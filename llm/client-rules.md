@@ -1,113 +1,249 @@
-CLIENT LLM RULES (MOBILE APP)
-These rules define how the LLM should behave when generating UI, flows, or client‑side logic.
+# PETTO — CLIENT LLM RULES (MOBILE APP)
 
-1. UI Structure Rules
-The LLM must always follow the MVP structure:
+## 0. Core Principle
 
-Header (Pet ID)
+This app is NOT a feature-rich system.
 
-photo
+This is a **simple, fast, stress-free pet passport**.
 
-name
+The user must feel:
+“I don’t need to remember anything anymore.”
 
-breed • age
+Priorities:
+1. Speed
+2. Simplicity
+3. Clarity
+4. Low friction
 
-tap → full profile
+DO NOT:
+- Add extra screens
+- Add unnecessary features
+- Add complex UI patterns
 
-Quick Status
+---
 
-show only if upcoming vaccination or reminder exists
+## 1. App Structure (STRICT)
 
-Main Cards
+The LLM MUST follow this structure:
+
+### Header (Pet ID)
+- photo
+- name
+- breed • age
+Tap → Full Profile
+
+---
+
+### Quick Status
+Show ONLY if exists:
+- nearest reminder
+- OR vaccination
+
+Show ONE item only (priority):
+1. Today reminder
+2. Upcoming reminder
+3. Due vaccination
+4. Overdue vaccination
+
+---
+
+### Main Cards
 
 Vaccinations (preview)
-
 Medical History (preview)
-
 Notes (preview)
 
-FAB
+Each shows ONLY latest item.
 
-Add Vaccination
+---
 
-Add Medical Record
+### FAB (GLOBAL ADD)
 
-Add Note
+Must open:
 
-Add Reminder
+- Add Vaccination
+- Add Medical Record
+- Add Note
+- Add Reminder
 
-2. Onboarding Rules
-First launch → Add Pet is required.
+---
 
-Required fields: email, pet name, pet type.
+## 2. Onboarding (STRICT)
 
-Optional: photo, breed, birth date.
+- First launch → Add Pet required
+- Required:
+  email, pet name, pet type
+- Optional:
+  photo, breed, birth date
 
-Must allow “Skip” for optional fields.
+Rules:
+- Must allow Skip
+- No extra steps
+- No tutorials
+- No onboarding flow expansion
 
-Never add extra steps.
+---
 
-3. Multi‑Pet Logic
-Avatar tap → bottom sheet with list of pets.
+## 3. Multi-Pet Logic
 
-All screens must update based on selected pet_id.
+- Avatar tap → bottom sheet
+- Switch pet instantly
+- All data depends on pet_id
 
-No cross‑pet mixing.
+Rules:
+- NEVER mix pet data
+- ALWAYS refresh UI on switch
 
-4. Validation Rules
-Required fields must be enforced exactly as defined.
+---
 
-Dates must be valid and not in the future unless allowed (e.g., next vaccination).
+## 4. Input UX Rules
 
-Text fields must allow short inputs.
+- Minimal typing
+- Short inputs only
+- No long forms
 
-No long-form text suggestions unless in Notes.
+Forms must be:
+- fast
+- clear
+- optional where possible
 
-5. Status Logic (Client-Side)
-The LLM must calculate:
+---
 
-Vaccination status:
+## 5. Validation Rules
 
-Up to date
+- Required fields enforced strictly
+- Dates:
+  - past → records
+  - future → reminders only
 
-Due soon
+- Inline validation only
+- No blocking popups
 
-Overdue
+---
 
-Reminder visual states:
+## 6. Status Display Rules
 
-Scheduled
+Client reflects server status.
 
-Today
+Vaccination:
+- Up to date
+- Due soon
+- Overdue
 
-Missed
+Reminder:
+- Scheduled
+- Today
+- Missed
+- Completed
 
-Completed
+Use simple visual indicators only.
 
-6. UI Messaging Rules
-Use only allowed system messages:
+---
 
-“Saved”
+## 7. Messaging Rules (STRICT)
 
-“Synced”
+ONLY allowed messages:
 
-“Something went wrong”
+- “Saved”
+- “Synced”
+- “Something went wrong”
+- “Failed to save”
+- “Check your connection”
+- “Delete this record? This action cannot be undone”
 
-“Failed to save”
+No extra text.
+No explanations.
+No system verbosity.
 
-“Check your connection”
+---
 
-“Delete this record? This action cannot be undone”
+## 8. UX Tone
 
-No custom messages outside this list.
+Must be:
 
-7. UX Tone
-Simple
+- Calm
+- Friendly
+- Minimal
+- Non-technical
 
-Calm
+Avoid:
+- medical jargon
+- complex language
+- instructions overload
 
-Clear
+---
 
-No technical jargon
+## 9. Navigation Rules
 
-No AI‑like explanations
+- Single main screen (Home)
+- Navigation via:
+  - cards
+  - profile
+  - FAB
+
+DO NOT:
+- introduce tabs
+- introduce deep navigation stacks
+
+---
+
+## 10. Empty States
+
+Must be present:
+
+Vaccinations:
+→ “No vaccinations yet”
+
+Medical:
+→ “No records yet”
+
+Notes:
+→ “No notes yet”
+
+Reminders:
+→ “No reminders yet”
+
+Each must include CTA:
+→ Add
+
+---
+
+## 11. Offline Behavior
+
+- Show data offline
+- Allow adding records
+- Sync silently later
+
+If offline:
+→ “Check your connection”
+
+---
+
+## 12. Performance Rules
+
+- Avoid heavy animations
+- Use skeleton loading
+- Fast screen transitions
+
+---
+
+## 13. What NOT to Build
+
+DO NOT add:
+
+- search
+- filters
+- dashboards
+- analytics
+- charts
+- AI suggestions
+
+---
+
+## 14. Success Condition
+
+The UI is correct if:
+
+- User can open app and understand instantly
+- User can add data in seconds
+- User can show vet data without thinking
