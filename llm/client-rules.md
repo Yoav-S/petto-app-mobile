@@ -714,3 +714,50 @@ The client is correct if:
 - user can return and see the same pet
 - user can show information to a vet without stress
 - UI feels calm, clear, and reliable
+
+
+## Firebase Configuration (STRICT)
+
+The app uses Firebase via the Web SDK.
+
+The LLM MUST:
+
+- Create a dedicated config file:
+  /src/config/firebase.ts
+
+- Initialize Firebase using environment variables only
+- NEVER hardcode credentials
+- NEVER use values directly from Firebase snippet
+
+---
+
+### Required environment variables
+
+- EXPO_PUBLIC_FIREBASE_API_KEY
+- EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
+- EXPO_PUBLIC_FIREBASE_PROJECT_ID
+- EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET
+- EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+- EXPO_PUBLIC_FIREBASE_APP_ID
+
+---
+
+### Rules
+
+- Use initializeApp from firebase/app
+- Export initialized app instance
+- Do NOT initialize Firebase multiple times
+- Do NOT include analytics in MVP
+- Do NOT use Firestore (MongoDB is backend)
+
+---
+
+### Goal
+
+Firebase is used ONLY for:
+- Authentication
+- (optional later) push notifications
+
+It is NOT used for:
+- database
+- business logic
