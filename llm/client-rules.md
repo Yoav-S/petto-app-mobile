@@ -149,7 +149,7 @@ Rules:
 Auth flow:
 - email is required
 - account is created during onboarding
-- login via email
+- login via email (and optionally Google Sign-In)
 - logout does NOT delete saved data
 - incomplete onboarding must return user to Add Pet
 
@@ -739,16 +739,33 @@ The LLM MUST:
 - EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET
 - EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
 - EXPO_PUBLIC_FIREBASE_APP_ID
+- EXPO_PUBLIC_API_BASE_URL
+
+---
+
+### Optional environment variables (for Google Sign-In)
+
+- EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
+- EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
+- EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID
 
 ---
 
 ### Rules
 
 - Use initializeApp from firebase/app
+- Implement React Native Persistence: When initializing Auth on mobile via the Web SDK, you MUST wrap it with AsyncStorage (e.g., `initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) })`) to prevent users from being logged out on app restart.
 - Export initialized app instance
 - Do NOT initialize Firebase multiple times
 - Do NOT include analytics in MVP
 - Do NOT use Firestore (MongoDB is backend)
+
+---
+
+### Backend Auth Handshake
+
+- When calling the custom server backend (via `EXPO_PUBLIC_API_BASE_URL`), the client MUST retrieve the Firebase ID Token upon login or session restore.
+- Attach the ID Token as a `Bearer` token in the `Authorization` headers for all HTTP requests to the backend.
 
 ---
 
