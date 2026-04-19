@@ -778,3 +778,19 @@ Firebase is used ONLY for:
 It is NOT used for:
 - database
 - business logic
+
+---
+
+## Payment Rules (STRICT)
+
+We are building for iOS and Android only. 
+The mobile app acts as the client for logging in and using features.
+
+### Client-Side Payments
+- **iOS** → Apple In-App Purchases (IAP)
+- **Android** → Google Play Billing
+
+### Backend Normalization
+- **Backend responsibility**: Normalize all payments into the system.
+- Handle tokens and subscriptions centrally on the backend.
+- Track payment source centrally as: `ios` | `android`
