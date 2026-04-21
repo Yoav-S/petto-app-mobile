@@ -47,6 +47,15 @@ The LLM must respect these app identifiers:
 - Android package: com.yoavshamir.petto
 - iOS bundleIdentifier: com.yoavshamir.petto
 
+### Windows / Expo Development Constraints (STRICT)
+
+- The developer is using Windows. This is an Expo (React Native) project, NOT a native iOS project.
+- Do NOT give instructions that require Xcode or a Mac.
+- Do NOT suggest Swift Package Manager, CocoaPods, or native iOS setup.
+- Firebase is configured using the JS/Web SDK only (`firebase` npm package).
+- For iOS builds, we use Expo EAS Build (cloud build, no Mac needed).
+- All Firebase setup is done through the `firebaseConfig` object in code, not native config files.
+
 ---
 
 ## 2. App Structure (STRICT)
@@ -778,6 +787,59 @@ Firebase is used ONLY for:
 It is NOT used for:
 - database
 - business logic
+
+---
+
+### Android Firebase configuration
+
+To make the `google-services.json` config values accessible to Firebase SDKs, you need the Google services Gradle plugin.
+
+**Kotlin DSL (`build.gradle.kts`)**
+**Groovy (`build.gradle`)**
+
+Add the plugin as a dependency to your project-level `build.gradle.kts` file:
+
+**Root-level (project-level) Gradle file (`<project>/build.gradle.kts`):**
+```kotlin
+plugins {
+  // ...
+
+  // Add the dependency for the Google services Gradle plugin
+  id("com.google.gms.google-services") version "4.4.4" apply false
+
+}
+```
+
+Then, in your module (app-level) `build.gradle.kts` file, add both the google-services plugin and any Firebase SDKs that you want to use in your app:
+
+**Module (app-level) Gradle file (`<project>/<app-module>/build.gradle.kts`):**
+```kotlin
+plugins {
+  id("com.android.application")
+
+  // Add the Google services Gradle plugin
+  id("com.google.gms.google-services")
+
+  // ...
+}
+
+dependencies {
+  // Import the Firebase BoM
+  implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
+
+
+  // TODO: Add the dependencies for Firebase products you want to use
+  // When using the BoM, don't specify versions in Firebase dependencies
+  implementation("com.google.firebase:firebase-analytics")
+
+
+  // Add the dependencies for any other desired Firebase products
+  // https://firebase.google.com/docs/android/setup#available-libraries
+}
+```
+
+By using the Firebase Android BoM, your app will always use compatible Firebase library versions. Learn more
+After adding the plugin and the desired SDKs, sync your Android project with Gradle files.
 
 ---
 
