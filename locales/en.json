@@ -1,0 +1,40 @@
+{
+  "home": {
+    "switch": "Switch",
+    "vaccinesCard": {
+      "title": "Vaccines",
+      "last": "Last:",
+      "next": "Next:",
+      "empty": "No vaccinations yet"
+    },
+    "remindersCard": {
+      "title": "Reminders",
+      "upcoming": "upcoming",
+      "empty": "No reminders yet"
+    },
+    "healthCard": {
+      "title": "Health",
+      "empty": "No records yet"
+    }
+  },
+  "fab": {
+    "vaccines": "Vaccines",
+    "health": "Health",
+    "reminders": "Reminders"
+  },
+  "status": {
+    "due_soon": "Due Soon",
+    "overdue": "Overdue",
+    "up_to_date": "Up to date",
+    "scheduled": "Scheduled",
+    "today": "Today",
+    "missed": "Missed",
+    "completed": "Completed"
+  },
+  "common": {
+    "today": "Today",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry"
+  }
+}

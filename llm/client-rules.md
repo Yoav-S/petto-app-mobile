@@ -782,6 +782,7 @@ The LLM MUST:
 
 Firebase is used ONLY for:
 - Authentication
+- Cloud Storage (for images)
 - (optional later) push notifications
 
 It is NOT used for:

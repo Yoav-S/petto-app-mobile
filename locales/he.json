@@ -1,0 +1,40 @@
+{
+  "home": {
+    "switch": "החלף",
+    "vaccinesCard": {
+      "title": "חיסונים",
+      "last": "אחרון:",
+      "next": "הבא:",
+      "empty": "אין חיסונים עדיין"
+    },
+    "remindersCard": {
+      "title": "תזכורות",
+      "upcoming": "קרובות",
+      "empty": "אין תזכורות עדיין"
+    },
+    "healthCard": {
+      "title": "בריאות",
+      "empty": "אין רשומות עדיין"
+    }
+  },
+  "fab": {
+    "vaccines": "חיסון",
+    "health": "בריאות",
+    "reminders": "תזכורת"
+  },
+  "status": {
+    "due_soon": "בקרוב",
+    "overdue": "באיחור",
+    "up_to_date": "מעודכן",
+    "scheduled": "מתוכנן",
+    "today": "היום",
+    "missed": "הוחמץ",
+    "completed": "הושלם"
+  },
+  "common": {
+    "today": "היום",
+    "loading": "טוען...",
+    "error": "משהו השתבש",
+    "retry": "נסה שוב"
+  }
+}
