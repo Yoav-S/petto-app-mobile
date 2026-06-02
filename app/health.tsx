@@ -9,18 +9,6 @@ import Snackbar from '@/components/ui/Snackbar';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-const MOCK_ACTIVE: any[] = [
-  { id: '1', title: 'Allergy', subtitle: 'Less scratching today, skin looks calmer after medication', dateOrTime: 'Today, 20:00', icon: 'notifications-outline' },
-  { id: '2', title: 'Allergy', subtitle: 'Less scratching today, skin looks calmer after medication', dateOrTime: 'Updated 24 Apr 2026' },
-  { id: '3', title: 'Allergy', subtitle: 'Less scratching today, skin looks calmer after medication', dateOrTime: 'Today, 20:00', icon: 'notifications-outline' },
-  { id: '4', title: 'Allergy', subtitle: 'Less scratching today, skin looks calmer after medication', dateOrTime: 'Updated 24 Apr 2026' },
-  { id: '10', title: 'Ear infection', subtitle: '', dateOrTime: 'Created:\n29.04.26' },
-];
-
-const MOCK_RESOLVED: any[] = [
-  { id: '5', title: 'Allergy', subtitle: 'Skin irritation fully healed after treatment.', dateOrTime: 'Resolved 24 Apr 2026' }
-];
-
 export default function HealthScreen() {
   const router = useRouter();
   const { deletedNote } = useLocalSearchParams();
@@ -33,15 +21,7 @@ export default function HealthScreen() {
     }
   }, [deletedNote]);
 
-  const getListData = () => {
-    switch (activeTab) {
-      case 'Active': return MOCK_ACTIVE;
-      case 'Resolved': return MOCK_RESOLVED;
-      default: return [];
-    }
-  };
-
-  const data = getListData();
+  const data: any[] = [];
 
   const renderEmptyState = () => {
     if (activeTab === 'Active') {
@@ -50,7 +30,7 @@ export default function HealthScreen() {
           title="No records yet" 
           subtitle="Track symptoms, changes or visits"
           actionTitle="Add first note"
-          onAction={() => {}}
+          onAction={() => router.push('/health/add-note' as any)}
         />
       );
     }
@@ -111,13 +91,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  segmentWrapper: {
-    // To match the screenshot where Health only has two tabs and they don't stretch fully to the edges in the same way,
-    // we can either add padding or rely on the SegmentedControl's margin.
-    // We'll leave it simple for now.
-  },
+  segmentWrapper: {},
   listContent: {
-    paddingBottom: 100, // Make room for FAB
+    paddingBottom: 100,
     flexGrow: 1,
   },
   fab: {

@@ -27,7 +27,7 @@ export default function LoginScreen() {
     
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // Navigation is handled automatically by the _layout.tsx observer
+      await auth.currentUser?.reload();
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Failed to sign in. Please check your credentials.');

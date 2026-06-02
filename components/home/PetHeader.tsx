@@ -9,9 +9,9 @@ interface PetHeaderProps {
   pet: {
     id: string;
     name: string;
-    breed?: string;
-    birth_date?: string;
-    photo_url?: string;
+    breed?: string | null;
+    birth_date?: string | null;
+    photo_url?: string | null;
   } | null;
   petCount: number;
   loading: boolean;
@@ -71,26 +71,34 @@ export default function PetHeader({ pet, petCount, loading, onSwitchPress }: Pet
       <TouchableOpacity style={styles.petInfoContainer} onPress={() => { /* Navigate to pet profile */ }}>
         {loading ? (
           <Animated.View style={[styles.avatarSkeleton, { opacity: fadeAnim }]} />
-        ) : (
+        ) : pet?.photo_url ? (
           <Image
-            source={{ uri: pet?.photo_url || 'https://via.placeholder.com/100' }}
+            source={{ uri: pet.photo_url }}
             style={styles.avatar}
             contentFit="cover"
           />
+        ) : (
+          <View style={[styles.avatar, styles.avatarEmpty]}>
+            <Ionicons name="paw-outline" size={36} color={Colors.secondaryText} />
+          </View>
         )}
         
         {loading ? (
           <Animated.View style={[styles.nameSkeleton, { opacity: fadeAnim }]} />
+        ) : pet ? (
+          <Text style={styles.name}>{pet.name}</Text>
         ) : (
-          <Text style={styles.name}>{pet?.name}</Text>
+          <Text style={styles.emptyName}>No pet yet</Text>
         )}
         
         {loading ? (
           <Animated.View style={[styles.subtitleSkeleton, { opacity: fadeAnim }]} />
-        ) : (
+        ) : pet ? (
           <Text style={styles.subtitle}>
-            {pet?.breed ? `${pet.breed} \u2022 ` : ''}{calculateAge(pet?.birth_date)}
+            {pet.breed ? `${pet.breed} \u2022 ` : ''}{calculateAge(pet.birth_date ?? undefined)}
           </Text>
+        ) : (
+          <Text style={styles.emptySubtitle}>Add your first pet to get started</Text>
         )}
       </TouchableOpacity>
     </View>
@@ -136,6 +144,11 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xl,
     marginBottom: Spacing.md,
   },
+  avatarEmpty: {
+    backgroundColor: Colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   avatarSkeleton: {
     width: 100,
     height: 100,
@@ -148,6 +161,18 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: Colors.primaryText,
     marginBottom: 4,
+  },
+  emptyName: {
+    fontFamily: 'Rubik-Medium',
+    fontSize: 20,
+    color: Colors.secondaryText,
+    marginBottom: 4,
+  },
+  emptySubtitle: {
+    fontFamily: 'Rubik-Regular',
+    fontSize: 14,
+    color: Colors.secondaryText,
+    textAlign: 'center',
   },
   nameSkeleton: {
     width: '60%',

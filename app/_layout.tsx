@@ -21,13 +21,25 @@ function RootLayoutNav() {
     if (isLoading) return;
 
     const inAuthGroup = (segments[0] as string) === '(auth)';
+    const onVerifyEmail = (segments[1] as string) === 'verify-email';
 
     if (!user && !inAuthGroup) {
-      // User is not authenticated and not in the auth group. Redirect to login.
       router.replace('/(auth)/login' as any);
-    } else if (user && inAuthGroup) {
-      // User is authenticated but trying to access auth screens. Redirect to main app.
-      router.replace('/(tabs)' as any);
+      return;
+    }
+
+    if (user) {
+      const needsVerification =
+        user.providerData.some(p => p.providerId === 'password') && !user.emailVerified;
+
+      if (needsVerification && !onVerifyEmail) {
+        router.replace('/(auth)/verify-email' as any);
+        return;
+      }
+
+      if (!needsVerification && inAuthGroup) {
+        router.replace('/(tabs)' as any);
+      }
     }
   }, [user, isLoading, segments]);
 

@@ -10,24 +10,6 @@ import ReminderActionSheet from '@/components/reminders/ReminderActionSheet';
 import Snackbar from '@/components/ui/Snackbar';
 import { Ionicons } from '@expo/vector-icons';
 
-const MOCK_TODAY = [
-  { id: '1', title: 'Give medication', subtitle: 'Apoquel tablet', timeOrDate: '8:00' },
-  { id: '2', title: 'Vet visit', subtitle: 'General check-up', timeOrDate: '10:30' },
-  { id: '3', title: 'Flea & tick spray', subtitle: '', timeOrDate: '13:00' },
-  { id: '4', title: 'Eye drops', subtitle: 'Left eye', timeOrDate: '16:00' },
-];
-
-const MOCK_UPCOMING = [
-  { id: '5', title: 'Vaccination', subtitle: 'Rabies booster', timeOrDate: '21:00\nToday', categoryAccent: '#48C072' }, // Adjusting time to mimic the screenshot's 'Today' label under upcoming, or using green for urgency
-  { id: '6', title: 'Deworming', subtitle: 'Milbemax', timeOrDate: 'Yesterday' },
-  { id: '7', title: 'Vet visit', subtitle: 'Dental check', timeOrDate: '11:30\n17.03.26' },
-  { id: '8', title: 'Nail trimming', subtitle: '', timeOrDate: '14:00\n19.02.26' },
-  { id: '9', title: 'Call to Grooming', subtitle: '', timeOrDate: '01.02.26' },
-  { id: '10', title: 'Ear cleaning', subtitle: 'Left ear', timeOrDate: '9:30\n25.01.26' },
-];
-
-const MOCK_RECENT: any[] = [];
-
 export default function RemindersScreen() {
   const router = useRouter();
   const { deletedId } = useLocalSearchParams();
@@ -42,16 +24,7 @@ export default function RemindersScreen() {
     }
   }, [deletedId]);
 
-  const getListData = () => {
-    switch (activeTab) {
-      case 'Today': return MOCK_TODAY;
-      case 'Upcoming': return MOCK_UPCOMING;
-      case 'Recent': return MOCK_RECENT;
-      default: return [];
-    }
-  };
-
-  const data = getListData();
+  const data: any[] = [];
 
   const renderEmptyState = () => {
     if (activeTab === 'Recent') {
@@ -134,7 +107,7 @@ export default function RemindersScreen() {
       <ReminderActionSheet 
         visible={actionSheetVisible}
         title={selectedReminder?.title}
-        subtitle={selectedReminder?.subtitle || 'No additional details'}
+        subtitle={selectedReminder?.subtitle}
         time={selectedReminder?.timeOrDate?.split('\n')[0]}
         context={activeTab}
         onClose={() => setActionSheetVisible(false)}
@@ -152,7 +125,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   listContent: {
-    paddingBottom: 100, // Make room for FAB
+    paddingBottom: 100,
     flexGrow: 1,
   },
   fab: {

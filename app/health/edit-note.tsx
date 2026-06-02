@@ -26,9 +26,11 @@ import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
 export default function EditNoteScreen() {
   const router = useRouter();
   
-  const [noteText, setNoteText] = useState('Less itching today');
-  const [hasPhoto, setHasPhoto] = useState(true);
-  const [hasReminder, setHasReminder] = useState(true);
+  const [noteText, setNoteText] = useState('');
+  const [hasPhoto, setHasPhoto] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [hasReminder, setHasReminder] = useState(false);
+  const [reminderLabel, setReminderLabel] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   
   // Sheet states
@@ -54,6 +56,7 @@ export default function EditNoteScreen() {
 
   const handleDeletePhoto = () => {
     setHasPhoto(false);
+    setPhotoUrl(null);
     setSnackbarConfig({ visible: true, message: 'Photo removed', type: 'photo' });
   };
 
@@ -87,10 +90,10 @@ export default function EditNoteScreen() {
           
           {/* Editable Card */}
           <View style={styles.card}>
-            {hasPhoto && (
+            {hasPhoto && photoUrl && (
               <TouchableOpacity activeOpacity={0.9} onPress={handleDeletePhoto}>
                 <Image 
-                  source={{ uri: "https://images.unsplash.com/photo-1544568100-847a948585b9?q=80&w=600&auto=format&fit=crop" }} 
+                  source={{ uri: photoUrl }} 
                   style={styles.image} 
                   contentFit="cover" 
                 />
@@ -98,19 +101,21 @@ export default function EditNoteScreen() {
             )}
             
             <TextInput
-              style={[styles.textInput, hasPhoto ? styles.textInputWithImage : null]}
+              style={[styles.textInput, hasPhoto && photoUrl ? styles.textInputWithImage : null]}
               value={noteText}
               onChangeText={setNoteText}
               multiline
               scrollEnabled={false}
+              placeholder="What's changed?"
+              placeholderTextColor={Colors.secondaryText}
             />
             
-            {hasReminder && (
+            {hasReminder && reminderLabel ? (
               <TouchableOpacity style={styles.reminderRow} activeOpacity={0.8} onPress={handleDeleteReminder}>
                 <Text style={styles.reminderLabel}>Reminder:</Text>
-                <Text style={styles.reminderValue}> Apr 21, 20:00</Text>
+                <Text style={styles.reminderValue}> {reminderLabel}</Text>
               </TouchableOpacity>
-            )}
+            ) : null}
             
             <View style={styles.iconRow}>
               <TouchableOpacity 
@@ -177,6 +182,7 @@ export default function EditNoteScreen() {
         onAdd={() => {
           setPhotoPickerSheetVisible(false);
           setHasPhoto(true);
+          // Photo URL will be set when real upload is wired up
         }}
       />
 

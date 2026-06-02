@@ -19,10 +19,10 @@ interface ReminderActionSheetProps {
 
 export default function ReminderActionSheet({
   visible,
-  title = "Give medication",
-  subtitle = "Take after food",
-  time = "8:00",
-  context = "Today",
+  title,
+  subtitle,
+  time,
+  context,
   currentIndex,
   totalCount,
   onClose,

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import auth from '@/services/firebaseAuth';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 
@@ -29,8 +29,9 @@ export default function SignupScreen() {
     setError('');
     
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      // Navigation is handled automatically by the _layout.tsx observer
+      const credential = await createUserWithEmailAndPassword(auth, email, password);
+      await sendEmailVerification(credential.user);
+      router.replace('/(auth)/verify-email' as any);
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Failed to create an account.');

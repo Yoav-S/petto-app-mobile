@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { View, ScrollView, SafeAreaView, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, ScrollView, SafeAreaView, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useActivePet } from '@/store/petStore';
 import { Colors } from '@/constants/theme';
 import { apiGet } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
-import { TouchableOpacity, Text } from 'react-native';
+import type { Pet, Vaccination, Reminder, MedicalRecord } from '@/types/api';
 
 import PetHeader from '@/components/home/PetHeader';
 import VaccinesCard from '@/components/home/VaccinesCard';
@@ -13,122 +13,169 @@ import RemindersCard from '@/components/home/RemindersCard';
 import HealthCard from '@/components/home/HealthCard';
 import FABMenu from '@/components/home/FABMenu';
 
+function reminderToScheduledAt(reminder: Reminder): string {
+  return `${reminder.date}T${reminder.time}:00`;
+}
+
 export default function HomeScreen() {
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { signOut, syncError, retryBackendSync, isSyncing } = useAuth();
   const { activePetId, setActivePetId } = useActivePet();
-  
-  const [pet, setPet] = useState<any>(null);
-  const [pets, setPets] = useState<any[]>([]);
-  const [latestVaccine, setLatestVaccine] = useState<any>(null);
-  const [nextReminder, setNextReminder] = useState<any>(null);
+
+  const [pet, setPet] = useState<Pet | null>(null);
+  const [pets, setPets] = useState<Pet[]>([]);
+  const [latestVaccine, setLatestVaccine] = useState<Vaccination | null>(null);
+  const [nextReminder, setNextReminder] = useState<{
+    title: string;
+    scheduled_at: string;
+    status: 'today' | 'scheduled' | 'missed' | 'completed';
+  } | null>(null);
   const [upcomingCount, setUpcomingCount] = useState(0);
-  const [latestRecord, setLatestRecord] = useState<any>(null);
-  
+  const [latestRecord, setLatestRecord] = useState<{
+    type: string;
+    description?: string;
+    date: string;
+    reminder_time?: string;
+  } | null>(null);
+
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setFetchError(null);
+
+      const petList = await apiGet<Pet[]>('/pets');
+      setPets(petList);
+
+      if (petList.length === 0) {
+        setPet(null);
+        setLatestVaccine(null);
+        setNextReminder(null);
+        setUpcomingCount(0);
+        setLatestRecord(null);
+        return;
+      }
+
+      const currentPetId = activePetId && petList.some(p => p.id === activePetId)
+        ? activePetId
+        : petList[0].id;
+
+      if (currentPetId !== activePetId) {
+        await setActivePetId(currentPetId);
+      }
+
+      const currentPet = petList.find(p => p.id === currentPetId) ?? petList[0];
+      setPet(currentPet);
+
+      const [vaccinations, todayReminders, upcomingReminders, records] = await Promise.all([
+        apiGet<Vaccination[]>(`/pets/${currentPetId}/vaccinations`),
+        apiGet<Reminder[]>(`/pets/${currentPetId}/reminders?tab=today`),
+        apiGet<Reminder[]>(`/pets/${currentPetId}/reminders?tab=upcoming`),
+        apiGet<MedicalRecord[]>(`/pets/${currentPetId}/medical-records?status=active`),
+      ]);
+
+      setLatestVaccine(vaccinations[0] ?? null);
+
+      const next = todayReminders[0] ?? upcomingReminders[0] ?? null;
+      if (next) {
+        setNextReminder({
+          title: next.title,
+          scheduled_at: reminderToScheduledAt(next),
+          status: next.status === 'today' ? 'today' : 'scheduled',
+        });
+      } else {
+        setNextReminder(null);
+      }
+
+      setUpcomingCount(todayReminders.length + upcomingReminders.length);
+
+      const record = records[0];
+      if (record) {
+        setLatestRecord({
+          type: record.title,
+          description: record.latest_note_preview ?? undefined,
+          date: record.created_at,
+          reminder_time: record.linked_reminder_time ?? undefined,
+        });
+      } else {
+        setLatestRecord(null);
+      }
+    } catch (error) {
+      console.error('Error fetching home data:', error);
+      setFetchError(error instanceof Error ? error.message : 'Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  }, [activePetId, setActivePetId]);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
-        // Note: Real API fetch logic would go here.
-        // For Phase 01 implementation structure, we will use mock structure based on the spec
-        // since the backend might not be fully seeded.
-        
-        // Example mock data setup for now to fulfill the UI structure:
-        const mockPets = [
-          {
-            id: '1',
-            name: 'Archie',
-            breed: 'Labrador',
-            birth_date: '2023-01-01T00:00:00.000Z',
-            photo_url: 'https://images.unsplash.com/photo-1544568100-847a948585b9?w=500&auto=format&fit=crop&q=60'
-          }
-        ];
-        
-        setPets(mockPets);
-        
-        const currentPetId = activePetId || mockPets[0]?.id;
-        if (currentPetId && currentPetId !== activePetId) {
-          await setActivePetId(currentPetId);
-        }
-        
-        setPet(mockPets.find(p => p.id === currentPetId) || mockPets[0]);
-        
-        // Mock data logic simulating endpoint responses
-        setLatestVaccine({
-          name: 'Rabies',
-          date: '2026-04-10T00:00:00.000Z',
-          next_date: '2027-04-10T00:00:00.000Z'
-        });
-        
-        setNextReminder({
-          title: 'Vet visit today',
-          scheduled_at: new Date().toISOString(),
-          status: 'today'
-        });
-        setUpcomingCount(2);
-        
-        setLatestRecord({
-          type: 'Allergy',
-          description: 'Less itching today after medication.',
-          date: new Date().toISOString(),
-          reminder_time: '20:00'
-        });
-        
-      } catch (error) {
-        console.error('Error fetching home data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    
     fetchData();
-  }, [activePetId]);
+  }, [fetchData]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={{ alignItems: 'flex-end', paddingRight: 16, paddingTop: 8 }}>
-          <TouchableOpacity onPress={signOut} style={{ padding: 8, backgroundColor: Colors.surface, borderRadius: 8 }}>
-            <Text style={{ fontFamily: 'Rubik-Medium', color: Colors.error }}>Log out (Test)</Text>
+        {(syncError || fetchError) && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>{syncError ?? fetchError}</Text>
+            <TouchableOpacity
+              onPress={() => {
+                if (syncError) retryBackendSync();
+                else fetchData();
+              }}
+              disabled={isSyncing}
+            >
+              <Text style={styles.errorBannerAction}>{isSyncing ? 'Retrying…' : 'Retry'}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <View style={styles.topActions}>
+          <TouchableOpacity onPress={signOut} style={styles.signOutButton}>
+            <Text style={styles.signOutText}>Sign out</Text>
           </TouchableOpacity>
         </View>
 
-        <PetHeader 
-          pet={pet} 
-          petCount={pets.length} 
-          loading={loading} 
-          onSwitchPress={() => console.log('Open switch pet sheet')} 
+        <PetHeader
+          pet={pet}
+          petCount={pets.length}
+          loading={loading}
+          onSwitchPress={() => {}}
         />
-        
+
         <View style={styles.cardsGrid}>
           <View style={styles.row}>
-            <VaccinesCard 
-              latestVaccine={latestVaccine} 
-              loading={loading} 
-              onPress={() => console.log('Nav to vaccines')} 
+            <VaccinesCard
+              latestVaccine={latestVaccine ? {
+                name: latestVaccine.name,
+                date: latestVaccine.date,
+                next_date: latestVaccine.next_date ?? undefined,
+              } : null}
+              loading={loading}
+              onPress={() => {}}
             />
-            <RemindersCard 
-              nextReminder={nextReminder} 
-              upcomingCount={upcomingCount} 
-              loading={loading} 
-              onPress={() => router.push('/reminders' as never)} 
+            <RemindersCard
+              nextReminder={nextReminder}
+              upcomingCount={upcomingCount}
+              loading={loading}
+              onPress={() => router.push('/reminders' as never)}
             />
           </View>
-          
-          <HealthCard 
-            latestRecord={latestRecord} 
-            loading={loading} 
-            onPress={() => router.push('/health' as never)} 
+
+          <HealthCard
+            latestRecord={latestRecord}
+            loading={loading}
+            onPress={() => router.push('/health' as never)}
           />
         </View>
       </ScrollView>
-      
-      <FABMenu 
-        onVaccinePress={() => console.log('Nav to add vaccine')}
-        onHealthPress={() => console.log('Nav to add health')}
-        onReminderPress={() => console.log('Nav to add reminder')}
+
+      <FABMenu
+        onVaccinePress={() => {}}
+        onHealthPress={() => router.push('/health/add-note' as never)}
+        onReminderPress={() => router.push('/reminders' as never)}
       />
     </SafeAreaView>
   );
@@ -138,6 +185,41 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  topActions: {
+    alignItems: 'flex-end',
+    paddingRight: 16,
+    paddingTop: 8,
+  },
+  signOutButton: {
+    padding: 8,
+    backgroundColor: Colors.surface,
+    borderRadius: 8,
+  },
+  signOutText: {
+    fontFamily: 'Rubik-Medium',
+    color: Colors.error,
+    fontSize: 14,
+  },
+  errorBanner: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    padding: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  errorBannerText: {
+    fontFamily: 'Rubik-Regular',
+    fontSize: 13,
+    color: Colors.secondaryText,
+    marginBottom: 4,
+  },
+  errorBannerAction: {
+    fontFamily: 'Rubik-Medium',
+    fontSize: 14,
+    color: Colors.primaryText,
   },
   cardsGrid: {
     padding: 16,

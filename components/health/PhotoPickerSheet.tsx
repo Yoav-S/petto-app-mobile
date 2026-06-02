@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList } from 'react-native';
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 
@@ -10,23 +9,9 @@ interface PhotoPickerSheetProps {
   onAdd: () => void;
 }
 
-// Mock URLs for the gallery
-const MOCK_PHOTOS = [
-  'https://images.unsplash.com/photo-1506744626753-1fa7604d5093?q=80&w=200&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1517404215738-15263e9f9178?q=80&w=200&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1494548162494-384bba4ab999?q=80&w=200&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1534081333815-ae5019106622?q=80&w=200&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1584697964400-2af6a2f6204c?q=80&w=200&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=200&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?q=80&w=200&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=200&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=200&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1534081333815-ae5019106622?q=80&w=200&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1584697964400-2af6a2f6204c?q=80&w=200&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=200&auto=format&fit=crop',
-];
-
 export default function PhotoPickerSheet({ visible, onClose, onAdd }: PhotoPickerSheetProps) {
+  const photos: string[] = [];
+
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.overlay}>
@@ -44,17 +29,20 @@ export default function PhotoPickerSheet({ visible, onClose, onAdd }: PhotoPicke
           </View>
           
           <View style={styles.gridContainer}>
-            <FlatList
-              data={MOCK_PHOTOS}
-              keyExtractor={(_, idx) => idx.toString()}
-              numColumns={3}
-              showsVerticalScrollIndicator={false}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={styles.photoWrapper} activeOpacity={0.8}>
-                  <Image source={{ uri: item }} style={styles.photo} contentFit="cover" />
-                </TouchableOpacity>
-              )}
-            />
+            {photos.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="images-outline" size={40} color={Colors.secondaryText} />
+                <Text style={styles.emptyText}>No photos yet</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={photos}
+                keyExtractor={(_, idx) => idx.toString()}
+                numColumns={3}
+                showsVerticalScrollIndicator={false}
+                renderItem={() => null}
+              />
+            )}
           </View>
 
           <View style={styles.footer}>
@@ -82,7 +70,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     paddingTop: Spacing.md,
-    height: '85%', // Make it take up most of the screen
+    height: '85%',
   },
   dragHandle: {
     width: 36,
@@ -119,20 +107,22 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: Spacing.sm,
   },
-  photoWrapper: {
+  emptyState: {
     flex: 1,
-    aspectRatio: 1,
-    padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: 80,
   },
-  photo: {
-    flex: 1,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.border,
+  emptyText: {
+    fontFamily: 'Rubik-Regular',
+    fontSize: 16,
+    color: Colors.secondaryText,
+    marginTop: Spacing.md,
   },
   footer: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.lg,
-    paddingBottom: Spacing.xl * 2, // safe area padding
+    paddingBottom: Spacing.xl * 2,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
     backgroundColor: Colors.surface,
