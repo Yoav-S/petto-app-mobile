@@ -158,9 +158,94 @@ Rules:
 Auth flow:
 - email is required
 - account is created during onboarding
-- login via email (and optionally Google Sign-In)
+- **passwordless** email auth via server **6-digit OTP** (NOT Firebase email links, NOT passwords)
+- signup and login use the **same** OTP flow
+- session persists via Firebase + AsyncStorage until user taps **Sign out**
+- after sign-out, user must complete OTP again to log in
+- Google Sign-In optional (separate flow, test on dev build / deployment)
 - logout does NOT delete saved data
 - incomplete onboarding must return user to Add Pet
+
+---
+
+## 4.1 Passwordless Email OTP and Backend Sync (STRICT)
+
+The client owns UI and Firebase session. The server owns OTP, user storage, and MongoDB.
+
+### API base
+
+- All backend calls use `EXPO_PUBLIC_API_BASE_URL` + prefix `/api/v1`.
+- Protected routes require `Authorization: Bearer <Firebase ID token>`.
+- OTP routes are **public** (no Bearer token).
+
+### Email signup AND login (same flow)
+
+| Step | Client action | Endpoint | Request body | Response |
+|------|---------------|----------|--------------|----------|
+| 1 | User enters email, taps Continue | `POST /auth/send-otp` | `{ "email": "user@example.com" }` | `{ "message": "..." }` |
+| 2 | Navigate to OTP screen | — | Keep email in **memory only** (`setPendingEmail`) | — |
+| 3 | User enters 6-digit OTP | `POST /auth/verify-otp` | `{ "email": "...", "otp": "123456" }` | `{ "custom_token": "..." }` |
+| 4 | Firebase sign-in | `signInWithCustomToken(auth, custom_token)` | Client only | Firebase session |
+| 5 | Backend handshake | `POST /users/me` `{}` | Bearer token | User profile + `last_login_at` |
+
+Optional: `POST /auth/resend-otp` `{ "email" }` — **20s cooldown** (show timer in UI).
+
+### Session rules
+
+- **Do NOT** sign out on app close — Firebase AsyncStorage keeps the session.
+- **Only** call `signOut()` when user taps Sign out — next login requires new OTP.
+- On app launch, `onAuthStateChanged` restores session → auto `POST /users/me`.
+
+### Google Sign-In (sign up + log in)
+
+Google uses one flow for both new and returning users:
+
+1. Google OAuth → Firebase (`signInWithCredential` with ID token)
+2. `AuthContext` auto-calls `POST /users/me`
+3. Server sets `auth_provider: "google"`, no password hash, updates `last_login_at`
+
+**Client config (`AuthContext`):**
+
+- `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` — Firebase Web client ID (required)
+- `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` — iOS OAuth client (native builds)
+- `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` — Android OAuth client (native builds)
+- Redirect scheme: `petto` (matches `app.json` → `expo.scheme`)
+- Use `webClientId` (not `clientId`) in `Google.useIdTokenAuthRequest`
+
+**UI:** `GoogleSignInButton` on login and signup screens.
+
+**Expo Go vs development build:**
+
+- **Web:** Google Sign-In works in the browser with the web client ID.
+- **Phone (Expo Go):** Google OAuth is unreliable — Expo Go cannot use custom redirect schemes properly.
+- **Phone (recommended):** Run an EAS **development build** (`eas build --profile development`). Register Android SHA-1 and iOS bundle ID in Firebase / Google Cloud.
+
+**Google Cloud (if blocked):** Auth platform → Audience → Test users (while app is in Testing); enable Google in Firebase Authentication.
+
+### Client files (auth)
+
+- `services/firebaseAuth.ts` — Firebase Web SDK init + AsyncStorage persistence
+- `services/api.ts` — `apiGet`, `apiPost` (Bearer), `apiPostPublic` (register/OTP)
+- `services/auth.ts` — `sendOtp`, `verifyOtpAndSignIn`, `resendOtp`, `syncUserWithBackend`, `setPendingEmail`
+- `context/AuthContext.tsx` — session restore + auto `POST /users/me` after Firebase login
+- `app/(auth)/signup.tsx`, `verify-email.tsx`, `login.tsx`
+
+### Rules
+
+- Do NOT use passwords or `signInWithEmailAndPassword` for email auth.
+- Do NOT use Firebase `sendEmailVerification` — OTP is server-side only.
+- Do NOT store email in URL/route params or AsyncStorage between OTP steps — use in-memory `pendingEmail` only.
+- Do NOT skip `POST /users/me` after login — MongoDB user + `last_login_at` depend on it.
+- OTP is **6 digits** (match UI boxes).
+- On physical device dev, `localhost` in `EXPO_PUBLIC_API_BASE_URL` must resolve to the dev machine (LAN IP or Expo host swap in `api.ts`).
+
+### Dev OTP
+
+When server SMTP is not configured, OTP appears in the **server terminal**:
+
+```
+[DEV OTP] user@example.com -> 123456
+```
 
 ---
 
@@ -732,7 +817,7 @@ The app uses Firebase via the Web SDK.
 The LLM MUST:
 
 - Create a dedicated config file:
-  /src/config/firebase.ts
+  `services/firebaseAuth.ts`
 
 - Initialize Firebase using environment variables only
 - NEVER hardcode credentials
@@ -774,7 +859,9 @@ The LLM MUST:
 ### Backend Auth Handshake
 
 - When calling the custom server backend (via `EXPO_PUBLIC_API_BASE_URL`), the client MUST retrieve the Firebase ID Token upon login or session restore.
-- Attach the ID Token as a `Bearer` token in the `Authorization` headers for all HTTP requests to the backend.
+- Attach the ID Token as a `Bearer` token in the `Authorization` headers for all **protected** HTTP requests to the backend.
+- Call `POST /api/v1/users/me` after every successful Firebase login and on session restore (`onAuthStateChanged`). This upserts the user in MongoDB and updates `last_login_at`.
+- Public auth endpoints (`/auth/send-otp`, `/auth/verify-otp`, `/auth/resend-otp`) do NOT use Bearer tokens.
 
 ---
 

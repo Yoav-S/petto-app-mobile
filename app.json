@@ -13,7 +13,7 @@
       "bundleIdentifier": "com.yoavshamir.petto"
     },
     "android": {
-      "package": "com.yoav.petto",
+      "package": "com.yoavshamir.petto",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

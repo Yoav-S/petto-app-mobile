@@ -1,36 +1,47 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import auth from '@/services/firebaseAuth';
-import { useAuth } from '@/context/AuthContext';
+import { sendOtp, setPendingEmail } from '@/services/auth';
 import { Colors, Radius, Spacing } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signInWithGoogle } = useAuth();
-  
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setError('Please enter both email and password.');
+  const isValidEmail = EMAIL_REGEX.test(email.trim());
+
+  const handleContinue = async () => {
+    if (!isValidEmail) {
+      setError('Please enter a valid email address.');
       return;
     }
-    
+
     setIsLoading(true);
     setError('');
-    
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      await auth.currentUser?.reload();
+      const normalizedEmail = email.trim().toLowerCase();
+      await sendOtp(normalizedEmail);
+      setPendingEmail(normalizedEmail);
+      router.replace('/(auth)/verify-email' as any);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Failed to sign in. Please check your credentials.');
+      setError(err.message || 'Something went wrong. Check your connection.');
     } finally {
       setIsLoading(false);
     }
@@ -38,66 +49,57 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView 
-        style={styles.container} 
+      <KeyboardAvoidingView
+        style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.content}>
-          <View style={styles.header}>
+          <View style={styles.card}>
             <Text style={styles.title}>Welcome back</Text>
-            <Text style={styles.subtitle}>Log in to Petto to continue</Text>
-          </View>
+            <Text style={styles.subtitle}>We&apos;ll send you a verification code.</Text>
 
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-          <View style={styles.form}>
+            <Text style={styles.label}>Email</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Email"
+              style={[styles.input, error ? styles.inputError : null]}
+              placeholder="Enter your email"
               placeholderTextColor={Colors.secondaryText}
               keyboardType="email-address"
               autoCapitalize="none"
+              autoCorrect={false}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(v) => {
+                setEmail(v);
+                if (error) setError('');
+              }}
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor={Colors.secondaryText}
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-            <TouchableOpacity 
-              style={[styles.button, isLoading && styles.buttonDisabled]} 
-              onPress={handleLogin}
-              disabled={isLoading}
+            <TouchableOpacity
+              style={[
+                styles.button,
+                (!isValidEmail || isLoading) && styles.buttonDisabled,
+              ]}
+              onPress={handleContinue}
+              disabled={!isValidEmail || isLoading}
             >
               {isLoading ? (
                 <ActivityIndicator color={Colors.surface} />
               ) : (
-                <Text style={styles.buttonText}>Log in</Text>
+                <Text style={styles.buttonText}>Continue</Text>
               )}
-            </TouchableOpacity>
-
-            <View style={styles.dividerContainer}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>OR</Text>
-              <View style={styles.divider} />
-            </View>
-
-            <TouchableOpacity 
-              style={styles.googleButton} 
-              onPress={signInWithGoogle}
-            >
-              <Ionicons name="logo-google" size={20} color={Colors.primaryText} style={styles.googleIcon} />
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
             </TouchableOpacity>
           </View>
 
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.divider} />
+          </View>
+
+          <GoogleSignInButton />
+
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/signup' as any)}>
               <Text style={styles.footerLink}>Sign up</Text>
             </TouchableOpacity>
@@ -109,44 +111,40 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  container: {
-    flex: 1,
-  },
+  safeArea: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   content: {
     flex: 1,
     paddingHorizontal: Spacing.xl,
     justifyContent: 'center',
   },
-  header: {
-    marginBottom: Spacing.xl * 2,
-    alignItems: 'center',
+  card: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg ?? Radius.md,
+    padding: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   title: {
     fontFamily: 'Rubik-SemiBold',
-    fontSize: 28,
+    fontSize: 22,
     color: Colors.primaryText,
     marginBottom: Spacing.sm,
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.secondaryText,
+    marginBottom: Spacing.lg,
   },
-  errorText: {
+  label: {
     fontFamily: 'Rubik-Regular',
-    color: Colors.error,
-    marginBottom: Spacing.md,
-    textAlign: 'center',
-  },
-  form: {
-    gap: Spacing.md,
+    fontSize: 13,
+    color: Colors.secondaryText,
+    marginBottom: Spacing.xs,
   },
   input: {
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.background,
     padding: Spacing.lg,
     borderRadius: Radius.md,
     fontFamily: 'Rubik-Regular',
@@ -154,6 +152,14 @@ const styles = StyleSheet.create({
     color: Colors.primaryText,
     borderWidth: 1,
     borderColor: Colors.border,
+    marginBottom: Spacing.sm,
+  },
+  inputError: { borderColor: Colors.error },
+  errorText: {
+    fontFamily: 'Rubik-Regular',
+    color: Colors.error,
+    fontSize: 13,
+    marginBottom: Spacing.sm,
   },
   button: {
     backgroundColor: Colors.primaryText,
@@ -162,9 +168,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: Spacing.sm,
   },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
+  buttonDisabled: { opacity: 0.5 },
   buttonText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
@@ -175,38 +179,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: Spacing.lg,
   },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.border,
-  },
+  divider: { flex: 1, height: 1, backgroundColor: Colors.border },
   dividerText: {
     fontFamily: 'Rubik-Medium',
     color: Colors.secondaryText,
     paddingHorizontal: Spacing.md,
   },
-  googleButton: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    padding: Spacing.lg,
-    borderRadius: Radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  googleIcon: {
-    marginRight: Spacing.sm,
-  },
-  googleButtonText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: Colors.primaryText,
-  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: Spacing.xl * 2,
+    marginTop: Spacing.lg,
   },
   footerText: {
     fontFamily: 'Rubik-Regular',

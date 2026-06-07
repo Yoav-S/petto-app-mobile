@@ -1,7 +1,10 @@
 export interface UserProfile {
   id: string;
   email: string;
+  auth_provider: 'email' | 'google';
+  email_verified: boolean;
   created_at: string;
+  last_login_at?: string | null;
 }
 
 export interface Pet {

@@ -21,25 +21,14 @@ function RootLayoutNav() {
     if (isLoading) return;
 
     const inAuthGroup = (segments[0] as string) === '(auth)';
-    const onVerifyEmail = (segments[1] as string) === 'verify-email';
 
     if (!user && !inAuthGroup) {
       router.replace('/(auth)/login' as any);
       return;
     }
 
-    if (user) {
-      const needsVerification =
-        user.providerData.some(p => p.providerId === 'password') && !user.emailVerified;
-
-      if (needsVerification && !onVerifyEmail) {
-        router.replace('/(auth)/verify-email' as any);
-        return;
-      }
-
-      if (!needsVerification && inAuthGroup) {
-        router.replace('/(tabs)' as any);
-      }
+    if (user && inAuthGroup) {
+      router.replace('/(tabs)' as any);
     }
   }, [user, isLoading, segments]);
 

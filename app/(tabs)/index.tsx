@@ -19,7 +19,7 @@ function reminderToScheduledAt(reminder: Reminder): string {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { signOut, syncError, retryBackendSync, isSyncing } = useAuth();
+  const { user, isLoading: authLoading, signOut, syncError, retryBackendSync, isSyncing } = useAuth();
   const { activePetId, setActivePetId } = useActivePet();
 
   const [pet, setPet] = useState<Pet | null>(null);
@@ -42,6 +42,12 @@ export default function HomeScreen() {
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
+    if (!user) {
+      setFetchError(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setFetchError(null);
@@ -108,11 +114,12 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
-  }, [activePetId, setActivePetId]);
+  }, [activePetId, setActivePetId, user]);
 
   useEffect(() => {
+    if (authLoading) return;
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, authLoading]);
 
   return (
     <SafeAreaView style={styles.safeArea}>

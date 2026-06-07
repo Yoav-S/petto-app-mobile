@@ -1,23 +1,58 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { User, onAuthStateChanged, signOut as firebaseSignOut, sendEmailVerification } from 'firebase/auth';
+import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import auth from '@/services/firebaseAuth';
 import { syncUserWithBackend } from '@/services/auth';
 import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 
 WebBrowser.maybeCompleteAuthSession();
+
+const APP_SCHEME = 'petto';
+
+function mapFirebaseGoogleError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes('auth/account-exists-with-different-credential')) {
+    return 'This email is already registered with email/password. Log in with your password instead.';
+  }
+  if (message.includes('auth/invalid-credential')) {
+    return 'Google sign-in failed. Check Firebase Google provider and OAuth client IDs.';
+  }
+  return 'Could not sign in with Google. Please try again.';
+}
+
+function mapGoogleOAuthError(
+  error: AuthSession.AuthError | null | undefined,
+  params: Record<string, string> | undefined,
+): string {
+  const code = error?.code ?? params?.error ?? '';
+  const description = error?.message ?? params?.error_description ?? '';
+
+  if (code === 'access_denied') {
+    return 'Google access was denied. If the app is in Testing mode, add your Gmail under Google Cloud → Audience → Test users.';
+  }
+  if (code === 'invalid_client' || description.includes('invalid_client')) {
+    return 'Google OAuth client mismatch. Use an EAS development build and set Android/iOS client IDs in .env (see .env.example).';
+  }
+  if (description.includes('OAuth 2.0 policy') || description.includes('validation rules')) {
+    return 'Google blocked sign-in (OAuth policy). Add yourself as a test user in Google Cloud → Audience, and enable Google in Firebase → Authentication.';
+  }
+  if (description) return description;
+  return 'Google sign-in failed. Try again or use email/password.';
+}
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isSyncing: boolean;
   syncError: string | null;
+  isGoogleLoading: boolean;
+  googleAuthError: string | null;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
-  resendVerificationEmail: () => Promise<void>;
-  refreshUser: () => Promise<void>;
   retryBackendSync: () => Promise<void>;
+  clearGoogleAuthError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -25,11 +60,12 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   isSyncing: false,
   syncError: null,
+  isGoogleLoading: false,
+  googleAuthError: null,
   signInWithGoogle: async () => {},
   signOut: async () => {},
-  resendVerificationEmail: async () => {},
-  refreshUser: async () => {},
   retryBackendSync: async () => {},
+  clearGoogleAuthError: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -39,14 +75,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
 
   const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+  const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+  const androidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
 
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: webClientId,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? webClientId,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? webClientId,
-  });
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest(
+    {
+      webClientId,
+      iosClientId: iosClientId || undefined,
+      androidClientId: androidClientId || undefined,
+      selectAccount: true,
+    },
+    { scheme: APP_SCHEME },
+  );
 
   const runBackendSync = useCallback(async (firebaseUser: User) => {
     setIsSyncing(true);
@@ -78,26 +122,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [runBackendSync]);
 
   useEffect(() => {
-    if (response?.type === 'success') {
-      const { id_token } = response.params;
-      const credential = GoogleAuthProvider.credential(id_token);
+    if (!response) return;
+
+    setIsGoogleLoading(false);
+
+    if (response.type === 'success') {
+      const idToken = response.params.id_token;
+      if (!idToken) {
+        setGoogleAuthError(
+          'Google did not return an ID token. On a phone, build a development client with EAS (Expo Go has limited Google support).',
+        );
+        return;
+      }
+
+      setGoogleAuthError(null);
+      const credential = GoogleAuthProvider.credential(idToken);
       signInWithCredential(auth, credential).catch(error => {
-        console.error("Firebase Google Auth Error:", error);
+        console.error('Firebase Google Auth Error:', error);
+        setGoogleAuthError(mapFirebaseGoogleError(error));
       });
-    } else if (response?.type === 'error') {
-      console.error("Google Auth Error:", response.error, response.params);
+      return;
+    }
+
+    if (response.type === 'error') {
+      setGoogleAuthError(mapGoogleOAuthError(response.error, response.params));
     }
   }, [response]);
 
   const signInWithGoogle = async () => {
-    if (!request) {
-      console.error("Google Sign-In Error: auth request not ready (check EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID)");
+    if (!webClientId) {
+      setGoogleAuthError(
+        'Google Sign-In is not configured. Set EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in .env and restart Expo.',
+      );
       return;
     }
+    if (!request) {
+      setGoogleAuthError('Google Sign-In is still initializing. Wait a moment and try again.');
+      return;
+    }
+
+    setGoogleAuthError(null);
+    setIsGoogleLoading(true);
+
     try {
-      await promptAsync();
+      const result = await promptAsync();
+      if (result.type === 'dismiss' || result.type === 'cancel') {
+        setIsGoogleLoading(false);
+      }
     } catch (error) {
-      console.error("Google Sign-In Error:", error);
+      console.error('Google Sign-In Error:', error);
+      setIsGoogleLoading(false);
+      setGoogleAuthError(
+        error instanceof Error ? error.message : 'Google sign-in failed.',
+      );
     }
   };
 
@@ -105,25 +182,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await firebaseSignOut(auth);
     } catch (error) {
-      console.error("Sign-out Error:", error);
+      console.error('Sign-out Error:', error);
     }
-  };
-
-  const resendVerificationEmail = async () => {
-    if (!auth.currentUser) return;
-    await sendEmailVerification(auth.currentUser);
-  };
-
-  const refreshUser = async () => {
-    if (!auth.currentUser) return;
-    await auth.currentUser.reload();
-    setUser({ ...auth.currentUser });
   };
 
   const retryBackendSync = async () => {
     if (!auth.currentUser) return;
     await runBackendSync(auth.currentUser);
   };
+
+  const clearGoogleAuthError = () => setGoogleAuthError(null);
 
   return (
     <AuthContext.Provider
@@ -132,11 +200,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isSyncing,
         syncError,
+        isGoogleLoading,
+        googleAuthError,
         signInWithGoogle,
         signOut,
-        resendVerificationEmail,
-        refreshUser,
         retryBackendSync,
+        clearGoogleAuthError,
       }}
     >
       {children}
