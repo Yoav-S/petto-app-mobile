@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { Platform } from 'react-native';
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import auth from '@/services/firebaseAuth';
 import { syncUserWithBackend } from '@/services/auth';
@@ -79,14 +80,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
 
   const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-  const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
-  const androidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
+  // Android/iOS hooks require platform client IDs — fall back to web ID so the app
+  // loads in Expo Go. Use native client IDs from Firebase for production Google login.
+  const iosClientId =
+    process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || webClientId;
+  const androidClientId =
+    process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || webClientId;
+
+  const googleEnabled = Boolean(webClientId);
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest(
     {
-      webClientId,
-      iosClientId: iosClientId || undefined,
-      androidClientId: androidClientId || undefined,
+      webClientId: webClientId ?? '',
+      iosClientId: Platform.OS === 'ios' ? iosClientId : undefined,
+      androidClientId: Platform.OS === 'android' ? androidClientId : undefined,
       selectAccount: true,
     },
     { scheme: APP_SCHEME },
@@ -150,9 +157,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [response]);
 
   const signInWithGoogle = async () => {
-    if (!webClientId) {
+    if (!googleEnabled) {
       setGoogleAuthError(
         'Google Sign-In is not configured. Set EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in .env and restart Expo.',
+      );
+      return;
+    }
+    if (Platform.OS === 'android' && !process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID) {
+      setGoogleAuthError(
+        'Google on Android needs EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID (add SHA-1 in Firebase, then rebuild). Use email OTP for now.',
       );
       return;
     }
