@@ -1,4 +1,4 @@
-import { signInWithCustomToken } from 'firebase/auth';
+import { signInWithCustomToken, signOut } from 'firebase/auth';
 import auth from './firebaseAuth';
 import { apiPost, apiPostPublic } from './api';
 import type { UserProfile } from '@/types/api';
@@ -49,5 +49,10 @@ export async function resendOtp(email: string): Promise<AuthMessage> {
 
 /** Upsert Firebase user in MongoDB — updates last_login_at. Called after every login/session restore. */
 export async function syncUserWithBackend(): Promise<UserProfile> {
-  return apiPost<UserProfile>('/users/me', {});
+  const profile = await apiPost<UserProfile>('/users/me', {});
+  if (profile.auth_provider === 'email' && !profile.email_verified) {
+    await signOut(auth);
+    throw new Error('Email not verified. Complete OTP verification to continue.');
+  }
+  return profile;
 }

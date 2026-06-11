@@ -33,6 +33,11 @@ function getResolvedBaseUrl(): string {
 }
 
 const BASE_URL = getResolvedBaseUrl();
+const REQUEST_TIMEOUT_MS = 15000;
+
+if (__DEV__) {
+  console.log('[API] base URL:', BASE_URL || '(missing)');
+}
 
 function buildUrl(path: string): string {
   if (!BASE_URL) {
@@ -48,6 +53,23 @@ async function getToken(): Promise<string> {
   return user.getIdToken();
 }
 
+async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(
+        `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s. Check EXPO_PUBLIC_API_BASE_URL (${BASE_URL}).`,
+      );
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function handleResponse<T>(res: Response, method: string, path: string): Promise<T> {
   if (!res.ok) {
     const body = await res.text().catch(() => '');
@@ -61,7 +83,7 @@ export async function apiGet<T>(path: string): Promise<T> {
   const token = await getToken();
   let res: Response;
   try {
-    res = await fetch(buildUrl(path), {
+    res = await fetchWithTimeout(buildUrl(path), {
       headers: { Authorization: `Bearer ${token}` },
     });
   } catch (error) {
@@ -79,7 +101,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   const token = await getToken();
   let res: Response;
   try {
-    res = await fetch(buildUrl(path), {
+    res = await fetchWithTimeout(buildUrl(path), {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -102,7 +124,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
 export async function apiPostPublic<T>(path: string, body: unknown): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(buildUrl(path), {
+    res = await fetchWithTimeout(buildUrl(path), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

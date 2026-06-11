@@ -79,19 +79,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
 
-  const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-  // Android/iOS hooks require platform client IDs — fall back to web ID so the app
-  // loads in Expo Go. Use native client IDs from Firebase for production Google login.
+  const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
+  // Native hooks require platform client IDs — fall back to web ID so the app loads
+  // in Expo Go. Use dedicated Android/iOS IDs from Firebase for production Google login.
   const iosClientId =
-    process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || webClientId;
+    process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || webClientId || undefined;
   const androidClientId =
-    process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || webClientId;
+    process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || webClientId || undefined;
 
   const googleEnabled = Boolean(webClientId);
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest(
     {
-      webClientId: webClientId ?? '',
+      webClientId,
       iosClientId: Platform.OS === 'ios' ? iosClientId : undefined,
       androidClientId: Platform.OS === 'android' ? androidClientId : undefined,
       selectAccount: true,
