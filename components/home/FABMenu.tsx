@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Pressable,
   Modal,
-  Dimensions,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
@@ -15,12 +14,11 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
 
-const PILL_WIDTH = 52;
-const PILL_HEIGHT = 72;
-const BTN_SIZE = 56;
+const PILL_W = 52;
+const PILL_H = 72;
 
 interface FABMenuProps {
   onVaccinePress: () => void;
@@ -28,7 +26,7 @@ interface FABMenuProps {
   onReminderPress: () => void;
 }
 
-type Point = { x: number; y: number; width: number; height: number };
+type Rect = { x: number; y: number };
 
 export default function FABMenu({
   onVaccinePress,
@@ -36,18 +34,12 @@ export default function FABMenu({
   onReminderPress,
 }: FABMenuProps) {
   const [open, setOpen] = useState(false);
-  const [point, setPoint] = useState<Point | null>(null);
-  const anchorRef = useRef<View>(null);
+  const [origin, setOrigin] = useState<Rect | null>(null);
+  const hubRef = useRef<View>(null);
   const progress = useSharedValue(0);
 
-  const measure = useCallback(() => {
-    anchorRef.current?.measureInWindow((x, y, width, height) => {
-      setPoint({ x, y, width, height });
-    });
-  }, []);
-
   const close = useCallback(() => {
-    progress.value = withTiming(0, { duration: 220 });
+    progress.value = withTiming(0, { duration: 200 });
     setOpen(false);
   }, [progress]);
 
@@ -56,9 +48,9 @@ export default function FABMenu({
       close();
       return;
     }
-    anchorRef.current?.measureInWindow((x, y, width, height) => {
-      setPoint({ x, y, width, height });
-      progress.value = withTiming(1, { duration: 220 });
+    hubRef.current?.measureInWindow((x, y) => {
+      setOrigin({ x, y });
+      progress.value = withTiming(1, { duration: 200 });
       setOpen(true);
     });
   }, [close, open, progress]);
@@ -67,126 +59,106 @@ export default function FABMenu({
     transform: [{ rotate: `${interpolate(progress.value, [0, 1], [0, 45])}deg` }],
   }));
 
-  const itemStyle = (index: number) =>
+  const fadeUp = (i: number) =>
     useAnimatedStyle(() => ({
       opacity: progress.value,
-      transform: [{ translateY: interpolate(progress.value, [0, 1], [8 * (index + 1), 0]) }],
+      transform: [{ translateY: interpolate(progress.value, [0, 1], [6 * (i + 1), 0]) }],
     }));
 
-  const s0 = itemStyle(0);
-  const s1 = itemStyle(1);
-  const s2 = itemStyle(2);
+  const a0 = fadeUp(0);
+  const a1 = fadeUp(1);
+  const a2 = fadeUp(2);
 
-  const screen = Dimensions.get('window');
-  const floatStyle =
-    point != null
-      ? {
-          right: screen.width - point.x - point.width,
-          bottom: screen.height - point.y - point.height,
-        }
-      : null;
+  const hubBody = (
+    <>
+      {open ? (
+        <View style={styles.menu} pointerEvents="box-none">
+          <Animated.View style={[styles.menuRow, a2]}>
+            <ActionPill
+              label={t('fab.vaccines')}
+              iconBg={Colors.category.vaccinesBg}
+              icon={<MaterialCommunityIcons name="needle" size={20} color={Colors.category.vaccines} />}
+              onPress={() => {
+                close();
+                onVaccinePress();
+              }}
+            />
+          </Animated.View>
+          <Animated.View style={[styles.menuRow, a1]}>
+            <ActionPill
+              label={t('fab.health')}
+              iconBg={Colors.category.notesBg}
+              icon={<MaterialCommunityIcons name="heart-pulse" size={20} color={Colors.category.notes} />}
+              onPress={() => {
+                close();
+                onHealthPress();
+              }}
+            />
+          </Animated.View>
+          <Animated.View style={[styles.menuRow, a0]}>
+            <ActionPill
+              label={t('fab.reminders')}
+              iconBg={Colors.category.remindersBg}
+              icon={<Ionicons name="notifications-outline" size={20} color={Colors.category.reminders} />}
+              onPress={() => {
+                close();
+                onReminderPress();
+              }}
+            />
+          </Animated.View>
+        </View>
+      ) : null}
 
-  const menu = (
-    <View style={styles.menu} pointerEvents="box-none">
-      <Animated.View style={[styles.menuRow, s2]}>
-        <MenuPill
-          label={t('fab.vaccines')}
-          bg={Colors.category.vaccinesBg}
-          icon={<MaterialCommunityIcons name="needle" size={20} color={Colors.category.vaccines} />}
-          onPress={() => {
-            close();
-            onVaccinePress();
-          }}
-        />
-      </Animated.View>
-      <Animated.View style={[styles.menuRow, s1]}>
-        <MenuPill
-          label={t('fab.health')}
-          bg={Colors.category.notesBg}
-          icon={<MaterialCommunityIcons name="heart-pulse" size={20} color={Colors.category.notes} />}
-          onPress={() => {
-            close();
-            onHealthPress();
-          }}
-        />
-      </Animated.View>
-      <Animated.View style={[styles.menuRow, s0]}>
-        <MenuPill
-          label={t('fab.reminders')}
-          bg={Colors.category.remindersBg}
-          icon={<Ionicons name="notifications-outline" size={20} color={Colors.category.reminders} />}
-          onPress={() => {
-            close();
-            onReminderPress();
-          }}
-        />
-      </Animated.View>
-    </View>
-  );
-
-  const trigger = (
-    <TouchableOpacity
-      style={[styles.btn, open ? styles.btnOpen : styles.btnPill]}
-      onPress={toggle}
-      activeOpacity={0.9}
-    >
-      <Animated.View style={iconStyle}>
-        <Ionicons name="add" size={28} color={Colors.surface} />
-      </Animated.View>
-    </TouchableOpacity>
-  );
-
-  const renderColumn = (trackAnchor: boolean) => (
-    <View style={styles.column} pointerEvents="box-none">
-      {open ? menu : null}
-      <View
-        ref={trackAnchor ? anchorRef : undefined}
-        collapsable={false}
-        onLayout={trackAnchor ? measure : undefined}
-        style={styles.anchor}
-      >
-        {trigger}
-      </View>
-    </View>
+      <TouchableOpacity style={styles.pill} onPress={toggle} activeOpacity={0.9}>
+        <Animated.View style={iconStyle}>
+          <Ionicons name="add" size={26} color={Colors.surface} />
+        </Animated.View>
+      </TouchableOpacity>
+    </>
   );
 
   return (
     <>
       <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
-        <View style={styles.modal}>
+        <View style={styles.modal} pointerEvents="box-none">
           <Pressable style={styles.backdrop} onPress={close} />
-          {floatStyle ? (
-            <View style={[styles.float, floatStyle]} pointerEvents="box-none">
-              {renderColumn(false)}
+          {origin ? (
+            <View
+              style={[styles.hub, styles.modalHub, { left: origin.x, top: origin.y }]}
+              pointerEvents="box-none"
+            >
+              {hubBody}
             </View>
           ) : null}
         </View>
       </Modal>
 
-      <View style={styles.root} pointerEvents="box-none">
-        <View style={open ? styles.rootHidden : undefined} pointerEvents={open ? 'none' : 'auto'}>
-          {renderColumn(true)}
+      {!open ? (
+        <View style={styles.slot} pointerEvents="auto">
+          <View ref={hubRef} collapsable={false} style={styles.hub}>
+            {hubBody}
+          </View>
         </View>
-      </View>
+      ) : null}
     </>
   );
 }
 
-function MenuPill({
+function ActionPill({
   label,
-  bg,
+  iconBg,
   icon,
   onPress,
 }: {
   label: string;
-  bg: string;
+  iconBg: string;
   icon: React.ReactNode;
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity style={styles.pill} onPress={onPress} activeOpacity={0.85}>
-      <View style={[styles.pillIcon, { backgroundColor: bg }]}>{icon}</View>
-      <Text style={styles.pillLabel}>{label}</Text>
+    <TouchableOpacity style={styles.action} onPress={onPress} activeOpacity={0.85}>
+      <View style={[styles.actionIcon, { backgroundColor: iconBg }]}>{icon}</View>
+      <Text style={styles.actionLabel}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -199,34 +171,19 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  float: {
+  modalHub: {
     position: 'absolute',
-    alignItems: 'flex-end',
-    overflow: 'visible',
   },
-  root: {
+  slot: {
     position: 'absolute',
-    right: -(Spacing.lg + BTN_SIZE / 2),
-    top: -PILL_HEIGHT / 2,
-    height: PILL_HEIGHT,
-    width: BTN_SIZE,
-    justifyContent: 'flex-end',
-    alignItems: 'flex-end',
+    right: -(Spacing.lg + PILL_W / 2),
+    top: -PILL_H / 2,
     zIndex: 50,
     overflow: 'visible',
   },
-  rootHidden: {
-    opacity: 0,
-  },
-  column: {
+  hub: {
     alignItems: 'flex-end',
     overflow: 'visible',
-  },
-  anchor: {
-    width: BTN_SIZE,
-    height: BTN_SIZE,
-    justifyContent: 'flex-end',
-    alignItems: 'flex-end',
   },
   menu: {
     alignItems: 'flex-end',
@@ -237,7 +194,7 @@ const styles = StyleSheet.create({
   menuRow: {
     alignItems: 'flex-end',
   },
-  pill: {
+  action: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
@@ -251,36 +208,30 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
-  pillIcon: {
+  actionIcon: {
     width: 32,
     height: 32,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  pillLabel: {
+  actionLabel: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     color: Colors.primaryText,
   },
-  btn: {
+  pill: {
+    width: PILL_W,
+    height: PILL_H,
+    borderRadius: PILL_W / 2,
     backgroundColor: Colors.primaryText,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
+    paddingTop: 14,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.22,
     shadowRadius: 8,
     elevation: 10,
-  },
-  btnPill: {
-    width: PILL_WIDTH,
-    height: PILL_HEIGHT,
-    borderRadius: PILL_WIDTH / 2,
-  },
-  btnOpen: {
-    width: BTN_SIZE,
-    height: BTN_SIZE,
-    borderRadius: Radius.lg,
   },
 });
