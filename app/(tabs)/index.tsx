@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   },
   fabGutter: {
     height: 0,
-    zIndex: 40,
+    zIndex: 50,
     overflow: 'visible',
   },
 });

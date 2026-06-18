@@ -7,22 +7,20 @@ import {
   Pressable,
   Modal,
   Dimensions,
-  type LayoutChangeEvent,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
   interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
 
-export const FAB_WIDTH = 52;
-export const FAB_PILL_HEIGHT = 72;
-export const FAB_OPEN_SIZE = 56;
-export const FAB_SIZE = FAB_OPEN_SIZE;
+const PILL_WIDTH = 52;
+const PILL_HEIGHT = 72;
+const BTN_SIZE = 56;
 
 interface FABMenuProps {
   onVaccinePress: () => void;
@@ -30,245 +28,242 @@ interface FABMenuProps {
   onReminderPress: () => void;
 }
 
-type AnchorRect = { x: number; y: number; width: number; height: number };
+type Point = { x: number; y: number; width: number; height: number };
 
 export default function FABMenu({
   onVaccinePress,
   onHealthPress,
   onReminderPress,
 }: FABMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [anchor, setAnchor] = useState<AnchorRect | null>(null);
-  const slotRef = useRef<View>(null);
-  const animation = useSharedValue(0);
+  const [open, setOpen] = useState(false);
+  const [point, setPoint] = useState<Point | null>(null);
+  const anchorRef = useRef<View>(null);
+  const progress = useSharedValue(0);
 
-  const syncAnchor = useCallback(() => {
-    slotRef.current?.measureInWindow((x, y, width, height) => {
-      setAnchor({ x, y, width, height });
+  const measure = useCallback(() => {
+    anchorRef.current?.measureInWindow((x, y, width, height) => {
+      setPoint({ x, y, width, height });
     });
   }, []);
 
-  const onSlotLayout = useCallback(
-    (_event: LayoutChangeEvent) => {
-      syncAnchor();
-    },
-    [syncAnchor],
-  );
+  const close = useCallback(() => {
+    progress.value = withTiming(0, { duration: 220 });
+    setOpen(false);
+  }, [progress]);
 
-  const closeMenu = useCallback(() => {
-    animation.value = withTiming(0, { duration: 220 });
-    setIsOpen(false);
-  }, [animation]);
-
-  const openMenu = useCallback(() => {
-    slotRef.current?.measureInWindow((x, y, width, height) => {
-      setAnchor({ x, y, width, height });
-      animation.value = withTiming(1, { duration: 220 });
-      setIsOpen(true);
+  const toggle = useCallback(() => {
+    if (open) {
+      close();
+      return;
+    }
+    anchorRef.current?.measureInWindow((x, y, width, height) => {
+      setPoint({ x, y, width, height });
+      progress.value = withTiming(1, { duration: 220 });
+      setOpen(true);
     });
-  }, [animation]);
+  }, [close, open, progress]);
 
-  const toggleMenu = () => {
-    if (isOpen) closeMenu();
-    else openMenu();
-  };
-
-  const fabIconStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${interpolate(animation.value, [0, 1], [0, 45])}deg` }],
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${interpolate(progress.value, [0, 1], [0, 45])}deg` }],
   }));
 
-  const createMenuItemStyle = (index: number) =>
+  const itemStyle = (index: number) =>
     useAnimatedStyle(() => ({
-      opacity: animation.value,
-      transform: [
-        {
-          translateY: interpolate(animation.value, [0, 1], [8 * (index + 1), 0]),
-        },
-      ],
+      opacity: progress.value,
+      transform: [{ translateY: interpolate(progress.value, [0, 1], [8 * (index + 1), 0]) }],
     }));
 
-  const item1Style = createMenuItemStyle(0);
-  const item2Style = createMenuItemStyle(1);
-  const item3Style = createMenuItemStyle(2);
+  const s0 = itemStyle(0);
+  const s1 = itemStyle(1);
+  const s2 = itemStyle(2);
 
-  const windowSize = Dimensions.get('window');
-
-  const modalAnchorStyle =
-    anchor != null
+  const screen = Dimensions.get('window');
+  const floatStyle =
+    point != null
       ? {
-          right: windowSize.width - anchor.x - anchor.width,
-          bottom: windowSize.height - anchor.y - anchor.height,
+          right: screen.width - point.x - point.width,
+          bottom: screen.height - point.y - point.height,
         }
       : null;
 
-  const renderMenu = () => (
-    <View style={styles.menuStack} pointerEvents="box-none">
-      <Animated.View style={[styles.menuItemRow, item3Style]}>
-        <TouchableOpacity
-          style={styles.menuItem}
+  const menu = (
+    <View style={styles.menu} pointerEvents="box-none">
+      <Animated.View style={[styles.menuRow, s2]}>
+        <MenuPill
+          label={t('fab.vaccines')}
+          bg={Colors.category.vaccinesBg}
+          icon={<MaterialCommunityIcons name="needle" size={20} color={Colors.category.vaccines} />}
           onPress={() => {
-            closeMenu();
+            close();
             onVaccinePress();
           }}
-          activeOpacity={0.85}
-        >
-          <View style={[styles.menuIcon, { backgroundColor: Colors.category.vaccinesBg }]}>
-            <MaterialCommunityIcons name="needle" size={20} color={Colors.category.vaccines} />
-          </View>
-          <Text style={styles.menuLabel}>{t('fab.vaccines')}</Text>
-        </TouchableOpacity>
+        />
       </Animated.View>
-
-      <Animated.View style={[styles.menuItemRow, item2Style]}>
-        <TouchableOpacity
-          style={styles.menuItem}
+      <Animated.View style={[styles.menuRow, s1]}>
+        <MenuPill
+          label={t('fab.health')}
+          bg={Colors.category.notesBg}
+          icon={<MaterialCommunityIcons name="heart-pulse" size={20} color={Colors.category.notes} />}
           onPress={() => {
-            closeMenu();
+            close();
             onHealthPress();
           }}
-          activeOpacity={0.85}
-        >
-          <View style={[styles.menuIcon, { backgroundColor: Colors.category.notesBg }]}>
-            <MaterialCommunityIcons name="heart-pulse" size={20} color={Colors.category.notes} />
-          </View>
-          <Text style={styles.menuLabel}>{t('fab.health')}</Text>
-        </TouchableOpacity>
+        />
       </Animated.View>
-
-      <Animated.View style={[styles.menuItemRow, item1Style]}>
-        <TouchableOpacity
-          style={styles.menuItem}
+      <Animated.View style={[styles.menuRow, s0]}>
+        <MenuPill
+          label={t('fab.reminders')}
+          bg={Colors.category.remindersBg}
+          icon={<Ionicons name="notifications-outline" size={20} color={Colors.category.reminders} />}
           onPress={() => {
-            closeMenu();
+            close();
             onReminderPress();
           }}
-          activeOpacity={0.85}
-        >
-          <View style={[styles.menuIcon, { backgroundColor: Colors.category.remindersBg }]}>
-            <Ionicons name="notifications-outline" size={20} color={Colors.category.reminders} />
-          </View>
-          <Text style={styles.menuLabel}>{t('fab.reminders')}</Text>
-        </TouchableOpacity>
+        />
       </Animated.View>
     </View>
   );
 
-  const renderFabStack = (opts: { interactive: boolean; attachRef: boolean }) => (
-    <View style={styles.stack} pointerEvents="box-none">
-      {isOpen ? renderMenu() : null}
+  const trigger = (
+    <TouchableOpacity
+      style={[styles.btn, open ? styles.btnOpen : styles.btnPill]}
+      onPress={toggle}
+      activeOpacity={0.9}
+    >
+      <Animated.View style={iconStyle}>
+        <Ionicons name="add" size={28} color={Colors.surface} />
+      </Animated.View>
+    </TouchableOpacity>
+  );
+
+  const renderColumn = (trackAnchor: boolean) => (
+    <View style={styles.column} pointerEvents="box-none">
+      {open ? menu : null}
       <View
-        ref={opts.attachRef ? slotRef : undefined}
+        ref={trackAnchor ? anchorRef : undefined}
         collapsable={false}
-        onLayout={opts.attachRef ? onSlotLayout : undefined}
-        style={styles.triggerSlot}
+        onLayout={trackAnchor ? measure : undefined}
+        style={styles.anchor}
       >
-        <TouchableOpacity
-          style={[styles.fab, isOpen ? styles.fabOpen : styles.fabPill]}
-          onPress={opts.interactive ? toggleMenu : undefined}
-          activeOpacity={0.9}
-          disabled={!opts.interactive}
-        >
-          <Animated.View style={fabIconStyle}>
-            <Ionicons name="add" size={28} color={Colors.surface} />
-          </Animated.View>
-        </TouchableOpacity>
+        {trigger}
       </View>
     </View>
   );
 
   return (
     <>
-      <Modal visible={isOpen} transparent animationType="fade" onRequestClose={closeMenu}>
-        <View style={styles.modalRoot}>
-          <Pressable style={styles.overlay} onPress={closeMenu} />
-          {modalAnchorStyle ? (
-            <View style={[styles.modalAnchor, modalAnchorStyle]} pointerEvents="box-none">
-              {renderFabStack({ interactive: true, attachRef: false })}
+      <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
+        <View style={styles.modal}>
+          <Pressable style={styles.backdrop} onPress={close} />
+          {floatStyle ? (
+            <View style={[styles.float, floatStyle]} pointerEvents="box-none">
+              {renderColumn(false)}
             </View>
           ) : null}
         </View>
       </Modal>
 
-      <View style={styles.host} pointerEvents="box-none">
-        <View style={isOpen ? styles.hostHidden : undefined} pointerEvents={isOpen ? 'none' : 'auto'}>
-          {renderFabStack({ interactive: !isOpen, attachRef: true })}
+      <View style={styles.root} pointerEvents="box-none">
+        <View style={open ? styles.rootHidden : undefined} pointerEvents={open ? 'none' : 'auto'}>
+          {renderColumn(true)}
         </View>
       </View>
     </>
   );
 }
 
+function MenuPill({
+  label,
+  bg,
+  icon,
+  onPress,
+}: {
+  label: string;
+  bg: string;
+  icon: React.ReactNode;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity style={styles.pill} onPress={onPress} activeOpacity={0.85}>
+      <View style={[styles.pillIcon, { backgroundColor: bg }]}>{icon}</View>
+      <Text style={styles.pillLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
 const styles = StyleSheet.create({
-  modalRoot: {
+  modal: {
     flex: 1,
   },
-  overlay: {
+  backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  modalAnchor: {
+  float: {
     position: 'absolute',
     alignItems: 'flex-end',
     overflow: 'visible',
   },
-  host: {
+  root: {
     position: 'absolute',
-    right: -(Spacing.lg + FAB_OPEN_SIZE / 2),
-    top: -FAB_PILL_HEIGHT / 2,
-    width: FAB_OPEN_SIZE,
-    height: FAB_PILL_HEIGHT,
-    zIndex: 40,
+    right: -(Spacing.lg + BTN_SIZE / 2),
+    top: -PILL_HEIGHT / 2,
+    height: PILL_HEIGHT,
+    width: BTN_SIZE,
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
+    zIndex: 50,
     overflow: 'visible',
   },
-  hostHidden: {
+  rootHidden: {
     opacity: 0,
   },
-  stack: {
+  column: {
     alignItems: 'flex-end',
     overflow: 'visible',
   },
-  triggerSlot: {
-    width: FAB_OPEN_SIZE,
-    height: FAB_OPEN_SIZE,
+  anchor: {
+    width: BTN_SIZE,
+    height: BTN_SIZE,
     justifyContent: 'flex-end',
     alignItems: 'flex-end',
   },
-  menuStack: {
+  menu: {
     alignItems: 'flex-end',
     gap: 10,
     marginBottom: 10,
     overflow: 'visible',
   },
-  menuItemRow: {
+  menuRow: {
     alignItems: 'flex-end',
   },
-  menuItem: {
+  pill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 28,
+    gap: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 6,
-    gap: 12,
   },
-  menuIcon: {
+  pillIcon: {
     width: 32,
     height: 32,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  menuLabel: {
+  pillLabel: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     color: Colors.primaryText,
   },
-  fab: {
+  btn: {
     backgroundColor: Colors.primaryText,
     justifyContent: 'center',
     alignItems: 'center',
@@ -278,14 +273,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 10,
   },
-  fabPill: {
-    width: FAB_WIDTH,
-    height: FAB_PILL_HEIGHT,
-    borderRadius: FAB_WIDTH / 2,
+  btnPill: {
+    width: PILL_WIDTH,
+    height: PILL_HEIGHT,
+    borderRadius: PILL_WIDTH / 2,
   },
-  fabOpen: {
-    width: FAB_OPEN_SIZE,
-    height: FAB_OPEN_SIZE,
+  btnOpen: {
+    width: BTN_SIZE,
+    height: BTN_SIZE,
     borderRadius: Radius.lg,
   },
 });
