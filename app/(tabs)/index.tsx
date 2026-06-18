@@ -14,7 +14,7 @@ import PetHeader from '@/components/home/PetHeader';
 import VaccinesCard from '@/components/home/VaccinesCard';
 import RemindersCard from '@/components/home/RemindersCard';
 import HealthCard from '@/components/home/HealthCard';
-import FABMenu, { HOME_ROW_GAP, HOME_TOP_ROW_MIN_HEIGHT } from '@/components/home/FABMenu';
+import FABMenu, { FAB_OPEN_SIZE } from '@/components/home/FABMenu';
 
 function reminderToScheduledAt(reminder: Reminder): string {
   return `${reminder.date}T${reminder.time}:00`;
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   cardsGrid: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
-    gap: HOME_ROW_GAP,
+    gap: Spacing.md,
     overflow: 'visible',
   },
   row: {
@@ -249,5 +249,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'visible',
     zIndex: 10,
+    marginBottom: FAB_OPEN_SIZE / 2,
   },
 });

@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  TouchableWithoutFeedback,
+  Pressable,
   Modal,
+  Dimensions,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
@@ -22,11 +23,13 @@ export const HOME_TOP_ROW_MIN_HEIGHT = 156;
 export const HOME_ROW_GAP = Spacing.md;
 
 export const FAB_WIDTH = 52;
-export const FAB_PILL_HEIGHT = 120;
+export const FAB_PILL_HEIGHT = 88;
 export const FAB_OPEN_SIZE = 56;
 
 /** Legacy alias used by home layout spacing */
 export const FAB_SIZE = FAB_OPEN_SIZE;
+
+const FAB_ANCHOR_TOP = HOME_TOP_ROW_MIN_HEIGHT / 2 + HOME_ROW_GAP;
 
 interface FABMenuProps {
   onVaccinePress: () => void;
@@ -36,6 +39,8 @@ interface FABMenuProps {
   anchored?: boolean;
 }
 
+type FabWindowRect = { x: number; y: number; width: number; height: number };
+
 export default function FABMenu({
   onVaccinePress,
   onHealthPress,
@@ -43,19 +48,32 @@ export default function FABMenu({
   anchored = false,
 }: FABMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [fabRect, setFabRect] = useState<FabWindowRect | null>(null);
+  const fabRef = useRef<View>(null);
   const animation = useSharedValue(0);
 
-  const toggleMenu = () => {
-    const toValue = isOpen ? 0 : 1;
-    animation.value = withTiming(toValue, { duration: 280 });
-    setIsOpen(!isOpen);
-  };
+  const measureFab = useCallback(() => {
+    fabRef.current?.measureInWindow((x, y, width, height) => {
+      setFabRect({ x, y, width, height });
+    });
+  }, []);
 
-  const closeMenu = () => {
-    if (isOpen) {
-      animation.value = withTiming(0, { duration: 280 });
-      setIsOpen(false);
-    }
+  const closeMenu = useCallback(() => {
+    animation.value = withTiming(0, { duration: 280 });
+    setIsOpen(false);
+  }, [animation]);
+
+  const openMenu = useCallback(() => {
+    fabRef.current?.measureInWindow((x, y, width, height) => {
+      setFabRect({ x, y, width, height });
+      animation.value = withTiming(1, { duration: 280 });
+      setIsOpen(true);
+    });
+  }, [animation]);
+
+  const toggleMenu = () => {
+    if (isOpen) closeMenu();
+    else openMenu();
   };
 
   const fabIconStyle = useAnimatedStyle(() => ({
@@ -76,126 +94,189 @@ export default function FABMenu({
   const item2Style = createMenuItemStyle(1);
   const item3Style = createMenuItemStyle(2);
 
-  const fabButtonSize = isOpen ? FAB_OPEN_SIZE : FAB_PILL_HEIGHT;
+  const windowWidth = Dimensions.get('window').width;
+  const windowHeight = Dimensions.get('window').height;
+
+  const menuLayerStyle =
+    fabRect != null
+      ? {
+          right: Math.max(8, windowWidth - fabRect.x - fabRect.width),
+          bottom: Math.max(8, windowHeight - fabRect.y + Spacing.md),
+        }
+      : null;
+
+  const renderMenuItems = () => (
+    <View style={styles.menuItems} pointerEvents="box-none">
+      <Animated.View style={[styles.menuItemWrapper, item3Style]}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => {
+            closeMenu();
+            onVaccinePress();
+          }}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: Colors.category.vaccinesBg }]}>
+            <MaterialCommunityIcons name="needle" size={20} color={Colors.category.vaccines} />
+          </View>
+          <Text style={styles.menuItemText}>{t('fab.vaccines')}</Text>
+        </TouchableOpacity>
+      </Animated.View>
+
+      <Animated.View style={[styles.menuItemWrapper, item2Style]}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => {
+            closeMenu();
+            onHealthPress();
+          }}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: Colors.category.notesBg }]}>
+            <MaterialCommunityIcons name="heart-pulse" size={20} color={Colors.category.notes} />
+          </View>
+          <Text style={styles.menuItemText}>{t('fab.health')}</Text>
+        </TouchableOpacity>
+      </Animated.View>
+
+      <Animated.View style={[styles.menuItemWrapper, item1Style]}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => {
+            closeMenu();
+            onReminderPress();
+          }}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: Colors.category.remindersBg }]}>
+            <Ionicons name="notifications-outline" size={20} color={Colors.category.reminders} />
+          </View>
+          <Text style={styles.menuItemText}>{t('fab.reminders')}</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  );
+
+  const renderModal = () => (
+    <Modal visible={isOpen} transparent animationType="fade" onRequestClose={closeMenu}>
+      <View style={styles.modalRoot}>
+        <Pressable style={styles.modalOverlay} onPress={closeMenu} />
+        {fabRect && menuLayerStyle ? (
+          <View style={[styles.modalMenuLayer, menuLayerStyle]} pointerEvents="box-none">
+            {renderMenuItems()}
+          </View>
+        ) : null}
+        {isOpen && fabRect ? (
+          <TouchableOpacity
+            style={[
+              styles.fab,
+              styles.fabOpen,
+              {
+                position: 'absolute',
+                left: fabRect.x,
+                top: fabRect.y,
+                width: fabRect.width,
+                height: fabRect.height,
+              },
+            ]}
+            onPress={toggleMenu}
+            activeOpacity={0.9}
+          >
+            <Animated.View style={fabIconStyle}>
+              <Ionicons name="add" size={28} color={Colors.surface} />
+            </Animated.View>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+    </Modal>
+  );
+
+  if (!anchored) {
+    return (
+      <>
+        {renderModal()}
+        <View style={styles.containerScreen} pointerEvents="box-none">
+          <View ref={fabRef} collapsable={false} onLayout={measureFab}>
+            <TouchableOpacity
+              style={[styles.fab, isOpen ? styles.fabOpen : styles.fabCircle]}
+              onPress={toggleMenu}
+              activeOpacity={0.9}
+            >
+              <Animated.View style={fabIconStyle}>
+                <Ionicons name="add" size={28} color={Colors.surface} />
+              </Animated.View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </>
+    );
+  }
 
   return (
     <>
-      <Modal visible={isOpen} transparent animationType="fade" onRequestClose={closeMenu}>
-        <TouchableWithoutFeedback onPress={closeMenu}>
-          <View style={styles.modalOverlay} />
-        </TouchableWithoutFeedback>
-      </Modal>
-
-      <View
-        style={[styles.container, anchored ? styles.containerAnchored : styles.containerScreen]}
-        pointerEvents="box-none"
-      >
-        {isOpen && (
-          <View style={[styles.menuItems, { bottom: fabButtonSize + Spacing.md }]} pointerEvents="box-none">
-            <Animated.View style={[styles.menuItemWrapper, item3Style]}>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => {
-                  closeMenu();
-                  onVaccinePress();
-                }}
-                activeOpacity={0.85}
-              >
-                <View style={[styles.iconContainer, { backgroundColor: Colors.category.vaccinesBg }]}>
-                  <MaterialCommunityIcons
-                    name="needle"
-                    size={20}
-                    color={Colors.category.vaccines}
-                  />
-                </View>
-                <Text style={styles.menuItemText}>{t('fab.vaccines')}</Text>
-              </TouchableOpacity>
-            </Animated.View>
-
-            <Animated.View style={[styles.menuItemWrapper, item2Style]}>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => {
-                  closeMenu();
-                  onHealthPress();
-                }}
-                activeOpacity={0.85}
-              >
-                <View style={[styles.iconContainer, { backgroundColor: Colors.category.notesBg }]}>
-                  <MaterialCommunityIcons
-                    name="heart-pulse"
-                    size={20}
-                    color={Colors.category.notes}
-                  />
-                </View>
-                <Text style={styles.menuItemText}>{t('fab.health')}</Text>
-              </TouchableOpacity>
-            </Animated.View>
-
-            <Animated.View style={[styles.menuItemWrapper, item1Style]}>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => {
-                  closeMenu();
-                  onReminderPress();
-                }}
-                activeOpacity={0.85}
-              >
-                <View style={[styles.iconContainer, { backgroundColor: Colors.category.remindersBg }]}>
-                  <Ionicons name="notifications-outline" size={20} color={Colors.category.reminders} />
-                </View>
-                <Text style={styles.menuItemText}>{t('fab.reminders')}</Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </View>
-        )}
-
-        <TouchableOpacity
-          style={[
-            styles.fab,
-            isOpen ? styles.fabOpen : styles.fabPill,
-          ]}
-          onPress={toggleMenu}
-          activeOpacity={0.9}
-        >
-          <Animated.View style={fabIconStyle}>
+      {renderModal()}
+      <View style={styles.anchoredRoot} pointerEvents="box-none">
+        {!isOpen ? (
+          <TouchableOpacity
+            style={[styles.fab, styles.fabPill, styles.closedPill]}
+            onPress={openMenu}
+            activeOpacity={0.9}
+          >
             <Ionicons name="add" size={28} color={Colors.surface} />
-          </Animated.View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        ) : null}
+
+        <View ref={fabRef} collapsable={false} style={styles.openFabAnchor} onLayout={measureFab}>
+          <View style={styles.openFabPlaceholder} />
+        </View>
       </View>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  modalRoot: {
     flex: 1,
+  },
+  modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  container: {
-    zIndex: 20,
+  modalMenuLayer: {
+    position: 'absolute',
+    alignItems: 'flex-end',
+    zIndex: 2,
   },
   containerScreen: {
     position: 'absolute',
     bottom: 32,
     right: -FAB_OPEN_SIZE / 2 + 8,
+    zIndex: 20,
     alignItems: 'flex-end',
   },
-  containerAnchored: {
+  anchoredRoot: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 20,
+    overflow: 'visible',
+  },
+  closedPill: {
     position: 'absolute',
-    top: -(HOME_TOP_ROW_MIN_HEIGHT / 2 + HOME_ROW_GAP),
+    top: -FAB_ANCHOR_TOP,
     right: -FAB_WIDTH / 2,
-    width: FAB_WIDTH,
-    height: FAB_PILL_HEIGHT,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
+  },
+  openFabAnchor: {
+    position: 'absolute',
+    right: -FAB_OPEN_SIZE / 2,
+    bottom: -FAB_OPEN_SIZE / 2,
+  },
+  openFabPlaceholder: {
+    width: FAB_OPEN_SIZE,
+    height: FAB_OPEN_SIZE,
+    opacity: 0,
   },
   menuItems: {
-    position: 'absolute',
-    right: 0,
     alignItems: 'flex-end',
     gap: 12,
-    paddingRight: FAB_WIDTH / 2,
   },
   menuItemWrapper: {
     alignItems: 'flex-end',
@@ -235,11 +316,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.22,
     shadowRadius: 8,
     elevation: 8,
+    zIndex: 3,
   },
   fabPill: {
     width: FAB_WIDTH,
     height: FAB_PILL_HEIGHT,
     borderRadius: FAB_WIDTH / 2,
+  },
+  fabCircle: {
+    width: FAB_OPEN_SIZE,
+    height: FAB_OPEN_SIZE,
+    borderRadius: FAB_OPEN_SIZE / 2,
   },
   fabOpen: {
     width: FAB_OPEN_SIZE,
