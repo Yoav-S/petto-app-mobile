@@ -15,7 +15,20 @@ interface RemindersCardProps {
   onPress: () => void;
 }
 
-export default function RemindersCard({ nextReminder, upcomingCount, loading, onPress }: RemindersCardProps) {
+function CategoryIcon() {
+  return (
+    <View style={[styles.iconContainer, { backgroundColor: Colors.category.remindersBg }]}>
+      <Ionicons name="notifications-outline" size={20} color={Colors.category.reminders} />
+    </View>
+  );
+}
+
+export default function RemindersCard({
+  nextReminder,
+  upcomingCount,
+  loading,
+  onPress,
+}: RemindersCardProps) {
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
@@ -24,7 +37,7 @@ export default function RemindersCard({ nextReminder, upcomingCount, loading, on
         Animated.sequence([
           Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
           Animated.timing(fadeAnim, { toValue: 0.4, duration: 800, useNativeDriver: true }),
-        ])
+        ]),
       ).start();
     } else {
       fadeAnim.stopAnimation();
@@ -38,38 +51,46 @@ export default function RemindersCard({ nextReminder, upcomingCount, loading, on
   };
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
       {loading ? (
         <View style={styles.contentContainer}>
-          <Animated.View style={[styles.skeletonLine, { width: 40, opacity: fadeAnim }]} />
+          <Animated.View style={[styles.skeletonLine, { width: 40, height: 36, opacity: fadeAnim }]} />
           <Animated.View style={[styles.skeletonLine, { width: '80%', opacity: fadeAnim }]} />
           <Animated.View style={[styles.skeletonLine, { width: '60%', opacity: fadeAnim }]} />
-          <Animated.View style={[styles.skeletonLine, { width: '60%', opacity: fadeAnim }]} />
-        </View>
-      ) : nextReminder ? (
-        <View style={styles.contentContainer}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="notifications-outline" size={20} color={Colors.category.reminders} />
-          </View>
-          <Text style={styles.title}>{t('home.remindersCard.title')}</Text>
-          <Text style={styles.reminderTitle}>{nextReminder.title}</Text>
-          <Text style={styles.timeText}>{formatTime(nextReminder.scheduled_at)}</Text>
-          
-          <View style={styles.bottomRow}>
-            <Text style={styles.upcomingText}>
-              {upcomingCount} {t('home.remindersCard.upcoming')}
-            </Text>
-            <Ionicons name="chevron-forward" size={16} color={Colors.secondaryText} />
-          </View>
         </View>
       ) : (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>{t('home.remindersCard.empty')}</Text>
+        <View style={styles.contentContainer}>
+          <CategoryIcon />
+          <Text style={styles.title}>{t('home.remindersCard.title')}</Text>
+          {nextReminder ? (
+            <>
+              <Text style={styles.primaryText}>{nextReminder.title}</Text>
+              <Text style={styles.secondaryText}>{formatTime(nextReminder.scheduled_at)}</Text>
+              {upcomingCount > 0 ? (
+                <View style={styles.bottomRow}>
+                  <Text style={styles.secondaryText}>
+                    {upcomingCount} {t('home.remindersCard.upcoming')}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={16} color={Colors.secondaryText} />
+                </View>
+              ) : null}
+            </>
+          ) : (
+            <Text style={styles.secondaryText}>{t('home.remindersCard.empty')}</Text>
+          )}
         </View>
       )}
     </TouchableOpacity>
   );
 }
+
+const cardShadow = {
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.06,
+  shadowRadius: 10,
+  elevation: 2,
+};
 
 const styles = StyleSheet.create({
   card: {
@@ -77,16 +98,17 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg,
     padding: Spacing.lg,
     flex: 1,
-    minHeight: 140,
+    minHeight: 156,
+    ...cardShadow,
   },
   contentContainer: {
-    gap: Spacing.sm,
+    gap: Spacing.xs,
+    flex: 1,
   },
   iconContainer: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.category.remindersBg,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacing.xs,
@@ -96,12 +118,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.primaryText,
   },
-  reminderTitle: {
+  primaryText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
     color: Colors.primaryText,
   },
-  timeText: {
+  secondaryText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     color: Colors.secondaryText,
@@ -109,23 +131,9 @@ const styles = StyleSheet.create({
   bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.sm,
-  },
-  upcomingText: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: Colors.secondaryText,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: Colors.secondaryText,
-    textAlign: 'center',
+    marginTop: 'auto',
+    paddingTop: Spacing.sm,
+    gap: 4,
   },
   skeletonLine: {
     height: 14,

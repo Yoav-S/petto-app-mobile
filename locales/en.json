@@ -1,10 +1,12 @@
 {
   "home": {
     "switch": "Switch",
+    "noPet": "No pet yet",
+    "addFirstPet": "Add your first pet to get started",
     "vaccinesCard": {
       "title": "Vaccines",
       "last": "Last:",
-      "next": "Next:",
+      "next": "Valid until:",
       "empty": "No vaccinations yet"
     },
     "remindersCard": {

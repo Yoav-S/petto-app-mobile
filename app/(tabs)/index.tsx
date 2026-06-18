@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, SafeAreaView, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useActivePet } from '@/store/petStore';
-import { Colors } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 import { apiGet } from '@/services/api';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
@@ -21,7 +22,7 @@ function reminderToScheduledAt(reminder: Reminder): string {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, isLoading: authLoading, signOut, syncError, retryBackendSync, isSyncing } = useAuth();
+  const { user, isLoading: authLoading, syncError, retryBackendSync, isSyncing } = useAuth();
   const { activePetId, setActivePetId } = useActivePet();
 
   const [pet, setPet] = useState<Pet | null>(null);
@@ -66,15 +67,14 @@ export default function HomeScreen() {
         return;
       }
 
-      const currentPetId = activePetId && petList.some(p => p.id === activePetId)
-        ? activePetId
-        : petList[0].id;
+      const currentPetId =
+        activePetId && petList.some((p) => p.id === activePetId) ? activePetId : petList[0].id;
 
       if (currentPetId !== activePetId) {
         await setActivePetId(currentPetId);
       }
 
-      const currentPet = petList.find(p => p.id === currentPetId) ?? petList[0];
+      const currentPet = petList.find((p) => p.id === currentPetId) ?? petList[0];
       setPet(currentPet);
 
       const [vaccinations, todayReminders, upcomingReminders, records] = await Promise.all([
@@ -124,70 +124,74 @@ export default function HomeScreen() {
   }, [fetchData, authLoading]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {(syncError || fetchError) && (
-          <View style={styles.errorBanner}>
-            <Text style={styles.errorBannerText}>{syncError ?? fetchError}</Text>
-            <TouchableOpacity
-              onPress={() => {
-                if (syncError) retryBackendSync();
-                else fetchData();
-              }}
-              disabled={isSyncing}
-            >
-              <Text style={styles.errorBannerAction}>
-                {isSyncing ? t('common.loading') : t('common.retry')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+      <View style={styles.screen}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {(syncError || fetchError) && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorBannerText}>{syncError ?? fetchError}</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  if (syncError) retryBackendSync();
+                  else fetchData();
+                }}
+                disabled={isSyncing}
+              >
+                <Text style={styles.errorBannerAction}>
+                  {isSyncing ? t('common.loading') : t('common.retry')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
-        <View style={styles.topActions}>
-          <TouchableOpacity onPress={signOut} style={styles.signOutButton}>
-            <Text style={styles.signOutText}>Sign out</Text>
-          </TouchableOpacity>
-        </View>
-
-        <PetHeader
-          pet={pet}
-          petCount={pets.length}
-          loading={loading}
-          onSwitchPress={() => {}}
-        />
-
-        <View style={styles.cardsGrid}>
-          <View style={styles.row}>
-            <VaccinesCard
-              latestVaccine={latestVaccine ? {
-                name: latestVaccine.name,
-                date: latestVaccine.date,
-                next_date: latestVaccine.next_date ?? undefined,
-              } : null}
-              loading={loading}
-              onPress={() => {}}
-            />
-            <RemindersCard
-              nextReminder={nextReminder}
-              upcomingCount={upcomingCount}
-              loading={loading}
-              onPress={() => router.push('/reminders' as never)}
-            />
-          </View>
-
-          <HealthCard
-            latestRecord={latestRecord}
+          <PetHeader
+            pet={pet}
+            petCount={pets.length}
             loading={loading}
-            onPress={() => router.push('/health' as never)}
+            onSwitchPress={() => {}}
+            onSettingsPress={() => {}}
           />
-        </View>
-      </ScrollView>
 
-      <FABMenu
-        onVaccinePress={() => {}}
-        onHealthPress={() => router.push('/health/add-note' as never)}
-        onReminderPress={() => router.push('/reminders' as never)}
-      />
+          <View style={styles.cardsGrid}>
+            <View style={styles.row}>
+              <VaccinesCard
+                latestVaccine={
+                  latestVaccine
+                    ? {
+                        name: latestVaccine.name,
+                        date: latestVaccine.date,
+                        next_date: latestVaccine.next_date ?? undefined,
+                      }
+                    : null
+                }
+                loading={loading}
+                onPress={() => router.push('/vaccines' as never)}
+              />
+              <RemindersCard
+                nextReminder={nextReminder}
+                upcomingCount={upcomingCount}
+                loading={loading}
+                onPress={() => router.push('/reminders' as never)}
+              />
+            </View>
+
+            <HealthCard
+              latestRecord={latestRecord}
+              loading={loading}
+              onPress={() => router.push('/health' as never)}
+            />
+          </View>
+        </ScrollView>
+
+        <FABMenu
+          onVaccinePress={() => router.push('/vaccines' as never)}
+          onHealthPress={() => router.push('/health/add-note' as never)}
+          onReminderPress={() => router.push('/reminders' as never)}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -197,27 +201,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  topActions: {
-    alignItems: 'flex-end',
-    paddingRight: 16,
-    paddingTop: 8,
+  screen: {
+    flex: 1,
+    overflow: 'visible',
   },
-  signOutButton: {
-    padding: 8,
-    backgroundColor: Colors.surface,
-    borderRadius: 8,
-  },
-  signOutText: {
-    fontFamily: 'Rubik-Medium',
-    color: Colors.error,
-    fontSize: 14,
+  scrollContent: {
+    paddingBottom: 100,
   },
   errorBanner: {
-    marginHorizontal: 16,
-    marginTop: 8,
-    padding: 12,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.sm,
+    padding: Spacing.md,
     backgroundColor: Colors.surface,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.border,
   },
@@ -233,11 +229,12 @@ const styles = StyleSheet.create({
     color: Colors.primaryText,
   },
   cardsGrid: {
-    padding: 16,
-    gap: 12,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    gap: Spacing.md,
   },
   row: {
     flexDirection: 'row',
-    gap: 12,
+    gap: Spacing.md,
   },
 });

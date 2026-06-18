@@ -1,9 +1,19 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  Dimensions,
+} from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Radius, Spacing, FontSize, LineHeight } from '@/constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors, Radius, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
+
+const COVER_HEIGHT = Math.round(Dimensions.get('window').height * 0.36);
 
 interface PetHeaderProps {
   pet: {
@@ -16,9 +26,34 @@ interface PetHeaderProps {
   petCount: number;
   loading: boolean;
   onSwitchPress: () => void;
+  onSettingsPress?: () => void;
 }
 
-export default function PetHeader({ pet, petCount, loading, onSwitchPress }: PetHeaderProps) {
+function calculateAge(birthDateString?: string): string {
+  if (!birthDateString) return '';
+  const birthDate = new Date(birthDateString);
+  const today = new Date();
+  let years = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    years--;
+  }
+  if (years > 0) return `${years} years`;
+  const months =
+    (today.getFullYear() - birthDate.getFullYear()) * 12 +
+    today.getMonth() -
+    birthDate.getMonth();
+  return `${Math.max(months, 0)} months`;
+}
+
+export default function PetHeader({
+  pet,
+  petCount,
+  loading,
+  onSwitchPress,
+  onSettingsPress,
+}: PetHeaderProps) {
+  const insets = useSafeAreaInsets();
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
@@ -27,7 +62,7 @@ export default function PetHeader({ pet, petCount, loading, onSwitchPress }: Pet
         Animated.sequence([
           Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
           Animated.timing(fadeAnim, { toValue: 0.4, duration: 800, useNativeDriver: true }),
-        ])
+        ]),
       ).start();
     } else {
       fadeAnim.stopAnimation();
@@ -35,138 +70,123 @@ export default function PetHeader({ pet, petCount, loading, onSwitchPress }: Pet
     }
   }, [loading, fadeAnim]);
 
-  const calculateAge = (birthDateString?: string) => {
-    if (!birthDateString) return '';
-    const birthDate = new Date(birthDateString);
-    const today = new Date();
-    let years = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      years--;
-    }
-    if (years > 0) {
-      return `${years} years`;
-    } else {
-      const months = (today.getFullYear() - birthDate.getFullYear()) * 12 + today.getMonth() - birthDate.getMonth();
-      return `${months} months`;
-    }
-  };
+  const canSwitch = petCount > 1;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.topBar}>
-        {petCount > 1 ? (
-          <TouchableOpacity style={styles.switchButton} onPress={onSwitchPress}>
-            <Ionicons name="swap-horizontal-outline" size={16} color={Colors.primaryText} />
-            <Text style={styles.switchText}>{t('home.switch')}</Text>
-          </TouchableOpacity>
+    <View style={styles.wrapper}>
+      <View style={[styles.cover, { height: COVER_HEIGHT }]}>
+        {loading ? (
+          <Animated.View style={[styles.coverPlaceholder, { opacity: fadeAnim }]} />
+        ) : pet?.photo_url ? (
+          <Image source={{ uri: pet.photo_url }} style={styles.coverImage} contentFit="cover" />
         ) : (
-          <View />
+          <View style={styles.coverPlaceholder}>
+            <Ionicons name="paw" size={72} color={Colors.secondaryText} />
+          </View>
         )}
-        <TouchableOpacity>
-          <Ionicons name="settings-outline" size={24} color={Colors.primaryText} />
+
+        <TouchableOpacity
+          style={[styles.settingsButton, { top: insets.top + Spacing.sm }]}
+          onPress={onSettingsPress}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="settings-outline" size={22} color={Colors.primaryText} />
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.petInfoContainer} onPress={() => { /* Navigate to pet profile */ }}>
+      <View style={styles.sheet}>
         {loading ? (
-          <Animated.View style={[styles.avatarSkeleton, { opacity: fadeAnim }]} />
-        ) : pet?.photo_url ? (
-          <Image
-            source={{ uri: pet.photo_url }}
-            style={styles.avatar}
-            contentFit="cover"
-          />
+          <View style={styles.sheetInner}>
+            <Animated.View style={[styles.nameSkeleton, { opacity: fadeAnim }]} />
+            <Animated.View style={[styles.subtitleSkeleton, { opacity: fadeAnim }]} />
+          </View>
         ) : (
-          <View style={[styles.avatar, styles.avatarEmpty]}>
-            <Ionicons name="paw-outline" size={36} color={Colors.secondaryText} />
+          <View style={styles.sheetInner}>
+            <TouchableOpacity
+              style={styles.nameRow}
+              onPress={canSwitch ? onSwitchPress : undefined}
+              activeOpacity={canSwitch ? 0.7 : 1}
+            >
+              <Text style={styles.name}>{pet?.name ?? t('home.noPet')}</Text>
+              {canSwitch ? (
+                <Ionicons name="chevron-down" size={22} color={Colors.primaryText} />
+              ) : null}
+            </TouchableOpacity>
+            {pet ? (
+              <Text style={styles.subtitle}>
+                {[pet.breed, calculateAge(pet.birth_date ?? undefined)].filter(Boolean).join(' \u2022 ')}
+              </Text>
+            ) : (
+              <Text style={styles.emptySubtitle}>{t('home.addFirstPet')}</Text>
+            )}
           </View>
         )}
-        
-        {loading ? (
-          <Animated.View style={[styles.nameSkeleton, { opacity: fadeAnim }]} />
-        ) : pet ? (
-          <Text style={styles.name}>{pet.name}</Text>
-        ) : (
-          <Text style={styles.emptyName}>No pet yet</Text>
-        )}
-        
-        {loading ? (
-          <Animated.View style={[styles.subtitleSkeleton, { opacity: fadeAnim }]} />
-        ) : pet ? (
-          <Text style={styles.subtitle}>
-            {pet.breed ? `${pet.breed} \u2022 ` : ''}{calculateAge(pet.birth_date ?? undefined)}
-          </Text>
-        ) : (
-          <Text style={styles.emptySubtitle}>Add your first pet to get started</Text>
-        )}
-      </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
+    backgroundColor: Colors.background,
+  },
+  cover: {
+    width: '100%',
+    backgroundColor: '#E8E2D8',
+    overflow: 'hidden',
+  },
+  coverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  coverPlaceholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E8E2D8',
+  },
+  settingsButton: {
+    position: 'absolute',
+    right: Spacing.lg,
+    width: 44,
+    height: 44,
+    borderRadius: Radius.md,
     backgroundColor: Colors.surface,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    paddingTop: 60, // approximate safe area
-    paddingBottom: Spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  sheet: {
+    marginTop: -40,
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.lg,
     paddingHorizontal: Spacing.lg,
   },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  sheetInner: {
     alignItems: 'center',
-    marginBottom: Spacing.xl,
   },
-  switchButton: {
+  nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  switchText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 14,
-    color: Colors.primaryText,
-  },
-  petInfoContainer: {
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: Radius.xl,
-    marginBottom: Spacing.md,
-  },
-  avatarEmpty: {
-    backgroundColor: Colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarSkeleton: {
-    width: 100,
-    height: 100,
-    borderRadius: Radius.xl,
-    backgroundColor: Colors.border,
-    marginBottom: Spacing.md,
+    gap: Spacing.xs,
+    marginBottom: 4,
   },
   name: {
     fontFamily: 'Rubik-Regular',
     fontSize: 28,
     color: Colors.primaryText,
-    marginBottom: 4,
   },
-  emptyName: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 20,
+  subtitle: {
+    fontFamily: 'Rubik-Regular',
+    fontSize: 14,
     color: Colors.secondaryText,
-    marginBottom: 4,
   },
   emptySubtitle: {
     fontFamily: 'Rubik-Regular',
@@ -175,19 +195,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   nameSkeleton: {
-    width: '60%',
+    width: 160,
     height: 28,
     borderRadius: 6,
     backgroundColor: Colors.border,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: Colors.secondaryText,
+    marginBottom: 8,
   },
   subtitleSkeleton: {
-    width: '40%',
+    width: 120,
     height: 14,
     borderRadius: 6,
     backgroundColor: Colors.border,
