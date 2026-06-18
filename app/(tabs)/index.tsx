@@ -14,7 +14,7 @@ import PetHeader from '@/components/home/PetHeader';
 import VaccinesCard from '@/components/home/VaccinesCard';
 import RemindersCard from '@/components/home/RemindersCard';
 import HealthCard from '@/components/home/HealthCard';
-import FABMenu, { FAB_OPEN_SIZE } from '@/components/home/FABMenu';
+import FABMenu from '@/components/home/FABMenu';
 
 function reminderToScheduledAt(reminder: Reminder): string {
   return `${reminder.date}T${reminder.time}:00`;
@@ -179,19 +179,19 @@ export default function HomeScreen() {
               />
             </View>
 
-            <View style={styles.healthFabAnchor}>
-              <HealthCard
-                latestRecord={latestRecord}
-                loading={loading}
-                onPress={() => router.push('/health' as never)}
-              />
+            <View style={styles.fabGutter}>
               <FABMenu
-                anchored
                 onVaccinePress={() => router.push('/vaccines' as never)}
                 onHealthPress={() => router.push('/health/add-note' as never)}
                 onReminderPress={() => router.push('/reminders' as never)}
               />
             </View>
+
+            <HealthCard
+              latestRecord={latestRecord}
+              loading={loading}
+              onPress={() => router.push('/health' as never)}
+            />
           </View>
         </ScrollView>
       </View>
@@ -245,10 +245,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.md,
   },
-  healthFabAnchor: {
-    position: 'relative',
+  fabGutter: {
+    height: 0,
+    zIndex: 40,
     overflow: 'visible',
-    zIndex: 10,
-    marginBottom: FAB_OPEN_SIZE / 2,
   },
 });
