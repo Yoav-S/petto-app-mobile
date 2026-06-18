@@ -14,7 +14,7 @@ import PetHeader from '@/components/home/PetHeader';
 import VaccinesCard from '@/components/home/VaccinesCard';
 import RemindersCard from '@/components/home/RemindersCard';
 import HealthCard from '@/components/home/HealthCard';
-import FABMenu, { FAB_SIZE } from '@/components/home/FABMenu';
+import FABMenu, { HOME_ROW_GAP, HOME_TOP_ROW_MIN_HEIGHT } from '@/components/home/FABMenu';
 
 function reminderToScheduledAt(reminder: Reminder): string {
   return `${reminder.date}T${reminder.time}:00`;
@@ -128,6 +128,7 @@ export default function HomeScreen() {
       <View style={styles.screen}>
         <ScrollView
           showsVerticalScrollIndicator={false}
+          style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
         >
           {(syncError || fetchError) && (
@@ -207,8 +208,12 @@ const styles = StyleSheet.create({
     flex: 1,
     overflow: 'visible',
   },
+  scroll: {
+    overflow: 'visible',
+  },
   scrollContent: {
     paddingBottom: Spacing.xl,
+    overflow: 'visible',
   },
   errorBanner: {
     marginHorizontal: Spacing.lg,
@@ -233,7 +238,8 @@ const styles = StyleSheet.create({
   cardsGrid: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
-    gap: Spacing.md,
+    gap: HOME_ROW_GAP,
+    overflow: 'visible',
   },
   row: {
     flexDirection: 'row',
@@ -242,6 +248,6 @@ const styles = StyleSheet.create({
   healthFabAnchor: {
     position: 'relative',
     overflow: 'visible',
-    marginBottom: FAB_SIZE / 2,
+    zIndex: 10,
   },
 });

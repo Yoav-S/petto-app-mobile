@@ -17,13 +17,22 @@ import Animated, {
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
 
-export const FAB_SIZE = 56;
+/** Matches VaccinesCard / RemindersCard minHeight */
+export const HOME_TOP_ROW_MIN_HEIGHT = 156;
+export const HOME_ROW_GAP = Spacing.md;
+
+export const FAB_WIDTH = 52;
+export const FAB_PILL_HEIGHT = 120;
+export const FAB_OPEN_SIZE = 56;
+
+/** Legacy alias used by home layout spacing */
+export const FAB_SIZE = FAB_OPEN_SIZE;
 
 interface FABMenuProps {
   onVaccinePress: () => void;
   onHealthPress: () => void;
   onReminderPress: () => void;
-  /** Pin FAB to parent (e.g. top-right of Health card) instead of screen bottom */
+  /** Pin FAB to the gutter between the top row and Health card */
   anchored?: boolean;
 }
 
@@ -67,6 +76,8 @@ export default function FABMenu({
   const item2Style = createMenuItemStyle(1);
   const item3Style = createMenuItemStyle(2);
 
+  const fabButtonSize = isOpen ? FAB_OPEN_SIZE : FAB_PILL_HEIGHT;
+
   return (
     <>
       <Modal visible={isOpen} transparent animationType="fade" onRequestClose={closeMenu}>
@@ -80,7 +91,7 @@ export default function FABMenu({
         pointerEvents="box-none"
       >
         {isOpen && (
-          <View style={styles.menuItems} pointerEvents="box-none">
+          <View style={[styles.menuItems, { bottom: fabButtonSize + Spacing.md }]} pointerEvents="box-none">
             <Animated.View style={[styles.menuItemWrapper, item3Style]}>
               <TouchableOpacity
                 style={styles.menuItem}
@@ -140,7 +151,10 @@ export default function FABMenu({
         )}
 
         <TouchableOpacity
-          style={[styles.fab, isOpen && styles.fabOpen]}
+          style={[
+            styles.fab,
+            isOpen ? styles.fabOpen : styles.fabPill,
+          ]}
           onPress={toggleMenu}
           activeOpacity={0.9}
         >
@@ -159,24 +173,29 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   container: {
-    alignItems: 'flex-end',
     zIndex: 20,
   },
   containerScreen: {
     position: 'absolute',
     bottom: 32,
-    right: -FAB_SIZE / 2 + 8,
+    right: -FAB_OPEN_SIZE / 2 + 8,
+    alignItems: 'flex-end',
   },
   containerAnchored: {
     position: 'absolute',
-    top: 0,
-    right: -FAB_SIZE / 2 + 6,
+    top: -(HOME_TOP_ROW_MIN_HEIGHT / 2 + HOME_ROW_GAP),
+    right: -FAB_WIDTH / 2,
+    width: FAB_WIDTH,
+    height: FAB_PILL_HEIGHT,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
   menuItems: {
+    position: 'absolute',
+    right: 0,
     alignItems: 'flex-end',
-    marginBottom: Spacing.md,
     gap: 12,
-    paddingRight: FAB_SIZE / 2 + 4,
+    paddingRight: FAB_WIDTH / 2,
   },
   menuItemWrapper: {
     alignItems: 'flex-end',
@@ -208,9 +227,6 @@ const styles = StyleSheet.create({
     color: Colors.primaryText,
   },
   fab: {
-    width: FAB_SIZE,
-    height: FAB_SIZE,
-    borderRadius: FAB_SIZE / 2,
     backgroundColor: Colors.primaryText,
     justifyContent: 'center',
     alignItems: 'center',
@@ -220,7 +236,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
+  fabPill: {
+    width: FAB_WIDTH,
+    height: FAB_PILL_HEIGHT,
+    borderRadius: FAB_WIDTH / 2,
+  },
   fabOpen: {
+    width: FAB_OPEN_SIZE,
+    height: FAB_OPEN_SIZE,
     borderRadius: Radius.lg,
   },
 });
