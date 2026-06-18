@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import auth from './firebaseAuth';
+import { mapErrorCode, parseErrorCode } from './errorCodes';
 
 const RAW_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL ?? '').replace(/\/$/, '');
 const API_PREFIX = '/api/v1';
@@ -70,10 +71,37 @@ async function fetchWithTimeout(url: string, init: RequestInit): Promise<Respons
   }
 }
 
-async function handleResponse<T>(res: Response, method: string, path: string): Promise<T> {
+export class ApiError extends Error {
+  status: number;
+  retryAfterSec: number | null;
+  code: string | null;
+
+  constructor(
+    message: string,
+    status: number,
+    retryAfterSec: number | null = null,
+    code: string | null = null,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.retryAfterSec = retryAfterSec;
+    this.code = code;
+  }
+}
+
+function parseRetryAfter(res: Response): number | null {
+  const raw = res.headers.get('Retry-After');
+  if (!raw) return null;
+  const seconds = Number.parseInt(raw, 10);
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : null;
+}
+
+async function handleResponse<T>(res: Response, _method: string, path: string): Promise<T> {
   if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`${method} ${path} failed: ${res.status}${body ? ` — ${body}` : ''}`);
+    const code = await parseErrorCode(res);
+    const message = mapErrorCode(code, res.status, path);
+    throw new ApiError(message, res.status, parseRetryAfter(res), code);
   }
   if (res.status === 204) return undefined as T;
   return res.json();

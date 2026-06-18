@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import { useActivePet } from '@/store/petStore';
 import { Colors } from '@/constants/theme';
 import { apiGet } from '@/services/api';
+import { getErrorMessage } from '@/services/errors';
+import { t } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
 import type { Pet, Vaccination, Reminder, MedicalRecord } from '@/types/api';
 
@@ -110,7 +112,7 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error('Error fetching home data:', error);
-      setFetchError(error instanceof Error ? error.message : 'Failed to load data');
+      setFetchError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -134,7 +136,9 @@ export default function HomeScreen() {
               }}
               disabled={isSyncing}
             >
-              <Text style={styles.errorBannerAction}>{isSyncing ? 'Retrying…' : 'Retry'}</Text>
+              <Text style={styles.errorBannerAction}>
+                {isSyncing ? t('common.loading') : t('common.retry')}
+              </Text>
             </TouchableOpacity>
           </View>
         )}

@@ -1,6 +1,7 @@
 import { signInWithCustomToken, signOut } from 'firebase/auth';
 import auth from './firebaseAuth';
 import { apiPost, apiPostPublic } from './api';
+import { t } from '@/i18n';
 import type { UserProfile } from '@/types/api';
 
 interface AuthMessage {
@@ -13,6 +14,17 @@ interface VerifyOtpResult {
 
 /** In-memory only — email between send-otp and verify screens. Never persist or route-param. */
 let pendingEmail: string | null = null;
+let verifyScreenMessage: string | null = null;
+
+export function setVerifyScreenMessage(message: string): void {
+  verifyScreenMessage = message;
+}
+
+export function consumeVerifyScreenMessage(): string | null {
+  const message = verifyScreenMessage;
+  verifyScreenMessage = null;
+  return message;
+}
 
 export function setPendingEmail(email: string): void {
   pendingEmail = email;
@@ -37,7 +49,12 @@ export async function verifyOtpAndSignIn(email: string, otp: string): Promise<Us
     email,
     otp,
   });
-  await signInWithCustomToken(auth, custom_token);
+  try {
+    await signInWithCustomToken(auth, custom_token);
+  } catch (error) {
+    console.error('Firebase sign-in after OTP failed:', error);
+    throw new Error(t('errors.firebase_signin_failed'));
+  }
   clearPendingEmail();
   return syncUserWithBackend();
 }
@@ -52,7 +69,7 @@ export async function syncUserWithBackend(): Promise<UserProfile> {
   const profile = await apiPost<UserProfile>('/users/me', {});
   if (profile.auth_provider === 'email' && !profile.email_verified) {
     await signOut(auth);
-    throw new Error('Email not verified. Complete OTP verification to continue.');
+    throw new Error(t('errors.email_not_verified'));
   }
   return profile;
 }

@@ -13,11 +13,15 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ApiError } from '@/services/api';
+import { getErrorMessage } from '@/services/errors';
+import { t } from '@/i18n';
 import {
   getPendingEmail,
   clearPendingEmail,
   verifyOtpAndSignIn,
   resendOtp,
+  consumeVerifyScreenMessage,
 } from '@/services/auth';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 
@@ -28,6 +32,8 @@ export default function VerifyEmailScreen() {
   const router = useRouter();
   const email = getPendingEmail() ?? '';
   const inputRef = useRef<TextInput>(null);
+  const verifyLockRef = useRef(false);
+  const verifiedRef = useRef(false);
 
   const [otp, setOtp] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -35,6 +41,7 @@ export default function VerifyEmailScreen() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_SEC);
+  const [info, setInfo] = useState('');
 
   const focusOtpInput = useCallback(() => {
     inputRef.current?.focus();
@@ -43,7 +50,10 @@ export default function VerifyEmailScreen() {
   useEffect(() => {
     if (!email) {
       router.replace('/(auth)/login' as any);
+      return;
     }
+    const flash = consumeVerifyScreenMessage();
+    if (flash) setInfo(flash);
   }, [email, router]);
 
   useEffect(() => {
@@ -57,26 +67,38 @@ export default function VerifyEmailScreen() {
     return () => clearInterval(t);
   }, [cooldown]);
 
-  const handleVerify = async () => {
-    if (otp.length !== OTP_LENGTH) {
-      setError('Enter the 6-digit code from your email.');
-      focusOtpInput();
+  const handleVerify = useCallback(async () => {
+    if (verifiedRef.current || otp.length !== OTP_LENGTH || verifyLockRef.current) {
+      if (!verifiedRef.current && otp.length !== OTP_LENGTH) {
+        setError(t('errors.otp_length'));
+        focusOtpInput();
+      }
       return;
     }
 
+    verifyLockRef.current = true;
     setIsVerifying(true);
     setError('');
+    setInfo('');
     try {
       await verifyOtpAndSignIn(email, otp);
+      verifiedRef.current = true;
       router.replace('/(tabs)' as any);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError('Invalid or expired code. Try again.');
+      setError(getErrorMessage(err));
       focusOtpInput();
+      verifyLockRef.current = false;
     } finally {
       setIsVerifying(false);
     }
-  };
+  }, [email, focusOtpInput, otp, router]);
+
+  useEffect(() => {
+    if (otp.length === OTP_LENGTH && !verifyLockRef.current && !verifiedRef.current && !error) {
+      handleVerify();
+    }
+  }, [otp, error, handleVerify]);
 
   const handleResend = async () => {
     if (cooldown > 0 || !email) return;
@@ -86,12 +108,12 @@ export default function VerifyEmailScreen() {
       await resendOtp(email);
       setCooldown(RESEND_COOLDOWN_SEC);
       setOtp('');
+      setInfo(t('auth.code_resent'));
       focusOtpInput();
-    } catch (err: any) {
-      if (String(err.message).includes('429')) {
-        setError('Please wait before requesting a new code.');
-      } else {
-        setError('Something went wrong. Check your connection.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
+      if (err instanceof ApiError && err.retryAfterSec) {
+        setCooldown(err.retryAfterSec);
       }
     } finally {
       setIsSending(false);
@@ -166,7 +188,11 @@ export default function VerifyEmailScreen() {
             </Pressable>
 
             <Text style={styles.tapHint}>Tap the code boxes to edit</Text>
+            <Text style={styles.tapHint}>
+              Check your inbox and spam folder. After resend, only the newest code works.
+            </Text>
 
+            {info ? <Text style={styles.infoText}>{info}</Text> : null}
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             <TouchableOpacity
@@ -298,6 +324,13 @@ const styles = StyleSheet.create({
     color: Colors.secondaryText,
     textAlign: 'center',
     marginBottom: Spacing.md,
+  },
+  infoText: {
+    fontFamily: 'Rubik-Regular',
+    color: Colors.secondaryText,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+    fontSize: 13,
   },
   errorText: {
     fontFamily: 'Rubik-Regular',

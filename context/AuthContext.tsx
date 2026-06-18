@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import auth from '@/services/firebaseAuth';
 import { syncUserWithBackend } from '@/services/auth';
+import { getErrorMessage } from '@/services/errors';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
@@ -106,9 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await syncUserWithBackend();
     } catch (error) {
       console.error('Backend auth handshake failed:', error);
-      setSyncError(
-        error instanceof Error ? error.message : 'Could not connect to the server.',
-      );
+      setSyncError(getErrorMessage(error));
     } finally {
       setIsSyncing(false);
     }

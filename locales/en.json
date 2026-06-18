@@ -36,5 +36,29 @@
     "loading": "Loading...",
     "error": "Something went wrong",
     "retry": "Retry"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "check_connection": "Something went wrong. Check your connection and try again.",
+    "failed_to_save": "Could not save your changes. Please try again.",
+    "not_found": "We could not find what you were looking for.",
+    "unauthorized": "Please sign in to continue.",
+    "invalid_token": "Your session expired. Please sign in again.",
+    "otp_invalid": "That code is incorrect. Check your email or tap Resend for a new code.",
+    "otp_expired": "This code has expired. Tap Resend to get a new one.",
+    "otp_too_many_attempts": "Too many wrong attempts. Tap Resend to get a new code.",
+    "otp_resend_cooldown": "Please wait a moment before requesting a new code.",
+    "email_not_verified": "Verify your email with the code we sent before continuing.",
+    "email_send_failed": "We could not send the verification email. Please try again later.",
+    "no_fields_to_update": "Nothing to update.",
+    "already_resolved": "This item was already completed.",
+    "network_timeout": "The request timed out. Check your connection and try again.",
+    "invalid_email": "Please enter a valid email address.",
+    "otp_length": "Enter the 6-digit code from your email.",
+    "firebase_signin_failed": "Sign-in failed after verification. Please try again.",
+    "load_failed": "Could not load data. Pull to refresh or tap Retry."
+  },
+  "auth": {
+    "code_resent": "A new code was sent. Previous codes no longer work."
   }
 }

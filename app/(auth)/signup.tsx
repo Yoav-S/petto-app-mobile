@@ -11,7 +11,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { sendOtp, setPendingEmail } from '@/services/auth';
+import { ApiError } from '@/services/api';
+import { getErrorMessage } from '@/services/errors';
+import { sendOtp, setPendingEmail, setVerifyScreenMessage } from '@/services/auth';
+import { t } from '@/i18n';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 
@@ -27,7 +30,7 @@ export default function SignupScreen() {
 
   const handleContinue = async () => {
     if (!isValidEmail) {
-      setError('Please enter a valid email address.');
+      setError(t('errors.invalid_email'));
       return;
     }
 
@@ -39,9 +42,16 @@ export default function SignupScreen() {
       await sendOtp(normalizedEmail);
       setPendingEmail(normalizedEmail);
       router.replace('/(auth)/verify-email' as any);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || 'Something went wrong. Check your connection.');
+      if (err instanceof ApiError && err.status === 429) {
+        const normalizedEmail = email.trim().toLowerCase();
+        setPendingEmail(normalizedEmail);
+        setVerifyScreenMessage(err.message);
+        router.replace('/(auth)/verify-email' as any);
+        return;
+      }
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
