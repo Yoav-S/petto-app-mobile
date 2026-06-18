@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Pressable,
   Modal,
+  Dimensions,
+  type LayoutChangeEvent,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
@@ -37,24 +39,31 @@ export default function FABMenu({
 }: FABMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [anchor, setAnchor] = useState<AnchorRect | null>(null);
-  const triggerRef = useRef<View>(null);
+  const slotRef = useRef<View>(null);
   const animation = useSharedValue(0);
 
-  const measureTrigger = useCallback(() => {
-    triggerRef.current?.measureInWindow((x, y, width, height) => {
+  const syncAnchor = useCallback(() => {
+    slotRef.current?.measureInWindow((x, y, width, height) => {
       setAnchor({ x, y, width, height });
     });
   }, []);
 
+  const onSlotLayout = useCallback(
+    (_event: LayoutChangeEvent) => {
+      syncAnchor();
+    },
+    [syncAnchor],
+  );
+
   const closeMenu = useCallback(() => {
-    animation.value = withTiming(0, { duration: 240 });
+    animation.value = withTiming(0, { duration: 220 });
     setIsOpen(false);
   }, [animation]);
 
   const openMenu = useCallback(() => {
-    triggerRef.current?.measureInWindow((x, y, width, height) => {
+    slotRef.current?.measureInWindow((x, y, width, height) => {
       setAnchor({ x, y, width, height });
-      animation.value = withTiming(1, { duration: 240 });
+      animation.value = withTiming(1, { duration: 220 });
       setIsOpen(true);
     });
   }, [animation]);
@@ -73,7 +82,7 @@ export default function FABMenu({
       opacity: animation.value,
       transform: [
         {
-          translateY: interpolate(animation.value, [0, 1], [10 * (index + 1), 0]),
+          translateY: interpolate(animation.value, [0, 1], [8 * (index + 1), 0]),
         },
       ],
     }));
@@ -81,6 +90,16 @@ export default function FABMenu({
   const item1Style = createMenuItemStyle(0);
   const item2Style = createMenuItemStyle(1);
   const item3Style = createMenuItemStyle(2);
+
+  const windowSize = Dimensions.get('window');
+
+  const modalAnchorStyle =
+    anchor != null
+      ? {
+          right: windowSize.width - anchor.x - anchor.width,
+          bottom: windowSize.height - anchor.y - anchor.height,
+        }
+      : null;
 
   const renderMenu = () => (
     <View style={styles.menuStack} pointerEvents="box-none">
@@ -134,61 +153,46 @@ export default function FABMenu({
     </View>
   );
 
-  const renderTrigger = (attachRef: boolean) => (
-    <View
-      ref={attachRef ? triggerRef : undefined}
-      collapsable={false}
-      onLayout={attachRef ? measureTrigger : undefined}
-    >
-      <TouchableOpacity
-        style={[styles.fab, isOpen ? styles.fabOpen : styles.fabPill]}
-        onPress={toggleMenu}
-        activeOpacity={0.9}
+  const renderFabStack = (opts: { interactive: boolean; attachRef: boolean }) => (
+    <View style={styles.stack} pointerEvents="box-none">
+      {isOpen ? renderMenu() : null}
+      <View
+        ref={opts.attachRef ? slotRef : undefined}
+        collapsable={false}
+        onLayout={opts.attachRef ? onSlotLayout : undefined}
+        style={styles.triggerSlot}
       >
-        <Animated.View style={fabIconStyle}>
-          <Ionicons name="add" size={28} color={Colors.surface} />
-        </Animated.View>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.fab, isOpen ? styles.fabOpen : styles.fabPill]}
+          onPress={opts.interactive ? toggleMenu : undefined}
+          activeOpacity={0.9}
+          disabled={!opts.interactive}
+        >
+          <Animated.View style={fabIconStyle}>
+            <Ionicons name="add" size={28} color={Colors.surface} />
+          </Animated.View>
+        </TouchableOpacity>
+      </View>
     </View>
   );
-
-  const renderStack = (layer: 'inline' | 'modal') => {
-    const hidden = layer === 'inline' && isOpen;
-    const show = layer === 'modal' ? isOpen : !isOpen;
-
-    if (!show) return null;
-
-    const modalPosition =
-      layer === 'modal' && anchor
-        ? {
-            position: 'absolute' as const,
-            left: anchor.x + (anchor.width - FAB_OPEN_SIZE) / 2,
-            top: anchor.y + (anchor.height - FAB_OPEN_SIZE) / 2,
-          }
-        : null;
-
-    return (
-      <View
-        style={[styles.stack, modalPosition, hidden ? styles.hidden : null]}
-        pointerEvents="box-none"
-      >
-        {isOpen ? renderMenu() : null}
-        {renderTrigger(layer === 'inline')}
-      </View>
-    );
-  };
 
   return (
     <>
       <Modal visible={isOpen} transparent animationType="fade" onRequestClose={closeMenu}>
         <View style={styles.modalRoot}>
           <Pressable style={styles.overlay} onPress={closeMenu} />
-          {renderStack('modal')}
+          {modalAnchorStyle ? (
+            <View style={[styles.modalAnchor, modalAnchorStyle]} pointerEvents="box-none">
+              {renderFabStack({ interactive: true, attachRef: false })}
+            </View>
+          ) : null}
         </View>
       </Modal>
 
       <View style={styles.host} pointerEvents="box-none">
-        {renderStack('inline')}
+        <View style={isOpen ? styles.hostHidden : undefined} pointerEvents={isOpen ? 'none' : 'auto'}>
+          {renderFabStack({ interactive: !isOpen, attachRef: true })}
+        </View>
       </View>
     </>
   );
@@ -202,25 +206,38 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
+  modalAnchor: {
+    position: 'absolute',
+    alignItems: 'flex-end',
+    overflow: 'visible',
+  },
   host: {
     position: 'absolute',
-    right: -(Spacing.lg + FAB_WIDTH / 2),
+    right: -(Spacing.lg + FAB_OPEN_SIZE / 2),
     top: -FAB_PILL_HEIGHT / 2,
+    width: FAB_OPEN_SIZE,
     height: FAB_PILL_HEIGHT,
-    justifyContent: 'flex-end',
-    alignItems: 'flex-end',
     zIndex: 40,
+    overflow: 'visible',
+  },
+  hostHidden: {
+    opacity: 0,
   },
   stack: {
     alignItems: 'flex-end',
+    overflow: 'visible',
   },
-  hidden: {
-    opacity: 0,
+  triggerSlot: {
+    width: FAB_OPEN_SIZE,
+    height: FAB_OPEN_SIZE,
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
   },
   menuStack: {
     alignItems: 'flex-end',
     gap: 10,
-    marginBottom: 12,
+    marginBottom: 10,
+    overflow: 'visible',
   },
   menuItemRow: {
     alignItems: 'flex-end',
