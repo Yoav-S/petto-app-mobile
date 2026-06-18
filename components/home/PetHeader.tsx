@@ -78,7 +78,13 @@ export default function PetHeader({
         {loading ? (
           <Animated.View style={[styles.coverPlaceholder, { opacity: fadeAnim }]} />
         ) : pet?.photo_url ? (
-          <Image source={{ uri: pet.photo_url }} style={styles.coverImage} contentFit="cover" />
+          <Image
+            key={pet.id}
+            source={{ uri: pet.photo_url }}
+            style={styles.coverImage}
+            contentFit="cover"
+            accessibilityLabel={pet.name ? `${pet.name} photo` : 'Pet photo'}
+          />
         ) : (
           <View style={styles.coverPlaceholder}>
             <Ionicons name="paw" size={72} color={Colors.secondaryText} />

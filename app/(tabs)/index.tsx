@@ -14,7 +14,7 @@ import PetHeader from '@/components/home/PetHeader';
 import VaccinesCard from '@/components/home/VaccinesCard';
 import RemindersCard from '@/components/home/RemindersCard';
 import HealthCard from '@/components/home/HealthCard';
-import FABMenu from '@/components/home/FABMenu';
+import FABMenu, { FAB_SIZE } from '@/components/home/FABMenu';
 
 function reminderToScheduledAt(reminder: Reminder): string {
   return `${reminder.date}T${reminder.time}:00`;
@@ -178,19 +178,21 @@ export default function HomeScreen() {
               />
             </View>
 
-            <HealthCard
-              latestRecord={latestRecord}
-              loading={loading}
-              onPress={() => router.push('/health' as never)}
-            />
+            <View style={styles.healthFabAnchor}>
+              <HealthCard
+                latestRecord={latestRecord}
+                loading={loading}
+                onPress={() => router.push('/health' as never)}
+              />
+              <FABMenu
+                anchored
+                onVaccinePress={() => router.push('/vaccines' as never)}
+                onHealthPress={() => router.push('/health/add-note' as never)}
+                onReminderPress={() => router.push('/reminders' as never)}
+              />
+            </View>
           </View>
         </ScrollView>
-
-        <FABMenu
-          onVaccinePress={() => router.push('/vaccines' as never)}
-          onHealthPress={() => router.push('/health/add-note' as never)}
-          onReminderPress={() => router.push('/reminders' as never)}
-        />
       </View>
     </SafeAreaView>
   );
@@ -206,7 +208,7 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: Spacing.xl,
   },
   errorBanner: {
     marginHorizontal: Spacing.lg,
@@ -236,5 +238,10 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: Spacing.md,
+  },
+  healthFabAnchor: {
+    position: 'relative',
+    overflow: 'visible',
+    marginBottom: FAB_SIZE / 2,
   },
 });

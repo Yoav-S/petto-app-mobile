@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  Modal,
+} from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
@@ -7,20 +14,25 @@ import Animated, {
   withTiming,
   interpolate,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
 
-const FAB_SIZE = 56;
+export const FAB_SIZE = 56;
 
 interface FABMenuProps {
   onVaccinePress: () => void;
   onHealthPress: () => void;
   onReminderPress: () => void;
+  /** Pin FAB to parent (e.g. top-right of Health card) instead of screen bottom */
+  anchored?: boolean;
 }
 
-export default function FABMenu({ onVaccinePress, onHealthPress, onReminderPress }: FABMenuProps) {
-  const insets = useSafeAreaInsets();
+export default function FABMenu({
+  onVaccinePress,
+  onHealthPress,
+  onReminderPress,
+  anchored = false,
+}: FABMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const animation = useSharedValue(0);
 
@@ -37,10 +49,6 @@ export default function FABMenu({ onVaccinePress, onHealthPress, onReminderPress
     }
   };
 
-  const overlayStyle = useAnimatedStyle(() => ({
-    opacity: animation.value,
-  }));
-
   const fabIconStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${interpolate(animation.value, [0, 1], [0, 45])}deg` }],
   }));
@@ -50,7 +58,7 @@ export default function FABMenu({ onVaccinePress, onHealthPress, onReminderPress
       opacity: animation.value,
       transform: [
         {
-          translateY: interpolate(animation.value, [0, 1], [16 * (index + 1), 0]),
+          translateY: interpolate(animation.value, [0, 1], [12 * (index + 1), 0]),
         },
       ],
     }));
@@ -59,19 +67,16 @@ export default function FABMenu({ onVaccinePress, onHealthPress, onReminderPress
   const item2Style = createMenuItemStyle(1);
   const item3Style = createMenuItemStyle(2);
 
-  const fabBottom = Math.max(insets.bottom, 12) + 8;
-  const fabRight = -FAB_SIZE / 2 + 8;
-
   return (
     <>
-      {isOpen && (
+      <Modal visible={isOpen} transparent animationType="fade" onRequestClose={closeMenu}>
         <TouchableWithoutFeedback onPress={closeMenu}>
-          <Animated.View style={[styles.overlay, overlayStyle]} />
+          <View style={styles.modalOverlay} />
         </TouchableWithoutFeedback>
-      )}
+      </Modal>
 
       <View
-        style={[styles.container, { bottom: fabBottom, right: fabRight }]}
+        style={[styles.container, anchored ? styles.containerAnchored : styles.containerScreen]}
         pointerEvents="box-none"
       >
         {isOpen && (
@@ -149,15 +154,23 @@ export default function FABMenu({ onVaccinePress, onHealthPress, onReminderPress
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
+  modalOverlay: {
+    flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
-    zIndex: 10,
   },
   container: {
-    position: 'absolute',
     alignItems: 'flex-end',
     zIndex: 20,
+  },
+  containerScreen: {
+    position: 'absolute',
+    bottom: 32,
+    right: -FAB_SIZE / 2 + 8,
+  },
+  containerAnchored: {
+    position: 'absolute',
+    top: 0,
+    right: -FAB_SIZE / 2 + 6,
   },
   menuItems: {
     alignItems: 'flex-end',
