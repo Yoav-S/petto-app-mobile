@@ -17,6 +17,7 @@ import Animated, {
 import { Colors, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
 
+/** Vertical pill — matches mockup proportions */
 const PILL_W = 52;
 const PILL_H = 72;
 
@@ -26,125 +27,127 @@ interface FABMenuProps {
   onReminderPress: () => void;
 }
 
-type Rect = { x: number; y: number };
-
 export default function FABMenu({
   onVaccinePress,
   onHealthPress,
   onReminderPress,
 }: FABMenuProps) {
   const [open, setOpen] = useState(false);
-  const [origin, setOrigin] = useState<Rect | null>(null);
-  const hubRef = useRef<View>(null);
   const progress = useSharedValue(0);
+  const pillRef = useRef<View>(null);
+  const [screenPos, setScreenPos] = useState<{ x: number; y: number } | null>(null);
 
   const close = useCallback(() => {
     progress.value = withTiming(0, { duration: 200 });
     setOpen(false);
   }, [progress]);
 
-  const toggle = useCallback(() => {
-    if (open) {
-      close();
-      return;
-    }
-    hubRef.current?.measureInWindow((x, y) => {
-      setOrigin({ x, y });
+  const openMenu = useCallback(() => {
+    pillRef.current?.measureInWindow((x, y) => {
+      setScreenPos({ x, y });
       progress.value = withTiming(1, { duration: 200 });
       setOpen(true);
     });
-  }, [close, open, progress]);
+  }, [progress]);
+
+  const toggle = useCallback(() => {
+    if (open) close();
+    else openMenu();
+  }, [close, open, openMenu]);
 
   const iconStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${interpolate(progress.value, [0, 1], [0, 45])}deg` }],
   }));
 
-  const fadeUp = (i: number) =>
+  const itemAnim = (index: number) =>
     useAnimatedStyle(() => ({
       opacity: progress.value,
-      transform: [{ translateY: interpolate(progress.value, [0, 1], [6 * (i + 1), 0]) }],
+      transform: [{ translateY: interpolate(progress.value, [0, 1], [8 * (index + 1), 0]) }],
     }));
 
-  const a0 = fadeUp(0);
-  const a1 = fadeUp(1);
-  const a2 = fadeUp(2);
+  const s0 = itemAnim(0);
+  const s1 = itemAnim(1);
+  const s2 = itemAnim(2);
 
-  const hubBody = (
-    <>
-      {open ? (
-        <View style={styles.menu} pointerEvents="box-none">
-          <Animated.View style={[styles.menuRow, a2]}>
-            <ActionPill
-              label={t('fab.vaccines')}
-              iconBg={Colors.category.vaccinesBg}
-              icon={<MaterialCommunityIcons name="needle" size={20} color={Colors.category.vaccines} />}
-              onPress={() => {
-                close();
-                onVaccinePress();
-              }}
-            />
-          </Animated.View>
-          <Animated.View style={[styles.menuRow, a1]}>
-            <ActionPill
-              label={t('fab.health')}
-              iconBg={Colors.category.notesBg}
-              icon={<MaterialCommunityIcons name="heart-pulse" size={20} color={Colors.category.notes} />}
-              onPress={() => {
-                close();
-                onHealthPress();
-              }}
-            />
-          </Animated.View>
-          <Animated.View style={[styles.menuRow, a0]}>
-            <ActionPill
-              label={t('fab.reminders')}
-              iconBg={Colors.category.remindersBg}
-              icon={<Ionicons name="notifications-outline" size={20} color={Colors.category.reminders} />}
-              onPress={() => {
-                close();
-                onReminderPress();
-              }}
-            />
-          </Animated.View>
-        </View>
-      ) : null}
+  const menu = open ? (
+    <View style={styles.menu} pointerEvents="box-none">
+      <Animated.View style={[styles.menuRow, s2]}>
+        <MenuItem
+          label={t('fab.vaccines')}
+          iconBg={Colors.category.vaccinesBg}
+          icon={<MaterialCommunityIcons name="needle" size={20} color={Colors.category.vaccines} />}
+          onPress={() => {
+            close();
+            onVaccinePress();
+          }}
+        />
+      </Animated.View>
+      <Animated.View style={[styles.menuRow, s1]}>
+        <MenuItem
+          label={t('fab.health')}
+          iconBg={Colors.category.notesBg}
+          icon={<MaterialCommunityIcons name="heart-pulse" size={20} color={Colors.category.notes} />}
+          onPress={() => {
+            close();
+            onHealthPress();
+          }}
+        />
+      </Animated.View>
+      <Animated.View style={[styles.menuRow, s0]}>
+        <MenuItem
+          label={t('fab.reminders')}
+          iconBg={Colors.category.remindersBg}
+          icon={<Ionicons name="notifications-outline" size={20} color={Colors.category.reminders} />}
+          onPress={() => {
+            close();
+            onReminderPress();
+          }}
+        />
+      </Animated.View>
+    </View>
+  ) : null;
 
+  const pill = (
+    <View ref={pillRef} collapsable={false} style={styles.pillWrap}>
       <TouchableOpacity style={styles.pill} onPress={toggle} activeOpacity={0.9}>
         <Animated.View style={iconStyle}>
           <Ionicons name="add" size={26} color={Colors.surface} />
         </Animated.View>
       </TouchableOpacity>
-    </>
+    </View>
+  );
+
+  const stack = (
+    <View style={styles.stack} pointerEvents="box-none">
+      {menu}
+      {pill}
+    </View>
   );
 
   return (
     <>
       <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
-        <View style={styles.modal} pointerEvents="box-none">
+        <View style={styles.modalRoot} pointerEvents="box-none">
           <Pressable style={styles.backdrop} onPress={close} />
-          {origin ? (
+          {screenPos ? (
             <View
-              style={[styles.hub, styles.modalHub, { left: origin.x, top: origin.y }]}
+              style={[styles.floating, { left: screenPos.x, top: screenPos.y }]}
               pointerEvents="box-none"
             >
-              {hubBody}
+              {stack}
             </View>
           ) : null}
         </View>
       </Modal>
 
-      {!open ? (
-        <View style={styles.slot} pointerEvents="auto">
-          <View ref={hubRef} collapsable={false} style={styles.hub}>
-            {hubBody}
-          </View>
-        </View>
-      ) : null}
+      <View style={[styles.anchor, open && styles.anchorHidden]} pointerEvents={open ? 'none' : 'auto'}>
+        {stack}
+      </View>
     </>
   );
 }
 
-function ActionPill({
+function MenuItem({
   label,
   iconBg,
   icon,
@@ -156,45 +159,51 @@ function ActionPill({
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity style={styles.action} onPress={onPress} activeOpacity={0.85}>
-      <View style={[styles.actionIcon, { backgroundColor: iconBg }]}>{icon}</View>
-      <Text style={styles.actionLabel}>{label}</Text>
+    <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.85}>
+      <View style={[styles.menuIcon, { backgroundColor: iconBg }]}>{icon}</View>
+      <Text style={styles.menuLabel}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  modal: {
+  modalRoot: {
     flex: 1,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  modalHub: {
+  floating: {
     position: 'absolute',
-  },
-  slot: {
-    position: 'absolute',
-    right: -(Spacing.lg + PILL_W / 2),
-    top: -PILL_H / 2,
-    zIndex: 50,
     overflow: 'visible',
   },
-  hub: {
+  anchor: {
+    position: 'absolute',
+    right: -(Spacing.lg + PILL_W / 2),
+    top: -(Spacing.md / 2 + PILL_H / 2),
+    overflow: 'visible',
+    zIndex: 60,
+  },
+  anchorHidden: {
+    opacity: 0,
+  },
+  stack: {
     alignItems: 'flex-end',
     overflow: 'visible',
   },
   menu: {
+    position: 'absolute',
+    right: 0,
+    bottom: PILL_H + 10,
     alignItems: 'flex-end',
     gap: 10,
-    marginBottom: 10,
     overflow: 'visible',
   },
   menuRow: {
     alignItems: 'flex-end',
   },
-  action: {
+  menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
@@ -208,17 +217,21 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
-  actionIcon: {
+  menuIcon: {
     width: 32,
     height: 32,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  actionLabel: {
+  menuLabel: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     color: Colors.primaryText,
+  },
+  pillWrap: {
+    width: PILL_W,
+    height: PILL_H,
   },
   pill: {
     width: PILL_W,
@@ -227,7 +240,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryText,
     justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingTop: 14,
+    paddingTop: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.22,

@@ -179,19 +179,18 @@ export default function HomeScreen() {
               />
             </View>
 
-            <View style={styles.fabGutter}>
+            <View style={styles.healthWrap}>
+              <HealthCard
+                latestRecord={latestRecord}
+                loading={loading}
+                onPress={() => router.push('/health' as never)}
+              />
               <FABMenu
                 onVaccinePress={() => router.push('/vaccines' as never)}
                 onHealthPress={() => router.push('/health/add-note' as never)}
                 onReminderPress={() => router.push('/reminders' as never)}
               />
             </View>
-
-            <HealthCard
-              latestRecord={latestRecord}
-              loading={loading}
-              onPress={() => router.push('/health' as never)}
-            />
           </View>
         </ScrollView>
       </View>
@@ -245,9 +244,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.md,
   },
-  fabGutter: {
-    height: 0,
-    zIndex: 50,
+  healthWrap: {
+    position: 'relative',
     overflow: 'visible',
+    zIndex: 50,
   },
 });
