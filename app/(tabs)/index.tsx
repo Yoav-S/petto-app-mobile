@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useActivePet } from '@/store/petStore';
@@ -43,6 +43,7 @@ export default function HomeScreen() {
 
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [fabOpen, setFabOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!user) {
@@ -126,6 +127,9 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <View style={styles.screen}>
+        {fabOpen ? (
+          <Pressable style={styles.fabBackdrop} onPress={() => setFabOpen(false)} />
+        ) : null}
         <ScrollView
           showsVerticalScrollIndicator={false}
           style={styles.scroll}
@@ -186,6 +190,8 @@ export default function HomeScreen() {
                 onPress={() => router.push('/health' as never)}
               />
               <FABMenu
+                open={fabOpen}
+                onOpenChange={setFabOpen}
                 onVaccinePress={() => router.push('/vaccines' as never)}
                 onHealthPress={() => router.push('/health/add-note' as never)}
                 onReminderPress={() => router.push('/reminders' as never)}
@@ -206,6 +212,11 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     overflow: 'visible',
+  },
+  fabBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    zIndex: 80,
   },
   scroll: {
     overflow: 'visible',
