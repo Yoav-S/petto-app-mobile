@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Pressable,
   Modal,
+  Dimensions,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
@@ -17,9 +18,11 @@ import Animated, {
 import { Colors, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
 
-/** Vertical pill — matches mockup proportions */
 const PILL_W = 52;
 const PILL_H = 72;
+
+const CLOSED_DEG = -45;
+const OPEN_DEG = -90;
 
 interface FABMenuProps {
   onVaccinePress: () => void;
@@ -27,25 +30,41 @@ interface FABMenuProps {
   onReminderPress: () => void;
 }
 
+type ScreenAnchor = { right: number; bottom: number };
+
 export default function FABMenu({
   onVaccinePress,
   onHealthPress,
   onReminderPress,
 }: FABMenuProps) {
   const [open, setOpen] = useState(false);
-  const progress = useSharedValue(0);
+  const [screenAnchor, setScreenAnchor] = useState<ScreenAnchor | null>(null);
   const pillRef = useRef<View>(null);
-  const [screenPos, setScreenPos] = useState<{ x: number; y: number } | null>(null);
+  const progress = useSharedValue(0);
+
+  const measurePill = useCallback(() => {
+    pillRef.current?.measureInWindow((x, y, width, height) => {
+      const { width: sw, height: sh } = Dimensions.get('window');
+      setScreenAnchor({
+        right: sw - x - width,
+        bottom: sh - y - height,
+      });
+    });
+  }, []);
 
   const close = useCallback(() => {
-    progress.value = withTiming(0, { duration: 200 });
+    progress.value = withTiming(0, { duration: 220 });
     setOpen(false);
   }, [progress]);
 
   const openMenu = useCallback(() => {
-    pillRef.current?.measureInWindow((x, y) => {
-      setScreenPos({ x, y });
-      progress.value = withTiming(1, { duration: 200 });
+    pillRef.current?.measureInWindow((x, y, width, height) => {
+      const { width: sw, height: sh } = Dimensions.get('window');
+      setScreenAnchor({
+        right: sw - x - width,
+        bottom: sh - y - height,
+      });
+      progress.value = withTiming(1, { duration: 220 });
       setOpen(true);
     });
   }, [progress]);
@@ -55,14 +74,26 @@ export default function FABMenu({
     else openMenu();
   }, [close, open, openMenu]);
 
+  const pillRotateStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: PILL_W / 2 },
+      { translateY: PILL_H / 2 },
+      { rotate: `${interpolate(progress.value, [0, 1], [CLOSED_DEG, OPEN_DEG])}deg` },
+      { translateX: -PILL_W / 2 },
+      { translateY: -PILL_H / 2 },
+    ],
+  }));
+
   const iconStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${interpolate(progress.value, [0, 1], [0, 45])}deg` }],
+    transform: [
+      { rotate: `${interpolate(progress.value, [0, 1], [0, 45])}deg` },
+    ],
   }));
 
   const itemAnim = (index: number) =>
     useAnimatedStyle(() => ({
       opacity: progress.value,
-      transform: [{ translateY: interpolate(progress.value, [0, 1], [8 * (index + 1), 0]) }],
+      transform: [{ translateY: interpolate(progress.value, [0, 1], [6 * (index + 1), 0]) }],
     }));
 
   const s0 = itemAnim(0);
@@ -107,20 +138,23 @@ export default function FABMenu({
     </View>
   ) : null;
 
-  const pill = (
-    <View ref={pillRef} collapsable={false} style={styles.pillWrap}>
-      <TouchableOpacity style={styles.pill} onPress={toggle} activeOpacity={0.9}>
-        <Animated.View style={iconStyle}>
-          <Ionicons name="add" size={26} color={Colors.surface} />
-        </Animated.View>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const stack = (
+  const stack = (attachRef: boolean) => (
     <View style={styles.stack} pointerEvents="box-none">
       {menu}
-      {pill}
+      <View
+        ref={attachRef ? pillRef : undefined}
+        collapsable={false}
+        onLayout={attachRef ? measurePill : undefined}
+        style={styles.pillSlot}
+      >
+        <Animated.View style={pillRotateStyle}>
+          <TouchableOpacity style={styles.pill} onPress={toggle} activeOpacity={0.9}>
+            <Animated.View style={iconStyle}>
+              <Ionicons name="add" size={26} color={Colors.surface} />
+            </Animated.View>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
     </View>
   );
 
@@ -129,19 +163,25 @@ export default function FABMenu({
       <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
         <View style={styles.modalRoot} pointerEvents="box-none">
           <Pressable style={styles.backdrop} onPress={close} />
-          {screenPos ? (
+          {screenAnchor ? (
             <View
-              style={[styles.floating, { left: screenPos.x, top: screenPos.y }]}
+              style={[
+                styles.floating,
+                { right: screenAnchor.right, bottom: screenAnchor.bottom },
+              ]}
               pointerEvents="box-none"
             >
-              {stack}
+              {stack(false)}
             </View>
           ) : null}
         </View>
       </Modal>
 
-      <View style={[styles.anchor, open && styles.anchorHidden]} pointerEvents={open ? 'none' : 'auto'}>
-        {stack}
+      <View
+        style={[styles.anchor, open && styles.anchorHidden]}
+        pointerEvents={open ? 'none' : 'auto'}
+      >
+        {stack(true)}
       </View>
     </>
   );
@@ -176,12 +216,13 @@ const styles = StyleSheet.create({
   },
   floating: {
     position: 'absolute',
+    alignItems: 'flex-end',
     overflow: 'visible',
   },
   anchor: {
     position: 'absolute',
     right: -(Spacing.lg + PILL_W / 2),
-    top: -(Spacing.md / 2 + PILL_H / 2),
+    bottom: 0,
     overflow: 'visible',
     zIndex: 60,
   },
@@ -193,11 +234,9 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   menu: {
-    position: 'absolute',
-    right: 0,
-    bottom: PILL_H + 10,
     alignItems: 'flex-end',
     gap: 10,
+    marginBottom: 10,
     overflow: 'visible',
   },
   menuRow: {
@@ -229,9 +268,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.primaryText,
   },
-  pillWrap: {
+  pillSlot: {
     width: PILL_W,
     height: PILL_H,
+    overflow: 'visible',
   },
   pill: {
     width: PILL_W,
