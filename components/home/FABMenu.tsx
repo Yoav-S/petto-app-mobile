@@ -19,8 +19,8 @@ const MENU_GAP = 16;
 /** Menu right edge sits this far left of the FAB right edge (Figma: 353 vs 394). */
 const MENU_RIGHT_INSET = 41;
 
-const CLOSED_DEG = 10;
-const OPEN_DEG = 90;
+const CLOSED_DEG = -10;
+const OPEN_DEG = -90;
 const ANIM_MS = 200;
 
 interface FABMenuProps {
