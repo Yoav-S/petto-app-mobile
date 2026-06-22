@@ -10,13 +10,17 @@ import Animated, {
 import { Colors, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
 
-export const BTN_W = 52;
-export const BTN_H = 72;
-const BTN_RADIUS = 12;
-const MENU_GAP = 4;
+export const BTN_W = 60;
+export const BTN_H = 82;
+const BTN_RADIUS = 22;
 
-const CLOSED_DEG = -15;
-const OPEN_DEG = -90;
+const MENU_W = 137;
+const MENU_GAP = 16;
+/** Menu right edge sits this far left of the FAB right edge (Figma: 353 vs 394). */
+const MENU_RIGHT_INSET = 41;
+
+const CLOSED_DEG = 10;
+const OPEN_DEG = 90;
 const ANIM_MS = 200;
 
 interface FABMenuProps {
@@ -79,9 +83,11 @@ export default function FABMenu({
       >
         <Animated.View style={[styles.menuRow, s2]}>
           <MenuItem
+            width={121}
+            padded={false}
             label={t('fab.vaccines')}
             iconBg={Colors.category.vaccinesBg}
-            icon={<MaterialCommunityIcons name="needle" size={20} color={Colors.category.vaccines} />}
+            icon={<MaterialCommunityIcons name="needle" size={18} color={Colors.category.vaccines} />}
             onPress={() => {
               close();
               onVaccinePress();
@@ -90,9 +96,11 @@ export default function FABMenu({
         </Animated.View>
         <Animated.View style={[styles.menuRow, s1]}>
           <MenuItem
+            width={105}
+            padded
             label={t('fab.health')}
             iconBg={Colors.category.notesBg}
-            icon={<MaterialCommunityIcons name="heart-pulse" size={20} color={Colors.category.notes} />}
+            icon={<MaterialCommunityIcons name="heart-pulse" size={18} color={Colors.category.notes} />}
             onPress={() => {
               close();
               onHealthPress();
@@ -101,9 +109,11 @@ export default function FABMenu({
         </Animated.View>
         <Animated.View style={[styles.menuRow, s0]}>
           <MenuItem
+            width={137}
+            padded
             label={t('fab.reminders')}
             iconBg={Colors.category.remindersBg}
-            icon={<Ionicons name="notifications-outline" size={20} color={Colors.category.reminders} />}
+            icon={<Ionicons name="notifications-outline" size={18} color={Colors.category.reminders} />}
             onPress={() => {
               close();
               onReminderPress();
@@ -124,18 +134,26 @@ export default function FABMenu({
 }
 
 function MenuItem({
+  width,
+  padded,
   label,
   iconBg,
   icon,
   onPress,
 }: {
+  width: number;
+  padded: boolean;
   label: string;
   iconBg: string;
   icon: React.ReactNode;
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity
+      style={[styles.menuItem, { width }, padded ? styles.menuItemPadded : styles.menuItemVaccines]}
+      onPress={onPress}
+      activeOpacity={0.85}
+    >
       <View style={[styles.menuIcon, { backgroundColor: iconBg }]}>{icon}</View>
       <Text style={styles.menuLabel}>{label}</Text>
     </TouchableOpacity>
@@ -146,7 +164,7 @@ const styles = StyleSheet.create({
   anchor: {
     position: 'absolute',
     right: -(Spacing.lg + BTN_W / 2),
-    bottom: -22,
+    bottom: -33,
     width: BTN_W,
     height: BTN_H,
     zIndex: 100,
@@ -155,10 +173,11 @@ const styles = StyleSheet.create({
   },
   menu: {
     position: 'absolute',
-    right: 0,
-    bottom: BTN_H + MENU_GAP,
+    right: MENU_RIGHT_INSET,
+    bottom: BTN_H,
+    width: MENU_W,
     alignItems: 'flex-end',
-    gap: 8,
+    gap: MENU_GAP,
     overflow: 'visible',
   },
   menuRow: {
@@ -167,27 +186,33 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    height: 40,
+    borderRadius: 12,
+    gap: 10,
     backgroundColor: Colors.surface,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 28,
-    gap: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  menuItemVaccines: {
+    paddingHorizontal: 14,
+  },
+  menuItemPadded: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
   },
   menuIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   menuLabel: {
     fontFamily: 'Rubik-Medium',
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.primaryText,
   },
   btn: {
