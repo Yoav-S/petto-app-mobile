@@ -5,15 +5,18 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
 
-const COVER_HEIGHT = Math.round(Dimensions.get('window').height * 0.36);
+export const DESIGN_WIDTH = 375;
+export const DESIGN_PANEL_TOP = 316;
+export const DESIGN_PANEL_HEIGHT = 496;
+export const DESIGN_PANEL_RADIUS = 24;
 
 interface PetHeaderProps {
   pet: {
@@ -27,6 +30,7 @@ interface PetHeaderProps {
   loading: boolean;
   onSwitchPress: () => void;
   onSettingsPress?: () => void;
+  children?: React.ReactNode;
 }
 
 function calculateAge(birthDateString?: string): string {
@@ -52,9 +56,15 @@ export default function PetHeader({
   loading,
   onSwitchPress,
   onSettingsPress,
+  children,
 }: PetHeaderProps) {
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
+
+  const layoutScale = screenWidth / DESIGN_WIDTH;
+  const coverHeight = Math.round(DESIGN_PANEL_TOP * layoutScale);
+  const panelMinHeight = Math.round(DESIGN_PANEL_HEIGHT * layoutScale);
 
   useEffect(() => {
     if (loading) {
@@ -74,7 +84,7 @@ export default function PetHeader({
 
   return (
     <View style={styles.wrapper}>
-      <View style={[styles.cover, { height: COVER_HEIGHT }]}>
+      <View style={[styles.cover, { height: coverHeight }]}>
         {loading ? (
           <Animated.View style={[styles.coverPlaceholder, { opacity: fadeAnim }]} />
         ) : pet?.photo_url ? (
@@ -100,14 +110,23 @@ export default function PetHeader({
         </TouchableOpacity>
       </View>
 
-      <View style={styles.sheet}>
+      <View
+        style={[
+          styles.panel,
+          {
+            minHeight: panelMinHeight,
+            borderTopLeftRadius: DESIGN_PANEL_RADIUS,
+            borderTopRightRadius: DESIGN_PANEL_RADIUS,
+          },
+        ]}
+      >
         {loading ? (
-          <View style={styles.sheetInner}>
+          <View style={styles.nameSection}>
             <Animated.View style={[styles.nameSkeleton, { opacity: fadeAnim }]} />
             <Animated.View style={[styles.subtitleSkeleton, { opacity: fadeAnim }]} />
           </View>
         ) : (
-          <View style={styles.sheetInner}>
+          <View style={styles.nameSection}>
             <TouchableOpacity
               style={styles.nameRow}
               onPress={canSwitch ? onSwitchPress : undefined}
@@ -127,6 +146,8 @@ export default function PetHeader({
             )}
           </View>
         )}
+
+        {children}
       </View>
     </View>
   );
@@ -156,7 +177,7 @@ const styles = StyleSheet.create({
     right: Spacing.lg,
     width: 44,
     height: 44,
-    borderRadius: Radius.md,
+    borderRadius: 12,
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
@@ -166,17 +187,16 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  sheet: {
-    marginTop: -40,
+  panel: {
     backgroundColor: Colors.surface,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
     paddingTop: Spacing.xl,
     paddingBottom: Spacing.lg,
-    paddingHorizontal: Spacing.lg,
+    overflow: 'visible',
   },
-  sheetInner: {
+  nameSection: {
     alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   nameRow: {
     flexDirection: 'row',

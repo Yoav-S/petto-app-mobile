@@ -158,46 +158,46 @@ export default function HomeScreen() {
             loading={loading}
             onSwitchPress={() => {}}
             onSettingsPress={() => {}}
-          />
+          >
+            <View style={styles.cardsGrid}>
+              <View style={styles.row}>
+                <VaccinesCard
+                  latestVaccine={
+                    latestVaccine
+                      ? {
+                          name: latestVaccine.name,
+                          date: latestVaccine.date,
+                          next_date: latestVaccine.next_date ?? undefined,
+                        }
+                      : null
+                  }
+                  loading={loading}
+                  onPress={() => router.push('/vaccines' as never)}
+                />
+                <RemindersCard
+                  nextReminder={nextReminder}
+                  upcomingCount={upcomingCount}
+                  loading={loading}
+                  onPress={() => router.push('/reminders' as never)}
+                />
+              </View>
 
-          <View style={styles.cardsGrid}>
-            <View style={styles.row}>
-              <VaccinesCard
-                latestVaccine={
-                  latestVaccine
-                    ? {
-                        name: latestVaccine.name,
-                        date: latestVaccine.date,
-                        next_date: latestVaccine.next_date ?? undefined,
-                      }
-                    : null
-                }
-                loading={loading}
-                onPress={() => router.push('/vaccines' as never)}
-              />
-              <RemindersCard
-                nextReminder={nextReminder}
-                upcomingCount={upcomingCount}
-                loading={loading}
-                onPress={() => router.push('/reminders' as never)}
-              />
+              <View style={styles.healthWrap}>
+                <HealthCard
+                  latestRecord={latestRecord}
+                  loading={loading}
+                  onPress={() => router.push('/health' as never)}
+                />
+                <FABMenu
+                  open={fabOpen}
+                  onOpenChange={setFabOpen}
+                  onVaccinePress={() => router.push('/vaccines' as never)}
+                  onHealthPress={() => router.push('/health/add-note' as never)}
+                  onReminderPress={() => router.push('/reminders' as never)}
+                />
+              </View>
             </View>
-
-            <View style={styles.healthWrap}>
-              <HealthCard
-                latestRecord={latestRecord}
-                loading={loading}
-                onPress={() => router.push('/health' as never)}
-              />
-              <FABMenu
-                open={fabOpen}
-                onOpenChange={setFabOpen}
-                onVaccinePress={() => router.push('/vaccines' as never)}
-                onHealthPress={() => router.push('/health/add-note' as never)}
-                onReminderPress={() => router.push('/reminders' as never)}
-              />
-            </View>
-          </View>
+          </PetHeader>
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -247,7 +247,6 @@ const styles = StyleSheet.create({
   },
   cardsGrid: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
     gap: Spacing.md,
     overflow: 'visible',
   },

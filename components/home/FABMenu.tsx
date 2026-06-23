@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
   interpolate,
@@ -9,6 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Colors, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
+import { DESIGN_WIDTH } from '@/components/home/PetHeader';
 
 export const BTN_W = 60;
 export const BTN_H = 82;
@@ -16,12 +17,21 @@ const BTN_RADIUS = 22;
 
 const MENU_W = 137;
 const MENU_GAP = 16;
-/** Menu right edge sits this far left of the FAB right edge (Figma: 353 vs 394). */
+
+/** Figma screen coords on 375px-wide frame */
+const BTN_CLOSED_LEFT = 334.46;
+const BTN_OPEN_LEFT = 320;
+const BTN_CLOSED_TOP = 681.05;
+const BTN_OPEN_TOP = 697;
 const MENU_RIGHT_INSET = 41;
 
 const CLOSED_DEG = -10;
 const OPEN_DEG = -90;
 const ANIM_MS = 200;
+
+const ICON_SIZE = 24;
+const ICON_CLOSED = { top: 15.98, left: 7.7, deg: 10 };
+const ICON_OPEN = { top: 18.36, left: 8.88, deg: 90 };
 
 interface FABMenuProps {
   open: boolean;
@@ -38,7 +48,14 @@ export default function FABMenu({
   onHealthPress,
   onReminderPress,
 }: FABMenuProps) {
+  const { width: screenWidth } = useWindowDimensions();
+  const layoutScale = screenWidth / DESIGN_WIDTH;
   const progress = useSharedValue(open ? 1 : 0);
+
+  const btnClosedLeft = BTN_CLOSED_LEFT * layoutScale;
+  const fabRight = -(btnClosedLeft + BTN_W - (screenWidth - Spacing.lg));
+  const openShiftX = (BTN_OPEN_LEFT - BTN_CLOSED_LEFT) * layoutScale;
+  const openShiftY = (BTN_OPEN_TOP - BTN_CLOSED_TOP) * layoutScale;
 
   useEffect(() => {
     progress.value = withTiming(open ? 1 : 0, { duration: ANIM_MS });
@@ -46,6 +63,13 @@ export default function FABMenu({
 
   const close = () => onOpenChange(false);
   const toggle = () => onOpenChange(!open);
+
+  const anchorStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: interpolate(progress.value, [0, 1], [0, openShiftX]) },
+      { translateY: interpolate(progress.value, [0, 1], [0, openShiftY]) },
+    ],
+  }));
 
   const btnRotateStyle = useAnimatedStyle(() => ({
     transform: [
@@ -58,7 +82,15 @@ export default function FABMenu({
   }));
 
   const iconStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${interpolate(progress.value, [0, 1], [0, 45])}deg` }],
+    top: interpolate(progress.value, [0, 1], [ICON_CLOSED.top, ICON_OPEN.top]),
+    left: interpolate(progress.value, [0, 1], [ICON_CLOSED.left, ICON_OPEN.left]),
+    transform: [
+      { translateX: ICON_SIZE / 2 },
+      { translateY: ICON_SIZE / 2 },
+      { rotate: `${interpolate(progress.value, [0, 1], [ICON_CLOSED.deg, ICON_OPEN.deg])}deg` },
+      { translateX: -ICON_SIZE / 2 },
+      { translateY: -ICON_SIZE / 2 },
+    ],
   }));
 
   const menuStyle = useAnimatedStyle(() => ({
@@ -76,7 +108,10 @@ export default function FABMenu({
   const s2 = itemAnim(2);
 
   return (
-    <View style={styles.anchor} pointerEvents="box-none">
+    <Animated.View
+      style={[styles.anchor, { right: fabRight }, anchorStyle]}
+      pointerEvents="box-none"
+    >
       <Animated.View
         style={[styles.menu, menuStyle]}
         pointerEvents={open ? 'box-none' : 'none'}
@@ -124,12 +159,12 @@ export default function FABMenu({
 
       <Animated.View style={btnRotateStyle}>
         <TouchableOpacity style={styles.btn} onPress={toggle} activeOpacity={0.9}>
-          <Animated.View style={iconStyle}>
-            <Ionicons name="add" size={26} color={Colors.surface} />
+          <Animated.View style={[styles.iconBox, iconStyle]}>
+            <Ionicons name="add" size={ICON_SIZE} color={Colors.surface} />
           </Animated.View>
         </TouchableOpacity>
       </Animated.View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -163,8 +198,7 @@ function MenuItem({
 const styles = StyleSheet.create({
   anchor: {
     position: 'absolute',
-    right: -(Spacing.lg + BTN_W / 2),
-    bottom: -33,
+    bottom: 0,
     width: BTN_W,
     height: BTN_H,
     zIndex: 100,
@@ -220,12 +254,17 @@ const styles = StyleSheet.create({
     height: BTN_H,
     borderRadius: BTN_RADIUS,
     backgroundColor: Colors.primaryText,
-    justifyContent: 'center',
-    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.22,
     shadowRadius: 8,
     elevation: 10,
+  },
+  iconBox: {
+    position: 'absolute',
+    width: ICON_SIZE,
+    height: ICON_SIZE,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
