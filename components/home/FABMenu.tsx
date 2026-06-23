@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
   interpolate,
@@ -7,7 +7,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors } from '@/constants/theme';
 import { t } from '@/i18n';
 import { DESIGN_WIDTH } from '@/components/home/PetHeader';
 
@@ -17,13 +17,13 @@ const BTN_RADIUS = 22;
 
 const MENU_W = 137;
 const MENU_GAP = 16;
+const MENU_RIGHT_INSET = 41;
 
 /** Figma screen coords on 375px-wide frame */
 const BTN_CLOSED_LEFT = 334.46;
 const BTN_OPEN_LEFT = 320;
 const BTN_CLOSED_TOP = 681.05;
 const BTN_OPEN_TOP = 697;
-const MENU_RIGHT_INSET = 41;
 
 const CLOSED_DEG = -10;
 const OPEN_DEG = -90;
@@ -39,6 +39,11 @@ interface FABMenuProps {
   onVaccinePress: () => void;
   onHealthPress: () => void;
   onReminderPress: () => void;
+  /** healthWrap origin in window coords (from measureInWindow) */
+  healthScreenX: number;
+  healthScreenY: number;
+  layoutScale: number;
+  measured: boolean;
 }
 
 export default function FABMenu({
@@ -47,15 +52,17 @@ export default function FABMenu({
   onVaccinePress,
   onHealthPress,
   onReminderPress,
+  healthScreenX,
+  healthScreenY,
+  layoutScale,
+  measured,
 }: FABMenuProps) {
-  const { width: screenWidth } = useWindowDimensions();
-  const layoutScale = screenWidth / DESIGN_WIDTH;
   const progress = useSharedValue(open ? 1 : 0);
 
-  const btnClosedLeft = BTN_CLOSED_LEFT * layoutScale;
-  const fabRight = -(btnClosedLeft + BTN_W - (screenWidth - Spacing.lg));
-  const openShiftX = (BTN_OPEN_LEFT - BTN_CLOSED_LEFT) * layoutScale;
-  const openShiftY = (BTN_OPEN_TOP - BTN_CLOSED_TOP) * layoutScale;
+  const closedLeft = BTN_CLOSED_LEFT * layoutScale - healthScreenX;
+  const closedTop = BTN_CLOSED_TOP * layoutScale - healthScreenY;
+  const openLeft = BTN_OPEN_LEFT * layoutScale - healthScreenX;
+  const openTop = BTN_OPEN_TOP * layoutScale - healthScreenY;
 
   useEffect(() => {
     progress.value = withTiming(open ? 1 : 0, { duration: ANIM_MS });
@@ -65,10 +72,8 @@ export default function FABMenu({
   const toggle = () => onOpenChange(!open);
 
   const anchorStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: interpolate(progress.value, [0, 1], [0, openShiftX]) },
-      { translateY: interpolate(progress.value, [0, 1], [0, openShiftY]) },
-    ],
+    left: interpolate(progress.value, [0, 1], [closedLeft, openLeft]),
+    top: interpolate(progress.value, [0, 1], [closedTop, openTop]),
   }));
 
   const btnRotateStyle = useAnimatedStyle(() => ({
@@ -107,11 +112,12 @@ export default function FABMenu({
   const s1 = itemAnim(1);
   const s2 = itemAnim(2);
 
+  if (!measured) {
+    return null;
+  }
+
   return (
-    <Animated.View
-      style={[styles.anchor, { right: fabRight }, anchorStyle]}
-      pointerEvents="box-none"
-    >
+    <Animated.View style={[styles.anchor, anchorStyle]} pointerEvents="box-none">
       <Animated.View
         style={[styles.menu, menuStyle]}
         pointerEvents={open ? 'box-none' : 'none'}
@@ -198,7 +204,6 @@ function MenuItem({
 const styles = StyleSheet.create({
   anchor: {
     position: 'absolute',
-    bottom: 0,
     width: BTN_W,
     height: BTN_H,
     zIndex: 100,

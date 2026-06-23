@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Pressable } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Pressable, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useActivePet } from '@/store/petStore';
@@ -10,7 +10,7 @@ import { t } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
 import type { Pet, Vaccination, Reminder, MedicalRecord } from '@/types/api';
 
-import PetHeader from '@/components/home/PetHeader';
+import PetHeader, { DESIGN_WIDTH, PANEL_BACKGROUND } from '@/components/home/PetHeader';
 import VaccinesCard from '@/components/home/VaccinesCard';
 import RemindersCard from '@/components/home/RemindersCard';
 import HealthCard from '@/components/home/HealthCard';
@@ -44,6 +44,18 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [fabOpen, setFabOpen] = useState(false);
+  const [healthScreen, setHealthScreen] = useState({ x: 0, y: 0 });
+  const [healthMeasured, setHealthMeasured] = useState(false);
+  const healthWrapRef = useRef<View>(null);
+  const { width: screenWidth } = useWindowDimensions();
+  const layoutScale = screenWidth / DESIGN_WIDTH;
+
+  const measureHealthWrap = useCallback(() => {
+    healthWrapRef.current?.measureInWindow((x, y) => {
+      setHealthScreen({ x, y });
+      setHealthMeasured(true);
+    });
+  }, []);
 
   const fetchData = useCallback(async () => {
     if (!user) {
@@ -124,6 +136,12 @@ export default function HomeScreen() {
     fetchData();
   }, [fetchData, authLoading]);
 
+  useEffect(() => {
+    if (loading) return;
+    const id = requestAnimationFrame(measureHealthWrap);
+    return () => cancelAnimationFrame(id);
+  }, [loading, pet, latestVaccine, nextReminder, latestRecord, measureHealthWrap]);
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <View style={styles.screen}>
@@ -182,7 +200,7 @@ export default function HomeScreen() {
                 />
               </View>
 
-              <View style={styles.healthWrap}>
+              <View ref={healthWrapRef} style={styles.healthWrap} onLayout={measureHealthWrap}>
                 <HealthCard
                   latestRecord={latestRecord}
                   loading={loading}
@@ -191,6 +209,10 @@ export default function HomeScreen() {
                 <FABMenu
                   open={fabOpen}
                   onOpenChange={setFabOpen}
+                  healthScreenX={healthScreen.x}
+                  healthScreenY={healthScreen.y}
+                  layoutScale={layoutScale}
+                  measured={healthMeasured}
                   onVaccinePress={() => router.push('/vaccines' as never)}
                   onHealthPress={() => router.push('/health/add-note' as never)}
                   onReminderPress={() => router.push('/reminders' as never)}
@@ -207,7 +229,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: PANEL_BACKGROUND,
   },
   screen: {
     flex: 1,

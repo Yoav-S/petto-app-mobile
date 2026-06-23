@@ -17,6 +17,7 @@ export const DESIGN_WIDTH = 375;
 export const DESIGN_PANEL_TOP = 316;
 export const DESIGN_PANEL_HEIGHT = 496;
 export const DESIGN_PANEL_RADIUS = 24;
+export const PANEL_BACKGROUND = '#F6F7F9';
 
 interface PetHeaderProps {
   pet: {
@@ -110,44 +111,45 @@ export default function PetHeader({
         </TouchableOpacity>
       </View>
 
-      <View
-        style={[
-          styles.panel,
-          {
-            minHeight: panelMinHeight,
-            borderTopLeftRadius: DESIGN_PANEL_RADIUS,
-            borderTopRightRadius: DESIGN_PANEL_RADIUS,
-          },
-        ]}
-      >
-        {loading ? (
-          <View style={styles.nameSection}>
-            <Animated.View style={[styles.nameSkeleton, { opacity: fadeAnim }]} />
-            <Animated.View style={[styles.subtitleSkeleton, { opacity: fadeAnim }]} />
-          </View>
-        ) : (
-          <View style={styles.nameSection}>
-            <TouchableOpacity
-              style={styles.nameRow}
-              onPress={canSwitch ? onSwitchPress : undefined}
-              activeOpacity={canSwitch ? 0.7 : 1}
-            >
-              <Text style={styles.name}>{pet?.name ?? t('home.noPet')}</Text>
-              {canSwitch ? (
-                <Ionicons name="chevron-down" size={22} color={Colors.primaryText} />
-              ) : null}
-            </TouchableOpacity>
-            {pet ? (
-              <Text style={styles.subtitle}>
-                {[pet.breed, calculateAge(pet.birth_date ?? undefined)].filter(Boolean).join(' \u2022 ')}
-              </Text>
-            ) : (
-              <Text style={styles.emptySubtitle}>{t('home.addFirstPet')}</Text>
-            )}
-          </View>
-        )}
+      <View style={[styles.panelOuter, { marginTop: -DESIGN_PANEL_RADIUS, minHeight: panelMinHeight }]}>
+        <View
+          style={[
+            styles.panelHeaderClip,
+            {
+              borderTopLeftRadius: DESIGN_PANEL_RADIUS,
+              borderTopRightRadius: DESIGN_PANEL_RADIUS,
+            },
+          ]}
+        >
+          {loading ? (
+            <View style={styles.nameSection}>
+              <Animated.View style={[styles.nameSkeleton, { opacity: fadeAnim }]} />
+              <Animated.View style={[styles.subtitleSkeleton, { opacity: fadeAnim }]} />
+            </View>
+          ) : (
+            <View style={styles.nameSection}>
+              <TouchableOpacity
+                style={styles.nameRow}
+                onPress={canSwitch ? onSwitchPress : undefined}
+                activeOpacity={canSwitch ? 0.7 : 1}
+              >
+                <Text style={styles.name}>{pet?.name ?? t('home.noPet')}</Text>
+                {canSwitch ? (
+                  <Ionicons name="chevron-down" size={22} color={Colors.primaryText} />
+                ) : null}
+              </TouchableOpacity>
+              {pet ? (
+                <Text style={styles.subtitle}>
+                  {[pet.breed, calculateAge(pet.birth_date ?? undefined)].filter(Boolean).join(' \u2022 ')}
+                </Text>
+              ) : (
+                <Text style={styles.emptySubtitle}>{t('home.addFirstPet')}</Text>
+              )}
+            </View>
+          )}
+        </View>
 
-        {children}
+        <View style={styles.panelBody}>{children}</View>
       </View>
     </View>
   );
@@ -155,7 +157,7 @@ export default function PetHeader({
 
 const styles = StyleSheet.create({
   wrapper: {
-    backgroundColor: Colors.background,
+    backgroundColor: PANEL_BACKGROUND,
   },
   cover: {
     width: '100%',
@@ -187,16 +189,26 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  panel: {
-    backgroundColor: Colors.surface,
+  panelOuter: {
+    backgroundColor: PANEL_BACKGROUND,
+    overflow: 'visible',
+  },
+  panelHeaderClip: {
+    backgroundColor: PANEL_BACKGROUND,
     paddingTop: Spacing.xl,
+    overflow: 'hidden',
+  },
+  panelBody: {
+    backgroundColor: PANEL_BACKGROUND,
     paddingBottom: Spacing.lg,
     overflow: 'visible',
+    flex: 1,
   },
   nameSection: {
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.md,
+    paddingBottom: 0,
   },
   nameRow: {
     flexDirection: 'row',
