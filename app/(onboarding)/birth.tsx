@@ -17,6 +17,7 @@ import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
 import { useActivePet } from '@/store/petStore';
 import { createPet } from '@/services/pets';
+import { uploadPetPhoto } from '@/services/storage';
 import { setOnboardingComplete } from '@/services/onboarding';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
@@ -74,11 +75,16 @@ export default function PetBirthOnboardingScreen() {
     setBirthDate(birthDate);
 
     try {
+      let photoUrl: string | null = null;
+      if (draft.photoUri) {
+        photoUrl = await uploadPetPhoto(draft.photoUri);
+      }
+
       const pet = await createPet({
         name: draft.name,
         type: draft.type,
         birth_date: birthDate,
-        photo_url: null,
+        photo_url: photoUrl,
       });
       await setOnboardingComplete();
       setActivePetId(pet.id);

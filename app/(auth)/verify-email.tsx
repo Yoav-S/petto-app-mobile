@@ -82,13 +82,15 @@ export default function VerifyEmailScreen() {
     setError('');
     setInfo('');
     try {
-      await verifyOtpAndSignIn(email, otp);
+      const profile = await verifyOtpAndSignIn(email, otp);
       verifiedRef.current = true;
-      const intent = consumePendingAuthIntent();
-      if (intent === 'signup') {
-        router.replace('/(onboarding)/name' as never);
-      } else {
+      // Server is the source of truth: even if the user tapped "Sign up",
+      // an existing account that already has a pet goes straight into the app.
+      consumePendingAuthIntent();
+      if (profile.has_pets) {
         router.replace('/(tabs)' as any);
+      } else {
+        router.replace('/(onboarding)/name' as never);
       }
     } catch (err: unknown) {
       console.error(err);

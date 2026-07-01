@@ -5,6 +5,8 @@ export interface UserProfile {
   email_verified: boolean;
   created_at: string;
   last_login_at?: string | null;
+  // Server-driven post-login routing: true → go to app, false → onboarding.
+  has_pets: boolean;
 }
 
 export interface Pet {
