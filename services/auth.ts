@@ -15,6 +15,27 @@ interface VerifyOtpResult {
 /** In-memory only — email between send-otp and verify screens. Never persist or route-param. */
 let pendingEmail: string | null = null;
 let verifyScreenMessage: string | null = null;
+let pendingAuthIntent: 'login' | 'signup' | null = null;
+
+export type AuthIntent = 'login' | 'signup';
+
+export function setPendingAuthIntent(intent: AuthIntent): void {
+  pendingAuthIntent = intent;
+}
+
+export function getPendingAuthIntent(): AuthIntent | null {
+  return pendingAuthIntent;
+}
+
+export function clearPendingAuthIntent(): void {
+  pendingAuthIntent = null;
+}
+
+export function consumePendingAuthIntent(): AuthIntent {
+  const intent = pendingAuthIntent ?? 'login';
+  pendingAuthIntent = null;
+  return intent;
+}
 
 export function setVerifyScreenMessage(message: string): void {
   verifyScreenMessage = message;

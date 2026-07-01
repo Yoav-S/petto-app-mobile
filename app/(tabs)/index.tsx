@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Pressable, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -10,7 +10,7 @@ import { t } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
 import type { Pet, Vaccination, Reminder, MedicalRecord } from '@/types/api';
 
-import PetHeader, { DESIGN_WIDTH, PANEL_BACKGROUND } from '@/components/home/PetHeader';
+import PetHeader, { DESIGN_WIDTH, DESIGN_HEIGHT, PANEL_BACKGROUND } from '@/components/home/PetHeader';
 import VaccinesCard from '@/components/home/VaccinesCard';
 import RemindersCard from '@/components/home/RemindersCard';
 import HealthCard from '@/components/home/HealthCard';
@@ -22,8 +22,11 @@ function reminderToScheduledAt(reminder: Reminder): string {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, isLoading: authLoading, syncError, retryBackendSync, isSyncing } = useAuth();
+  const { user, isLoading: authLoading, syncError, retryBackendSync, isSyncing, signOut } = useAuth();
   const { activePetId, setActivePetId } = useActivePet();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const scaleX = screenWidth / DESIGN_WIDTH;
+  const scaleY = screenHeight / DESIGN_HEIGHT;
 
   const [pet, setPet] = useState<Pet | null>(null);
   const [pets, setPets] = useState<Pet[]>([]);
@@ -44,18 +47,6 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [fabOpen, setFabOpen] = useState(false);
-  const [healthScreen, setHealthScreen] = useState({ x: 0, y: 0 });
-  const [healthMeasured, setHealthMeasured] = useState(false);
-  const healthWrapRef = useRef<View>(null);
-  const { width: screenWidth } = useWindowDimensions();
-  const layoutScale = screenWidth / DESIGN_WIDTH;
-
-  const measureHealthWrap = useCallback(() => {
-    healthWrapRef.current?.measureInWindow((x, y) => {
-      setHealthScreen({ x, y });
-      setHealthMeasured(true);
-    });
-  }, []);
 
   const fetchData = useCallback(async () => {
     if (!user) {
@@ -136,12 +127,6 @@ export default function HomeScreen() {
     fetchData();
   }, [fetchData, authLoading]);
 
-  useEffect(() => {
-    if (loading) return;
-    const id = requestAnimationFrame(measureHealthWrap);
-    return () => cancelAnimationFrame(id);
-  }, [loading, pet, latestVaccine, nextReminder, latestRecord, measureHealthWrap]);
-
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <View style={styles.screen}>
@@ -153,73 +138,77 @@ export default function HomeScreen() {
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
         >
-          {(syncError || fetchError) && (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorBannerText}>{syncError ?? fetchError}</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  if (syncError) retryBackendSync();
-                  else fetchData();
-                }}
-                disabled={isSyncing}
-              >
-                <Text style={styles.errorBannerAction}>
-                  {isSyncing ? t('common.loading') : t('common.retry')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          <PetHeader
-            pet={pet}
-            petCount={pets.length}
-            loading={loading}
-            onSwitchPress={() => {}}
-            onSettingsPress={() => {}}
-          >
-            <View style={styles.cardsGrid}>
-              <View style={styles.row}>
-                <VaccinesCard
-                  latestVaccine={
-                    latestVaccine
-                      ? {
-                          name: latestVaccine.name,
-                          date: latestVaccine.date,
-                          next_date: latestVaccine.next_date ?? undefined,
-                        }
-                      : null
-                  }
-                  loading={loading}
-                  onPress={() => router.push('/vaccines' as never)}
-                />
-                <RemindersCard
-                  nextReminder={nextReminder}
-                  upcomingCount={upcomingCount}
-                  loading={loading}
-                  onPress={() => router.push('/reminders' as never)}
-                />
+          <View style={[styles.homeFrame, { minHeight: DESIGN_HEIGHT * scaleY }]}>
+            {(syncError || fetchError) && (
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorBannerText}>{syncError ?? fetchError}</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (syncError) retryBackendSync();
+                    else fetchData();
+                  }}
+                  disabled={isSyncing}
+                >
+                  <Text style={styles.errorBannerAction}>
+                    {isSyncing ? t('common.loading') : t('common.retry')}
+                  </Text>
+                </TouchableOpacity>
               </View>
+            )}
 
-              <View ref={healthWrapRef} style={styles.healthWrap} onLayout={measureHealthWrap}>
-                <HealthCard
-                  latestRecord={latestRecord}
-                  loading={loading}
-                  onPress={() => router.push('/health' as never)}
-                />
-                <FABMenu
-                  open={fabOpen}
-                  onOpenChange={setFabOpen}
-                  healthScreenX={healthScreen.x}
-                  healthScreenY={healthScreen.y}
-                  layoutScale={layoutScale}
-                  measured={healthMeasured}
-                  onVaccinePress={() => router.push('/vaccines' as never)}
-                  onHealthPress={() => router.push('/health/add-note' as never)}
-                  onReminderPress={() => router.push('/reminders' as never)}
-                />
+            <TouchableOpacity style={styles.logoutButton} onPress={() => void signOut()}>
+              <Text style={styles.logoutText}>{t('common.sign_out')}</Text>
+            </TouchableOpacity>
+
+            <PetHeader
+              pet={pet}
+              petCount={pets.length}
+              loading={loading}
+              onSwitchPress={() => {}}
+              onSettingsPress={() => {
+                void signOut();
+              }}
+            >
+              <View style={styles.cardsGrid}>
+                <View style={styles.row}>
+                  <VaccinesCard
+                    latestVaccine={
+                      latestVaccine
+                        ? {
+                            name: latestVaccine.name,
+                            date: latestVaccine.date,
+                            next_date: latestVaccine.next_date ?? undefined,
+                          }
+                        : null
+                    }
+                    loading={loading}
+                    onPress={() => router.push('/vaccines' as never)}
+                  />
+                  <RemindersCard
+                    nextReminder={nextReminder}
+                    upcomingCount={upcomingCount}
+                    loading={loading}
+                    onPress={() => router.push('/reminders' as never)}
+                  />
+                </View>
+
+                <View style={styles.healthWrap}>
+                  <HealthCard
+                    latestRecord={latestRecord}
+                    loading={loading}
+                    onPress={() => router.push('/health' as never)}
+                  />
+                  <FABMenu
+                    open={fabOpen}
+                    onOpenChange={setFabOpen}
+                    onVaccinePress={() => router.push('/vaccines' as never)}
+                    onHealthPress={() => router.push('/health/add-note' as never)}
+                    onReminderPress={() => router.push('/reminders' as never)}
+                  />
+                </View>
               </View>
-            </View>
-          </PetHeader>
+            </PetHeader>
+          </View>
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -234,6 +223,7 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     overflow: 'visible',
+    position: 'relative',
   },
   fabBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -245,6 +235,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: Spacing.xl,
+    overflow: 'visible',
+  },
+  homeFrame: {
+    position: 'relative',
+    width: '100%',
     overflow: 'visible',
   },
   errorBanner: {
@@ -266,6 +261,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     color: Colors.primaryText,
+  },
+  logoutButton: {
+    alignSelf: 'flex-end',
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+  },
+  logoutText: {
+    fontFamily: 'Rubik-Medium',
+    fontSize: 14,
+    color: Colors.secondaryText,
+    textDecorationLine: 'underline',
   },
   cardsGrid: {
     paddingHorizontal: Spacing.lg,

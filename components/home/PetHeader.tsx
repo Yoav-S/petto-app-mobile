@@ -1,19 +1,20 @@
-import React, { useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-  useWindowDimensions,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import React, { useEffect, useRef } from 'react';
+import {
+  Animated,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const DESIGN_WIDTH = 375;
+export const DESIGN_HEIGHT = 812;
 export const DESIGN_PANEL_TOP = 316;
 export const DESIGN_PANEL_HEIGHT = 496;
 export const DESIGN_PANEL_RADIUS = 24;
@@ -60,12 +61,13 @@ export default function PetHeader({
   children,
 }: PetHeaderProps) {
   const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
 
-  const layoutScale = screenWidth / DESIGN_WIDTH;
-  const coverHeight = Math.round(DESIGN_PANEL_TOP * layoutScale);
-  const panelMinHeight = Math.round(DESIGN_PANEL_HEIGHT * layoutScale);
+  const scaleX = screenWidth / DESIGN_WIDTH;
+  const scaleY = screenHeight / DESIGN_HEIGHT;
+  const coverHeight = Math.round(DESIGN_PANEL_TOP * scaleY);
+  const panelMinHeight = Math.round(DESIGN_PANEL_HEIGHT * scaleY);
 
   useEffect(() => {
     if (loading) {

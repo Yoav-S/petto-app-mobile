@@ -1,12 +1,13 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
 import { useEffect } from 'react';
+import 'react-native-reanimated';
 
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { PetStoreProvider } from '@/store/petStore';
-import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { PetOnboardingDraftProvider } from '@/store/petOnboardingDraft';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -21,28 +22,42 @@ function RootLayoutNav() {
     if (isLoading) return;
 
     const inAuthGroup = (segments[0] as string) === '(auth)';
-    const onVerifyEmail = (segments[1] as string) === 'verify-email';
+    const authScreen = segments[1] as string | undefined;
+    const onVerifyEmail = authScreen === 'verify-email';
+    const onTerms = authScreen === 'terms';
+    const onEmail = authScreen === 'email';
+    const inOnboardingGroup = (segments[0] as string) === '(onboarding)';
 
-    if (!user && !inAuthGroup) {
-      router.replace('/(auth)/login' as any);
+    if (!user && !inAuthGroup && !inOnboardingGroup) {
+      router.replace('/(auth)/' as never);
       return;
     }
 
-    // Firebase session only exists after OTP verify (custom token). Block stale/unverified sessions.
-    if (user && !user.emailVerified && !onVerifyEmail) {
-      router.replace('/(auth)/login' as any);
+    if (!user && inOnboardingGroup) {
+      router.replace('/(auth)/' as never);
       return;
     }
 
-    if (user && user.emailVerified && inAuthGroup && !onVerifyEmail) {
-      router.replace('/(tabs)' as any);
+    if (user && !user.emailVerified && !onVerifyEmail && !onTerms && !onEmail) {
+      router.replace('/(auth)/' as never);
+      return;
     }
-  }, [user, isLoading, segments]);
+
+    if (user && user.emailVerified && inAuthGroup && !onVerifyEmail && !onTerms && !onEmail) {
+      router.replace('/(tabs)' as never);
+      return;
+    }
+
+    if (user && user.emailVerified && inOnboardingGroup) {
+      return;
+    }
+  }, [user, isLoading, segments, router]);
 
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
     </Stack>
   );
 }
@@ -53,10 +68,12 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <PetStoreProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <RootLayoutNav />
-          <StatusBar style="auto" />
-        </ThemeProvider>
+        <PetOnboardingDraftProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <RootLayoutNav />
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </PetOnboardingDraftProvider>
       </PetStoreProvider>
     </AuthProvider>
   );

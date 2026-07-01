@@ -41,7 +41,14 @@
           }
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Petto to access your photos to add a pet picture.",
+          "cameraPermission": "Allow Petto to access your camera to take a pet picture."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

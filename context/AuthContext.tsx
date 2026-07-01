@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import auth from '@/services/firebaseAuth';
 import { syncUserWithBackend } from '@/services/auth';
+import { clearOnboardingComplete } from '@/services/onboarding';
 import { getErrorMessage } from '@/services/errors';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
@@ -193,6 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
+      await clearOnboardingComplete();
     } catch (error) {
       console.error('Sign-out Error:', error);
     }

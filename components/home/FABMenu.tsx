@@ -1,37 +1,81 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Colors } from '@/constants/theme';
+import { DESIGN_WIDTH } from '@/components/home/PetHeader';
+import { t } from '@/i18n';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useEffect, useMemo } from 'react';
+import { StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Animated, {
   interpolate,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { Colors } from '@/constants/theme';
-import { t } from '@/i18n';
-import { DESIGN_WIDTH } from '@/components/home/PetHeader';
 
-export const BTN_W = 60;
-export const BTN_H = 82;
-const BTN_RADIUS = 22;
-
-const MENU_W = 137;
-const MENU_GAP = 16;
-const MENU_RIGHT_INSET = 41;
-
-/** Figma screen coords on 375px-wide frame */
-const BTN_CLOSED_LEFT = 334.46;
-const BTN_OPEN_LEFT = 320;
-const BTN_CLOSED_TOP = 681.05;
-const BTN_OPEN_TOP = 697;
+/** Reference frame (Figma / your tuned device) */
+const DESIGN = {
+  btnW: 60,
+  btnH: 82,
+  btnRadius: 22,
+  menuW: 137,
+  menuGap: 16,
+  menuRightInset: 41,
+  /** Your tweak: menu sits at bottom: BTN_H - 50 */
+  menuBottom: 32,
+  fabRightOverflow: 35.46,
+  openShiftX: 5.54,
+  openShiftY: -49.05,
+  iconSize: 24,
+  iconClosed: { top: 15.98, left: 7.7, deg: 0 },
+  iconOpen: { top: 18.36, left: 8.88, deg: 45 },
+  menuItemH: 40,
+  menuItemVaccinesW: 121,
+  menuItemHealthW: 105,
+  menuItemRemindersW: 137,
+} as const;
 
 const CLOSED_DEG = -10;
 const OPEN_DEG = -90;
 const ANIM_MS = 200;
 
-const ICON_SIZE = 24;
-const ICON_CLOSED = { top: 15.98, left: 7.7, deg: 10 };
-const ICON_OPEN = { top: 18.36, left: 8.88, deg: 90 };
+export const BTN_W = DESIGN.btnW;
+export const BTN_H = DESIGN.btnH;
+
+function useFabLayout() {
+  const { width } = useWindowDimensions();
+  const s = width / DESIGN_WIDTH;
+
+  return useMemo(
+    () => ({
+      s,
+      btnW: DESIGN.btnW * s,
+      btnH: DESIGN.btnH * s,
+      btnRadius: DESIGN.btnRadius * s,
+      menuW: DESIGN.menuW * s,
+      menuGap: DESIGN.menuGap * s,
+      menuBottom: DESIGN.menuBottom * s,
+      menuRightInset: DESIGN.menuRightInset * s,
+      fabRight: DESIGN.fabRightOverflow * s,
+      openShiftX: DESIGN.openShiftX * s,
+      openShiftY: DESIGN.openShiftY * s,
+      iconSize: DESIGN.iconSize * s,
+      iconClosed: {
+        top: DESIGN.iconClosed.top * s,
+        left: DESIGN.iconClosed.left * s,
+        deg: DESIGN.iconClosed.deg,
+      },
+      iconOpen: {
+        top: DESIGN.iconOpen.top * s,
+        left: DESIGN.iconOpen.left * s,
+        deg: DESIGN.iconOpen.deg,
+      },
+      menuItemH: DESIGN.menuItemH * s,
+      menuItemVaccinesW: DESIGN.menuItemVaccinesW * s,
+      menuItemHealthW: DESIGN.menuItemHealthW * s,
+      menuItemRemindersW: DESIGN.menuItemRemindersW * s,
+    }),
+    [s],
+  );
+}
 
 interface FABMenuProps {
   open: boolean;
@@ -39,11 +83,6 @@ interface FABMenuProps {
   onVaccinePress: () => void;
   onHealthPress: () => void;
   onReminderPress: () => void;
-  /** healthWrap origin in window coords (from measureInWindow) */
-  healthScreenX: number;
-  healthScreenY: number;
-  layoutScale: number;
-  measured: boolean;
 }
 
 export default function FABMenu({
@@ -52,17 +91,9 @@ export default function FABMenu({
   onVaccinePress,
   onHealthPress,
   onReminderPress,
-  healthScreenX,
-  healthScreenY,
-  layoutScale,
-  measured,
 }: FABMenuProps) {
+  const layout = useFabLayout();
   const progress = useSharedValue(open ? 1 : 0);
-
-  const closedLeft = BTN_CLOSED_LEFT * layoutScale - healthScreenX;
-  const closedTop = BTN_CLOSED_TOP * layoutScale - healthScreenY;
-  const openLeft = BTN_OPEN_LEFT * layoutScale - healthScreenX;
-  const openTop = BTN_OPEN_TOP * layoutScale - healthScreenY;
 
   useEffect(() => {
     progress.value = withTiming(open ? 1 : 0, { duration: ANIM_MS });
@@ -72,29 +103,33 @@ export default function FABMenu({
   const toggle = () => onOpenChange(!open);
 
   const anchorStyle = useAnimatedStyle(() => ({
-    left: interpolate(progress.value, [0, 1], [closedLeft, openLeft]),
-    top: interpolate(progress.value, [0, 1], [closedTop, openTop]),
+    transform: [
+      { translateX: interpolate(progress.value, [0, 1], [0, layout.openShiftX]) },
+      { translateY: interpolate(progress.value, [0, 1], [0, layout.openShiftY]) },
+    ],
   }));
 
   const btnRotateStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateX: BTN_W / 2 },
-      { translateY: BTN_H / 2 },
+      { translateX: layout.btnW / 2 },
+      { translateY: layout.btnH / 2 },
       { rotate: `${interpolate(progress.value, [0, 1], [CLOSED_DEG, OPEN_DEG])}deg` },
-      { translateX: -BTN_W / 2 },
-      { translateY: -BTN_H / 2 },
+      { translateX: -layout.btnW / 2 },
+      { translateY: -layout.btnH / 2 },
     ],
   }));
 
   const iconStyle = useAnimatedStyle(() => ({
-    top: interpolate(progress.value, [0, 1], [ICON_CLOSED.top, ICON_OPEN.top]),
-    left: interpolate(progress.value, [0, 1], [ICON_CLOSED.left, ICON_OPEN.left]),
+    top: interpolate(progress.value, [0, 1], [layout.iconClosed.top, layout.iconOpen.top]),
+    left: interpolate(progress.value, [0, 1], [layout.iconClosed.left, layout.iconOpen.left]),
     transform: [
-      { translateX: ICON_SIZE / 2 },
-      { translateY: ICON_SIZE / 2 },
-      { rotate: `${interpolate(progress.value, [0, 1], [ICON_CLOSED.deg, ICON_OPEN.deg])}deg` },
-      { translateX: -ICON_SIZE / 2 },
-      { translateY: -ICON_SIZE / 2 },
+      { translateX: layout.iconSize / 2 },
+      { translateY: layout.iconSize / 2 },
+      {
+        rotate: `${interpolate(progress.value, [0, 1], [layout.iconClosed.deg, layout.iconOpen.deg])}deg`,
+      },
+      { translateX: -layout.iconSize / 2 },
+      { translateY: -layout.iconSize / 2 },
     ],
   }));
 
@@ -105,30 +140,43 @@ export default function FABMenu({
   const itemAnim = (index: number) =>
     useAnimatedStyle(() => ({
       opacity: progress.value,
-      transform: [{ translateY: interpolate(progress.value, [0, 1], [4 * (index + 1), 0]) }],
+      transform: [{ translateY: interpolate(progress.value, [0, 1], [4 * (index + 1) * layout.s, 0]) }],
     }));
 
   const s0 = itemAnim(0);
   const s1 = itemAnim(1);
   const s2 = itemAnim(2);
 
-  if (!measured) {
-    return null;
-  }
-
   return (
-    <Animated.View style={[styles.anchor, anchorStyle]} pointerEvents="box-none">
+    <Animated.View
+      style={[
+        styles.anchor,
+        { right: -layout.fabRight, width: layout.btnW, height: layout.btnH },
+        anchorStyle,
+      ]}
+      pointerEvents="box-none"
+    >
       <Animated.View
-        style={[styles.menu, menuStyle]}
+        style={[
+          styles.menu,
+          {
+            right: layout.menuRightInset,
+            bottom: layout.menuBottom,
+            width: layout.menuW,
+            gap: layout.menuGap,
+          },
+          menuStyle,
+        ]}
         pointerEvents={open ? 'box-none' : 'none'}
       >
         <Animated.View style={[styles.menuRow, s2]}>
           <MenuItem
-            width={121}
+            width={layout.menuItemVaccinesW}
+            height={layout.menuItemH}
             padded={false}
             label={t('fab.vaccines')}
             iconBg={Colors.category.vaccinesBg}
-            icon={<MaterialCommunityIcons name="needle" size={18} color={Colors.category.vaccines} />}
+            icon={<MaterialCommunityIcons name="needle" size={18 * layout.s} color={Colors.category.vaccines} />}
             onPress={() => {
               close();
               onVaccinePress();
@@ -137,11 +185,12 @@ export default function FABMenu({
         </Animated.View>
         <Animated.View style={[styles.menuRow, s1]}>
           <MenuItem
-            width={105}
+            width={layout.menuItemHealthW}
+            height={layout.menuItemH}
             padded
             label={t('fab.health')}
             iconBg={Colors.category.notesBg}
-            icon={<MaterialCommunityIcons name="heart-pulse" size={18} color={Colors.category.notes} />}
+            icon={<MaterialCommunityIcons name="heart-pulse" size={18 * layout.s} color={Colors.category.notes} />}
             onPress={() => {
               close();
               onHealthPress();
@@ -150,11 +199,12 @@ export default function FABMenu({
         </Animated.View>
         <Animated.View style={[styles.menuRow, s0]}>
           <MenuItem
-            width={137}
+            width={layout.menuItemRemindersW}
+            height={layout.menuItemH}
             padded
             label={t('fab.reminders')}
             iconBg={Colors.category.remindersBg}
-            icon={<Ionicons name="notifications-outline" size={18} color={Colors.category.reminders} />}
+            icon={<Ionicons name="notifications-outline" size={18 * layout.s} color={Colors.category.reminders} />}
             onPress={() => {
               close();
               onReminderPress();
@@ -164,9 +214,13 @@ export default function FABMenu({
       </Animated.View>
 
       <Animated.View style={btnRotateStyle}>
-        <TouchableOpacity style={styles.btn} onPress={toggle} activeOpacity={0.9}>
-          <Animated.View style={[styles.iconBox, iconStyle]}>
-            <Ionicons name="add" size={ICON_SIZE} color={Colors.surface} />
+        <TouchableOpacity
+          style={[styles.btn, { width: layout.btnW, height: layout.btnH, borderRadius: layout.btnRadius }]}
+          onPress={toggle}
+          activeOpacity={0.9}
+        >
+          <Animated.View style={[styles.iconBox, { width: layout.iconSize, height: layout.iconSize }, iconStyle]}>
+            <Ionicons name="add" size={layout.iconSize} color={Colors.surface} />
           </Animated.View>
         </TouchableOpacity>
       </Animated.View>
@@ -176,6 +230,7 @@ export default function FABMenu({
 
 function MenuItem({
   width,
+  height,
   padded,
   label,
   iconBg,
@@ -183,6 +238,7 @@ function MenuItem({
   onPress,
 }: {
   width: number;
+  height: number;
   padded: boolean;
   label: string;
   iconBg: string;
@@ -191,7 +247,11 @@ function MenuItem({
 }) {
   return (
     <TouchableOpacity
-      style={[styles.menuItem, { width }, padded ? styles.menuItemPadded : styles.menuItemVaccines]}
+      style={[
+        styles.menuItem,
+        { width, height },
+        padded ? styles.menuItemPadded : styles.menuItemVaccines,
+      ]}
       onPress={onPress}
       activeOpacity={0.85}
     >
@@ -204,19 +264,14 @@ function MenuItem({
 const styles = StyleSheet.create({
   anchor: {
     position: 'absolute',
-    width: BTN_W,
-    height: BTN_H,
+    bottom: 0,
     zIndex: 100,
     elevation: 100,
     overflow: 'visible',
   },
   menu: {
     position: 'absolute',
-    right: MENU_RIGHT_INSET,
-    bottom: BTN_H,
-    width: MENU_W,
     alignItems: 'flex-end',
-    gap: MENU_GAP,
     overflow: 'visible',
   },
   menuRow: {
@@ -225,7 +280,6 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 40,
     borderRadius: 12,
     gap: 10,
     backgroundColor: Colors.surface,
@@ -255,9 +309,6 @@ const styles = StyleSheet.create({
     color: Colors.primaryText,
   },
   btn: {
-    width: BTN_W,
-    height: BTN_H,
-    borderRadius: BTN_RADIUS,
     backgroundColor: Colors.primaryText,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -267,8 +318,6 @@ const styles = StyleSheet.create({
   },
   iconBox: {
     position: 'absolute',
-    width: ICON_SIZE,
-    height: ICON_SIZE,
     justifyContent: 'center',
     alignItems: 'center',
   },

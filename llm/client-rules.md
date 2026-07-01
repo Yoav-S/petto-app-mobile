@@ -159,7 +159,7 @@ Auth flow:
 - email is required
 - account is created during onboarding
 - **passwordless** email auth via server **6-digit OTP** (NOT Firebase email links, NOT passwords)
-- signup and login use the **same** OTP flow
+- sign-in uses the **same** OTP flow for new and returning users (single `sign-in` screen; no passwords)
 - session persists via Firebase + AsyncStorage until user taps **Sign out**
 - after sign-out, user must complete OTP again to log in
 - Google Sign-In optional (separate flow, test on dev build / deployment)
@@ -178,7 +178,7 @@ The client owns UI and Firebase session. The server owns OTP, user storage, and 
 - Protected routes require `Authorization: Bearer <Firebase ID token>`.
 - OTP routes are **public** (no Bearer token).
 
-### Email signup AND login (same flow)
+### Email sign-in (new + returning users, same flow)
 
 | Step | Client action | Endpoint | Request body | Response |
 |------|---------------|----------|--------------|----------|
@@ -212,7 +212,7 @@ Google uses one flow for both new and returning users:
 - Redirect scheme: `petto` (matches `app.json` → `expo.scheme`)
 - Use `webClientId` (not `clientId`) in `Google.useIdTokenAuthRequest`
 
-**UI:** `GoogleSignInButton` on login and signup screens.
+**UI:** Welcome onboarding at `app/(auth)/index.tsx` (once per install). `GoogleSignInButton` on `email` screen.
 
 **Expo Go vs development build:**
 
@@ -228,7 +228,8 @@ Google uses one flow for both new and returning users:
 - `services/api.ts` — `apiGet`, `apiPost` (Bearer), `apiPostPublic` (register/OTP)
 - `services/auth.ts` — `sendOtp`, `verifyOtpAndSignIn`, `resendOtp`, `syncUserWithBackend`, `setPendingEmail`
 - `context/AuthContext.tsx` — session restore + auto `POST /users/me` after Firebase login
-- `app/(auth)/signup.tsx`, `verify-email.tsx`, `login.tsx`
+- `app/(auth)/index.tsx` — onboarding welcome (once per install)
+- `app/(auth)/index.tsx` (welcome + email on same screen), `verify-email.tsx`
 
 ### Rules
 

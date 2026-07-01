@@ -22,6 +22,7 @@ import {
   verifyOtpAndSignIn,
   resendOtp,
   consumeVerifyScreenMessage,
+  consumePendingAuthIntent,
 } from '@/services/auth';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 
@@ -49,7 +50,7 @@ export default function VerifyEmailScreen() {
 
   useEffect(() => {
     if (!email) {
-      router.replace('/(auth)/login' as any);
+      router.replace('/(auth)/' as never);
       return;
     }
     const flash = consumeVerifyScreenMessage();
@@ -83,7 +84,12 @@ export default function VerifyEmailScreen() {
     try {
       await verifyOtpAndSignIn(email, otp);
       verifiedRef.current = true;
-      router.replace('/(tabs)' as any);
+      const intent = consumePendingAuthIntent();
+      if (intent === 'signup') {
+        router.replace('/(onboarding)/name' as never);
+      } else {
+        router.replace('/(tabs)' as any);
+      }
     } catch (err: unknown) {
       console.error(err);
       setError(getErrorMessage(err));
