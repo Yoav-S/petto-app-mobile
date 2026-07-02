@@ -1,6 +1,7 @@
 {
   "home": {
     "switch": "החלף",
+    "settings": "הגדרות",
     "noPet": "אין חיה עדיין",
     "addFirstPet": "הוסף את החיה הראשונה שלך כדי להתחיל",
     "vaccinesCard": {

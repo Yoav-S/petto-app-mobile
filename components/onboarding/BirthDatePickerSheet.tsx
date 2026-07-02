@@ -17,6 +17,7 @@ import { getPetOnboardingScale } from '@/utils/petOnboardingScale';
 import {
   getCalendarCells,
   getYearOptions,
+  isFutureDate,
   isSameDay,
   MONTH_KEYS,
   toIsoDate,
@@ -67,6 +68,7 @@ export default function BirthDatePickerSheet({
   };
 
   const handleSelectCell = (cell: CalendarCell) => {
+    if (isFutureDate(cell.date)) return;
     if (!cell.inCurrentMonth) {
       setViewYear(cell.date.getFullYear());
       setViewMonth(cell.date.getMonth());
@@ -82,10 +84,21 @@ export default function BirthDatePickerSheet({
   const renderPickerList = () => {
     if (!openPicker) return null;
 
+    const now = new Date();
     const items =
       openPicker === 'month'
-        ? MONTH_KEYS.map((key, index) => ({ key, index, label: t(`petOnboarding.month_${key}`) }))
-        : years.map((year) => ({ key: String(year), index: year, label: String(year) }));
+        ? MONTH_KEYS.map((key, index) => ({
+            key,
+            index,
+            label: t(`petOnboarding.month_${key}`),
+            disabled: viewYear === now.getFullYear() && index > now.getMonth(),
+          }))
+        : years.map((year) => ({
+            key: String(year),
+            index: year,
+            label: String(year),
+            disabled: false,
+          }));
 
     return (
       <View style={styles.pickerOverlay}>
@@ -96,16 +109,23 @@ export default function BirthDatePickerSheet({
               <Pressable
                 key={item.key}
                 style={styles.pickerItem}
+                disabled={item.disabled}
                 onPress={() => {
                   if (openPicker === 'month') {
                     setViewMonth(item.index);
                   } else {
                     setViewYear(item.index);
+                    // Snap month back if the new year makes it a future month.
+                    if (item.index === now.getFullYear() && viewMonth > now.getMonth()) {
+                      setViewMonth(now.getMonth());
+                    }
                   }
                   setOpenPicker(null);
                 }}
               >
-                <Text style={styles.pickerItemText}>{item.label}</Text>
+                <Text style={[styles.pickerItemText, item.disabled && styles.pickerItemTextDisabled]}>
+                  {item.label}
+                </Text>
               </Pressable>
             ))}
           </ScrollView>
@@ -216,12 +236,18 @@ export default function BirthDatePickerSheet({
             >
               {cells.map((cell) => {
                 const isSelected = selected ? isSameDay(cell.date, selected) : false;
-                const color = cell.inCurrentMonth ? Colors.primaryText : PET_BIRTH_SHEET.mutedDayColor;
+                const isFuture = isFutureDate(cell.date);
+                const color = isFuture
+                  ? PET_BIRTH_SHEET.mutedDayColor
+                  : cell.inCurrentMonth
+                    ? Colors.primaryText
+                    : PET_BIRTH_SHEET.mutedDayColor;
 
                 return (
                   <Pressable
                     key={`${cell.date.getTime()}-${cell.inCurrentMonth}`}
                     onPress={() => handleSelectCell(cell)}
+                    disabled={isFuture}
                     style={[
                       styles.dayCell,
                       {
@@ -406,5 +432,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.primaryText,
     textAlign: 'center',
+  },
+  pickerItemTextDisabled: {
+    color: '#D1D5DB',
   },
 });

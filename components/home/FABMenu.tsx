@@ -22,6 +22,8 @@ const DESIGN = {
   /** Your tweak: menu sits at bottom: BTN_H - 50 */
   menuBottom: 32,
   fabRightOverflow: 35.46,
+  /** Push the FAB lower than the reference position (auto-scaled). */
+  bottomOffset: 40,
   openShiftX: 5.54,
   openShiftY: -49.05,
   iconSize: 24,
@@ -55,6 +57,7 @@ function useFabLayout() {
       menuBottom: DESIGN.menuBottom * s,
       menuRightInset: DESIGN.menuRightInset * s,
       fabRight: DESIGN.fabRightOverflow * s,
+      bottomOffset: DESIGN.bottomOffset * s,
       openShiftX: DESIGN.openShiftX * s,
       openShiftY: DESIGN.openShiftY * s,
       iconSize: DESIGN.iconSize * s,
@@ -151,7 +154,12 @@ export default function FABMenu({
     <Animated.View
       style={[
         styles.anchor,
-        { right: -layout.fabRight, width: layout.btnW, height: layout.btnH },
+        {
+          right: -layout.fabRight,
+          bottom: -layout.bottomOffset,
+          width: layout.btnW,
+          height: layout.btnH,
+        },
         anchorStyle,
       ]}
       pointerEvents="box-none"

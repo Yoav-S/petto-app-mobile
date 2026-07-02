@@ -2,9 +2,10 @@ import { Colors, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const DESIGN_WIDTH = 375;
 export const DESIGN_HEIGHT = 812;
+export const DESIGN_COVER_HEIGHT = 340;
 export const DESIGN_PANEL_TOP = 316;
 export const DESIGN_PANEL_HEIGHT = 496;
 export const DESIGN_PANEL_RADIUS = 24;
@@ -31,7 +33,7 @@ interface PetHeaderProps {
   petCount: number;
   loading: boolean;
   onSwitchPress: () => void;
-  onSettingsPress?: () => void;
+  onLogout?: () => void;
   children?: React.ReactNode;
 }
 
@@ -57,17 +59,19 @@ export default function PetHeader({
   petCount,
   loading,
   onSwitchPress,
-  onSettingsPress,
+  onLogout,
   children,
 }: PetHeaderProps) {
   const insets = useSafeAreaInsets();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const scaleX = screenWidth / DESIGN_WIDTH;
   const scaleY = screenHeight / DESIGN_HEIGHT;
-  const coverHeight = Math.round(DESIGN_PANEL_TOP * scaleY);
-  const panelMinHeight = Math.round(DESIGN_PANEL_HEIGHT * scaleY);
+  const coverHeight = Math.round(DESIGN_COVER_HEIGHT * scaleY);
+  const panelOverlap = Math.round((DESIGN_COVER_HEIGHT - DESIGN_PANEL_TOP) * scaleY);
+  const panelRadius = Math.round(DESIGN_PANEL_RADIUS * scaleX);
 
   useEffect(() => {
     if (loading) {
@@ -106,20 +110,41 @@ export default function PetHeader({
 
         <TouchableOpacity
           style={[styles.settingsButton, { top: insets.top + Spacing.sm }]}
-          onPress={onSettingsPress}
+          onPress={() => setMenuOpen((v) => !v)}
           activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={t('home.settings')}
         >
           <Ionicons name="settings-outline" size={22} color={Colors.primaryText} />
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.panelOuter, { marginTop: -DESIGN_PANEL_RADIUS, minHeight: panelMinHeight }]}>
+      {menuOpen ? (
+        <>
+          <Pressable style={styles.menuBackdrop} onPress={() => setMenuOpen(false)} />
+          <View style={[styles.settingsMenu, { top: insets.top + Spacing.sm + 44 + Spacing.xs }]}>
+            <TouchableOpacity
+              style={styles.settingsMenuItem}
+              onPress={() => {
+                setMenuOpen(false);
+                onLogout?.();
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="log-out-outline" size={18} color={Colors.primaryText} />
+              <Text style={styles.settingsMenuItemText}>{t('common.sign_out')}</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      ) : null}
+
+      <View style={[styles.panelOuter, { marginTop: -panelOverlap }]}>
         <View
           style={[
             styles.panelHeaderClip,
             {
-              borderTopLeftRadius: DESIGN_PANEL_RADIUS,
-              borderTopRightRadius: DESIGN_PANEL_RADIUS,
+              borderTopLeftRadius: panelRadius,
+              borderTopRightRadius: panelRadius,
             },
           ]}
         >
@@ -159,6 +184,7 @@ export default function PetHeader({
 
 const styles = StyleSheet.create({
   wrapper: {
+    flex: 1,
     backgroundColor: PANEL_BACKGROUND,
   },
   cover: {
@@ -191,8 +217,39 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
+  menuBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 90,
+  },
+  settingsMenu: {
+    position: 'absolute',
+    right: Spacing.lg,
+    minWidth: 160,
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    paddingVertical: Spacing.xs,
+    zIndex: 95,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  settingsMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+  },
+  settingsMenuItemText: {
+    fontFamily: 'Rubik-Medium',
+    fontSize: 15,
+    color: Colors.primaryText,
+  },
   panelOuter: {
-    backgroundColor: PANEL_BACKGROUND,
+    flex: 1,
+    backgroundColor: 'transparent',
     overflow: 'visible',
   },
   panelHeaderClip: {

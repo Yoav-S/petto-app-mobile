@@ -1,6 +1,7 @@
 {
   "home": {
     "switch": "Switch",
+    "settings": "Settings",
     "noPet": "No pet yet",
     "addFirstPet": "Add your first pet to get started",
     "vaccinesCard": {

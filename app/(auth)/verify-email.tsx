@@ -6,12 +6,13 @@ import {
   TouchableOpacity,
   Pressable,
   StyleSheet,
-  SafeAreaView,
   ActivityIndicator,
   KeyboardAvoidingView,
   ScrollView,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ApiError } from '@/services/api';
 import { getErrorMessage } from '@/services/errors';
@@ -30,6 +31,7 @@ const RESEND_COOLDOWN_SEC = 20;
 
 export default function VerifyEmailScreen() {
   const router = useRouter();
+  const { height: screenHeight } = useWindowDimensions();
   const email = getPendingEmail() ?? '';
   const inputRef = useRef<TextInput>(null);
   const verifyLockRef = useRef(false);
@@ -129,14 +131,14 @@ export default function VerifyEmailScreen() {
   const activeIndex = Math.min(otp.length, OTP_LENGTH - 1);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: screenHeight * 0.06 }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -253,7 +255,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: Spacing.xl,
     justifyContent: 'flex-start',
-    paddingTop: Spacing.xl,
     paddingBottom: Spacing.xl,
   },
   card: {
