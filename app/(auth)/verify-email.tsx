@@ -22,7 +22,6 @@ import {
   verifyOtpAndSignIn,
   resendOtp,
   consumeVerifyScreenMessage,
-  consumePendingAuthIntent,
 } from '@/services/auth';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 
@@ -84,9 +83,8 @@ export default function VerifyEmailScreen() {
     try {
       const profile = await verifyOtpAndSignIn(email, otp);
       verifiedRef.current = true;
-      // Server is the source of truth: even if the user tapped "Sign up",
-      // an existing account that already has a pet goes straight into the app.
-      consumePendingAuthIntent();
+      // Server is the source of truth: an existing account that already has a
+      // pet goes straight into the app; a new account starts pet onboarding.
       if (profile.has_pets) {
         router.replace('/(tabs)' as any);
       } else {
@@ -254,8 +252,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: Spacing.xl,
-    justifyContent: 'center',
-    paddingVertical: Spacing.xl,
+    justifyContent: 'flex-start',
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.xl,
   },
   card: {
     backgroundColor: Colors.surface,

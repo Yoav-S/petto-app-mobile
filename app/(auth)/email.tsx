@@ -14,22 +14,15 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ApiError } from '@/services/api';
 import { getErrorMessage } from '@/services/errors';
-import {
-  sendOtp,
-  setPendingEmail,
-  setPendingAuthIntent,
-  type AuthIntent,
-} from '@/services/auth';
+import { sendOtp, setPendingEmail } from '@/services/auth';
 import { t } from '@/i18n';
 import { Colors, Radius, Spacing } from '@/constants/theme';
-import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function EmailAuthScreen() {
   const router = useRouter();
   const inputRef = useRef<TextInput>(null);
-  const [intent, setIntent] = useState<AuthIntent>('signup');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +36,6 @@ export default function EmailAuthScreen() {
     setIsLoading(true);
     setError('');
     try {
-      setPendingAuthIntent(intent);
       setPendingEmail(trimmed);
       await sendOtp(trimmed);
       router.push('/(auth)/verify-email' as never);
@@ -76,25 +68,6 @@ export default function EmailAuthScreen() {
 
           <Text style={styles.title}>{t('auth.email_title')}</Text>
           <Text style={styles.subtitle}>{t('auth.email_subtitle')}</Text>
-
-          <View style={styles.intentRow}>
-            <Pressable
-              style={[styles.intentBtn, intent === 'signup' && styles.intentBtnActive]}
-              onPress={() => setIntent('signup')}
-            >
-              <Text style={[styles.intentText, intent === 'signup' && styles.intentTextActive]}>
-                {t('auth.signup')}
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[styles.intentBtn, intent === 'login' && styles.intentBtnActive]}
-              onPress={() => setIntent('login')}
-            >
-              <Text style={[styles.intentText, intent === 'login' && styles.intentTextActive]}>
-                {t('auth.login')}
-              </Text>
-            </Pressable>
-          </View>
 
           <TextInput
             ref={inputRef}
@@ -136,14 +109,6 @@ export default function EmailAuthScreen() {
               <Text style={styles.buttonText}>{t('onboarding.continue')}</Text>
             </View>
           )}
-
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>{t('auth.or')}</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <GoogleSignInButton label={t('auth.google_continue')} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -187,33 +152,6 @@ const styles = StyleSheet.create({
     color: Colors.secondaryText,
     marginBottom: Spacing.xl,
   },
-  intentRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
-  },
-  intentBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  intentBtnActive: {
-    backgroundColor: Colors.primaryText,
-    borderColor: Colors.primaryText,
-  },
-  intentText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 14,
-    color: Colors.primaryText,
-  },
-  intentTextActive: {
-    color: Colors.surface,
-  },
   input: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
@@ -246,21 +184,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     color: Colors.surface,
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    marginVertical: Spacing.xl,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  dividerText: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 12,
-    color: Colors.secondaryText,
   },
 });
