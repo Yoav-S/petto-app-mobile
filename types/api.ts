@@ -25,6 +25,8 @@ export interface Vaccination {
   date: string;
   next_date?: string | null;
   status: string;
+  note?: string | null;
+  created_at?: string;
 }
 
 export interface Reminder {
@@ -33,6 +35,7 @@ export interface Reminder {
   title: string;
   date: string;
   time: string;
+  repeat: string;
   status: string;
   note?: string | null;
 }
@@ -45,4 +48,19 @@ export interface MedicalRecord {
   created_at: string;
   latest_note_preview?: string | null;
   linked_reminder_time?: string | null;
+}
+
+export interface HealthNote {
+  id: string;
+  medical_record_id: string;
+  text: string;
+  photo_url?: string | null;
+  linked_reminder_id?: string | null;
+  linked_reminder_date?: string | null;
+  linked_reminder_time?: string | null;
+  created_at: string;
+}
+
+export interface MedicalRecordDetail extends MedicalRecord {
+  notes: HealthNote[];
 }

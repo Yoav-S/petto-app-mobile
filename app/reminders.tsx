@@ -1,6 +1,16 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, FlatList, SafeAreaView, TouchableOpacity } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  SafeAreaView,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import SegmentedControl from '@/components/ui/SegmentedControl';
@@ -8,112 +18,190 @@ import EmptyState from '@/components/ui/EmptyState';
 import ReminderListItem from '@/components/reminders/ReminderListItem';
 import ReminderActionSheet from '@/components/reminders/ReminderActionSheet';
 import Snackbar from '@/components/ui/Snackbar';
-import { Ionicons } from '@expo/vector-icons';
+import { t } from '@/i18n';
+import { useActivePet } from '@/store/petStore';
+import {
+  listReminders,
+  updateReminderStatus,
+  type ReminderTab,
+} from '@/services/reminders';
+import { repeatLabel } from '@/components/pickers/RepeatPickerSheet';
+import { getErrorMessage } from '@/services/errors';
+import { formatDisplayDate } from '@/utils/calendar';
+import type { Reminder } from '@/types/api';
+import type { RepeatOption } from '@/services/reminders';
+
+const TABS = ['Today', 'Upcoming', 'Recent'];
+const TAB_TO_API: Record<string, ReminderTab> = {
+  Today: 'today',
+  Upcoming: 'upcoming',
+  Recent: 'recent',
+};
+
+function reminderSubtitle(item: Reminder): string {
+  if (item.note) return item.note;
+  if (item.repeat && item.repeat !== 'off') return repeatLabel(item.repeat as RepeatOption);
+  return '';
+}
+
+function reminderTimeOrDate(item: Reminder, tab: string): string {
+  if (tab === 'Today') return item.time;
+  if (tab === 'Recent') {
+    const status = t(`status.${item.status}`);
+    return `${status === `status.${item.status}` ? item.status : status}\n${formatDisplayDate(item.date)}`;
+  }
+  return `${formatDisplayDate(item.date)}\n${item.time}`;
+}
 
 export default function RemindersScreen() {
   const router = useRouter();
+  const { activePetId } = useActivePet();
   const { deletedId } = useLocalSearchParams();
+
   const [activeTab, setActiveTab] = useState('Today');
+  const [items, setItems] = useState<Reminder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
-  const [selectedReminder, setSelectedReminder] = useState<any>(null);
+  const [selectedReminder, setSelectedReminder] = useState<Reminder | null>(null);
 
   React.useEffect(() => {
-    if (deletedId) {
-      setSnackbarVisible(true);
-    }
+    if (deletedId) setSnackbarVisible(true);
   }, [deletedId]);
 
-  const data: any[] = [];
+  const fetchData = useCallback(async () => {
+    if (!activePetId) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+    try {
+      setError(null);
+      const list = await listReminders(activePetId, TAB_TO_API[activeTab]);
+      setItems(list);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [activePetId, activeTab]);
+
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      fetchData();
+    }, [fetchData]),
+  );
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchData();
+  }, [fetchData]);
+
+  const handleStatus = async (status: 'completed' | 'missed') => {
+    if (!activePetId || !selectedReminder) return;
+    setActionSheetVisible(false);
+    try {
+      await updateReminderStatus(activePetId, selectedReminder.id, status);
+      fetchData();
+    } catch {
+      /* keep list as-is; a transient error shouldn't block the UI */
+    }
+  };
 
   const renderEmptyState = () => {
     if (activeTab === 'Recent') {
-      return (
-        <EmptyState 
-          title="No recent activity" 
-          subtitle="Completed reminders\nwill appear here" 
-        />
-      );
+      return <EmptyState title={t('reminders.empty_recent_title')} subtitle={t('reminders.empty_recent_subtitle')} />;
     }
     if (activeTab === 'Upcoming') {
-      return (
-        <EmptyState 
-          title="No upcoming reminders" 
-          subtitle="You're all set for now" 
-        />
-      );
+      return <EmptyState title={t('reminders.empty_upcoming_title')} subtitle={t('reminders.empty_upcoming_subtitle')} />;
     }
     return (
-      <EmptyState 
-        title="No reminders yet" 
-        subtitle="Start by adding your first reminder"
-        actionTitle="Add reminder"
-        onAction={() => {}}
+      <EmptyState
+        title={t('reminders.empty_today_title')}
+        subtitle={t('reminders.empty_today_subtitle')}
+        actionTitle={t('reminders.add')}
+        onAction={() => router.push('/reminders/add' as never)}
       />
     );
   };
 
-  const handleReminderPress = (item: any) => {
-    setSelectedReminder(item);
-    setActionSheetVisible(true);
-  };
-
-  const handleDetailsPress = () => {
-    setActionSheetVisible(false);
-    if (selectedReminder) {
-      router.push(`/reminders/${selectedReminder.id}` as any);
-    }
-  };
-
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScreenHeader title="Reminders" />
-      
-      <SegmentedControl 
-        tabs={['Today', 'Upcoming', 'Recent']} 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab} 
-      />
-      
-      <FlatList
-        data={data}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <ReminderListItem 
-            title={item.title}
-            subtitle={item.subtitle}
-            timeOrDate={item.timeOrDate}
-            categoryAccent={item.categoryAccent}
-            onPress={() => handleReminderPress(item)}
-          />
-        )}
-        ListEmptyComponent={renderEmptyState}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
+      <ScreenHeader title={t('reminders.title')} />
 
-      <TouchableOpacity style={styles.fab} activeOpacity={0.8}>
+      <SegmentedControl tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {loading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator color={Colors.primaryText} />
+        </View>
+      ) : error ? (
+        <View style={styles.centered}>
+          <EmptyState
+            title={t('common.error')}
+            subtitle={error}
+            actionTitle={t('common.retry')}
+            onAction={() => {
+              setLoading(true);
+              fetchData();
+            }}
+          />
+        </View>
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <ReminderListItem
+              title={item.title}
+              subtitle={reminderSubtitle(item)}
+              timeOrDate={reminderTimeOrDate(item, activeTab)}
+              categoryAccent={Colors.category.reminders}
+              onPress={() => {
+                setSelectedReminder(item);
+                setActionSheetVisible(true);
+              }}
+            />
+          )}
+          ListEmptyComponent={renderEmptyState}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        />
+      )}
+
+      <TouchableOpacity
+        style={styles.fab}
+        activeOpacity={0.8}
+        onPress={() => router.push('/reminders/add' as never)}
+      >
         <Ionicons name="add" size={28} color={Colors.surface} />
       </TouchableOpacity>
-      
-      <Snackbar 
-        visible={snackbarVisible} 
-        message="Reminder deleted" 
-        actionText="Undo"
-        onAction={() => setSnackbarVisible(false)}
+
+      <Snackbar
+        visible={snackbarVisible}
+        message={t('reminders.deleted')}
         onHide={() => setSnackbarVisible(false)}
       />
 
-      <ReminderActionSheet 
+      <ReminderActionSheet
         visible={actionSheetVisible}
         title={selectedReminder?.title}
-        subtitle={selectedReminder?.subtitle}
-        time={selectedReminder?.timeOrDate?.split('\n')[0]}
+        subtitle={selectedReminder ? reminderSubtitle(selectedReminder) : undefined}
+        time={selectedReminder?.time}
         context={activeTab}
         onClose={() => setActionSheetVisible(false)}
-        onDetailsPress={handleDetailsPress}
-        onDone={() => setActionSheetVisible(false)}
-        onMissed={() => setActionSheetVisible(false)}
+        onDetailsPress={() => {
+          setActionSheetVisible(false);
+          if (selectedReminder) router.push(`/reminders/${selectedReminder.id}` as never);
+        }}
+        onDone={() => handleStatus('completed')}
+        onMissed={() => handleStatus('missed')}
       />
     </SafeAreaView>
   );
@@ -124,8 +212,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  centered: {
+    flex: 1,
+  },
   listContent: {
-    paddingBottom: 100,
+    paddingBottom: 120,
     flexGrow: 1,
   },
   fab: {

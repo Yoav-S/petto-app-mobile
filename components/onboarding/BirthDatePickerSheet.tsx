@@ -30,6 +30,10 @@ interface BirthDatePickerSheetProps {
   initialDate: Date | null;
   onClose: () => void;
   onConfirm: (isoDate: string) => void;
+  /** Allow selecting dates in the future (reminders / vaccine next date). */
+  allowFuture?: boolean;
+  /** Optional sheet title override. */
+  title?: string;
 }
 
 export default function BirthDatePickerSheet({
@@ -37,6 +41,8 @@ export default function BirthDatePickerSheet({
   initialDate,
   onClose,
   onConfirm,
+  allowFuture = false,
+  title,
 }: BirthDatePickerSheetProps) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -49,7 +55,10 @@ export default function BirthDatePickerSheet({
 
   const sheetHeight = PET_BIRTH_SHEET.height * sy;
   const cells = useMemo(() => getCalendarCells(viewYear, viewMonth), [viewYear, viewMonth]);
-  const years = useMemo(() => getYearOptions(), []);
+  const years = useMemo(
+    () => getYearOptions(allowFuture ? { futureYears: 10 } : undefined),
+    [allowFuture],
+  );
 
   useEffect(() => {
     if (!visible) return;
@@ -68,7 +77,7 @@ export default function BirthDatePickerSheet({
   };
 
   const handleSelectCell = (cell: CalendarCell) => {
-    if (isFutureDate(cell.date)) return;
+    if (!allowFuture && isFutureDate(cell.date)) return;
     if (!cell.inCurrentMonth) {
       setViewYear(cell.date.getFullYear());
       setViewMonth(cell.date.getMonth());
@@ -91,7 +100,7 @@ export default function BirthDatePickerSheet({
             key,
             index,
             label: t(`petOnboarding.month_${key}`),
-            disabled: viewYear === now.getFullYear() && index > now.getMonth(),
+            disabled: !allowFuture && viewYear === now.getFullYear() && index > now.getMonth(),
           }))
         : years.map((year) => ({
             key: String(year),
@@ -116,7 +125,7 @@ export default function BirthDatePickerSheet({
                   } else {
                     setViewYear(item.index);
                     // Snap month back if the new year makes it a future month.
-                    if (item.index === now.getFullYear() && viewMonth > now.getMonth()) {
+                    if (!allowFuture && item.index === now.getFullYear() && viewMonth > now.getMonth()) {
                       setViewMonth(now.getMonth());
                     }
                   }
@@ -166,7 +175,7 @@ export default function BirthDatePickerSheet({
                 { fontSize: PET_BIRTH_SHEET.titleSize * sx, lineHeight: PET_BIRTH_SHEET.titleLine * sy },
               ]}
             >
-              {t('petOnboarding.birth_sheet_title')}
+              {title ?? t('petOnboarding.birth_sheet_title')}
             </Text>
             <Pressable
               onPress={onClose}
@@ -236,7 +245,7 @@ export default function BirthDatePickerSheet({
             >
               {cells.map((cell) => {
                 const isSelected = selected ? isSameDay(cell.date, selected) : false;
-                const isFuture = isFutureDate(cell.date);
+                const isFuture = !allowFuture && isFutureDate(cell.date);
                 const color = isFuture
                   ? PET_BIRTH_SHEET.mutedDayColor
                   : cell.inCurrentMonth

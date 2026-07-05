@@ -3,13 +3,18 @@ import { DESIGN_WIDTH } from '@/components/home/PetHeader';
 import { t } from '@/i18n';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useMemo } from 'react';
-import { StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Animated, {
   interpolate,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+/** Full-screen scrim opacity when the menu is fully open (Figma: #000 @ 0.2). */
+const SCRIM_OPACITY = 0.2;
 
 /** Reference frame (Figma / your tuned device) */
 const DESIGN = {
@@ -23,7 +28,8 @@ const DESIGN = {
   menuBottom: 32,
   fabRightOverflow: 35.46,
   /** Push the FAB lower than the reference position (auto-scaled). */
-  bottomOffset: 40,
+  bottomOffsetClosed: 30,
+  bottomOffsetOpen: 20,
   openShiftX: 5.54,
   openShiftY: -49.05,
   iconSize: 24,
@@ -57,7 +63,8 @@ function useFabLayout() {
       menuBottom: DESIGN.menuBottom * s,
       menuRightInset: DESIGN.menuRightInset * s,
       fabRight: DESIGN.fabRightOverflow * s,
-      bottomOffset: DESIGN.bottomOffset * s,
+      bottomOffsetClosed: DESIGN.bottomOffsetClosed * s,
+      bottomOffsetOpen: DESIGN.bottomOffsetOpen * s,
       openShiftX: DESIGN.openShiftX * s,
       openShiftY: DESIGN.openShiftY * s,
       iconSize: DESIGN.iconSize * s,
@@ -105,10 +112,14 @@ export default function FABMenu({
   const close = () => onOpenChange(false);
   const toggle = () => onOpenChange(!open);
 
+  // Closed rests at bottomOffsetClosed; opening lifts by the extra difference so it
+  // effectively sits at bottomOffsetOpen while keeping the tuned open-shift intact.
+  const openExtraLift = layout.bottomOffsetClosed - layout.bottomOffsetOpen;
+
   const anchorStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: interpolate(progress.value, [0, 1], [0, layout.openShiftX]) },
-      { translateY: interpolate(progress.value, [0, 1], [0, layout.openShiftY]) },
+      { translateY: interpolate(progress.value, [0, 1], [0, layout.openShiftY - openExtraLift]) },
     ],
   }));
 
@@ -140,6 +151,10 @@ export default function FABMenu({
     opacity: progress.value,
   }));
 
+  const scrimStyle = useAnimatedStyle(() => ({
+    opacity: progress.value * SCRIM_OPACITY,
+  }));
+
   const itemAnim = (index: number) =>
     useAnimatedStyle(() => ({
       opacity: progress.value,
@@ -151,19 +166,25 @@ export default function FABMenu({
   const s2 = itemAnim(2);
 
   return (
-    <Animated.View
-      style={[
-        styles.anchor,
-        {
-          right: -layout.fabRight,
-          bottom: -layout.bottomOffset,
-          width: layout.btnW,
-          height: layout.btnH,
-        },
-        anchorStyle,
-      ]}
-      pointerEvents="box-none"
-    >
+    <>
+      <AnimatedPressable
+        style={[styles.scrim, scrimStyle]}
+        pointerEvents={open ? 'auto' : 'none'}
+        onPress={close}
+      />
+      <Animated.View
+        style={[
+          styles.anchor,
+          {
+            right: -layout.fabRight,
+            bottom: -layout.bottomOffsetClosed,
+            width: layout.btnW,
+            height: layout.btnH,
+          },
+          anchorStyle,
+        ]}
+        pointerEvents="box-none"
+      >
       <Animated.View
         style={[
           styles.menu,
@@ -232,7 +253,8 @@ export default function FABMenu({
           </Animated.View>
         </TouchableOpacity>
       </Animated.View>
-    </Animated.View>
+      </Animated.View>
+    </>
   );
 }
 
@@ -270,6 +292,15 @@ function MenuItem({
 }
 
 const styles = StyleSheet.create({
+  scrim: {
+    position: 'absolute',
+    top: -2000,
+    bottom: -2000,
+    left: -2000,
+    right: -2000,
+    backgroundColor: '#000000',
+    zIndex: 90,
+  },
   anchor: {
     position: 'absolute',
     bottom: 0,

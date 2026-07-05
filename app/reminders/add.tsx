@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -12,36 +12,24 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import ScreenHeader from '@/components/ui/ScreenHeader';
-import EmptyState from '@/components/ui/EmptyState';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import TimePickerSheet from '@/components/pickers/TimePickerSheet';
 import RepeatPickerSheet, { repeatLabel } from '@/components/pickers/RepeatPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import {
-  getReminder,
-  updateReminder,
-  deleteReminder,
-  type RepeatOption,
-} from '@/services/reminders';
+import { createReminder, type RepeatOption } from '@/services/reminders';
 import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDate, parseIsoDate } from '@/utils/calendar';
 
 type Sheet = 'date' | 'time' | 'repeat' | null;
 
-export default function ReminderDetailsScreen() {
+export default function AddReminderScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
   const { activePetId } = useActivePet();
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [notFound, setNotFound] = useState(false);
 
   const [title, setTitle] = useState('');
   const [date, setDate] = useState<string | null>(null);
@@ -49,42 +37,15 @@ export default function ReminderDetailsScreen() {
   const [repeat, setRepeat] = useState<RepeatOption>('off');
   const [note, setNote] = useState('');
   const [sheet, setSheet] = useState<Sheet>(null);
-  const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    if (!activePetId || !id) {
-      setNotFound(true);
-      setLoading(false);
-      return;
-    }
-    try {
-      setError(null);
-      const reminder = await getReminder(activePetId, id);
-      setTitle(reminder.title);
-      setDate(reminder.date);
-      setTime(reminder.time);
-      setRepeat((reminder.repeat as RepeatOption) ?? 'off');
-      setNote(reminder.note ?? '');
-    } catch (err) {
-      setError(getErrorMessage(err));
-      setNotFound(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [activePetId, id]);
-
-  useFocusEffect(
-    useCallback(() => {
-      setLoading(true);
-      fetchData();
-    }, [fetchData]),
-  );
+  const canSave = title.trim().length > 0 && !!date && !!time && !submitting;
 
   const handleSave = async () => {
-    if (!activePetId || !id || !title.trim() || !date || !time) return;
+    if (!canSave || !activePetId || !date || !time) return;
     try {
-      setSaving(true);
-      await updateReminder(activePetId, id, {
+      setSubmitting(true);
+      await createReminder(activePetId, {
         title: title.trim(),
         date,
         time,
@@ -94,59 +55,13 @@ export default function ReminderDetailsScreen() {
       router.back();
     } catch (err) {
       Alert.alert(t('common.error'), getErrorMessage(err));
-      setSaving(false);
+      setSubmitting(false);
     }
   };
 
-  const handleDelete = () => {
-    if (!activePetId || !id) return;
-    Alert.alert(t('reminders.delete_confirm_title'), t('reminders.delete_confirm_body'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('common.delete'),
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteReminder(activePetId, id);
-            router.replace({ pathname: '/reminders', params: { deletedId: id } } as never);
-          } catch (err) {
-            Alert.alert(t('common.error'), getErrorMessage(err));
-          }
-        },
-      },
-    ]);
-  };
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <ScreenHeader title={t('reminders.title')} />
-        <View style={styles.centered}>
-          <ActivityIndicator color={Colors.primaryText} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (notFound) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <ScreenHeader title={t('reminders.title')} />
-        <View style={styles.centered}>
-          <EmptyState
-            title={t('reminders.not_found_title')}
-            subtitle={error ?? t('reminders.not_found_subtitle')}
-            actionTitle={t('reminders.back')}
-            onAction={() => router.back()}
-          />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScreenHeader title={t('reminders.details_title')} />
+      <ScreenHeader title={t('reminders.add_title')} />
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -160,6 +75,7 @@ export default function ReminderDetailsScreen() {
             onChangeText={setTitle}
             placeholder={t('reminders.field_title_placeholder')}
             placeholderTextColor={Colors.secondaryText}
+            autoFocus
           />
 
           <Text style={styles.label}>{t('reminders.field_date')}</Text>
@@ -194,20 +110,16 @@ export default function ReminderDetailsScreen() {
             multiline
             textAlignVertical="top"
           />
-
-          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete} activeOpacity={0.7}>
-            <Text style={styles.deleteText}>{t('reminders.delete')}</Text>
-          </TouchableOpacity>
         </ScrollView>
 
         <View style={styles.footer}>
           <TouchableOpacity
-            style={[styles.saveButton, (!title.trim() || !date || !time || saving) && styles.saveButtonDisabled]}
+            style={[styles.saveButton, !canSave && styles.saveButtonDisabled]}
             onPress={handleSave}
-            disabled={!title.trim() || !date || !time || saving}
+            disabled={!canSave}
             activeOpacity={0.85}
           >
-            {saving ? (
+            {submitting ? (
               <ActivityIndicator color={Colors.surface} />
             ) : (
               <Text style={styles.saveText}>{t('common.save')}</Text>
@@ -256,9 +168,6 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  centered: {
-    flex: 1,
-  },
   content: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
@@ -303,16 +212,6 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     color: Colors.secondaryText,
-  },
-  deleteButton: {
-    marginTop: Spacing.xl,
-    alignItems: 'center',
-    padding: Spacing.md,
-  },
-  deleteText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: Colors.error,
   },
   footer: {
     paddingHorizontal: Spacing.lg,

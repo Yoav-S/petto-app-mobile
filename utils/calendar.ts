@@ -73,9 +73,25 @@ export function isFutureDate(date: Date): boolean {
   return date.getTime() > endOfToday.getTime();
 }
 
-export function getYearOptions(): number[] {
+export function getYearOptions(options?: { pastYears?: number; futureYears?: number }): number[] {
+  const { pastYears = 30, futureYears = 0 } = options ?? {};
   const current = new Date().getFullYear();
-  return Array.from({ length: 31 }, (_, i) => current - i);
+  const years: number[] = [];
+  for (let y = current + futureYears; y >= current - pastYears; y -= 1) {
+    years.push(y);
+  }
+  return years;
+}
+
+/** Format an ISO date (YYYY-MM-DD) or Date as DD.MM.YY for display. */
+export function formatDisplayDate(value: string | Date | null | undefined): string {
+  if (!value) return '';
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return '';
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = String(date.getFullYear()).slice(-2);
+  return `${day}.${month}.${year}`;
 }
 
 export const MONTH_KEYS = [

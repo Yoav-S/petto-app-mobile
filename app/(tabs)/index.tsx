@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Pressable } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { useActivePet } from '@/store/petStore';
 import { Colors, Spacing } from '@/constants/theme';
 import { apiGet } from '@/services/api';
@@ -44,6 +46,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [fabOpen, setFabOpen] = useState(false);
+  const [switchVisible, setSwitchVisible] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!user) {
@@ -124,12 +127,24 @@ export default function HomeScreen() {
     fetchData();
   }, [fetchData, authLoading]);
 
+  // Refresh cards when returning from a create/edit flow.
+  useFocusEffect(
+    useCallback(() => {
+      if (authLoading) return;
+      fetchData();
+    }, [fetchData, authLoading]),
+  );
+
+  const handleSelectPet = async (petId: string) => {
+    setSwitchVisible(false);
+    if (petId !== activePetId) {
+      await setActivePetId(petId);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <View style={styles.screen}>
-        {fabOpen ? (
-          <Pressable style={styles.fabBackdrop} onPress={() => setFabOpen(false)} />
-        ) : null}
         <View style={styles.homeFrame}>
           {(syncError || fetchError) && (
             <View style={styles.errorBanner}>
@@ -152,7 +167,7 @@ export default function HomeScreen() {
             pet={pet}
             petCount={pets.length}
             loading={loading}
-            onSwitchPress={() => {}}
+            onSwitchPress={() => setSwitchVisible(true)}
             onLogout={() => {
               void signOut();
             }}
@@ -198,6 +213,35 @@ export default function HomeScreen() {
           </PetHeader>
         </View>
       </View>
+
+      <Modal
+        visible={switchVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSwitchVisible(false)}
+      >
+        <Pressable style={styles.switchOverlay} onPress={() => setSwitchVisible(false)}>
+          <Pressable style={styles.switchSheet} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.switchTitle}>{t('home.switch')}</Text>
+            {pets.map((p) => {
+              const isActive = p.id === activePetId;
+              return (
+                <TouchableOpacity
+                  key={p.id}
+                  style={styles.switchRow}
+                  onPress={() => handleSelectPet(p.id)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.switchName}>{p.name}</Text>
+                  {isActive ? (
+                    <Ionicons name="checkmark" size={20} color={Colors.primaryText} />
+                  ) : null}
+                </TouchableOpacity>
+              );
+            })}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -211,11 +255,6 @@ const styles = StyleSheet.create({
     flex: 1,
     overflow: 'visible',
     position: 'relative',
-  },
-  fabBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    zIndex: 80,
   },
   homeFrame: {
     flex: 1,
@@ -256,5 +295,35 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'visible',
     zIndex: 50,
+  },
+  switchOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.xl,
+  },
+  switchSheet: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: Spacing.lg,
+  },
+  switchTitle: {
+    fontFamily: 'Rubik-Medium',
+    fontSize: 18,
+    color: Colors.primaryText,
+    marginBottom: Spacing.sm,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  switchName: {
+    fontFamily: 'Rubik-Regular',
+    fontSize: 16,
+    color: Colors.primaryText,
   },
 });

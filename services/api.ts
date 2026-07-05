@@ -148,6 +148,58 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   return handleResponse<T>(res, 'POST', path);
 }
 
+/** Shared body-carrying request for authenticated PATCH / PUT. */
+async function apiWrite<T>(method: 'PATCH' | 'PUT', path: string, body: unknown): Promise<T> {
+  const token = await getToken();
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(buildUrl(path), {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    if (BASE_URL.includes('localhost')) {
+      throw new Error(
+        'Network request failed. On a physical device, localhost points to the phone. Set EXPO_PUBLIC_API_BASE_URL to your computer LAN IP.',
+      );
+    }
+    throw error;
+  }
+  return handleResponse<T>(res, method, path);
+}
+
+export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  return apiWrite<T>('PATCH', path, body);
+}
+
+export async function apiPut<T>(path: string, body: unknown): Promise<T> {
+  return apiWrite<T>('PUT', path, body);
+}
+
+/** DELETE — server responds 204; handleResponse resolves to undefined. */
+export async function apiDelete(path: string): Promise<void> {
+  const token = await getToken();
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(buildUrl(path), {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch (error) {
+    if (BASE_URL.includes('localhost')) {
+      throw new Error(
+        'Network request failed. On a physical device, localhost points to the phone. Set EXPO_PUBLIC_API_BASE_URL to your computer LAN IP.',
+      );
+    }
+    throw error;
+  }
+  await handleResponse<void>(res, 'DELETE', path);
+}
+
 /** Public POST — no Firebase token (register, OTP verify, resend). */
 export async function apiPostPublic<T>(path: string, body: unknown): Promise<T> {
   let res: Response;

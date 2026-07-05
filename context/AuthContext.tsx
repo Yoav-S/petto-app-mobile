@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import auth from '@/services/firebaseAuth';
 import { syncUserWithBackend } from '@/services/auth';
+import { registerForPushNotifications } from '@/services/notifications';
 import { clearOnboardingComplete } from '@/services/onboarding';
 import { getErrorMessage } from '@/services/errors';
 import * as WebBrowser from 'expo-web-browser';
@@ -106,6 +107,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSyncError(null);
     try {
       await syncUserWithBackend();
+      // Fire-and-forget: register push token + timezone. Never blocks login.
+      void registerForPushNotifications();
     } catch (error) {
       console.error('Backend auth handshake failed:', error);
       setSyncError(getErrorMessage(error));

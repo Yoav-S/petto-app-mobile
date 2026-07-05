@@ -9,6 +9,7 @@ interface HealthListItemProps {
   dateOrTime: string;
   icon?: any;
   onPress?: () => void;
+  onLongPress?: () => void;
 }
 
 export default function HealthListItem({ 
@@ -16,12 +17,14 @@ export default function HealthListItem({
   subtitle, 
   dateOrTime, 
   icon,
-  onPress 
+  onPress,
+  onLongPress 
 }: HealthListItemProps) {
   return (
     <TouchableOpacity 
       style={styles.card} 
       onPress={onPress}
+      onLongPress={onLongPress}
       activeOpacity={0.7}
       disabled={!onPress}
     >
