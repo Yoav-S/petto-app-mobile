@@ -1,18 +1,13 @@
 import { Platform } from 'react-native';
-import Constants from 'expo-constants';
-import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { apiPost } from './api';
 
-// How notifications behave while the app is in the foreground.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+// Expo Go (SDK 53+) removed remote push support. Importing expo-notifications
+// there triggers a red LogBox error from its auto-registration side-effect, so
+// we must NOT import it eagerly — only lazily, and only outside Expo Go.
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+let handlerConfigured = false;
 
 function getDeviceTimezone(): string {
   try {
@@ -30,45 +25,66 @@ function getProjectId(): string | undefined {
   );
 }
 
+async function resolvePushToken(): Promise<string | null> {
+  // Lazy import so expo-notifications never loads (and never errors) in Expo Go.
+  const Notifications = await import('expo-notifications');
+  const Device = await import('expo-device');
+
+  if (!handlerConfigured) {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+    handlerConfigured = true;
+  }
+
+  if (!Device.isDevice) return null;
+
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'Default',
+      importance: Notifications.AndroidImportance.DEFAULT,
+    });
+  }
+
+  const { status: existing } = await Notifications.getPermissionsAsync();
+  let status = existing;
+  if (existing !== 'granted') {
+    const req = await Notifications.requestPermissionsAsync();
+    status = req.status;
+  }
+
+  if (status !== 'granted') return null;
+
+  const projectId = getProjectId();
+  const result = await Notifications.getExpoPushTokenAsync(
+    projectId ? { projectId } : undefined,
+  );
+  return result.data;
+}
+
 /**
  * Register this device for push notifications and sync the timezone.
  *
- * Safe to call on every login. In Expo Go (SDK 54) a push token cannot be
- * generated — that's expected; we still send the timezone so reminders are
- * scheduled correctly, and real push delivery starts working automatically
- * once the app runs as a development / production build.
+ * Safe to call on every login. In Expo Go a push token cannot be generated —
+ * that's expected; we still send the timezone so reminders are scheduled
+ * correctly, and real push delivery starts working automatically once the app
+ * runs as a development / production build.
  */
 export async function registerForPushNotifications(): Promise<void> {
   const timezone = getDeviceTimezone();
   let token: string | null = null;
 
-  try {
-    if (Device.isDevice) {
-      if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
-          name: 'Default',
-          importance: Notifications.AndroidImportance.DEFAULT,
-        });
-      }
-
-      const { status: existing } = await Notifications.getPermissionsAsync();
-      let status = existing;
-      if (existing !== 'granted') {
-        const req = await Notifications.requestPermissionsAsync();
-        status = req.status;
-      }
-
-      if (status === 'granted') {
-        const projectId = getProjectId();
-        const result = await Notifications.getExpoPushTokenAsync(
-          projectId ? { projectId } : undefined,
-        );
-        token = result.data;
-      }
+  if (!isExpoGo) {
+    try {
+      token = await resolvePushToken();
+    } catch (err) {
+      if (__DEV__) console.log('[push] token unavailable:', err);
     }
-  } catch (err) {
-    // Expected in Expo Go — remote push tokens aren't available there.
-    if (__DEV__) console.log('[push] token unavailable (likely Expo Go):', err);
   }
 
   try {

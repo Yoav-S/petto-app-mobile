@@ -51,6 +51,19 @@ export function toIsoDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+/** Add calendar years to an ISO date string (YYYY-MM-DD). */
+export function addYearsToIsoDate(iso: string, years: number): string {
+  const date = parseIsoDate(iso);
+  if (!date) return iso;
+  const next = new Date(date);
+  next.setFullYear(next.getFullYear() + years);
+  return toIsoDate(next);
+}
+
+export function todayIsoDate(): string {
+  return toIsoDate(new Date());
+}
+
 export function parseIsoDate(value: string | null): Date | null {
   if (!value) return null;
   const [y, m, d] = value.split('-').map(Number);
@@ -91,6 +104,17 @@ export function formatDisplayDate(value: string | Date | null | undefined): stri
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = String(date.getFullYear()).slice(-2);
+  return `${day}.${month}.${year}`;
+}
+
+/** Format an ISO date (YYYY-MM-DD) or Date as DD.MM.YYYY for display. */
+export function formatDisplayDateLong(value: string | Date | null | undefined): string {
+  if (!value) return '';
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return '';
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = String(date.getFullYear());
   return `${day}.${month}.${year}`;
 }
 

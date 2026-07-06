@@ -9,9 +9,10 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
@@ -19,23 +20,16 @@ import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { listVaccinations } from '@/services/vaccines';
 import { getErrorMessage } from '@/services/errors';
-import { formatDisplayDate } from '@/utils/calendar';
+import { formatDisplayDateLong } from '@/utils/calendar';
 import type { Vaccination } from '@/types/api';
 
-const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  up_to_date: { bg: Colors.category.remindersBg, text: Colors.category.reminders },
-  due_soon: { bg: Colors.category.notesBg, text: Colors.category.notes },
-  overdue: { bg: '#FBE9E9', text: Colors.error },
-};
-
-function StatusBadge({ status }: { status: string }) {
-  const palette = STATUS_COLORS[status] ?? STATUS_COLORS.up_to_date;
-  const label = t(`status.${status}`);
+function VaccineThumbnail({ uri }: { uri?: string | null }) {
+  if (uri) {
+    return <Image source={{ uri }} style={styles.thumb} contentFit="cover" />;
+  }
   return (
-    <View style={[styles.badge, { backgroundColor: palette.bg }]}>
-      <Text style={[styles.badgeText, { color: palette.text }]}>
-        {label === `status.${status}` ? status : label}
-      </Text>
+    <View style={[styles.thumb, styles.thumbPlaceholder]}>
+      <MaterialCommunityIcons name="needle" size={22} color={Colors.category.vaccines} />
     </View>
   );
 }
@@ -109,20 +103,29 @@ export default function VaccinesScreen() {
         data={items}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} activeOpacity={0.7}>
-            <View style={styles.cardTop}>
-              <Text style={styles.cardTitle}>{item.name}</Text>
-              <StatusBadge status={item.status} />
-            </View>
-            <Text style={styles.cardDate}>
-              {t('vaccines.given')} {formatDisplayDate(item.date)}
-            </Text>
-            {item.next_date ? (
-              <Text style={styles.cardDate}>
-                {t('vaccines.next')} {formatDisplayDate(item.next_date)}
+          <TouchableOpacity
+            style={styles.card}
+            activeOpacity={0.7}
+            onPress={() => router.push(`/vaccines/${item.id}` as never)}
+          >
+            <VaccineThumbnail uri={item.photo_url} />
+            <View style={styles.cardBody}>
+              <Text style={styles.cardTitle} numberOfLines={1}>
+                {item.name}
               </Text>
-            ) : null}
-            {item.note ? <Text style={styles.cardNote}>{item.note}</Text> : null}
+              <View style={styles.datesRow}>
+                <View style={styles.dateCol}>
+                  <Text style={styles.dateLabel}>{t('vaccines.vaccinated_on')}</Text>
+                  <Text style={styles.dateValue}>{formatDisplayDateLong(item.date)}</Text>
+                </View>
+                {item.next_date ? (
+                  <View style={[styles.dateCol, styles.dateColRight]}>
+                    <Text style={styles.dateLabel}>{t('vaccines.valid_until')}</Text>
+                    <Text style={styles.dateValue}>{formatDisplayDateLong(item.next_date)}</Text>
+                  </View>
+                ) : null}
+              </View>
+            </View>
           </TouchableOpacity>
         )}
         ListEmptyComponent={
@@ -142,7 +145,7 @@ export default function VaccinesScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScreenHeader title={t('vaccines.title')} />
+      <ScreenHeader title={t('vaccines.list_title')} />
       {renderContent()}
 
       <TouchableOpacity
@@ -175,45 +178,55 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.md,
     padding: Spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
   },
-  cardTop: {
-    flexDirection: 'row',
+  thumb: {
+    width: 52,
+    height: 52,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.background,
+  },
+  thumbPlaceholder: {
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.xs,
+    justifyContent: 'center',
+    backgroundColor: Colors.category.vaccinesBg,
+  },
+  cardBody: {
+    flex: 1,
+    marginLeft: Spacing.md,
   },
   cardTitle: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     color: Colors.primaryText,
+    marginBottom: Spacing.sm,
+  },
+  datesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  dateCol: {
     flex: 1,
-    marginRight: Spacing.md,
   },
-  cardDate: {
+  dateColRight: {
+    alignItems: 'flex-end',
+  },
+  dateLabel: {
     fontFamily: 'Rubik-Regular',
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.secondaryText,
-    marginTop: 2,
+    marginBottom: 2,
   },
-  cardNote: {
+  dateValue: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     color: Colors.primaryText,
-    marginTop: Spacing.xs,
-  },
-  badge: {
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  badgeText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 12,
   },
   fab: {
     position: 'absolute',

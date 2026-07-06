@@ -22,10 +22,16 @@ export interface Vaccination {
   id: string;
   pet_id: string;
   name: string;
+  /** Date the vaccine was administered ("Vaccinated on"). */
   date: string;
+  /** Date the vaccine is valid until ("Valid until"). */
   next_date?: string | null;
   status: string;
   note?: string | null;
+  /** URL of the uploaded proof photo (vaccine card / certificate). */
+  photo_url?: string | null;
+  /** Veterinarian or clinic name. */
+  vet_clinic?: string | null;
   created_at?: string;
 }
 

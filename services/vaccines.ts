@@ -6,6 +6,8 @@ export interface CreateVaccinationInput {
   date: string;
   next_date?: string | null;
   note?: string | null;
+  photo_url?: string | null;
+  vet_clinic?: string | null;
 }
 
 export type UpdateVaccinationInput = Partial<CreateVaccinationInput>;
