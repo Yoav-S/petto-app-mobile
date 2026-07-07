@@ -8,10 +8,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -22,6 +24,11 @@ import { listVaccinations } from '@/services/vaccines';
 import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDateLong } from '@/utils/calendar';
 import type { Vaccination } from '@/types/api';
+
+const DESIGN_HEIGHT = 812;
+const EMPTY_TOP = 304;
+const EMPTY_GAP = 20;
+const HEADER_BLOCK = 64;
 
 function VaccineThumbnail({ uri }: { uri?: string | null }) {
   if (uri) {
@@ -37,6 +44,11 @@ function VaccineThumbnail({ uri }: { uri?: string | null }) {
 export default function VaccinesScreen() {
   const router = useRouter();
   const { activePetId } = useActivePet();
+  const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const sy = height / DESIGN_HEIGHT;
+  const emptyTop = Math.max(Spacing.lg, EMPTY_TOP * sy - (insets.top + HEADER_BLOCK));
+  const emptyGap = EMPTY_GAP * sy;
 
   const [items, setItems] = useState<Vaccination[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,9 +146,11 @@ export default function VaccinesScreen() {
             subtitle={t('vaccines.empty_subtitle')}
             actionTitle={t('vaccines.add')}
             onAction={() => router.push('/vaccines/add' as never)}
+            topOffset={emptyTop}
+            contentGap={emptyGap}
           />
         }
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, items.length === 0 && styles.listContentEmpty]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       />
@@ -171,6 +185,9 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.md,
     paddingBottom: 120,
     flexGrow: 1,
+  },
+  listContentEmpty: {
+    flexGrow: 0,
   },
   card: {
     backgroundColor: Colors.surface,

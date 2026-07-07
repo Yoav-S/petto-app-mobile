@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -14,10 +14,12 @@ import {
   Modal,
   Pressable,
   Keyboard,
+  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import InlineCalendarPicker from '@/components/vaccines/InlineCalendarPicker';
@@ -36,9 +38,35 @@ import {
 
 type ExpandedDatePicker = 'date' | 'next' | null;
 
+const DESIGN_WIDTH = 375;
+const DESIGN_HEIGHT = 812;
+
 export default function AddVaccineScreen() {
   const router = useRouter();
   const { activePetId } = useActivePet();
+  const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const sx = width / DESIGN_WIDTH;
+  const sy = height / DESIGN_HEIGHT;
+
+  const layout = useMemo(
+    () => ({
+      formTop: Math.max(Spacing.sm, 116 * sy - insets.top),
+      formGap: 22 * sy,
+      cardWidth: 335 * sx,
+      cardRadius: 12 * sx,
+      cardPadH: 16 * sx,
+      cardPadV: 14 * sy,
+      nameHeight: 48 * sy,
+      datesHeight: 84 * sy,
+      photoHeight: 150 * sy,
+      clinicHeight: 78 * sy,
+      photoPadBottom: 20 * sy,
+      innerGap: 10 * sy,
+      photoInnerHeight: Math.max(72 * sy, 150 * sy - 14 * sy - 20 * sy - 18 * sy - 10 * sy),
+    }),
+    [sx, sy, insets.top],
+  );
 
   const [name, setName] = useState('');
   const [date, setDate] = useState(todayIsoDate);
@@ -152,12 +180,32 @@ export default function AddVaccineScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[
+            styles.content,
+            {
+              paddingTop: layout.formTop,
+              paddingBottom: Spacing.lg,
+              gap: layout.formGap,
+              alignItems: 'center',
+            },
+          ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {/* Vaccine name */}
-          <View style={styles.card}>
+          <View
+            style={[
+              styles.card,
+              {
+                width: layout.cardWidth,
+                borderRadius: layout.cardRadius,
+                paddingHorizontal: layout.cardPadH,
+                paddingVertical: layout.cardPadV,
+                minHeight: layout.nameHeight,
+                justifyContent: 'center',
+              },
+            ]}
+          >
             <TextInput
               style={styles.nameInput}
               value={name}
@@ -170,7 +218,19 @@ export default function AddVaccineScreen() {
           </View>
 
           {/* Dates */}
-          <View style={styles.card}>
+          <View
+            style={[
+              styles.card,
+              {
+                width: layout.cardWidth,
+                borderRadius: layout.cardRadius,
+                paddingHorizontal: layout.cardPadH,
+                paddingVertical: layout.cardPadV,
+                minHeight: expandedPicker ? undefined : layout.datesHeight,
+                gap: layout.innerGap,
+              },
+            ]}
+          >
             <TouchableOpacity
               style={styles.dateRow}
               onPress={() => togglePicker('date')}
@@ -181,14 +241,11 @@ export default function AddVaccineScreen() {
             </TouchableOpacity>
 
             {expandedPicker === 'date' ? (
-              <>
-                <View style={styles.divider} />
-                <InlineCalendarPicker
-                  value={parseIsoDate(date)}
-                  onChange={handleVaccinatedDateChange}
-                  allowFuture
-                />
-              </>
+              <InlineCalendarPicker
+                value={parseIsoDate(date)}
+                onChange={handleVaccinatedDateChange}
+                allowFuture
+              />
             ) : null}
 
             <View style={styles.divider} />
@@ -203,22 +260,32 @@ export default function AddVaccineScreen() {
             </TouchableOpacity>
 
             {expandedPicker === 'next' ? (
-              <>
-                <View style={styles.divider} />
-                <InlineCalendarPicker
-                  value={parseIsoDate(nextDate)}
-                  onChange={setNextDate}
-                  allowFuture
-                />
-              </>
+              <InlineCalendarPicker
+                value={parseIsoDate(nextDate)}
+                onChange={setNextDate}
+                allowFuture
+              />
             ) : null}
           </View>
 
           {/* Proof photo */}
-          <View style={styles.card}>
+          <View
+            style={[
+              styles.card,
+              {
+                width: layout.cardWidth,
+                borderRadius: layout.cardRadius,
+                paddingHorizontal: layout.cardPadH,
+                paddingTop: layout.cardPadV,
+                paddingBottom: layout.photoPadBottom,
+                minHeight: layout.photoHeight,
+                gap: layout.innerGap,
+              },
+            ]}
+          >
             <Text style={styles.sectionLabel}>{t('vaccines.proof_photo')}</Text>
             {photoUri ? (
-              <View style={styles.photoWrap}>
+              <View style={[styles.photoWrap, { height: layout.photoInnerHeight }]}>
                 <TouchableOpacity activeOpacity={0.9} onPress={() => setPhotoSheetVisible(true)}>
                   <Image source={{ uri: photoUri }} style={styles.photo} contentFit="cover" />
                 </TouchableOpacity>
@@ -232,18 +299,31 @@ export default function AddVaccineScreen() {
               </View>
             ) : (
               <TouchableOpacity
-                style={styles.photoPlaceholder}
+                style={[styles.photoPlaceholder, { height: layout.photoInnerHeight }]}
                 onPress={() => setPhotoSheetVisible(true)}
                 activeOpacity={0.7}
               >
-                <Ionicons name="image-outline" size={28} color={Colors.secondaryText} />
+                <Ionicons name="image-outline" size={24} color={Colors.secondaryText} />
                 <Text style={styles.photoPlaceholderText}>{t('vaccines.add_vaccine_photo')}</Text>
               </TouchableOpacity>
             )}
           </View>
 
           {/* Veterinarian / Clinic */}
-          <View style={styles.card}>
+          <View
+            style={[
+              styles.card,
+              {
+                width: layout.cardWidth,
+                borderRadius: layout.cardRadius,
+                paddingHorizontal: layout.cardPadH,
+                paddingVertical: layout.cardPadV,
+                minHeight: layout.clinicHeight,
+                gap: layout.innerGap,
+                justifyContent: 'center',
+              },
+            ]}
+          >
             <Text style={styles.fieldLabel}>{t('vaccines.vet_clinic')}</Text>
             <TextInput
               style={styles.clinicInput}
@@ -317,8 +397,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    marginTop: 8,
+    paddingVertical: Spacing.sm,
   },
   closeButton: {
     width: 40,
@@ -342,15 +421,10 @@ const styles = StyleSheet.create({
     width: 40,
   },
   content: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.sm,
-    paddingBottom: Spacing.xl,
+    paddingHorizontal: 0,
   },
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    marginBottom: Spacing.lg,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -362,12 +436,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.primaryText,
     padding: 0,
+    margin: 0,
   },
   dateRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: Spacing.sm,
   },
   dateRowLabel: {
     fontFamily: 'Rubik-Medium',
@@ -384,20 +458,20 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: Colors.border,
-    marginVertical: Spacing.xs,
   },
   sectionLabel: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     color: Colors.primaryText,
-    marginBottom: Spacing.md,
   },
   photoWrap: {
     position: 'relative',
+    borderRadius: Radius.md,
+    overflow: 'hidden',
   },
   photo: {
     width: '100%',
-    aspectRatio: 1.6,
+    height: '100%',
     borderRadius: Radius.md,
     backgroundColor: Colors.background,
   },
@@ -415,7 +489,6 @@ const styles = StyleSheet.create({
   photoPlaceholder: {
     backgroundColor: Colors.background,
     borderRadius: Radius.md,
-    aspectRatio: 1.6,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -423,13 +496,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     color: Colors.secondaryText,
-    marginTop: Spacing.sm,
+    marginTop: 6,
   },
   fieldLabel: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     color: Colors.secondaryText,
-    marginBottom: Spacing.sm,
   },
   clinicInput: {
     fontFamily: 'Rubik-Regular',
