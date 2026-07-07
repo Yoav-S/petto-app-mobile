@@ -79,6 +79,21 @@ export function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
+/** Compare ISO dates (YYYY-MM-DD). Returns negative if a < b, 0 if equal, positive if a > b. */
+export function compareIsoDates(a: string, b: string): number {
+  return a.localeCompare(b);
+}
+
+/** True if ISO date `a` is strictly before `b`. */
+export function isIsoDateBefore(a: string, b: string): boolean {
+  return compareIsoDates(a, b) < 0;
+}
+
+/** True if `date` is strictly before `minIso` (YYYY-MM-DD). */
+export function isBeforeIsoDate(date: Date, minIso: string): boolean {
+  return isIsoDateBefore(toIsoDate(date), minIso);
+}
+
 /** True if `date` is strictly after today (ignoring time-of-day). */
 export function isFutureDate(date: Date): boolean {
   const today = new Date();

@@ -19,9 +19,9 @@ import {
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import InlineCalendarPicker from '@/components/vaccines/InlineCalendarPicker';
 import VaccinePhotoSourceSheet from '@/components/vaccines/VaccinePhotoSourceSheet';
 import { t } from '@/i18n';
@@ -32,6 +32,7 @@ import { getErrorMessage } from '@/services/errors';
 import {
   addYearsToIsoDate,
   formatDisplayDate,
+  isIsoDateBefore,
   parseIsoDate,
   todayIsoDate,
 } from '@/utils/calendar';
@@ -45,34 +46,45 @@ export default function AddVaccineScreen() {
   const router = useRouter();
   const { activePetId } = useActivePet();
   const { width, height } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const sx = width / DESIGN_WIDTH;
   const sy = height / DESIGN_HEIGHT;
-
-  const layout = useMemo(
-    () => ({
-      formTop: Math.max(Spacing.sm, 116 * sy - insets.top),
-      formGap: 22 * sy,
-      cardWidth: 335 * sx,
-      cardRadius: 12 * sx,
-      cardPadH: 16 * sx,
-      cardPadV: 14 * sy,
-      nameHeight: 48 * sy,
-      datesHeight: 84 * sy,
-      photoHeight: 150 * sy,
-      clinicHeight: 78 * sy,
-      photoPadBottom: 20 * sy,
-      innerGap: 10 * sy,
-      photoInnerHeight: Math.max(72 * sy, 150 * sy - 14 * sy - 20 * sy - 18 * sy - 10 * sy),
-    }),
-    [sx, sy, insets.top],
-  );
 
   const [name, setName] = useState('');
   const [date, setDate] = useState(todayIsoDate);
   const [nextDate, setNextDate] = useState(() => addYearsToIsoDate(todayIsoDate(), 1));
   const [clinic, setClinic] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+
+  const layout = useMemo(() => {
+    const innerGap = 10 * sy;
+    const cardPadV = 14 * sy;
+    const photoPadBottom = 20 * sy;
+    const photoCardHeight = (photoUri ? 286 : 150) * sy;
+    const labelAndGap = 18 * sy + innerGap;
+    const photoInnerHeight = Math.max(
+      72 * sy,
+      photoCardHeight - cardPadV - photoPadBottom - labelAndGap,
+    );
+
+    return {
+      formTop: 16 * sy,
+      formGap: 22 * sy,
+      cardWidth: 335 * sx,
+      cardRadius: 12 * sx,
+      cardPadH: 16 * sx,
+      cardPadV,
+      nameHeight: 48 * sy,
+      datesHeight: 84 * sy,
+      photoHeight: photoCardHeight,
+      clinicHeight: 78 * sy,
+      photoPadBottom,
+      innerGap,
+      photoInnerHeight,
+      saveHeight: 48 * sy,
+      savePadV: 12 * sy,
+      savePadH: 16 * sx,
+    };
+  }, [sx, sy, photoUri]);
   const [expandedPicker, setExpandedPicker] = useState<ExpandedDatePicker>(null);
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
@@ -98,7 +110,17 @@ export default function AddVaccineScreen() {
 
   const handleVaccinatedDateChange = (iso: string) => {
     setDate(iso);
-    setNextDate(addYearsToIsoDate(iso, 1));
+    if (isIsoDateBefore(nextDate, iso)) {
+      setNextDate(addYearsToIsoDate(iso, 1));
+    }
+  };
+
+  const handleValidUntilChange = (iso: string) => {
+    if (isIsoDateBefore(iso, date)) {
+      Alert.alert(t('common.error'), t('vaccines.valid_until_before_vaccinated'));
+      return;
+    }
+    setNextDate(iso);
   };
 
   const pickImage = async (source: 'camera' | 'library') => {
@@ -137,6 +159,10 @@ export default function AddVaccineScreen() {
 
   const handleSave = async () => {
     if (!canSave || !activePetId) return;
+    if (isIsoDateBefore(nextDate, date)) {
+      Alert.alert(t('common.error'), t('vaccines.valid_until_before_vaccinated'));
+      return;
+    }
     try {
       setSubmitting(true);
       let photoUrl: string | undefined;
@@ -163,17 +189,7 @@ export default function AddVaccineScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={() => router.back()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="close" size={22} color={Colors.primaryText} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('vaccines.add_title')}</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <VaccineScreenHeader title={t('vaccines.add_title')} icon="close" />
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -184,7 +200,7 @@ export default function AddVaccineScreen() {
             styles.content,
             {
               paddingTop: layout.formTop,
-              paddingBottom: Spacing.lg,
+              paddingBottom: Spacing.xl,
               gap: layout.formGap,
               alignItems: 'center',
             },
@@ -262,7 +278,8 @@ export default function AddVaccineScreen() {
             {expandedPicker === 'next' ? (
               <InlineCalendarPicker
                 value={parseIsoDate(nextDate)}
-                onChange={setNextDate}
+                onChange={handleValidUntilChange}
+                minDate={date}
                 allowFuture
               />
             ) : null}
@@ -342,11 +359,19 @@ export default function AddVaccineScreen() {
               </View>
             ) : null}
           </View>
-        </ScrollView>
 
-        <View style={styles.footer}>
           <TouchableOpacity
-            style={[styles.saveButton, !canSave && styles.saveButtonDisabled]}
+            style={[
+              styles.saveButton,
+              {
+                width: layout.cardWidth,
+                height: layout.saveHeight,
+                borderRadius: layout.cardRadius,
+                paddingVertical: layout.savePadV,
+                paddingHorizontal: layout.savePadH,
+              },
+              !canSave && styles.saveButtonDisabled,
+            ]}
             onPress={handleSave}
             disabled={!canSave}
             activeOpacity={0.85}
@@ -359,7 +384,7 @@ export default function AddVaccineScreen() {
               </Text>
             )}
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
 
       <VaccinePhotoSourceSheet
@@ -391,34 +416,6 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  headerTitle: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 24,
-    color: Colors.primaryText,
-  },
-  headerSpacer: {
-    width: 40,
   },
   content: {
     paddingHorizontal: 0,
@@ -524,16 +521,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.surface,
   },
-  footer: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    paddingBottom: Spacing.lg,
-  },
   saveButton: {
     backgroundColor: Colors.primaryText,
-    borderRadius: Radius.md,
-    paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   saveButtonDisabled: {
     backgroundColor: Colors.button.disabledBg,

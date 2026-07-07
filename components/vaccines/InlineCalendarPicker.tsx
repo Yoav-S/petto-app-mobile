@@ -1,11 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  Modal,
+  TouchableWithoutFeedback,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
 import {
   getCalendarCells,
   getYearOptions,
+  isBeforeIsoDate,
   isFutureDate,
   isSameDay,
   MONTH_KEYS,
@@ -18,12 +27,15 @@ interface InlineCalendarPickerProps {
   value: Date | null;
   onChange: (isoDate: string) => void;
   allowFuture?: boolean;
+  /** Earliest selectable date (YYYY-MM-DD). */
+  minDate?: string;
 }
 
 export default function InlineCalendarPicker({
   value,
   onChange,
   allowFuture = true,
+  minDate,
 }: InlineCalendarPickerProps) {
   const [viewYear, setViewYear] = useState(value?.getFullYear() ?? new Date().getFullYear());
   const [viewMonth, setViewMonth] = useState(value?.getMonth() ?? new Date().getMonth());
@@ -41,8 +53,14 @@ export default function InlineCalendarPicker({
     setViewMonth(base.getMonth());
   }, [value]);
 
+  const isCellDisabled = (cell: CalendarCell) => {
+    if (!allowFuture && isFutureDate(cell.date)) return true;
+    if (minDate && isBeforeIsoDate(cell.date, minDate)) return true;
+    return false;
+  };
+
   const handleSelectCell = (cell: CalendarCell) => {
-    if (!allowFuture && isFutureDate(cell.date)) return;
+    if (isCellDisabled(cell)) return;
     if (!cell.inCurrentMonth) {
       setViewYear(cell.date.getFullYear());
       setViewMonth(cell.date.getMonth());
@@ -50,56 +68,33 @@ export default function InlineCalendarPicker({
     onChange(toIsoDate(cell.date));
   };
 
-  const renderPickerList = () => {
-    if (!openPicker) return null;
+  const pickerItems = useMemo(() => {
+    if (!openPicker) return [];
     const now = new Date();
-    const items =
-      openPicker === 'month'
-        ? MONTH_KEYS.map((key, index) => ({
-            key,
-            index,
-            label: t(`petOnboarding.month_${key}`),
-            disabled: !allowFuture && viewYear === now.getFullYear() && index > now.getMonth(),
-          }))
-        : years.map((year) => ({
-            key: String(year),
-            index: year,
-            label: String(year),
-            disabled: false,
-          }));
+    const minYear = minDate ? Number(minDate.split('-')[0]) : null;
+    const minMonth = minDate ? Number(minDate.split('-')[1]) - 1 : null;
 
-    return (
-      <View style={styles.pickerOverlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpenPicker(null)} />
-        <View style={styles.pickerList}>
-          <ScrollView keyboardShouldPersistTaps="handled">
-            {items.map((item) => (
-              <Pressable
-                key={item.key}
-                style={styles.pickerItem}
-                disabled={item.disabled}
-                onPress={() => {
-                  if (openPicker === 'month') {
-                    setViewMonth(item.index);
-                  } else {
-                    setViewYear(item.index);
-                    if (!allowFuture && item.index === now.getFullYear() && viewMonth > now.getMonth()) {
-                      setViewMonth(now.getMonth());
-                    }
-                  }
-                  setOpenPicker(null);
-                }}
-              >
-                <Text style={[styles.pickerItemText, item.disabled && styles.pickerItemTextDisabled]}>
-                  {item.label}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
-      </View>
-    );
-  };
+    if (openPicker === 'month') {
+      return MONTH_KEYS.map((key, index) => ({
+        key,
+        index,
+        label: t(`petOnboarding.month_${key}`),
+        disabled:
+          (!allowFuture && viewYear === now.getFullYear() && index > now.getMonth()) ||
+          (minYear != null &&
+            minMonth != null &&
+            viewYear === minYear &&
+            index < minMonth),
+      }));
+    }
+
+    return years.map((year) => ({
+      key: String(year),
+      index: year,
+      label: String(year),
+      disabled: minYear != null && year < minYear,
+    }));
+  }, [allowFuture, minDate, openPicker, viewYear, years]);
 
   return (
     <View style={styles.wrap}>
@@ -126,9 +121,9 @@ export default function InlineCalendarPicker({
 
       <View style={styles.grid}>
         {cells.map((cell) => {
+          const disabled = isCellDisabled(cell);
           const isSelected = value ? isSameDay(cell.date, value) : false;
-          const isFuture = !allowFuture && isFutureDate(cell.date);
-          const color = isFuture
+          const color = disabled
             ? '#D1D5DB'
             : cell.inCurrentMonth
               ? Colors.primaryText
@@ -138,7 +133,7 @@ export default function InlineCalendarPicker({
             <Pressable
               key={`${cell.date.getTime()}-${cell.inCurrentMonth}`}
               onPress={() => handleSelectCell(cell)}
-              disabled={isFuture}
+              disabled={disabled}
               style={[styles.dayCell, isSelected && styles.dayCellSelected]}
             >
               <Text style={[styles.dayText, { color }, isSelected && styles.dayTextSelected]}>
@@ -149,14 +144,71 @@ export default function InlineCalendarPicker({
         })}
       </View>
 
-      {renderPickerList()}
+      <Modal
+        visible={openPicker != null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOpenPicker(null)}
+      >
+        <TouchableWithoutFeedback onPress={() => setOpenPicker(null)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.pickerList}>
+                <ScrollView
+                  style={styles.pickerScroll}
+                  contentContainerStyle={styles.pickerScrollContent}
+                  nestedScrollEnabled
+                  showsVerticalScrollIndicator
+                  keyboardShouldPersistTaps="handled"
+                >
+                  {pickerItems.map((item) => (
+                    <Pressable
+                      key={item.key}
+                      style={styles.pickerItem}
+                      disabled={item.disabled}
+                      onPress={() => {
+                        if (openPicker === 'month') {
+                          setViewMonth(item.index);
+                        } else {
+                          setViewYear(item.index);
+                          const now = new Date();
+                          if (
+                            !allowFuture &&
+                            item.index === now.getFullYear() &&
+                            viewMonth > now.getMonth()
+                          ) {
+                            setViewMonth(now.getMonth());
+                          }
+                          if (minDate) {
+                            const minYear = Number(minDate.split('-')[0]);
+                            const minMonth = Number(minDate.split('-')[1]) - 1;
+                            if (item.index === minYear && viewMonth < minMonth) {
+                              setViewMonth(minMonth);
+                            }
+                          }
+                        }
+                        setOpenPicker(null);
+                      }}
+                    >
+                      <Text
+                        style={[styles.pickerItemText, item.disabled && styles.pickerItemTextDisabled]}
+                      >
+                        {item.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    position: 'relative',
     paddingTop: Spacing.md,
   },
   dropdownRow: {
@@ -216,18 +268,25 @@ const styles = StyleSheet.create({
     color: Colors.surface,
     fontFamily: 'Rubik-Medium',
   },
-  pickerOverlay: {
-    ...StyleSheet.absoluteFillObject,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'center',
-    paddingHorizontal: Spacing.lg,
-    zIndex: 10,
+    paddingHorizontal: Spacing.xl,
   },
   pickerList: {
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: Radius.md,
-    maxHeight: 220,
+    maxHeight: 320,
+    overflow: 'hidden',
+  },
+  pickerScroll: {
+    maxHeight: 320,
+  },
+  pickerScrollContent: {
+    paddingVertical: Spacing.xs,
   },
   pickerItem: {
     paddingVertical: 12,

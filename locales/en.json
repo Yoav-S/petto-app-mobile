@@ -79,7 +79,8 @@
     "field_next": "Valid until (optional)",
     "field_next_placeholder": "Select date",
     "field_note": "Note (optional)",
-    "field_note_placeholder": "Add a note"
+    "field_note_placeholder": "Add a note",
+    "valid_until_before_vaccinated": "Valid until cannot be earlier than the vaccinated on date"
   },
   "reminders": {
     "title": "Reminders",

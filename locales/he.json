@@ -79,7 +79,8 @@
     "field_next": "בתוקף עד (אופציונלי)",
     "field_next_placeholder": "בחר תאריך",
     "field_note": "הערה (אופציונלי)",
-    "field_note_placeholder": "הוסף הערה"
+    "field_note_placeholder": "הוסף הערה",
+    "valid_until_before_vaccinated": "תאריך התוקף לא יכול להיות מוקדם מתאריך החיסון"
   },
   "reminders": {
     "title": "תזכורות",

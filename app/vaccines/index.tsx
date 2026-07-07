@@ -13,10 +13,9 @@ import {
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
-import ScreenHeader from '@/components/ui/ScreenHeader';
+import VaccineScreenHeader, { getVaccineHeaderContentOffset } from '@/components/vaccines/VaccineScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
@@ -28,7 +27,6 @@ import type { Vaccination } from '@/types/api';
 const DESIGN_HEIGHT = 812;
 const EMPTY_TOP = 304;
 const EMPTY_GAP = 20;
-const HEADER_BLOCK = 64;
 
 function VaccineThumbnail({ uri }: { uri?: string | null }) {
   if (uri) {
@@ -45,9 +43,9 @@ export default function VaccinesScreen() {
   const router = useRouter();
   const { activePetId } = useActivePet();
   const { height } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const sy = height / DESIGN_HEIGHT;
-  const emptyTop = Math.max(Spacing.lg, EMPTY_TOP * sy - (insets.top + HEADER_BLOCK));
+  const headerOffset = getVaccineHeaderContentOffset(height);
+  const emptyTop = Math.max(Spacing.lg, EMPTY_TOP * sy - headerOffset);
   const emptyGap = EMPTY_GAP * sy;
 
   const [items, setItems] = useState<Vaccination[]>([]);
@@ -159,7 +157,7 @@ export default function VaccinesScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScreenHeader title={t('vaccines.list_title')} />
+      <VaccineScreenHeader title={t('vaccines.list_title')} />
       {renderContent()}
 
       <TouchableOpacity
