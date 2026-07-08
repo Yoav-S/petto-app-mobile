@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -20,15 +20,17 @@ import HealthListItem from '@/components/health/HealthListItem';
 import Snackbar from '@/components/ui/Snackbar';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import { listRecords, deleteRecord, type RecordStatus } from '@/services/health';
+import { listRecords, deleteRecord } from '@/services/health';
 import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDate } from '@/utils/calendar';
 import type { MedicalRecord } from '@/types/api';
 
-const TABS = ['Active', 'Resolved'];
-const TAB_TO_STATUS: Record<string, RecordStatus> = {
-  Active: 'active',
-  Resolved: 'resolved',
+const TABS = ['Active', 'Resolved'] as const;
+type TabName = (typeof TABS)[number];
+
+const EMPTY_LISTS: Record<TabName, MedicalRecord[]> = {
+  Active: [],
+  Resolved: [],
 };
 
 export default function HealthScreen() {
@@ -36,13 +38,25 @@ export default function HealthScreen() {
   const { activePetId } = useActivePet();
   const { deletedNote } = useLocalSearchParams();
 
-  const [activeTab, setActiveTab] = useState('Active');
-  const [items, setItems] = useState<MedicalRecord[]>([]);
+  const [activeTab, setActiveTab] = useState<TabName>('Active');
+  const [listsByTab, setListsByTab] = useState<Record<TabName, MedicalRecord[]>>(EMPTY_LISTS);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState(t('health.deleted'));
+
+  const items = listsByTab[activeTab];
+
+  const tabPresence = useMemo(
+    () => ({
+      active: listsByTab.Active.length > 0,
+      resolved: listsByTab.Resolved.length > 0,
+    }),
+    [listsByTab],
+  );
+
+  const hasAnyRecords = tabPresence.active || tabPresence.resolved;
 
   React.useEffect(() => {
     if (deletedNote) {
@@ -53,21 +67,24 @@ export default function HealthScreen() {
 
   const fetchData = useCallback(async () => {
     if (!activePetId) {
-      setItems([]);
+      setListsByTab(EMPTY_LISTS);
       setLoading(false);
       return;
     }
     try {
       setError(null);
-      const list = await listRecords(activePetId, TAB_TO_STATUS[activeTab]);
-      setItems(list);
+      const [active, resolved] = await Promise.all([
+        listRecords(activePetId, 'active'),
+        listRecords(activePetId, 'resolved'),
+      ]);
+      setListsByTab({ Active: active, Resolved: resolved });
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [activePetId, activeTab]);
+  }, [activePetId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -102,19 +119,45 @@ export default function HealthScreen() {
     ]);
   };
 
+  const addRecordAction = {
+    actionTitle: t('health.add_first'),
+    onAction: () => router.push('/health/add-note' as never),
+  };
+
   const renderEmptyState = () => {
-    if (activeTab === 'Active') {
+    if (!hasAnyRecords) {
       return (
         <EmptyState
-          title={t('health.empty_active_title')}
-          subtitle={t('health.empty_active_subtitle')}
-          actionTitle={t('health.add_first')}
-          onAction={() => router.push('/health/add-note' as never)}
+          title={t('health.empty_all_title')}
+          subtitle={t('health.empty_all_subtitle')}
+          {...addRecordAction}
         />
       );
     }
+
+    if (activeTab === 'Active') {
+      return (
+        <EmptyState
+          title={t('health.empty_active_only_title')}
+          subtitle={t('health.empty_active_only_subtitle')}
+        />
+      );
+    }
+
+    if (tabPresence.active) {
+      return (
+        <EmptyState
+          title={t('health.empty_resolved_with_active_title')}
+          subtitle={t('health.empty_resolved_with_active_subtitle')}
+        />
+      );
+    }
+
     return (
-      <EmptyState title={t('health.empty_resolved_title')} subtitle={t('health.empty_resolved_subtitle')} />
+      <EmptyState
+        title={t('health.empty_resolved_title')}
+        subtitle={t('health.empty_resolved_subtitle')}
+      />
     );
   };
 
@@ -122,7 +165,11 @@ export default function HealthScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScreenHeader title={t('health.title')} />
 
-      <SegmentedControl tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+      <SegmentedControl
+        tabs={[...TABS]}
+        activeTab={activeTab}
+        onTabChange={(tab) => setActiveTab(tab as TabName)}
+      />
 
       {loading ? (
         <View style={styles.centered}>

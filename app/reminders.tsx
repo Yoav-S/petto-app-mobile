@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -23,7 +23,6 @@ import { useActivePet } from '@/store/petStore';
 import {
   listReminders,
   updateReminderStatus,
-  type ReminderTab,
 } from '@/services/reminders';
 import { repeatLabel } from '@/components/pickers/RepeatPickerSheet';
 import { getErrorMessage } from '@/services/errors';
@@ -31,11 +30,13 @@ import { formatDisplayDate } from '@/utils/calendar';
 import type { Reminder } from '@/types/api';
 import type { RepeatOption } from '@/services/reminders';
 
-const TABS = ['Today', 'Upcoming', 'Recent'];
-const TAB_TO_API: Record<string, ReminderTab> = {
-  Today: 'today',
-  Upcoming: 'upcoming',
-  Recent: 'recent',
+const TABS = ['Today', 'Upcoming', 'Recent'] as const;
+type TabName = (typeof TABS)[number];
+
+const EMPTY_LISTS: Record<TabName, Reminder[]> = {
+  Today: [],
+  Upcoming: [],
+  Recent: [],
 };
 
 function reminderSubtitle(item: Reminder): string {
@@ -44,7 +45,7 @@ function reminderSubtitle(item: Reminder): string {
   return '';
 }
 
-function reminderTimeOrDate(item: Reminder, tab: string): string {
+function reminderTimeOrDate(item: Reminder, tab: TabName): string {
   if (tab === 'Today') return item.time;
   if (tab === 'Recent') {
     const status = t(`status.${item.status}`);
@@ -58,8 +59,8 @@ export default function RemindersScreen() {
   const { activePetId } = useActivePet();
   const { deletedId } = useLocalSearchParams();
 
-  const [activeTab, setActiveTab] = useState('Today');
-  const [items, setItems] = useState<Reminder[]>([]);
+  const [activeTab, setActiveTab] = useState<TabName>('Today');
+  const [listsByTab, setListsByTab] = useState<Record<TabName, Reminder[]>>(EMPTY_LISTS);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,27 +69,44 @@ export default function RemindersScreen() {
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
   const [selectedReminder, setSelectedReminder] = useState<Reminder | null>(null);
 
+  const items = listsByTab[activeTab];
+
+  const tabPresence = useMemo(
+    () => ({
+      today: listsByTab.Today.length > 0,
+      upcoming: listsByTab.Upcoming.length > 0,
+      recent: listsByTab.Recent.length > 0,
+    }),
+    [listsByTab],
+  );
+
+  const hasAnyReminders = tabPresence.today || tabPresence.upcoming || tabPresence.recent;
+
   React.useEffect(() => {
     if (deletedId) setSnackbarVisible(true);
   }, [deletedId]);
 
   const fetchData = useCallback(async () => {
     if (!activePetId) {
-      setItems([]);
+      setListsByTab(EMPTY_LISTS);
       setLoading(false);
       return;
     }
     try {
       setError(null);
-      const list = await listReminders(activePetId, TAB_TO_API[activeTab]);
-      setItems(list);
+      const [today, upcoming, recent] = await Promise.all([
+        listReminders(activePetId, 'today'),
+        listReminders(activePetId, 'upcoming'),
+        listReminders(activePetId, 'recent'),
+      ]);
+      setListsByTab({ Today: today, Upcoming: upcoming, Recent: recent });
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [activePetId, activeTab]);
+  }, [activePetId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -113,28 +131,57 @@ export default function RemindersScreen() {
     }
   };
 
+  const addReminderAction = {
+    actionTitle: t('reminders.add'),
+    onAction: () => router.push('/reminders/add' as never),
+  };
+
   const renderEmptyState = () => {
-    if (activeTab === 'Recent') {
-      return <EmptyState title={t('reminders.empty_recent_title')} subtitle={t('reminders.empty_recent_subtitle')} />;
+    if (!hasAnyReminders) {
+      return (
+        <EmptyState
+          title={t('reminders.empty_all_title')}
+          subtitle={t('reminders.empty_all_subtitle')}
+          {...addReminderAction}
+        />
+      );
     }
+
+    if (activeTab === 'Today') {
+      let subtitle = t('reminders.empty_today_only_subtitle');
+      if (tabPresence.upcoming) {
+        subtitle = t('reminders.empty_today_only_subtitle_upcoming');
+      } else if (tabPresence.recent) {
+        subtitle = t('reminders.empty_today_only_subtitle_recent');
+      }
+      return (
+        <EmptyState title={t('reminders.empty_today_only_title')} subtitle={subtitle} />
+      );
+    }
+
     if (activeTab === 'Upcoming') {
-      return <EmptyState title={t('reminders.empty_upcoming_title')} subtitle={t('reminders.empty_upcoming_subtitle')} />;
+      const subtitle = tabPresence.today
+        ? t('reminders.empty_upcoming_with_today_subtitle')
+        : t('reminders.empty_upcoming_subtitle');
+      return <EmptyState title={t('reminders.empty_upcoming_title')} subtitle={subtitle} />;
     }
-    return (
-      <EmptyState
-        title={t('reminders.empty_today_title')}
-        subtitle={t('reminders.empty_today_subtitle')}
-        actionTitle={t('reminders.add')}
-        onAction={() => router.push('/reminders/add' as never)}
-      />
-    );
+
+    const subtitle =
+      tabPresence.today || tabPresence.upcoming
+        ? t('reminders.empty_recent_with_scheduled_subtitle')
+        : t('reminders.empty_recent_subtitle');
+    return <EmptyState title={t('reminders.empty_recent_title')} subtitle={subtitle} />;
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScreenHeader title={t('reminders.title')} />
 
-      <SegmentedControl tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+      <SegmentedControl
+        tabs={[...TABS]}
+        activeTab={activeTab}
+        onTabChange={(tab) => setActiveTab(tab as TabName)}
+      />
 
       {loading ? (
         <View style={styles.centered}>
