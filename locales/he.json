@@ -156,8 +156,11 @@
     "condition_title_placeholder": "לדוגמה: אלרגיה בעור",
     "note_placeholder": "מה השתנה?",
     "reminder_label": "תזכורת:",
-    "link_reminder": "קשר תזכורת",
-    "no_reminders": "אין תזכורות לקשר עדיין",
+    "add_reminder": "הוסף תזכורת",
+    "remove_reminder": "הסר תזכורת",
+    "reminder_chip_morning": "בוקר",
+    "reminder_chip_afternoon": "צהריים",
+    "reminder_chip_evening": "ערב",
     "delete_note": "מחק פתק",
     "delete_note_confirm_title": "למחוק את הפתק?",
     "delete_note_confirm_body": "הפתק יימחק לצמיתות."

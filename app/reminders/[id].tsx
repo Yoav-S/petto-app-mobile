@@ -16,6 +16,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
@@ -50,6 +51,7 @@ export default function ReminderDetailsScreen() {
   const [note, setNote] = useState('');
   const [sheet, setSheet] = useState<Sheet>(null);
   const [saving, setSaving] = useState(false);
+  const [deleteVisible, setDeleteVisible] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!activePetId || !id) {
@@ -98,23 +100,15 @@ export default function ReminderDetailsScreen() {
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!activePetId || !id) return;
-    Alert.alert(t('reminders.delete_confirm_title'), t('reminders.delete_confirm_body'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('common.delete'),
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteReminder(activePetId, id);
-            router.replace({ pathname: '/reminders', params: { deletedId: id } } as never);
-          } catch (err) {
-            Alert.alert(t('common.error'), getErrorMessage(err));
-          }
-        },
-      },
-    ]);
+    setDeleteVisible(false);
+    try {
+      await deleteReminder(activePetId, id);
+      router.replace({ pathname: '/reminders', params: { deletedId: id } } as never);
+    } catch (err) {
+      Alert.alert(t('common.error'), getErrorMessage(err));
+    }
   };
 
   if (loading) {
@@ -195,7 +189,11 @@ export default function ReminderDetailsScreen() {
             textAlignVertical="top"
           />
 
-          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => setDeleteVisible(true)}
+            activeOpacity={0.7}
+          >
             <Text style={styles.deleteText}>{t('reminders.delete')}</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -243,6 +241,15 @@ export default function ReminderDetailsScreen() {
           setRepeat(value);
           setSheet(null);
         }}
+      />
+
+      <ConfirmModal
+        visible={deleteVisible}
+        title={t('reminders.delete_confirm_title')}
+        message={t('reminders.delete_confirm_body')}
+        confirmText={t('common.delete')}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteVisible(false)}
       />
     </SafeAreaView>
   );

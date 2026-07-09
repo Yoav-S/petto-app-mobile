@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,6 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  Modal,
-  Pressable,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -20,14 +18,22 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { addNote, createRecord } from '@/services/health';
-import { listReminders } from '@/services/reminders';
+import {
+  healthReminderTitle,
+  upsertHealthReminder,
+  type HealthReminderDraft,
+} from '@/services/healthReminder';
 import { uploadImage } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDate } from '@/utils/calendar';
-import type { Reminder } from '@/types/api';
+
+function reminderLabel(draft: HealthReminderDraft): string {
+  return `${formatDisplayDate(draft.date)} ${draft.time}`;
+}
 
 export default function AddNoteScreen() {
   const router = useRouter();
@@ -37,12 +43,9 @@ export default function AddNoteScreen() {
   const [conditionTitle, setConditionTitle] = useState('');
   const [note, setNote] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [linkedReminder, setLinkedReminder] = useState<Reminder | null>(null);
+  const [reminderDraft, setReminderDraft] = useState<HealthReminderDraft | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  const [reminderModalVisible, setReminderModalVisible] = useState(false);
-  const [reminderOptions, setReminderOptions] = useState<Reminder[]>([]);
-  const [loadingReminders, setLoadingReminders] = useState(false);
+  const [reminderSheetVisible, setReminderSheetVisible] = useState(false);
 
   const needsTitle = !recordId;
   const canSave =
@@ -63,23 +66,6 @@ export default function AddNoteScreen() {
     }
   };
 
-  const openReminderModal = useCallback(async () => {
-    if (!activePetId) return;
-    setReminderModalVisible(true);
-    setLoadingReminders(true);
-    try {
-      const [today, upcoming] = await Promise.all([
-        listReminders(activePetId, 'today'),
-        listReminders(activePetId, 'upcoming'),
-      ]);
-      setReminderOptions([...today, ...upcoming]);
-    } catch {
-      setReminderOptions([]);
-    } finally {
-      setLoadingReminders(false);
-    }
-  }, [activePetId]);
-
   const handleSave = async () => {
     if (!canSave || !activePetId) return;
     try {
@@ -96,10 +82,19 @@ export default function AddNoteScreen() {
         photoUrl = await uploadImage(photoUri, 'notes');
       }
 
+      let linkedReminderId: string | undefined;
+      if (reminderDraft) {
+        linkedReminderId = await upsertHealthReminder(
+          activePetId,
+          reminderDraft,
+          healthReminderTitle(note, conditionTitle),
+        );
+      }
+
       await addNote(activePetId, targetRecordId, {
         text: note.trim(),
         photo_url: photoUrl,
-        linked_reminder_id: linkedReminder?.id ?? undefined,
+        linked_reminder_id: linkedReminderId,
       });
 
       router.back();
@@ -150,18 +145,21 @@ export default function AddNoteScreen() {
               textAlignVertical="top"
             />
 
-            {linkedReminder ? (
+            {reminderDraft ? (
               <TouchableOpacity
                 style={styles.reminderRow}
                 activeOpacity={0.8}
-                onPress={() => setLinkedReminder(null)}
+                onPress={() => setReminderSheetVisible(true)}
               >
                 <Text style={styles.reminderLabel}>{t('health.reminder_label')}</Text>
-                <Text style={styles.reminderValue}>
-                  {' '}
-                  {linkedReminder.title} • {formatDisplayDate(linkedReminder.date)} {linkedReminder.time}
-                </Text>
-                <Ionicons name="close-circle" size={16} color={Colors.secondaryText} style={styles.reminderRemove} />
+                <Text style={styles.reminderValue}> {reminderLabel(reminderDraft)}</Text>
+                <TouchableOpacity
+                  onPress={() => setReminderDraft(null)}
+                  hitSlop={8}
+                  accessibilityLabel={t('health.remove_reminder')}
+                >
+                  <Ionicons name="close-circle" size={16} color={Colors.secondaryText} />
+                </TouchableOpacity>
               </TouchableOpacity>
             ) : null}
 
@@ -169,7 +167,10 @@ export default function AddNoteScreen() {
               <TouchableOpacity style={styles.iconButton} onPress={pickImage}>
                 <Ionicons name="image-outline" size={24} color={Colors.secondaryText} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton} onPress={openReminderModal}>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setReminderSheetVisible(true)}
+              >
                 <Ionicons name="notifications-outline" size={24} color={Colors.secondaryText} />
               </TouchableOpacity>
             </View>
@@ -192,37 +193,14 @@ export default function AddNoteScreen() {
         </View>
       </KeyboardAvoidingView>
 
-      <Modal visible={reminderModalVisible} transparent animationType="slide" onRequestClose={() => setReminderModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setReminderModalVisible(false)} />
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>{t('health.link_reminder')}</Text>
-            {loadingReminders ? (
-              <ActivityIndicator color={Colors.primaryText} style={{ marginVertical: Spacing.lg }} />
-            ) : reminderOptions.length === 0 ? (
-              <Text style={styles.modalEmpty}>{t('health.no_reminders')}</Text>
-            ) : (
-              <ScrollView style={styles.modalList}>
-                {reminderOptions.map((reminder) => (
-                  <TouchableOpacity
-                    key={reminder.id}
-                    style={styles.modalRow}
-                    onPress={() => {
-                      setLinkedReminder(reminder);
-                      setReminderModalVisible(false);
-                    }}
-                  >
-                    <Text style={styles.modalRowTitle}>{reminder.title}</Text>
-                    <Text style={styles.modalRowMeta}>
-                      {formatDisplayDate(reminder.date)} {reminder.time}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
-          </View>
-        </View>
-      </Modal>
+      <ReminderPickerSheet
+        visible={reminderSheetVisible}
+        initialDate={reminderDraft?.date}
+        initialTime={reminderDraft?.time}
+        initialRepeat={reminderDraft?.repeat}
+        onClose={() => setReminderSheetVisible(false)}
+        onConfirm={setReminderDraft}
+      />
     </SafeAreaView>
   );
 }
@@ -298,9 +276,6 @@ const styles = StyleSheet.create({
     color: Colors.primaryText,
     flex: 1,
   },
-  reminderRemove: {
-    marginLeft: Spacing.xs,
-  },
   iconRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -332,50 +307,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     color: Colors.surface,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  modalSheet: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: Spacing.lg,
-    maxHeight: '70%',
-  },
-  modalTitle: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 18,
-    color: Colors.primaryText,
-    marginBottom: Spacing.md,
-    textAlign: 'center',
-  },
-  modalEmpty: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 15,
-    color: Colors.secondaryText,
-    textAlign: 'center',
-    marginVertical: Spacing.lg,
-  },
-  modalList: {
-    marginBottom: Spacing.md,
-  },
-  modalRow: {
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  modalRowTitle: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: Colors.primaryText,
-  },
-  modalRowMeta: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 13,
-    color: Colors.secondaryText,
-    marginTop: 2,
   },
 });

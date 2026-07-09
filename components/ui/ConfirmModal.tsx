@@ -1,6 +1,21 @@
-import React from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import React, { useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  useWindowDimensions,
+} from 'react-native';
+import { Colors } from '@/constants/theme';
+import { t } from '@/i18n';
+
+const DESIGN_WIDTH = 375;
+const DESIGN_HEIGHT = 812;
+
+const DELETE_BG = '#FEE2E2';
+const DELETE_TEXT = '#EF4444';
 
 interface ConfirmModalProps {
   visible: boolean;
@@ -9,38 +24,117 @@ interface ConfirmModalProps {
   confirmText: string;
   onConfirm: () => void;
   onCancel: () => void;
+  cancelText?: string;
 }
 
-export default function ConfirmModal({ 
-  visible, 
-  title, 
-  message, 
-  confirmText, 
-  onConfirm, 
-  onCancel 
+export default function ConfirmModal({
+  visible,
+  title,
+  message,
+  confirmText,
+  onConfirm,
+  onCancel,
+  cancelText,
 }: ConfirmModalProps) {
+  const { width, height } = useWindowDimensions();
+  const sx = width / DESIGN_WIDTH;
+  const sy = height / DESIGN_HEIGHT;
+
+  const layout = useMemo(
+    () => ({
+      modalWidth: 316 * sx,
+      modalRadius: 16 * sx,
+      modalPadH: 20 * sx,
+      modalPadV: 36 * sy,
+      contentGap: 10 * sy,
+      contentWidth: 276 * sx,
+      titleHeight: 20 * sy,
+      messageMinHeight: 20 * sy,
+      buttonRowHeight: 44 * sy,
+      buttonRowGap: 12 * sx,
+      buttonWidth: 120 * sx,
+      buttonHeight: 44 * sy,
+      buttonRadius: 10 * sx,
+      buttonPadV: 12 * sy,
+      buttonPadH: 16 * sx,
+    }),
+    [sx, sy],
+  );
+
   return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="fade"
-      onRequestClose={onCancel}
-    >
+    <Modal transparent visible={visible} animationType="fade" onRequestClose={onCancel}>
       <TouchableWithoutFeedback onPress={onCancel}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
-            <View style={styles.modalContainer}>
-              <Text style={styles.title}>{title}</Text>
-              <Text style={styles.message}>{message}</Text>
-              
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.button} onPress={onCancel} activeOpacity={0.7}>
-                  <Text style={styles.cancelText}>Cancel</Text>
+            <View
+              style={[
+                styles.modalContainer,
+                {
+                  width: layout.modalWidth,
+                  borderRadius: layout.modalRadius,
+                  paddingHorizontal: layout.modalPadH,
+                  paddingVertical: layout.modalPadV,
+                  gap: layout.contentGap,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.title,
+                  { width: layout.contentWidth, minHeight: layout.titleHeight },
+                ]}
+              >
+                {title}
+              </Text>
+
+              <Text
+                style={[
+                  styles.message,
+                  { width: layout.contentWidth, minHeight: layout.messageMinHeight },
+                ]}
+              >
+                {message}
+              </Text>
+
+              <View
+                style={[
+                  styles.buttonRow,
+                  {
+                    width: layout.contentWidth,
+                    height: layout.buttonRowHeight,
+                    gap: layout.buttonRowGap,
+                  },
+                ]}
+              >
+                <TouchableOpacity
+                  style={[
+                    styles.cancelButton,
+                    {
+                      width: layout.buttonWidth,
+                      height: layout.buttonHeight,
+                      borderRadius: layout.buttonRadius,
+                      paddingVertical: layout.buttonPadV,
+                      paddingHorizontal: layout.buttonPadH,
+                    },
+                  ]}
+                  onPress={onCancel}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.cancelText}>{cancelText ?? t('common.cancel')}</Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[styles.button, styles.confirmButton]} 
-                  onPress={onConfirm} 
+
+                <TouchableOpacity
+                  style={[
+                    styles.confirmButton,
+                    {
+                      width: layout.buttonWidth,
+                      height: layout.buttonHeight,
+                      borderRadius: layout.buttonRadius,
+                      paddingVertical: layout.buttonPadV,
+                      paddingHorizontal: layout.buttonPadH,
+                    },
+                  ]}
+                  onPress={onConfirm}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.confirmText}>{confirmText}</Text>
@@ -60,12 +154,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
   },
   modalContainer: {
-    width: '80%',
     backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.xl,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -75,42 +167,45 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: 'Rubik-Medium',
-    fontSize: 18,
+    fontSize: 16,
+    lineHeight: 20,
     color: Colors.primaryText,
-    marginBottom: Spacing.sm,
+    textAlign: 'center',
   },
   message: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
+    lineHeight: 20,
     color: Colors.secondaryText,
-    marginBottom: Spacing.xl,
     textAlign: 'center',
   },
-  buttonContainer: {
+  buttonRow: {
     flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  button: {
-    flex: 1,
-    paddingVertical: 12,
+  cancelButton: {
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   confirmButton: {
-    backgroundColor: '#FFEBEB', // Light red background matching design
-    borderRadius: Radius.md,
-    marginLeft: Spacing.md,
+    backgroundColor: DELETE_BG,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cancelText: {
     fontFamily: 'Rubik-Medium',
-    fontSize: 16,
+    fontSize: 14,
+    lineHeight: 18,
     color: Colors.primaryText,
+    textAlign: 'center',
   },
   confirmText: {
     fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: Colors.error,
+    fontSize: 14,
+    lineHeight: 18,
+    color: DELETE_TEXT,
+    textAlign: 'center',
   },
 });

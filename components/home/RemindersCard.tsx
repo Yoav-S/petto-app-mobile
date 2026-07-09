@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { homeCardTypography } from '@/components/home/homeCardTypography';
 import { t, currentLocale } from '@/i18n';
 
 interface RemindersCardProps {
@@ -61,23 +62,31 @@ export default function RemindersCard({
       ) : (
         <View style={styles.contentContainer}>
           <CategoryIcon />
-          <Text style={styles.title}>{t('home.remindersCard.title')}</Text>
+          <View style={homeCardTypography.titleSubtitleBlock}>
+            <Text style={homeCardTypography.title}>{t('home.remindersCard.title')}</Text>
+            {nextReminder ? (
+              <Text style={homeCardTypography.subtitle} numberOfLines={1} ellipsizeMode="tail">
+                {nextReminder.title}
+              </Text>
+            ) : (
+              <Text style={homeCardTypography.meta} numberOfLines={1} ellipsizeMode="tail">
+                {t('home.remindersCard.empty')}
+              </Text>
+            )}
+          </View>
           {nextReminder ? (
-            <>
-              <Text style={styles.primaryText}>{nextReminder.title}</Text>
-              <Text style={styles.secondaryText}>{formatTime(nextReminder.scheduled_at)}</Text>
-              {upcomingCount > 0 ? (
-                <View style={styles.bottomRow}>
-                  <Text style={styles.secondaryText}>
-                    {upcomingCount} {t('home.remindersCard.upcoming')}
-                  </Text>
-                  <Ionicons name="chevron-forward" size={16} color={Colors.secondaryText} />
-                </View>
-              ) : null}
-            </>
-          ) : (
-            <Text style={styles.secondaryText}>{t('home.remindersCard.empty')}</Text>
-          )}
+            <Text style={homeCardTypography.meta} numberOfLines={1}>
+              {formatTime(nextReminder.scheduled_at)}
+            </Text>
+          ) : null}
+          {upcomingCount > 0 ? (
+            <View style={[homeCardTypography.footerRow, styles.upcomingRow]}>
+              <Text style={homeCardTypography.meta} numberOfLines={1}>
+                {upcomingCount} {t('home.remindersCard.upcoming')}
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={Colors.secondaryText} />
+            </View>
+          ) : null}
         </View>
       )}
     </TouchableOpacity>
@@ -102,8 +111,8 @@ const styles = StyleSheet.create({
     ...cardShadow,
   },
   contentContainer: {
-    gap: Spacing.xs,
     flex: 1,
+    gap: Spacing.xs,
   },
   iconContainer: {
     width: 36,
@@ -113,27 +122,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.xs,
   },
-  title: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: Colors.primaryText,
-  },
-  primaryText: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    color: Colors.primaryText,
-  },
-  secondaryText: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: Colors.secondaryText,
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  upcomingRow: {
     marginTop: 'auto',
-    paddingTop: Spacing.sm,
-    gap: 4,
   },
   skeletonLine: {
     height: 14,

@@ -1,132 +1,195 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  ScrollView,
+  Pressable,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import SettingRow from '@/components/ui/SettingRow';
-
-import InlineDatePicker from '@/components/ui/InlineDatePicker';
-import InlineTimePicker from '@/components/ui/InlineTimePicker';
-import InlineRepeatPicker from '@/components/ui/InlineRepeatPicker';
+import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
+import TimePickerSheet from '@/components/pickers/TimePickerSheet';
+import RepeatPickerSheet, { repeatLabel } from '@/components/pickers/RepeatPickerSheet';
+import { t } from '@/i18n';
+import type { RepeatOption } from '@/services/reminders';
+import type { HealthReminderDraft } from '@/services/healthReminder';
+import { formatDisplayDate, parseIsoDate, todayIsoDate } from '@/utils/calendar';
 
 interface ReminderPickerSheetProps {
   visible: boolean;
+  initialDate?: string | null;
+  initialTime?: string | null;
+  initialRepeat?: RepeatOption;
   onClose: () => void;
+  onConfirm: (draft: HealthReminderDraft) => void;
 }
 
-const CHIPS = [
-  { id: 'morning', label: 'Morning', time: '9:00' },
-  { id: 'afternoon', label: 'Afternoon', time: '13:00' },
-  { id: 'evening', label: 'Evening', time: '20:00' },
-];
+const TIME_CHIPS = [
+  { id: 'morning', labelKey: 'health.reminder_chip_morning', time: '09:00' },
+  { id: 'afternoon', labelKey: 'health.reminder_chip_afternoon', time: '13:00' },
+  { id: 'evening', labelKey: 'health.reminder_chip_evening', time: '20:00' },
+] as const;
 
-type ExpandedRowType = 'date' | 'time' | 'repeat' | null;
+type SubSheet = 'date' | 'time' | 'repeat' | null;
 
-export default function ReminderPickerSheet({ visible, onClose }: ReminderPickerSheetProps) {
+function chipForTime(time: string): string | null {
+  const match = TIME_CHIPS.find((chip) => chip.time === time);
+  return match?.id ?? null;
+}
+
+function formatTimeDisplay(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return time;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+export default function ReminderPickerSheet({
+  visible,
+  initialDate,
+  initialTime,
+  initialRepeat = 'off',
+  onClose,
+  onConfirm,
+}: ReminderPickerSheetProps) {
+  const [date, setDate] = useState(todayIsoDate());
+  const [time, setTime] = useState('13:00');
+  const [repeat, setRepeat] = useState<RepeatOption>('off');
   const [selectedChip, setSelectedChip] = useState<string | null>('afternoon');
-  const [expandedRow, setExpandedRow] = useState<ExpandedRowType>(null);
+  const [subSheet, setSubSheet] = useState<SubSheet>(null);
 
-  const toggleRow = (row: ExpandedRowType) => {
-    if (expandedRow === row) {
-      setExpandedRow(null);
-    } else {
-      setExpandedRow(row);
-    }
+  useEffect(() => {
+    if (!visible) return;
+    const nextDate = initialDate ?? todayIsoDate();
+    const nextTime = initialTime ?? '13:00';
+    setDate(nextDate);
+    setTime(nextTime);
+    setRepeat(initialRepeat);
+    setSelectedChip(chipForTime(nextTime) ?? null);
+    setSubSheet(null);
+  }, [visible, initialDate, initialTime, initialRepeat]);
+
+  const handleChipPress = (chipId: string, chipTime: string) => {
+    setSelectedChip(chipId);
+    setTime(chipTime);
+  };
+
+  const handleDone = () => {
+    onConfirm({ date, time, repeat });
+    onClose();
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} onPress={onClose} activeOpacity={1} />
-        
-        <View style={styles.sheet}>
-          <View style={styles.dragHandle} />
-          
-          <View style={styles.header}>
-            <View style={styles.headerSpacer} />
-            <Text style={styles.title}>Set reminder</Text>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Ionicons name="close" size={20} color={Colors.primaryText} />
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView 
-            showsVerticalScrollIndicator={false} 
-            contentContainerStyle={styles.scrollContent}
-          >
-            <View style={styles.contentCard}>
-              <Text style={styles.sectionTitle}>Today</Text>
-              
-              <View style={styles.chipsContainer}>
-                {CHIPS.map((chip) => {
-                  const isSelected = selectedChip === chip.id;
-                  return (
-                    <TouchableOpacity 
-                      key={chip.id}
-                      style={[styles.chip, isSelected && styles.chipActive]}
-                      onPress={() => setSelectedChip(chip.id)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={[styles.chipLabel, isSelected && styles.chipLabelActive]}>{chip.label}</Text>
-                      <Text style={[styles.chipTime, isSelected && styles.chipTimeActive]}>{chip.time}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+    <>
+      <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+        <View style={styles.overlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+          <View style={styles.sheet}>
+            <View style={styles.dragHandle} />
 
-              <View style={styles.settingsWrapper}>
-                {/* Date Row */}
-                <SettingRow 
-                  icon="calendar-outline" 
-                  label="Date" 
-                  value="24.06.26" 
-                  onPress={() => toggleRow('date')} 
-                  hideDivider={expandedRow === 'date'}
-                />
-                {expandedRow === 'date' && (
-                  <View style={styles.pickerContainer}>
-                    <InlineDatePicker />
-                  </View>
-                )}
-
-                {/* Time Row */}
-                <SettingRow 
-                  icon="time-outline" 
-                  label="Time" 
-                  value="8:00" 
-                  onPress={() => toggleRow('time')} 
-                  hideDivider={expandedRow === 'time'}
-                />
-                {expandedRow === 'time' && (
-                  <View style={styles.pickerContainer}>
-                    <InlineTimePicker />
-                  </View>
-                )}
-
-                {/* Repeat Row */}
-                <SettingRow 
-                  icon="repeat-outline" 
-                  label="Repeat" 
-                  value="Off" 
-                  hideDivider // Always hide divider for last row visually unless expanded picker needs it
-                  onPress={() => toggleRow('repeat')} 
-                />
-                {expandedRow === 'repeat' && (
-                  <View style={[styles.pickerContainer, styles.pickerContainerLast]}>
-                    <InlineRepeatPicker />
-                  </View>
-                )}
-              </View>
+            <View style={styles.header}>
+              <View style={styles.headerSpacer} />
+              <Text style={styles.title}>{t('health.add_reminder')}</Text>
+              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                <Ionicons name="close" size={20} color={Colors.primaryText} />
+              </TouchableOpacity>
             </View>
-          </ScrollView>
 
-          <View style={styles.footer}>
-            <TouchableOpacity style={styles.doneButton} onPress={onClose} activeOpacity={0.8}>
-              <Text style={styles.doneButtonText}>Done</Text>
-            </TouchableOpacity>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={styles.contentCard}>
+                <Text style={styles.sectionTitle}>{t('common.today')}</Text>
+
+                <View style={styles.chipsContainer}>
+                  {TIME_CHIPS.map((chip) => {
+                    const isSelected = selectedChip === chip.id;
+                    return (
+                      <TouchableOpacity
+                        key={chip.id}
+                        style={[styles.chip, isSelected && styles.chipActive]}
+                        onPress={() => handleChipPress(chip.id, chip.time)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.chipLabel, isSelected && styles.chipLabelActive]}>
+                          {t(chip.labelKey)}
+                        </Text>
+                        <Text style={[styles.chipTime, isSelected && styles.chipTimeActive]}>
+                          {formatTimeDisplay(chip.time)}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <View style={styles.settingsWrapper}>
+                  <SettingRow
+                    icon="calendar-outline"
+                    label={t('reminders.field_date')}
+                    value={formatDisplayDate(date)}
+                    onPress={() => setSubSheet('date')}
+                  />
+                  <SettingRow
+                    icon="time-outline"
+                    label={t('reminders.field_time')}
+                    value={formatTimeDisplay(time)}
+                    onPress={() => setSubSheet('time')}
+                  />
+                  <SettingRow
+                    icon="repeat-outline"
+                    label={t('reminders.field_repeat')}
+                    value={repeatLabel(repeat)}
+                    hideDivider
+                    onPress={() => setSubSheet('repeat')}
+                  />
+                </View>
+              </View>
+            </ScrollView>
+
+            <View style={styles.footer}>
+              <TouchableOpacity style={styles.doneButton} onPress={handleDone} activeOpacity={0.8}>
+                <Text style={styles.doneButtonText}>{t('common.save')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+
+      <BirthDatePickerSheet
+        visible={subSheet === 'date'}
+        initialDate={parseIsoDate(date)}
+        allowFuture
+        onClose={() => setSubSheet(null)}
+        onConfirm={(iso) => {
+          setDate(iso);
+          setSubSheet(null);
+        }}
+      />
+      <TimePickerSheet
+        visible={subSheet === 'time'}
+        value={time}
+        onClose={() => setSubSheet(null)}
+        onConfirm={(value) => {
+          setTime(value);
+          setSelectedChip(chipForTime(value));
+          setSubSheet(null);
+        }}
+      />
+      <RepeatPickerSheet
+        visible={subSheet === 'repeat'}
+        value={repeat}
+        onClose={() => setSubSheet(null)}
+        onSelect={(value) => {
+          setRepeat(value);
+          setSubSheet(null);
+        }}
+      />
+    </>
   );
 }
 
@@ -136,15 +199,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
   },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
   sheet: {
     backgroundColor: Colors.surface,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     paddingTop: Spacing.md,
-    maxHeight: '90%', // Prevent it from taking over the whole screen
+    maxHeight: '90%',
   },
   dragHandle: {
     width: 36,
@@ -229,17 +289,6 @@ const styles = StyleSheet.create({
   },
   settingsWrapper: {
     marginTop: Spacing.sm,
-  },
-  pickerContainer: {
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    paddingBottom: Spacing.md,
-    marginBottom: Spacing.sm, // Add small gap after picker before next row
-  },
-  pickerContainerLast: {
-    borderBottomWidth: 0,
-    paddingBottom: 0,
-    marginBottom: 0,
   },
   footer: {
     paddingHorizontal: Spacing.lg,

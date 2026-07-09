@@ -18,6 +18,7 @@ import SegmentedControl from '@/components/ui/SegmentedControl';
 import EmptyState from '@/components/ui/EmptyState';
 import HealthListItem from '@/components/health/HealthListItem';
 import Snackbar from '@/components/ui/Snackbar';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { listRecords, deleteRecord } from '@/services/health';
@@ -45,6 +46,7 @@ export default function HealthScreen() {
   const [error, setError] = useState<string | null>(null);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState(t('health.deleted'));
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const items = listsByTab[activeTab];
 
@@ -100,23 +102,21 @@ export default function HealthScreen() {
 
   const handleDeleteRecord = (id: string) => {
     if (!activePetId) return;
-    Alert.alert(t('health.delete_record_confirm_title'), t('health.delete_record_confirm_body'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('common.delete'),
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteRecord(activePetId, id);
-            setSnackbarMessage(t('health.record_deleted'));
-            setSnackbarVisible(true);
-            fetchData();
-          } catch (err) {
-            Alert.alert(t('common.error'), getErrorMessage(err));
-          }
-        },
-      },
-    ]);
+    setDeleteTargetId(id);
+  };
+
+  const confirmDeleteRecord = async () => {
+    if (!activePetId || !deleteTargetId) return;
+    const id = deleteTargetId;
+    setDeleteTargetId(null);
+    try {
+      await deleteRecord(activePetId, id);
+      setSnackbarMessage(t('health.record_deleted'));
+      setSnackbarVisible(true);
+      fetchData();
+    } catch (err) {
+      Alert.alert(t('common.error'), getErrorMessage(err));
+    }
   };
 
   const addRecordAction = {
@@ -219,6 +219,15 @@ export default function HealthScreen() {
         visible={snackbarVisible}
         message={snackbarMessage}
         onHide={() => setSnackbarVisible(false)}
+      />
+
+      <ConfirmModal
+        visible={deleteTargetId != null}
+        title={t('health.delete_record_confirm_title')}
+        message={t('health.delete_record_confirm_body')}
+        confirmText={t('common.delete')}
+        onConfirm={confirmDeleteRecord}
+        onCancel={() => setDeleteTargetId(null)}
       />
     </SafeAreaView>
   );

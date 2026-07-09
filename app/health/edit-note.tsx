@@ -11,8 +11,6 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
-  Modal,
-  Pressable,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -20,16 +18,27 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
+import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { getRecord, updateNote, deleteNote } from '@/services/health';
-import { listReminders } from '@/services/reminders';
+import { getReminder } from '@/services/reminders';
+import {
+  healthReminderTitle,
+  upsertHealthReminder,
+  removeHealthReminder,
+  type HealthReminderDraft,
+} from '@/services/healthReminder';
 import { uploadImage } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDate } from '@/utils/calendar';
-import type { Reminder } from '@/types/api';
+
+function reminderLabel(draft: HealthReminderDraft): string {
+  return `${formatDisplayDate(draft.date)} ${draft.time}`;
+}
 
 export default function EditNoteScreen() {
   const router = useRouter();
@@ -43,12 +52,11 @@ export default function EditNoteScreen() {
   const [noteText, setNoteText] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoChanged, setPhotoChanged] = useState(false);
-  const [linkedReminderId, setLinkedReminderId] = useState<string | null>(null);
-  const [linkedReminderLabel, setLinkedReminderLabel] = useState('');
 
-  const [reminderModalVisible, setReminderModalVisible] = useState(false);
-  const [reminderOptions, setReminderOptions] = useState<Reminder[]>([]);
-  const [loadingReminders, setLoadingReminders] = useState(false);
+  const [linkedReminderId, setLinkedReminderId] = useState<string | null>(null);
+  const [reminderDraft, setReminderDraft] = useState<HealthReminderDraft | null>(null);
+  const [reminderSheetVisible, setReminderSheetVisible] = useState(false);
+  const [deleteVisible, setDeleteVisible] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!activePetId || !recordId || !noteId) {
@@ -67,11 +75,29 @@ export default function EditNoteScreen() {
       setPhotoUri(note.photo_url ?? null);
       setPhotoChanged(false);
       setLinkedReminderId(note.linked_reminder_id ?? null);
-      setLinkedReminderLabel(
-        note.linked_reminder_date
-          ? `${formatDisplayDate(note.linked_reminder_date)} ${note.linked_reminder_time ?? ''}`.trim()
-          : '',
-      );
+
+      if (note.linked_reminder_id) {
+        try {
+          const reminder = await getReminder(activePetId, note.linked_reminder_id);
+          setReminderDraft({
+            date: reminder.date,
+            time: reminder.time,
+            repeat: (reminder.repeat as HealthReminderDraft['repeat']) ?? 'off',
+          });
+        } catch {
+          setReminderDraft(
+            note.linked_reminder_date
+              ? {
+                  date: note.linked_reminder_date,
+                  time: note.linked_reminder_time ?? '09:00',
+                  repeat: 'off',
+                }
+              : null,
+          );
+        }
+      } else {
+        setReminderDraft(null);
+      }
     } catch {
       setNotFound(true);
     } finally {
@@ -104,35 +130,34 @@ export default function EditNoteScreen() {
     setPhotoChanged(true);
   };
 
-  const openReminderModal = useCallback(async () => {
-    if (!activePetId) return;
-    setReminderModalVisible(true);
-    setLoadingReminders(true);
-    try {
-      const [today, upcoming] = await Promise.all([
-        listReminders(activePetId, 'today'),
-        listReminders(activePetId, 'upcoming'),
-      ]);
-      setReminderOptions([...today, ...upcoming]);
-    } catch {
-      setReminderOptions([]);
-    } finally {
-      setLoadingReminders(false);
-    }
-  }, [activePetId]);
-
   const handleSave = async () => {
     if (!activePetId || !recordId || !noteId || !noteText.trim()) return;
     try {
       setSaving(true);
+
       let photoUrl: string | null | undefined;
       if (photoChanged) {
         photoUrl = photoUri ? await uploadImage(photoUri, 'notes') : null;
       }
+
+      let nextLinkedReminderId: string | null = linkedReminderId;
+
+      if (reminderDraft) {
+        nextLinkedReminderId = await upsertHealthReminder(
+          activePetId,
+          reminderDraft,
+          healthReminderTitle(noteText),
+          linkedReminderId,
+        );
+      } else if (linkedReminderId) {
+        await removeHealthReminder(activePetId, linkedReminderId);
+        nextLinkedReminderId = null;
+      }
+
       await updateNote(activePetId, recordId, noteId, {
         text: noteText.trim(),
         photo_url: photoUrl,
-        linked_reminder_id: linkedReminderId,
+        linked_reminder_id: nextLinkedReminderId,
       });
       router.back();
     } catch (err) {
@@ -141,23 +166,15 @@ export default function EditNoteScreen() {
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!activePetId || !recordId || !noteId) return;
-    Alert.alert(t('health.delete_note_confirm_title'), t('health.delete_note_confirm_body'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('common.delete'),
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteNote(activePetId, recordId, noteId);
-            router.replace({ pathname: '/health', params: { deletedNote: 'true' } } as never);
-          } catch (err) {
-            Alert.alert(t('common.error'), getErrorMessage(err));
-          }
-        },
-      },
-    ]);
+    setDeleteVisible(false);
+    try {
+      await deleteNote(activePetId, recordId, noteId);
+      router.replace({ pathname: '/health', params: { deletedNote: 'true' } } as never);
+    } catch (err) {
+      Alert.alert(t('common.error'), getErrorMessage(err));
+    }
   };
 
   if (loading) {
@@ -210,18 +227,23 @@ export default function EditNoteScreen() {
               textAlignVertical="top"
             />
 
-            {linkedReminderId ? (
+            {reminderDraft ? (
               <TouchableOpacity
                 style={styles.reminderRow}
                 activeOpacity={0.8}
-                onPress={() => {
-                  setLinkedReminderId(null);
-                  setLinkedReminderLabel('');
-                }}
+                onPress={() => setReminderSheetVisible(true)}
               >
                 <Text style={styles.reminderLabel}>{t('health.reminder_label')}</Text>
-                <Text style={styles.reminderValue}> {linkedReminderLabel}</Text>
-                <Ionicons name="close-circle" size={16} color={Colors.secondaryText} style={styles.reminderRemove} />
+                <Text style={styles.reminderValue}> {reminderLabel(reminderDraft)}</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setReminderDraft(null);
+                  }}
+                  hitSlop={8}
+                  accessibilityLabel={t('health.remove_reminder')}
+                >
+                  <Ionicons name="close-circle" size={16} color={Colors.secondaryText} />
+                </TouchableOpacity>
               </TouchableOpacity>
             ) : null}
 
@@ -229,13 +251,20 @@ export default function EditNoteScreen() {
               <TouchableOpacity style={styles.iconButton} onPress={pickImage}>
                 <Ionicons name="image-outline" size={24} color={Colors.secondaryText} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton} onPress={openReminderModal}>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setReminderSheetVisible(true)}
+              >
                 <Ionicons name="notifications-outline" size={24} color={Colors.secondaryText} />
               </TouchableOpacity>
             </View>
           </View>
 
-          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => setDeleteVisible(true)}
+            activeOpacity={0.7}
+          >
             <Text style={styles.deleteText}>{t('health.delete_note')}</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -256,38 +285,23 @@ export default function EditNoteScreen() {
         </View>
       </KeyboardAvoidingView>
 
-      <Modal visible={reminderModalVisible} transparent animationType="slide" onRequestClose={() => setReminderModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setReminderModalVisible(false)} />
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>{t('health.link_reminder')}</Text>
-            {loadingReminders ? (
-              <ActivityIndicator color={Colors.primaryText} style={{ marginVertical: Spacing.lg }} />
-            ) : reminderOptions.length === 0 ? (
-              <Text style={styles.modalEmpty}>{t('health.no_reminders')}</Text>
-            ) : (
-              <ScrollView style={styles.modalList}>
-                {reminderOptions.map((reminder) => (
-                  <TouchableOpacity
-                    key={reminder.id}
-                    style={styles.modalRow}
-                    onPress={() => {
-                      setLinkedReminderId(reminder.id);
-                      setLinkedReminderLabel(`${formatDisplayDate(reminder.date)} ${reminder.time}`);
-                      setReminderModalVisible(false);
-                    }}
-                  >
-                    <Text style={styles.modalRowTitle}>{reminder.title}</Text>
-                    <Text style={styles.modalRowMeta}>
-                      {formatDisplayDate(reminder.date)} {reminder.time}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
-          </View>
-        </View>
-      </Modal>
+      <ReminderPickerSheet
+        visible={reminderSheetVisible}
+        initialDate={reminderDraft?.date}
+        initialTime={reminderDraft?.time}
+        initialRepeat={reminderDraft?.repeat}
+        onClose={() => setReminderSheetVisible(false)}
+        onConfirm={setReminderDraft}
+      />
+
+      <ConfirmModal
+        visible={deleteVisible}
+        title={t('health.delete_note_confirm_title')}
+        message={t('health.delete_note_confirm_body')}
+        confirmText={t('common.delete')}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -348,9 +362,6 @@ const styles = StyleSheet.create({
     color: Colors.primaryText,
     flex: 1,
   },
-  reminderRemove: {
-    marginLeft: Spacing.xs,
-  },
   iconRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -392,50 +403,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     color: Colors.surface,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  modalSheet: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: Spacing.lg,
-    maxHeight: '70%',
-  },
-  modalTitle: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 18,
-    color: Colors.primaryText,
-    marginBottom: Spacing.md,
-    textAlign: 'center',
-  },
-  modalEmpty: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 15,
-    color: Colors.secondaryText,
-    textAlign: 'center',
-    marginVertical: Spacing.lg,
-  },
-  modalList: {
-    marginBottom: Spacing.md,
-  },
-  modalRow: {
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  modalRowTitle: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: Colors.primaryText,
-  },
-  modalRowMeta: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 13,
-    color: Colors.secondaryText,
-    marginTop: 2,
   },
 });

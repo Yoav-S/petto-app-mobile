@@ -156,8 +156,11 @@
     "condition_title_placeholder": "e.g. Skin allergy",
     "note_placeholder": "What's changed?",
     "reminder_label": "Reminder:",
-    "link_reminder": "Link a reminder",
-    "no_reminders": "No reminders to link yet",
+    "add_reminder": "Add reminder",
+    "remove_reminder": "Remove reminder",
+    "reminder_chip_morning": "Morning",
+    "reminder_chip_afternoon": "Afternoon",
+    "reminder_chip_evening": "Evening",
     "delete_note": "Delete note",
     "delete_note_confirm_title": "Delete note?",
     "delete_note_confirm_body": "This note will be permanently removed."

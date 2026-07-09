@@ -2,6 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { homeCardTypography } from '@/components/home/homeCardTypography';
+import { formatDisplayDate } from '@/utils/calendar';
 import { t } from '@/i18n';
 
 interface HealthCardProps {
@@ -18,7 +20,7 @@ interface HealthCardProps {
 function CategoryIcon() {
   return (
     <View style={[styles.iconContainer, { backgroundColor: Colors.category.notesBg }]}>
-      <MaterialCommunityIcons name="heart-pulse" size={20} color={Colors.category.notes} />
+      <MaterialCommunityIcons name="heart-pulse" size={18} color={Colors.category.notes} />
     </View>
   );
 }
@@ -43,39 +45,51 @@ export default function HealthCard({ latestRecord, loading, onPress }: HealthCar
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
       {loading ? (
-        <View style={styles.contentContainer}>
-          <Animated.View style={[styles.skeletonLine, { width: 40, height: 36, opacity: fadeAnim }]} />
-          <Animated.View style={[styles.skeletonLine, { width: '80%', opacity: fadeAnim }]} />
-          <Animated.View style={[styles.skeletonLine, { width: '60%', opacity: fadeAnim }]} />
+        <View style={styles.cardRow}>
+          <Animated.View style={[styles.skeletonIcon, { opacity: fadeAnim }]} />
+          <View style={styles.skeletonContent}>
+            <Animated.View style={[styles.skeletonLine, { width: '70%', opacity: fadeAnim }]} />
+            <Animated.View style={[styles.skeletonLine, { width: '90%', opacity: fadeAnim }]} />
+            <Animated.View style={[styles.skeletonLine, { width: '60%', opacity: fadeAnim }]} />
+          </View>
         </View>
       ) : (
-        <View style={styles.contentContainer}>
-          <View style={styles.headerRow}>
-            <View style={styles.titleRow}>
-              <CategoryIcon />
-              <Text style={styles.title}>{t('home.healthCard.title')}</Text>
-            </View>
-            {latestRecord?.reminder_time ? (
-              <View style={styles.reminderRow}>
-                <Ionicons name="notifications-outline" size={16} color={Colors.secondaryText} />
-                <Text style={styles.reminderText}>
-                  {t('common.today')}, {latestRecord.reminder_time}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-          {latestRecord ? (
-            <>
-              <Text style={styles.primaryText}>{latestRecord.type}</Text>
-              {latestRecord.description ? (
-                <Text style={styles.secondaryText} numberOfLines={2}>
-                  {latestRecord.description}
-                </Text>
+        <View style={styles.cardRow}>
+          <CategoryIcon />
+          <View style={homeCardTypography.healthContent}>
+            <View style={homeCardTypography.healthTitleRow}>
+              <Text style={homeCardTypography.title}>{t('home.healthCard.title')}</Text>
+              {latestRecord ? (
+                <View style={homeCardTypography.healthDateMeta}>
+                  {latestRecord.reminder_time ? (
+                    <Ionicons name="notifications-outline" size={14} color={Colors.secondaryText} />
+                  ) : null}
+                  <Text style={homeCardTypography.meta} numberOfLines={1}>
+                    {formatDisplayDate(latestRecord.date)}
+                  </Text>
+                </View>
               ) : null}
-            </>
-          ) : (
-            <Text style={styles.secondaryText}>{t('home.healthCard.empty')}</Text>
-          )}
+            </View>
+
+            <View style={homeCardTypography.healthBodyBlock}>
+              {latestRecord ? (
+                <>
+                  <Text style={homeCardTypography.healthSubtitle} numberOfLines={1} ellipsizeMode="tail">
+                    {latestRecord.type}
+                  </Text>
+                  {latestRecord.description ? (
+                    <Text style={homeCardTypography.note} numberOfLines={1} ellipsizeMode="tail">
+                      {latestRecord.description}
+                    </Text>
+                  ) : null}
+                </>
+              ) : (
+                <Text style={homeCardTypography.note} numberOfLines={1} ellipsizeMode="tail">
+                  {t('home.healthCard.empty')}
+                </Text>
+              )}
+            </View>
+          </View>
         </View>
       )}
     </TouchableOpacity>
@@ -99,52 +113,28 @@ const styles = StyleSheet.create({
     minHeight: 120,
     ...cardShadow,
   },
-  contentContainer: {
-    gap: Spacing.xs,
-  },
-  headerRow: {
+  cardRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: Spacing.xs,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
+    gap: 8,
   },
   iconContainer: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  title: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: Colors.primaryText,
+  skeletonIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: Colors.border,
   },
-  reminderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    flexShrink: 1,
-  },
-  reminderText: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: Colors.secondaryText,
-  },
-  primaryText: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    color: Colors.primaryText,
-  },
-  secondaryText: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: Colors.secondaryText,
+  skeletonContent: {
+    flex: 1,
+    gap: 8,
+    paddingTop: 4,
   },
   skeletonLine: {
     height: 14,

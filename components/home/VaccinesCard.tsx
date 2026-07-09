@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { homeCardTypography } from '@/components/home/homeCardTypography';
 import { t } from '@/i18n';
 
 interface VaccinesCardProps {
@@ -59,22 +60,30 @@ export default function VaccinesCard({ latestVaccine, loading, onPress }: Vaccin
       ) : (
         <View style={styles.contentContainer}>
           <CategoryIcon />
-          <Text style={styles.title}>{t('home.vaccinesCard.title')}</Text>
+          <View style={homeCardTypography.titleSubtitleBlock}>
+            <Text style={homeCardTypography.title}>{t('home.vaccinesCard.title')}</Text>
+            {latestVaccine ? (
+              <Text style={homeCardTypography.subtitle} numberOfLines={1} ellipsizeMode="tail">
+                {latestVaccine.name}
+              </Text>
+            ) : (
+              <Text style={homeCardTypography.meta} numberOfLines={1} ellipsizeMode="tail">
+                {t('home.vaccinesCard.empty')}
+              </Text>
+            )}
+          </View>
           {latestVaccine ? (
             <>
-              <Text style={styles.primaryText}>{latestVaccine.name}</Text>
-              <Text style={styles.secondaryText}>
+              <Text style={homeCardTypography.meta} numberOfLines={1}>
                 {t('home.vaccinesCard.last')} {formatDate(latestVaccine.date)}
               </Text>
               {latestVaccine.next_date ? (
-                <Text style={styles.secondaryText}>
+                <Text style={homeCardTypography.meta} numberOfLines={1}>
                   {t('home.vaccinesCard.next')} {formatDate(latestVaccine.next_date)}
                 </Text>
               ) : null}
             </>
-          ) : (
-            <Text style={styles.secondaryText}>{t('home.vaccinesCard.empty')}</Text>
-          )}
+          ) : null}
         </View>
       )}
     </TouchableOpacity>
@@ -108,21 +117,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacing.xs,
-  },
-  title: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: Colors.primaryText,
-  },
-  primaryText: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    color: Colors.primaryText,
-  },
-  secondaryText: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: Colors.secondaryText,
   },
   skeletonLine: {
     height: 14,
