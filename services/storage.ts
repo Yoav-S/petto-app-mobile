@@ -2,6 +2,23 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import auth from './firebaseAuth';
 
 const storage = getStorage(auth.app);
+const UPLOAD_TIMEOUT_MS = 30000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
 
 /**
  * Read a local file URI (file://, content://, ph://) as a Blob.
@@ -39,10 +56,18 @@ export async function uploadImage(localUri: string, subfolder = 'uploads'): Prom
   try {
     const path = `users/${user.uid}/${subfolder}/${Date.now()}.jpg`;
     const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, blob, {
-      contentType: (blob as any).type || 'image/jpeg',
-    });
-    return await getDownloadURL(storageRef);
+    await withTimeout(
+      uploadBytes(storageRef, blob, {
+        contentType: (blob as any).type || 'image/jpeg',
+      }),
+      UPLOAD_TIMEOUT_MS,
+      'Image upload timed out.',
+    );
+    return await withTimeout(
+      getDownloadURL(storageRef),
+      UPLOAD_TIMEOUT_MS,
+      'Image upload timed out while fetching the download URL.',
+    );
   } finally {
     // Free native memory held by the RN Blob (no-op on web).
     (blob as any).close?.();

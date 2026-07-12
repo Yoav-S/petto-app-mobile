@@ -26,9 +26,10 @@ import {
   upsertHealthReminder,
   type HealthReminderDraft,
 } from '@/services/healthReminder';
-import { uploadImage } from '@/services/storage';
+import { uploadHealthNotePhoto } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDate } from '@/utils/calendar';
+import { normalizeRouteParam } from '@/utils/routeParams';
 
 function reminderLabel(draft: HealthReminderDraft): string {
   return `${formatDisplayDate(draft.date)} ${draft.time}`;
@@ -36,7 +37,8 @@ function reminderLabel(draft: HealthReminderDraft): string {
 
 export default function AddNoteScreen() {
   const router = useRouter();
-  const { recordId } = useLocalSearchParams<{ recordId?: string }>();
+  const { recordId: recordIdParam } = useLocalSearchParams<{ recordId?: string }>();
+  const recordId = normalizeRouteParam(recordIdParam);
   const { activePetId } = useActivePet();
 
   const [conditionTitle, setConditionTitle] = useState('');
@@ -78,7 +80,7 @@ export default function AddNoteScreen() {
 
       let photoUrl: string | undefined;
       if (photoUri) {
-        photoUrl = await uploadImage(photoUri, 'notes');
+        photoUrl = await uploadHealthNotePhoto(photoUri);
       }
 
       let linkedReminderId: string | undefined;
@@ -99,6 +101,7 @@ export default function AddNoteScreen() {
       router.back();
     } catch (err) {
       Alert.alert(t('common.error'), getErrorMessage(err));
+    } finally {
       setSubmitting(false);
     }
   };

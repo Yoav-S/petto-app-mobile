@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import { useActivePet } from '@/store/petStore';
 import { getRecord, resolveRecord } from '@/services/health';
 import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDate } from '@/utils/calendar';
+import { normalizeRouteParam } from '@/utils/routeParams';
 import type { MedicalRecordDetail } from '@/types/api';
 
 const DESIGN_WIDTH = 375;
@@ -31,6 +32,7 @@ const DESIGN_HEIGHT = 812;
 export default function HealthDetailsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const recordId = normalizeRouteParam(id);
   const { activePetId } = useActivePet();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -56,40 +58,51 @@ export default function HealthDetailsScreen() {
   const [record, setRecord] = useState<MedicalRecordDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    if (!activePetId || !id) {
-      setError(t('health.not_found_subtitle'));
-      setLoading(false);
-      return;
-    }
-    try {
-      setError(null);
-      const detail = await getRecord(activePetId, id);
-      setRecord(detail);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [activePetId, id]);
+  const recordRef = useRef<MedicalRecordDetail | null>(null);
+  recordRef.current = record;
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
-      fetchData();
-    }, [fetchData]),
+      let cancelled = false;
+
+      (async () => {
+        if (!activePetId || !recordId) {
+          if (!cancelled) {
+            setError(t('health.not_found_subtitle'));
+            setLoading(false);
+          }
+          return;
+        }
+
+        const showFullLoader = recordRef.current == null;
+        if (showFullLoader && !cancelled) setLoading(true);
+
+        try {
+          if (!cancelled) setError(null);
+          const detail = await getRecord(activePetId, recordId);
+          if (!cancelled) setRecord(detail);
+        } catch (err) {
+          if (!cancelled) setError(getErrorMessage(err));
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      })();
+
+      return () => {
+        cancelled = true;
+      };
+    }, [activePetId, recordId]),
   );
 
   const handleResolve = () => {
-    if (!activePetId || !id) return;
+    if (!activePetId || !recordId) return;
     Alert.alert(t('health.resolve_confirm_title'), t('health.resolve_confirm_body'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('health.mark_resolved'),
         onPress: async () => {
           try {
-            await resolveRecord(activePetId, id);
+            await resolveRecord(activePetId, recordId);
             router.back();
           } catch (err) {
             Alert.alert(t('common.error'), getErrorMessage(err));
@@ -133,10 +146,10 @@ export default function HealthDetailsScreen() {
       <ScreenHeader title={record.title} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {record.notes.length === 0 ? (
+        {(record.notes ?? []).length === 0 ? (
           <Text style={styles.emptyNotes}>{t('health.no_notes_yet')}</Text>
         ) : (
-          record.notes.map((note) => (
+          (record.notes ?? []).map((note) => (
             <TouchableOpacity
               key={note.id}
               style={styles.noteCard}

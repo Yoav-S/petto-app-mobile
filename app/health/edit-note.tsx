@@ -31,9 +31,10 @@ import {
   removeHealthReminder,
   type HealthReminderDraft,
 } from '@/services/healthReminder';
-import { uploadImage } from '@/services/storage';
+import { uploadHealthNotePhoto } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDate } from '@/utils/calendar';
+import { normalizeRouteParam } from '@/utils/routeParams';
 
 const DESIGN_HEIGHT = 812;
 
@@ -43,11 +44,14 @@ function reminderLabel(draft: HealthReminderDraft): string {
 
 export default function EditNoteScreen() {
   const router = useRouter();
-  const { recordId, noteId, open } = useLocalSearchParams<{
+  const { recordId: recordIdParam, noteId: noteIdParam, open: openParam } = useLocalSearchParams<{
     recordId: string;
     noteId: string;
     open?: string;
   }>();
+  const recordId = normalizeRouteParam(recordIdParam);
+  const noteId = normalizeRouteParam(noteIdParam);
+  const open = normalizeRouteParam(openParam);
   const { activePetId } = useActivePet();
   const { height } = useWindowDimensions();
   const sy = height / DESIGN_HEIGHT;
@@ -65,60 +69,79 @@ export default function EditNoteScreen() {
   const [reminderDraft, setReminderDraft] = useState<HealthReminderDraft | null>(null);
   const [reminderSheetVisible, setReminderSheetVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    if (!activePetId || !recordId || !noteId) {
-      setNotFound(true);
-      setLoading(false);
-      return;
-    }
-    try {
-      const detail = await getRecord(activePetId, recordId);
-      const note = detail.notes.find((n) => n.id === noteId);
-      if (!note) {
-        setNotFound(true);
-        return;
-      }
-      setNoteText(note.text);
-      setPhotoUri(note.photo_url ?? null);
-      setPhotoChanged(false);
-      setLinkedReminderId(note.linked_reminder_id ?? null);
-
-      if (note.linked_reminder_id) {
-        try {
-          const reminder = await getReminder(activePetId, note.linked_reminder_id);
-          setReminderDraft({
-            date: reminder.date,
-            time: reminder.time,
-            repeat: (reminder.repeat as HealthReminderDraft['repeat']) ?? 'off',
-          });
-        } catch {
-          setReminderDraft(
-            note.linked_reminder_date
-              ? {
-                  date: note.linked_reminder_date,
-                  time: note.linked_reminder_time ?? '09:00',
-                  repeat: 'off',
-                }
-              : null,
-          );
-        }
-      } else {
-        setReminderDraft(null);
-      }
-    } catch {
-      setNotFound(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [activePetId, recordId, noteId]);
+  const loadedRef = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
+      let cancelled = false;
       openHandled.current = false;
-      fetchData();
-    }, [fetchData]),
+
+      (async () => {
+        if (!activePetId || !recordId || !noteId) {
+          if (!cancelled) {
+            setNotFound(true);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const showFullLoader = !loadedRef.current;
+        if (showFullLoader && !cancelled) setLoading(true);
+
+        try {
+          const detail = await getRecord(activePetId, recordId);
+          const note = detail.notes.find((n) => n.id === noteId);
+          if (!note) {
+            if (!cancelled) setNotFound(true);
+            return;
+          }
+          if (!cancelled) {
+            setNotFound(false);
+            setNoteText(note.text);
+            setPhotoUri(note.photo_url ?? null);
+            setPhotoChanged(false);
+            setLinkedReminderId(note.linked_reminder_id ?? null);
+          }
+
+          if (note.linked_reminder_id) {
+            try {
+              const reminder = await getReminder(activePetId, note.linked_reminder_id);
+              if (!cancelled) {
+                setReminderDraft({
+                  date: reminder.date,
+                  time: reminder.time,
+                  repeat: (reminder.repeat as HealthReminderDraft['repeat']) ?? 'off',
+                });
+              }
+            } catch {
+              if (!cancelled) {
+                setReminderDraft(
+                  note.linked_reminder_date
+                    ? {
+                        date: note.linked_reminder_date,
+                        time: note.linked_reminder_time ?? '09:00',
+                        repeat: 'off',
+                      }
+                    : null,
+                );
+              }
+            }
+          } else if (!cancelled) {
+            setReminderDraft(null);
+          }
+
+          if (!cancelled) loadedRef.current = true;
+        } catch {
+          if (!cancelled) setNotFound(true);
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      })();
+
+      return () => {
+        cancelled = true;
+      };
+    }, [activePetId, recordId, noteId]),
   );
 
   const pickImage = useCallback(async () => {
@@ -151,7 +174,7 @@ export default function EditNoteScreen() {
 
       let photoUrl: string | null | undefined;
       if (photoChanged) {
-        photoUrl = photoUri ? await uploadImage(photoUri, 'notes') : null;
+        photoUrl = photoUri ? await uploadHealthNotePhoto(photoUri) : null;
       }
 
       let nextLinkedReminderId: string | null = linkedReminderId;
@@ -176,6 +199,7 @@ export default function EditNoteScreen() {
       router.back();
     } catch (err) {
       Alert.alert(t('common.error'), getErrorMessage(err));
+    } finally {
       setSaving(false);
     }
   };
