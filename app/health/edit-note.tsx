@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,21 +6,20 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
   Alert,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
-import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
+import HealthNoteEditorCard from '@/components/health/HealthNoteEditorCard';
 import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
@@ -36,14 +35,23 @@ import { uploadImage } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDate } from '@/utils/calendar';
 
+const DESIGN_HEIGHT = 812;
+
 function reminderLabel(draft: HealthReminderDraft): string {
   return `${formatDisplayDate(draft.date)} ${draft.time}`;
 }
 
 export default function EditNoteScreen() {
   const router = useRouter();
-  const { recordId, noteId } = useLocalSearchParams<{ recordId: string; noteId: string }>();
+  const { recordId, noteId, open } = useLocalSearchParams<{
+    recordId: string;
+    noteId: string;
+    open?: string;
+  }>();
   const { activePetId } = useActivePet();
+  const { height } = useWindowDimensions();
+  const sy = height / DESIGN_HEIGHT;
+  const openHandled = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -108,11 +116,12 @@ export default function EditNoteScreen() {
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
+      openHandled.current = false;
       fetchData();
     }, [fetchData]),
   );
 
-  const pickImage = async () => {
+  const pickImage = useCallback(async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       Alert.alert(t('petOnboarding.photo_permission_title'), t('petOnboarding.photo_permission_body'));
@@ -123,12 +132,17 @@ export default function EditNoteScreen() {
       setPhotoUri(result.assets[0].uri);
       setPhotoChanged(true);
     }
-  };
+  }, []);
 
-  const removePhoto = () => {
-    setPhotoUri(null);
-    setPhotoChanged(true);
-  };
+  useEffect(() => {
+    if (loading || notFound || openHandled.current || !open) return;
+    openHandled.current = true;
+    if (open === 'photo') {
+      void pickImage();
+    } else if (open === 'reminder') {
+      setReminderSheetVisible(true);
+    }
+  }, [loading, notFound, open, pickImage]);
 
   const handleSave = async () => {
     if (!activePetId || !recordId || !noteId || !noteText.trim()) return;
@@ -209,56 +223,21 @@ export default function EditNoteScreen() {
       <ScreenHeader title={t('health.edit_note')} />
 
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.card}>
-            {photoUri ? (
-              <TouchableOpacity activeOpacity={0.9} onPress={removePhoto}>
-                <Image source={{ uri: photoUri }} style={styles.image} contentFit="cover" />
-              </TouchableOpacity>
-            ) : null}
-
-            <TextInput
-              style={styles.textInput}
-              value={noteText}
-              onChangeText={setNoteText}
-              multiline
-              placeholder={t('health.note_placeholder')}
-              placeholderTextColor={Colors.secondaryText}
-              textAlignVertical="top"
-            />
-
-            {reminderDraft ? (
-              <TouchableOpacity
-                style={styles.reminderRow}
-                activeOpacity={0.8}
-                onPress={() => setReminderSheetVisible(true)}
-              >
-                <Text style={styles.reminderLabel}>{t('health.reminder_label')}</Text>
-                <Text style={styles.reminderValue}> {reminderLabel(reminderDraft)}</Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    setReminderDraft(null);
-                  }}
-                  hitSlop={8}
-                  accessibilityLabel={t('health.remove_reminder')}
-                >
-                  <Ionicons name="close-circle" size={16} color={Colors.secondaryText} />
-                </TouchableOpacity>
-              </TouchableOpacity>
-            ) : null}
-
-            <View style={styles.iconRow}>
-              <TouchableOpacity style={styles.iconButton} onPress={pickImage}>
-                <Ionicons name="image-outline" size={24} color={Colors.secondaryText} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.iconButton}
-                onPress={() => setReminderSheetVisible(true)}
-              >
-                <Ionicons name="notifications-outline" size={24} color={Colors.secondaryText} />
-              </TouchableOpacity>
-            </View>
-          </View>
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingTop: Math.max(Spacing.md, 16 * sy) }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <HealthNoteEditorCard
+            key={photoUri ?? 'no-photo'}
+            noteText={noteText}
+            onChangeNoteText={setNoteText}
+            photoUri={photoUri}
+            onPickImage={pickImage}
+            reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
+            onReminderPress={() => setReminderSheetVisible(true)}
+            onRemoveReminder={() => setReminderDraft(null)}
+          />
 
           <TouchableOpacity
             style={styles.deleteButton}
@@ -319,64 +298,12 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
     paddingBottom: Spacing.xl,
-  },
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  image: {
-    width: '100%',
-    height: 180,
-    borderRadius: Radius.md,
-    marginBottom: Spacing.md,
-  },
-  textInput: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    color: Colors.primaryText,
-    lineHeight: 22,
-    padding: 0,
-    minHeight: 80,
-  },
-  reminderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.md,
-  },
-  reminderLabel: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 14,
-    color: Colors.primaryText,
-  },
-  reminderValue: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: Colors.primaryText,
-    flex: 1,
-  },
-  iconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingTop: Spacing.md,
-  },
-  iconButton: {
-    marginRight: Spacing.lg,
+    gap: Spacing.lg,
   },
   deleteButton: {
     padding: Spacing.md,
     alignItems: 'center',
-    marginTop: Spacing.lg,
   },
   deleteText: {
     fontFamily: 'Rubik-Medium',

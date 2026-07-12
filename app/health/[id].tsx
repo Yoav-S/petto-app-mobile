@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
@@ -23,10 +25,33 @@ import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDate } from '@/utils/calendar';
 import type { MedicalRecordDetail } from '@/types/api';
 
+const DESIGN_WIDTH = 375;
+const DESIGN_HEIGHT = 812;
+
 export default function HealthDetailsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { activePetId } = useActivePet();
+  const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const sx = width / DESIGN_WIDTH;
+  const sy = height / DESIGN_HEIGHT;
+
+  const footerLayout = useMemo(
+    () => ({
+      padH: 20 * sx,
+      padBottom: Math.max(insets.bottom, 10 * sy),
+      gap: 8 * sx,
+      rowHeight: 48 * sy,
+      addWidth: 220 * sx,
+      resolveWidth: 107 * sx,
+      buttonHeight: 48 * sy,
+      buttonRadius: 12 * sx,
+      buttonPadV: 12 * sy,
+      buttonPadH: 16 * sx,
+    }),
+    [sx, sy, insets.bottom],
+  );
 
   const [record, setRecord] = useState<MedicalRecordDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -143,14 +168,49 @@ export default function HealthDetailsScreen() {
         )}
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View
+        style={[
+          styles.footer,
+          {
+            paddingHorizontal: footerLayout.padH,
+            paddingBottom: footerLayout.padBottom,
+            gap: footerLayout.gap,
+            minHeight: footerLayout.rowHeight,
+            justifyContent: isActive ? 'flex-start' : 'flex-end',
+          },
+        ]}
+      >
         {isActive ? (
-          <TouchableOpacity style={styles.resolveButton} onPress={handleResolve} activeOpacity={0.7}>
-            <Text style={styles.resolveText}>{t('health.mark_resolved')}</Text>
+          <TouchableOpacity
+            style={[
+              styles.resolveButton,
+              {
+                width: footerLayout.resolveWidth,
+                height: footerLayout.buttonHeight,
+                borderRadius: footerLayout.buttonRadius,
+                paddingVertical: footerLayout.buttonPadV,
+                paddingHorizontal: footerLayout.buttonPadH,
+              },
+            ]}
+            onPress={handleResolve}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.resolveText} numberOfLines={1}>
+              {t('health.mark_resolved')}
+            </Text>
           </TouchableOpacity>
         ) : null}
         <TouchableOpacity
-          style={styles.addButton}
+          style={[
+            styles.addButton,
+            {
+              width: footerLayout.addWidth,
+              height: footerLayout.buttonHeight,
+              borderRadius: footerLayout.buttonRadius,
+              paddingVertical: footerLayout.buttonPadV,
+              paddingHorizontal: footerLayout.buttonPadH,
+            },
+          ]}
           activeOpacity={0.85}
           onPress={() =>
             router.push({ pathname: '/health/add-note', params: { recordId: record.id } } as never)
@@ -174,7 +234,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
-    paddingBottom: Spacing.xl,
+    paddingBottom: 80,
   },
   emptyNotes: {
     fontFamily: 'Rubik-Regular',
@@ -224,32 +284,35 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
   },
   footer: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    gap: Spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: Spacing.sm,
+    width: '100%',
   },
   resolveButton: {
-    borderRadius: Radius.md,
-    paddingVertical: 14,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
   },
   resolveText: {
     fontFamily: 'Rubik-Medium',
-    fontSize: 16,
+    fontSize: 14,
+    lineHeight: 18,
     color: Colors.primaryText,
+    textAlign: 'center',
   },
   addButton: {
     backgroundColor: Colors.primaryText,
-    borderRadius: Radius.md,
-    paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   addText: {
     fontFamily: 'Rubik-Medium',
-    fontSize: 16,
+    fontSize: 14,
+    lineHeight: 18,
     color: Colors.surface,
+    textAlign: 'center',
   },
 });

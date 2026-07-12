@@ -196,8 +196,40 @@ export default function HealthScreen() {
               title={item.title}
               subtitle={item.latest_note_preview ?? t('health.no_notes_preview')}
               dateOrTime={formatDisplayDate(item.created_at)}
+              photoUrl={item.latest_note_photo_url}
+              reminderDate={
+                item.linked_reminder_date ? formatDisplayDate(item.linked_reminder_date) : null
+              }
+              reminderTime={item.linked_reminder_time}
+              noteId={item.latest_note_id}
               onPress={() => router.push(`/health/${item.id}` as never)}
               onLongPress={() => handleDeleteRecord(item.id)}
+              onPhotoPress={
+                item.latest_note_id
+                  ? () =>
+                      router.push({
+                        pathname: '/health/edit-note',
+                        params: {
+                          recordId: item.id,
+                          noteId: item.latest_note_id!,
+                          open: 'photo',
+                        },
+                      } as never)
+                  : undefined
+              }
+              onReminderPress={
+                item.latest_note_id
+                  ? () =>
+                      router.push({
+                        pathname: '/health/edit-note',
+                        params: {
+                          recordId: item.id,
+                          noteId: item.latest_note_id!,
+                          open: 'reminder',
+                        },
+                      } as never)
+                  : undefined
+              }
             />
           )}
           ListEmptyComponent={renderEmptyState}

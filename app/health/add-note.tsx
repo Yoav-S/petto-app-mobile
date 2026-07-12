@@ -12,12 +12,11 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import HealthNoteEditorCard from '@/components/health/HealthNoteEditorCard';
 import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
@@ -127,54 +126,16 @@ export default function AddNoteScreen() {
             </>
           ) : null}
 
-          <View style={styles.card}>
-            {photoUri ? (
-              <TouchableOpacity activeOpacity={0.9} onPress={() => setPhotoUri(null)}>
-                <Image source={{ uri: photoUri }} style={styles.image} contentFit="cover" />
-              </TouchableOpacity>
-            ) : null}
-
-            <TextInput
-              style={styles.textInput}
-              placeholder={t('health.note_placeholder')}
-              placeholderTextColor={Colors.secondaryText}
-              multiline
-              autoFocus={!needsTitle}
-              value={note}
-              onChangeText={setNote}
-              textAlignVertical="top"
-            />
-
-            {reminderDraft ? (
-              <TouchableOpacity
-                style={styles.reminderRow}
-                activeOpacity={0.8}
-                onPress={() => setReminderSheetVisible(true)}
-              >
-                <Text style={styles.reminderLabel}>{t('health.reminder_label')}</Text>
-                <Text style={styles.reminderValue}> {reminderLabel(reminderDraft)}</Text>
-                <TouchableOpacity
-                  onPress={() => setReminderDraft(null)}
-                  hitSlop={8}
-                  accessibilityLabel={t('health.remove_reminder')}
-                >
-                  <Ionicons name="close-circle" size={16} color={Colors.secondaryText} />
-                </TouchableOpacity>
-              </TouchableOpacity>
-            ) : null}
-
-            <View style={styles.iconRow}>
-              <TouchableOpacity style={styles.iconButton} onPress={pickImage}>
-                <Ionicons name="image-outline" size={24} color={Colors.secondaryText} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.iconButton}
-                onPress={() => setReminderSheetVisible(true)}
-              >
-                <Ionicons name="notifications-outline" size={24} color={Colors.secondaryText} />
-              </TouchableOpacity>
-            </View>
-          </View>
+          <HealthNoteEditorCard
+            key={photoUri ?? 'no-photo'}
+            noteText={note}
+            onChangeNoteText={setNote}
+            photoUri={photoUri}
+            onPickImage={pickImage}
+            reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
+            onReminderPress={() => setReminderSheetVisible(true)}
+            onRemoveReminder={() => setReminderDraft(null)}
+          />
         </ScrollView>
 
         <View style={styles.footer}>
@@ -217,6 +178,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.xl,
+    gap: Spacing.lg,
   },
   label: {
     fontFamily: 'Rubik-Medium',
@@ -235,57 +197,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.primaryText,
     marginBottom: Spacing.lg,
-  },
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    minHeight: 160,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  image: {
-    width: '100%',
-    height: 180,
-    borderRadius: Radius.md,
-    marginBottom: Spacing.md,
-  },
-  textInput: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    color: Colors.primaryText,
-    minHeight: 96,
-    padding: 0,
-  },
-  reminderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.md,
-  },
-  reminderLabel: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 14,
-    color: Colors.primaryText,
-  },
-  reminderValue: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: Colors.primaryText,
-    flex: 1,
-  },
-  iconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingTop: Spacing.md,
-  },
-  iconButton: {
-    marginRight: Spacing.lg,
   },
   footer: {
     paddingHorizontal: Spacing.lg,

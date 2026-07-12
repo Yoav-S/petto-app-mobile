@@ -9,6 +9,7 @@ import {
   Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import SettingRow from '@/components/ui/SettingRow';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
@@ -55,6 +56,7 @@ export default function ReminderPickerSheet({
   onClose,
   onConfirm,
 }: ReminderPickerSheetProps) {
+  const insets = useSafeAreaInsets();
   const [date, setDate] = useState(todayIsoDate());
   const [time, setTime] = useState('13:00');
   const [repeat, setRepeat] = useState<RepeatOption>('off');
@@ -151,7 +153,7 @@ export default function ReminderPickerSheet({
               </View>
             </ScrollView>
 
-            <View style={styles.footer}>
+            <View style={[styles.footer, { paddingBottom: insets.bottom + 40 }]}>
               <TouchableOpacity style={styles.doneButton} onPress={handleDone} activeOpacity={0.8}>
                 <Text style={styles.doneButtonText}>{t('common.save')}</Text>
               </TouchableOpacity>
@@ -293,7 +295,6 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
-    paddingBottom: Spacing.xl * 2,
     backgroundColor: Colors.surface,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
