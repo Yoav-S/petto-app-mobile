@@ -185,6 +185,18 @@ export function isBeforeIsoDate(date: Date, minIso: string): boolean {
   return isIsoDateBefore(toIsoDate(date), minIso);
 }
 
+/** True when a local reminder date+time (YYYY-MM-DD, HH:MM) is already in the past. */
+export function isReminderDateTimeInPast(isoDate: string, time: string): boolean {
+  const date = parseIsoDate(isoDate);
+  if (!date) return true;
+  const [h, m] = time.split(':').map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return true;
+  const scheduled = new Date(date.getFullYear(), date.getMonth(), date.getDate(), h, m, 0, 0);
+  const now = new Date();
+  now.setSeconds(0, 0);
+  return scheduled.getTime() < now.getTime();
+}
+
 /** True if `date` is strictly after today (ignoring time-of-day). */
 export function isFutureDate(date: Date): boolean {
   const today = new Date();

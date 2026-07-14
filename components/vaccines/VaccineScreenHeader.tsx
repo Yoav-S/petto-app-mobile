@@ -15,9 +15,15 @@ const HEADER_PAD_V = 6;
 interface VaccineScreenHeaderProps {
   title: string;
   icon?: 'back' | 'close';
+  /** Extra space below the safe area (Figma status bar compensation). */
+  extraTopOffset?: number;
 }
 
-export default function VaccineScreenHeader({ title, icon = 'back' }: VaccineScreenHeaderProps) {
+export default function VaccineScreenHeader({
+  title,
+  icon = 'back',
+  extraTopOffset = 0,
+}: VaccineScreenHeaderProps) {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -26,14 +32,14 @@ export default function VaccineScreenHeader({ title, icon = 'back' }: VaccineScr
 
   const layout = useMemo(
     () => ({
-      marginTop: Math.max(0, HEADER_TOP * sy - insets.top),
+      marginTop: Math.max(0, HEADER_TOP * sy - insets.top) + extraTopOffset,
       height: HEADER_HEIGHT * sy,
       paddingHorizontal: HEADER_PAD_H * sx,
       paddingVertical: HEADER_PAD_V * sy,
       buttonSize: 40 * sx,
       buttonRadius: 12 * sx,
     }),
-    [sx, sy, insets.top],
+    [sx, sy, insets.top, extraTopOffset],
   );
 
   return (
