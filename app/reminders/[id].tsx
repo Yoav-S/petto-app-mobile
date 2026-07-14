@@ -1,44 +1,47 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   SafeAreaView,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
   Alert,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors, Radius, Spacing } from '@/constants/theme';
-import ConfirmModal from '@/components/ui/ConfirmModal';
-import ScreenHeader from '@/components/ui/ScreenHeader';
+import { Colors } from '@/constants/theme';
+import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
-import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
-import TimePickerSheet from '@/components/pickers/TimePickerSheet';
-import RepeatPickerSheet, { repeatLabel } from '@/components/pickers/RepeatPickerSheet';
+import ReminderFormBody, { ReminderAutosaveStatus } from '@/components/reminders/ReminderFormBody';
+import {
+  DESIGN_HEIGHT,
+  DESIGN_WIDTH,
+  hasDuplicateInList,
+  isBeforeMinReminderDate,
+  type ReminderSheet,
+} from '@/components/reminders/reminderFormShared';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import {
   getReminder,
+  listReminders,
   updateReminder,
-  deleteReminder,
   type RepeatOption,
 } from '@/services/reminders';
 import { getErrorMessage } from '@/services/errors';
-import { formatDisplayDate, parseIsoDate } from '@/utils/calendar';
+import type { Reminder } from '@/types/api';
 
-type Sheet = 'date' | 'time' | 'repeat' | null;
+type AutosaveState = 'idle' | 'saving' | 'saved' | 'error';
 
-export default function ReminderDetailsScreen() {
+const AUTOSAVE_MS = 700;
+
+export default function EditReminderScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { activePetId } = useActivePet();
+  const { width, height } = useWindowDimensions();
+  const sx = width / DESIGN_WIDTH;
+  const sy = height / DESIGN_HEIGHT;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,9 +52,60 @@ export default function ReminderDetailsScreen() {
   const [time, setTime] = useState<string | null>(null);
   const [repeat, setRepeat] = useState<RepeatOption>('off');
   const [note, setNote] = useState('');
-  const [sheet, setSheet] = useState<Sheet>(null);
-  const [saving, setSaving] = useState(false);
-  const [deleteVisible, setDeleteVisible] = useState(false);
+  const [noteFocused, setNoteFocused] = useState(false);
+  const [sheet, setSheet] = useState<ReminderSheet>(null);
+  const [autosaveState, setAutosaveState] = useState<AutosaveState>('idle');
+  const [existingReminders, setExistingReminders] = useState<Reminder[]>([]);
+
+  const hydratedRef = useRef(false);
+  const snapshotRef = useRef('');
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const layout = useMemo(
+    () => ({
+      formTop: 16 * sy,
+      formGap: 22 * sy,
+      cardWidth: 335 * sx,
+      cardRadius: 12 * sx,
+      cardPadH: 16 * sx,
+      cardPadV: 14 * sy,
+      nameHeight: 48 * sy,
+      scheduleHeight: 120 * sy,
+      noteHeight: 78 * sy,
+      innerGap: 8 * sy,
+      rowHeight: 20 * sy,
+      footerHeight: 48 * sy,
+    }),
+    [sx, sy],
+  );
+
+  const buildSnapshot = useCallback(
+    () =>
+      JSON.stringify({
+        title: title.trim(),
+        date,
+        time,
+        repeat,
+        note: note.trim(),
+      }),
+    [title, date, time, repeat, note],
+  );
+
+  const loadExistingReminders = useCallback(async (): Promise<Reminder[]> => {
+    if (!activePetId) return [];
+    try {
+      const [today, upcoming] = await Promise.all([
+        listReminders(activePetId, 'today'),
+        listReminders(activePetId, 'upcoming'),
+      ]);
+      const merged = [...today, ...upcoming];
+      setExistingReminders(merged);
+      return merged;
+    } catch {
+      setExistingReminders([]);
+      return [];
+    }
+  }, [activePetId]);
 
   const fetchData = useCallback(async () => {
     if (!activePetId || !id) {
@@ -61,31 +115,79 @@ export default function ReminderDetailsScreen() {
     }
     try {
       setError(null);
-      const reminder = await getReminder(activePetId, id);
+      const [reminder] = await Promise.all([
+        getReminder(activePetId, id),
+        loadExistingReminders(),
+      ]);
+
+      if (reminder.status !== 'scheduled') {
+        setNotFound(true);
+        setError(t('reminders.edit_not_allowed'));
+        setLoading(false);
+        return;
+      }
+
       setTitle(reminder.title);
       setDate(reminder.date);
       setTime(reminder.time);
       setRepeat((reminder.repeat as RepeatOption) ?? 'off');
       setNote(reminder.note ?? '');
+      snapshotRef.current = JSON.stringify({
+        title: reminder.title.trim(),
+        date: reminder.date,
+        time: reminder.time,
+        repeat: reminder.repeat,
+        note: (reminder.note ?? '').trim(),
+      });
+      hydratedRef.current = true;
+      setAutosaveState('idle');
     } catch (err) {
       setError(getErrorMessage(err));
       setNotFound(true);
     } finally {
       setLoading(false);
     }
-  }, [activePetId, id]);
+  }, [activePetId, id, loadExistingReminders]);
 
   useFocusEffect(
     useCallback(() => {
+      hydratedRef.current = false;
       setLoading(true);
       fetchData();
     }, [fetchData]),
   );
 
-  const handleSave = async () => {
-    if (!activePetId || !id || !title.trim() || !date || !time) return;
+  const warnDuplicate = useCallback(
+    (nextDate: string, nextTime: string, list = existingReminders) => {
+      if (!hasDuplicateInList(list, nextDate, nextTime, id)) return false;
+      Alert.alert(t('common.error'), t('reminders.duplicate_datetime'));
+      return true;
+    },
+    [existingReminders, id],
+  );
+
+  const warnBeforeMinDate = useCallback((nextDate: string) => {
+    if (!isBeforeMinReminderDate(nextDate)) return false;
+    Alert.alert(t('common.error'), t('reminders.past_datetime'));
+    return true;
+  }, []);
+
+  const persist = useCallback(async () => {
+    if (!activePetId || !id || !hydratedRef.current) return;
+    if (!title.trim() || !date || !time) return;
+
+    const latest = await loadExistingReminders();
+    if (warnDuplicate(date, time, latest)) {
+      setAutosaveState('error');
+      return;
+    }
+    if (warnBeforeMinDate(date)) {
+      setAutosaveState('error');
+      return;
+    }
+
     try {
-      setSaving(true);
+      setAutosaveState('saving');
       await updateReminder(activePetId, id, {
         title: title.trim(),
         date,
@@ -93,28 +195,60 @@ export default function ReminderDetailsScreen() {
         repeat,
         note: note.trim() || undefined,
       });
-      router.back();
+      snapshotRef.current = buildSnapshot();
+      setAutosaveState('saved');
     } catch (err) {
+      setAutosaveState('error');
       Alert.alert(t('common.error'), getErrorMessage(err));
-      setSaving(false);
     }
+  }, [
+    activePetId,
+    id,
+    title,
+    date,
+    time,
+    repeat,
+    note,
+    loadExistingReminders,
+    warnDuplicate,
+    warnBeforeMinDate,
+    buildSnapshot,
+  ]);
+
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    const nextSnapshot = buildSnapshot();
+    if (nextSnapshot === snapshotRef.current) return;
+    if (!title.trim() || !date || !time) return;
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      persist();
+    }, AUTOSAVE_MS);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [title, date, time, repeat, note, buildSnapshot, persist]);
+
+  const handleDateConfirm = (iso: string) => {
+    if (warnBeforeMinDate(iso)) return;
+    if (time && warnDuplicate(iso, time)) return;
+    setDate(iso);
+    setSheet(null);
   };
 
-  const handleDelete = async () => {
-    if (!activePetId || !id) return;
-    setDeleteVisible(false);
-    try {
-      await deleteReminder(activePetId, id);
-      router.replace({ pathname: '/reminders', params: { deletedId: id } } as never);
-    } catch (err) {
-      Alert.alert(t('common.error'), getErrorMessage(err));
-    }
+  const handleTimeConfirm = (value: string) => {
+    if (!date) return;
+    if (warnDuplicate(date, value)) return;
+    setTime(value);
+    setSheet(null);
   };
 
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <ScreenHeader title={t('reminders.title')} />
+        <VaccineScreenHeader title={t('reminders.edit_title')} icon="close" extraTopOffset={44 * sy} />
         <View style={styles.centered}>
           <ActivityIndicator color={Colors.primaryText} />
         </View>
@@ -125,7 +259,7 @@ export default function ReminderDetailsScreen() {
   if (notFound) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <ScreenHeader title={t('reminders.title')} />
+        <VaccineScreenHeader title={t('reminders.edit_title')} icon="close" extraTopOffset={44 * sy} />
         <View style={styles.centered}>
           <EmptyState
             title={t('reminders.not_found_title')}
@@ -140,116 +274,29 @@ export default function ReminderDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScreenHeader title={t('reminders.details_title')} />
-
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <Text style={styles.label}>{t('reminders.field_title')}</Text>
-          <TextInput
-            style={styles.input}
-            value={title}
-            onChangeText={setTitle}
-            placeholder={t('reminders.field_title_placeholder')}
-            placeholderTextColor={Colors.secondaryText}
-          />
-
-          <Text style={styles.label}>{t('reminders.field_date')}</Text>
-          <TouchableOpacity style={styles.fieldButton} onPress={() => setSheet('date')}>
-            <Text style={[styles.fieldValue, !date && styles.placeholder]}>
-              {date ? formatDisplayDate(date) : t('reminders.field_date_placeholder')}
-            </Text>
-            <Ionicons name="calendar-outline" size={20} color={Colors.secondaryText} />
-          </TouchableOpacity>
-
-          <Text style={styles.label}>{t('reminders.field_time')}</Text>
-          <TouchableOpacity style={styles.fieldButton} onPress={() => setSheet('time')}>
-            <Text style={[styles.fieldValue, !time && styles.placeholder]}>
-              {time ?? t('reminders.field_time_placeholder')}
-            </Text>
-            <Ionicons name="time-outline" size={20} color={Colors.secondaryText} />
-          </TouchableOpacity>
-
-          <Text style={styles.label}>{t('reminders.field_repeat')}</Text>
-          <TouchableOpacity style={styles.fieldButton} onPress={() => setSheet('repeat')}>
-            <Text style={styles.fieldValue}>{repeatLabel(repeat)}</Text>
-            <Ionicons name="repeat-outline" size={20} color={Colors.secondaryText} />
-          </TouchableOpacity>
-
-          <Text style={styles.label}>{t('reminders.field_note')}</Text>
-          <TextInput
-            style={[styles.input, styles.noteInput]}
-            value={note}
-            onChangeText={setNote}
-            placeholder={t('reminders.field_note_placeholder')}
-            placeholderTextColor={Colors.secondaryText}
-            multiline
-            textAlignVertical="top"
-          />
-
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => setDeleteVisible(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.deleteText}>{t('reminders.delete')}</Text>
-          </TouchableOpacity>
-        </ScrollView>
-
-        <View style={styles.footer}>
-          <TouchableOpacity
-            style={[styles.saveButton, (!title.trim() || !date || !time || saving) && styles.saveButtonDisabled]}
-            onPress={handleSave}
-            disabled={!title.trim() || !date || !time || saving}
-            activeOpacity={0.85}
-          >
-            {saving ? (
-              <ActivityIndicator color={Colors.surface} />
-            ) : (
-              <Text style={styles.saveText}>{t('common.save')}</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-
-      <BirthDatePickerSheet
-        visible={sheet === 'date'}
-        initialDate={parseIsoDate(date)}
-        allowFuture
-        onClose={() => setSheet(null)}
-        onConfirm={(iso) => {
-          setDate(iso);
-          setSheet(null);
-        }}
+      <VaccineScreenHeader
+        title={t('reminders.edit_title')}
+        icon="close"
+        extraTopOffset={44 * sy}
       />
-      <TimePickerSheet
-        visible={sheet === 'time'}
-        value={time}
-        onClose={() => setSheet(null)}
-        onConfirm={(value) => {
-          setTime(value);
-          setSheet(null);
-        }}
-      />
-      <RepeatPickerSheet
-        visible={sheet === 'repeat'}
-        value={repeat}
-        onClose={() => setSheet(null)}
-        onSelect={(value) => {
-          setRepeat(value);
-          setSheet(null);
-        }}
-      />
-
-      <ConfirmModal
-        visible={deleteVisible}
-        title={t('reminders.delete_confirm_title')}
-        message={t('reminders.delete_confirm_body')}
-        confirmText={t('common.delete')}
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteVisible(false)}
+      <ReminderFormBody
+        layout={layout}
+        title={title}
+        onTitleChange={setTitle}
+        date={date}
+        time={time}
+        repeat={repeat}
+        note={note}
+        onNoteChange={setNote}
+        noteFocused={noteFocused}
+        onNoteFocus={() => setNoteFocused(true)}
+        onNoteBlur={() => setNoteFocused(false)}
+        sheet={sheet}
+        onSheetChange={setSheet}
+        onDateConfirm={handleDateConfirm}
+        onTimeConfirm={handleTimeConfirm}
+        onRepeatSelect={setRepeat}
+        footer={<ReminderAutosaveStatus layout={layout} state={autosaveState} />}
       />
     </SafeAreaView>
   );
@@ -260,83 +307,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  flex: {
-    flex: 1,
-  },
   centered: {
     flex: 1,
-  },
-  content: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xl,
-  },
-  label: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 14,
-    color: Colors.primaryText,
-    marginBottom: Spacing.sm,
-    marginTop: Spacing.lg,
-  },
-  input: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: 14,
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    color: Colors.primaryText,
-  },
-  noteInput: {
-    minHeight: 96,
-  },
-  fieldButton: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  fieldValue: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    color: Colors.primaryText,
-  },
-  placeholder: {
-    color: Colors.secondaryText,
-  },
-  deleteButton: {
-    marginTop: Spacing.xl,
-    alignItems: 'center',
-    padding: Spacing.md,
-  },
-  deleteText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: Colors.error,
-  },
-  footer: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-  },
-  saveButton: {
-    backgroundColor: Colors.primaryText,
-    borderRadius: Radius.md,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  saveButtonDisabled: {
-    backgroundColor: Colors.button.disabledBg,
-  },
-  saveText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: Colors.surface,
   },
 });

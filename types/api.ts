@@ -44,6 +44,7 @@ export interface Reminder {
   repeat: string;
   status: string;
   note?: string | null;
+  notified_at?: string | null;
 }
 
 export interface MedicalRecord {

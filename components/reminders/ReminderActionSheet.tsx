@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Pressable } from 'react-native';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { t } from '@/i18n';
 
 interface ReminderActionSheetProps {
   visible: boolean;
@@ -11,8 +12,10 @@ interface ReminderActionSheetProps {
   context?: string;
   currentIndex?: number;
   totalCount?: number;
+  /** When false, the card is display-only (no navigation to edit). */
+  showDetailsLink?: boolean;
   onClose: () => void;
-  onDetailsPress: () => void;
+  onDetailsPress?: () => void;
   onDone: () => void;
   onMissed: () => void;
 }
@@ -25,60 +28,57 @@ export default function ReminderActionSheet({
   context,
   currentIndex,
   totalCount,
+  showDetailsLink = false,
   onClose,
   onDetailsPress,
   onDone,
-  onMissed
+  onMissed,
 }: ReminderActionSheetProps) {
+  const CardWrapper = showDetailsLink && onDetailsPress ? TouchableOpacity : View;
+
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <View style={styles.sheet}>
-              <View style={styles.dragHandle} />
-              
-              <View style={styles.header}>
-                <View style={styles.headerSpacer}>
-                  {currentIndex !== undefined && totalCount !== undefined && (
-                    <Text style={styles.paginationText}>{currentIndex}/{totalCount}</Text>
-                  )}
-                </View>
-                <Text style={styles.title}>Reminder</Text>
-                <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                  <Ionicons name="close" size={20} color={Colors.primaryText} />
-                </TouchableOpacity>
-              </View>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.sheet}>
+          <View style={styles.dragHandle} />
 
-              <TouchableOpacity 
-                style={styles.card} 
-                activeOpacity={0.8}
-                onPress={onDetailsPress}
-              >
-                <View style={styles.cardHeader}>
-                  <Text style={styles.cardTitle}>{title}</Text>
-                  <Text style={styles.cardTime}>{time}</Text>
-                </View>
-                <Text style={styles.cardSubtitle}>{subtitle}</Text>
-                <Text style={styles.cardContext}>{context}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.doneButton} onPress={onDone} activeOpacity={0.8}>
-                <Text style={styles.doneText}>Done</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.missedButton} onPress={onMissed} activeOpacity={0.8}>
-                <Text style={styles.missedText}>Missed</Text>
-              </TouchableOpacity>
+          <View style={styles.header}>
+            <View style={styles.headerSpacer}>
+              {currentIndex !== undefined && totalCount !== undefined ? (
+                <Text style={styles.paginationText}>
+                  {currentIndex}/{totalCount}
+                </Text>
+              ) : null}
             </View>
-          </TouchableWithoutFeedback>
+            <Text style={styles.title}>{t('reminders.action_sheet_title')}</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <Ionicons name="close" size={20} color={Colors.primaryText} />
+            </TouchableOpacity>
+          </View>
+
+          <CardWrapper
+            style={styles.card}
+            activeOpacity={0.8}
+            onPress={showDetailsLink ? onDetailsPress : undefined}
+          >
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>{title}</Text>
+              <Text style={styles.cardTime}>{time}</Text>
+            </View>
+            {subtitle ? <Text style={styles.cardSubtitle}>{subtitle}</Text> : null}
+            {context ? <Text style={styles.cardContext}>{context}</Text> : null}
+          </CardWrapper>
+
+          <TouchableOpacity style={styles.doneButton} onPress={onDone} activeOpacity={0.8}>
+            <Text style={styles.doneText}>{t('reminders.mark_done')}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.missedButton} onPress={onMissed} activeOpacity={0.8}>
+            <Text style={styles.missedText}>{t('reminders.mark_missed')}</Text>
+          </TouchableOpacity>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
     </Modal>
   );
 }
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.background, // Match the slightly off-white background
+    backgroundColor: Colors.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingBottom: 40,
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   headerSpacer: {
-    width: 32, // To balance the close button
+    width: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -153,14 +153,14 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start', // allow title to wrap without pushing time down
+    alignItems: 'flex-start',
     marginBottom: 4,
   },
   cardTitle: {
     fontFamily: 'Rubik-Medium',
     fontSize: 18,
     color: Colors.primaryText,
-    flex: 1, // allow wrapping
+    flex: 1,
     marginRight: Spacing.md,
   },
   cardTime: {
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     color: Colors.secondaryText,
   },
   doneButton: {
-    backgroundColor: Colors.primaryText, // Dark button
+    backgroundColor: Colors.primaryText,
     borderRadius: Radius.md,
     paddingVertical: 16,
     alignItems: 'center',

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +19,10 @@ import EmptyState from '@/components/ui/EmptyState';
 import ReminderListItem from '@/components/reminders/ReminderListItem';
 import ReminderActionSheet from '@/components/reminders/ReminderActionSheet';
 import Snackbar from '@/components/ui/Snackbar';
+import {
+  needsStatusPrompt,
+  statusPromptKey,
+} from '@/components/reminders/reminderFormShared';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import {
@@ -68,6 +73,7 @@ export default function RemindersScreen() {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
   const [selectedReminder, setSelectedReminder] = useState<Reminder | null>(null);
+  const autoPromptCheckedRef = useRef(false);
 
   const items = listsByTab[activeTab];
 
@@ -100,19 +106,45 @@ export default function RemindersScreen() {
         listReminders(activePetId, 'recent'),
       ]);
       setListsByTab({ Today: today, Upcoming: upcoming, Recent: recent });
+      return today;
     } catch (err) {
       setError(getErrorMessage(err));
+      return [];
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [activePetId]);
 
+  const maybeAutoPromptStatus = useCallback(async (today: Reminder[]) => {
+    if (autoPromptCheckedRef.current) return;
+    autoPromptCheckedRef.current = true;
+
+    for (const item of today) {
+      if (!needsStatusPrompt(item)) continue;
+      const key = statusPromptKey(item);
+      const seen = await AsyncStorage.getItem(key);
+      if (!seen) {
+        setSelectedReminder(item);
+        setActionSheetVisible(true);
+        break;
+      }
+    }
+  }, []);
+
+  const markStatusPrompted = useCallback(async (reminder: Reminder | null) => {
+    if (!reminder || !needsStatusPrompt(reminder)) return;
+    await AsyncStorage.setItem(statusPromptKey(reminder), '1');
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
+      autoPromptCheckedRef.current = false;
       setLoading(true);
-      fetchData();
-    }, [fetchData]),
+      fetchData().then((today) => {
+        if (today?.length) maybeAutoPromptStatus(today);
+      });
+    }, [fetchData, maybeAutoPromptStatus]),
   );
 
   const onRefresh = useCallback(() => {
@@ -120,11 +152,33 @@ export default function RemindersScreen() {
     fetchData();
   }, [fetchData]);
 
+  const closeActionSheet = useCallback(() => {
+    setActionSheetVisible(false);
+    setSelectedReminder(null);
+  }, []);
+
+  const handleReminderPress = useCallback(
+    (item: Reminder) => {
+      if (activeTab === 'Upcoming') {
+        router.push(`/reminders/${item.id}` as never);
+        return;
+      }
+      if (activeTab === 'Today') {
+        setSelectedReminder(item);
+        setActionSheetVisible(true);
+      }
+    },
+    [activeTab, router],
+  );
+
   const handleStatus = async (status: 'completed' | 'missed') => {
     if (!activePetId || !selectedReminder) return;
+    const reminder = selectedReminder;
     setActionSheetVisible(false);
+    setSelectedReminder(null);
     try {
-      await updateReminderStatus(activePetId, selectedReminder.id, status);
+      await updateReminderStatus(activePetId, reminder.id, status);
+      await markStatusPrompted(reminder);
       fetchData();
     } catch {
       /* keep list as-is; a transient error shouldn't block the UI */
@@ -209,10 +263,9 @@ export default function RemindersScreen() {
               subtitle={reminderSubtitle(item)}
               timeOrDate={reminderTimeOrDate(item, activeTab)}
               categoryAccent={Colors.category.reminders}
-              onPress={() => {
-                setSelectedReminder(item);
-                setActionSheetVisible(true);
-              }}
+              onPress={
+                activeTab === 'Recent' ? undefined : () => handleReminderPress(item)
+              }
             />
           )}
           ListEmptyComponent={renderEmptyState}
@@ -241,11 +294,11 @@ export default function RemindersScreen() {
         title={selectedReminder?.title}
         subtitle={selectedReminder ? reminderSubtitle(selectedReminder) : undefined}
         time={selectedReminder?.time}
-        context={activeTab}
-        onClose={() => setActionSheetVisible(false)}
-        onDetailsPress={() => {
-          setActionSheetVisible(false);
-          if (selectedReminder) router.push(`/reminders/${selectedReminder.id}` as never);
+        context={activeTab === 'Today' ? t('common.today') : undefined}
+        showDetailsLink={false}
+        onClose={async () => {
+          await markStatusPrompted(selectedReminder);
+          closeActionSheet();
         }}
         onDone={() => handleStatus('completed')}
         onMissed={() => handleStatus('missed')}
