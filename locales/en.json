@@ -46,8 +46,11 @@
   },
   "pickers": {
     "time_title": "Choose time",
-    "hours": "Hours",
-    "minutes": "Minutes",
+    "hours": "Hour",
+    "minutes": "Min",
+    "period": "AM/PM",
+    "am": "AM",
+    "pm": "PM",
     "done": "Done"
   },
   "vaccines": {
@@ -120,7 +123,7 @@
     "field_description": "Description",
     "field_description_placeholder": "Description",
     "duplicate_datetime": "You already have a reminder at this date and time",
-    "past_datetime": "Choose a date and time in the future",
+    "past_datetime": "Choose tomorrow or a later date",
     "repeat_toggle_on": "On",
     "repeat_toggle_off": "Off",
     "repeat_title": "Repeat",
@@ -192,7 +195,7 @@
     "no_fields_to_update": "Nothing to update.",
     "already_resolved": "This item was already completed.",
     "duplicate_reminder_datetime": "You already have a reminder at this date and time.",
-    "reminder_datetime_in_past": "Choose a date and time in the future.",
+    "reminder_datetime_in_past": "Choose tomorrow or a later date.",
     "network_timeout": "The request timed out. Check your connection and try again.",
     "invalid_email": "Please enter a valid email address.",
     "otp_length": "Enter the 6-digit code from your email.",

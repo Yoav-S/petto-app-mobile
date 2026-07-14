@@ -25,7 +25,12 @@ import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { createReminder, listReminders, type RepeatOption } from '@/services/reminders';
 import { getErrorMessage } from '@/services/errors';
-import { formatDisplayDate, isIsoDateBefore, isReminderDateTimeInPast, todayIsoDate } from '@/utils/calendar';
+import {
+  formatDisplayDate,
+  formatReminderClockTime,
+  isIsoDateBefore,
+  minReminderDateIso,
+} from '@/utils/calendar';
 import type { Reminder } from '@/types/api';
 
 type Sheet = 'date' | 'time' | 'repeat' | null;
@@ -48,7 +53,7 @@ function normalizeTime(time: string): string {
 }
 
 function formatTimeDisplay(time: string): string {
-  return normalizeTime(time);
+  return formatReminderClockTime(normalizeTime(time));
 }
 
 function isActiveReminderStatus(status: string): boolean {
@@ -134,25 +139,20 @@ export default function AddReminderScreen() {
     [existingReminders, hasDuplicateInList],
   );
 
-  const warnPastDateTime = useCallback((nextDate: string, nextTime: string) => {
-    if (!isReminderDateTimeInPast(nextDate, nextTime)) return false;
+  const warnBeforeMinDate = useCallback((nextDate: string) => {
+    if (!isIsoDateBefore(nextDate, minReminderDateIso())) return false;
     Alert.alert(t('common.error'), t('reminders.past_datetime'));
     return true;
   }, []);
 
-  const canSave =
-    title.trim().length > 0 &&
-    !!date &&
-    !!time &&
-    !submitting &&
-    !isReminderDateTimeInPast(date ?? '', time ?? '');
+  const canSave = title.trim().length > 0 && !!date && !!time && !submitting;
   const showNoteLabel = noteFocused || note.trim().length > 0;
 
   const handleSave = async () => {
     if (!canSave || !activePetId || !date || !time) return;
     const latest = await loadExistingReminders();
     if (warnDuplicate(date, time, latest)) return;
-    if (warnPastDateTime(date, time)) return;
+    if (warnBeforeMinDate(date)) return;
 
     try {
       setSubmitting(true);
@@ -171,21 +171,14 @@ export default function AddReminderScreen() {
   };
 
   const handleDateConfirm = (iso: string) => {
-    if (isIsoDateBefore(iso, todayIsoDate())) {
-      Alert.alert(t('common.error'), t('reminders.past_datetime'));
-      return;
-    }
+    if (warnBeforeMinDate(iso)) return;
     if (time && warnDuplicate(iso, time)) return;
-    if (time && warnPastDateTime(iso, time)) {
-      setTime(null);
-    }
     setDate(iso);
     setSheet(null);
   };
 
   const handleTimeConfirm = (value: string) => {
     if (!date) return;
-    if (warnPastDateTime(date, value)) return;
     if (warnDuplicate(date, value)) return;
     setTime(value);
     setSheet(null);

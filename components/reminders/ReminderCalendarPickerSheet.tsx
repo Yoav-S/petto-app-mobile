@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import InlineCalendarPicker from '@/components/vaccines/InlineCalendarPicker';
 import { t } from '@/i18n';
-import { parseIsoDate, todayIsoDate } from '@/utils/calendar';
+import { parseIsoDate, minReminderDateIso } from '@/utils/calendar';
 
 const DESIGN_WIDTH = 375;
 const DESIGN_HEIGHT = 812;
@@ -92,7 +92,7 @@ export default function ReminderCalendarPickerSheet({
               value={parseIsoDate(draft)}
               onChange={setDraft}
               allowFuture
-              minDate={todayIsoDate()}
+              minDate={minReminderDateIso()}
             />
           </View>
 

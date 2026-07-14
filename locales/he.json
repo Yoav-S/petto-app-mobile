@@ -46,8 +46,11 @@
   },
   "pickers": {
     "time_title": "בחר שעה",
-    "hours": "שעות",
-    "minutes": "דקות",
+    "hours": "שעה",
+    "minutes": "דקה",
+    "period": "AM/PM",
+    "am": "AM",
+    "pm": "PM",
     "done": "סיום"
   },
   "vaccines": {
@@ -120,7 +123,7 @@
     "field_description": "תיאור",
     "field_description_placeholder": "תיאור",
     "duplicate_datetime": "כבר יש לך תזכורת בתאריך ובשעה האלה",
-    "past_datetime": "בחר תאריך ושעה בעתיד",
+    "past_datetime": "בחר מחר או תאריך מאוחר יותר",
     "repeat_toggle_on": "פעיל",
     "repeat_toggle_off": "כבוי",
     "repeat_title": "חזרה",
@@ -192,7 +195,7 @@
     "no_fields_to_update": "אין מה לעדכן.",
     "already_resolved": "פריט זה כבר הושלם.",
     "duplicate_reminder_datetime": "כבר יש לך תזכורת בתאריך ובשעה האלה.",
-    "reminder_datetime_in_past": "בחר תאריך ושעה בעתיד.",
+    "reminder_datetime_in_past": "בחר מחר או תאריך מאוחר יותר.",
     "network_timeout": "הבקשה נמשכה יותר מדי. בדוק את החיבור ונסה שוב.",
     "invalid_email": "הזן כתובת אימייל תקינה.",
     "otp_length": "הזן את קוד בן 6 הספרות מהאימייל.",

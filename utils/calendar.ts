@@ -64,6 +64,41 @@ export function todayIsoDate(): string {
   return toIsoDate(new Date());
 }
 
+/** Earliest selectable date for new reminders (tomorrow). */
+export function minReminderDateIso(): string {
+  return addDaysToIsoDate(todayIsoDate(), 1);
+}
+
+export interface Time12Parts {
+  hour12: number;
+  minute: number;
+  isPm: boolean;
+}
+
+/** Parse "HH:MM" (24h) into 12-hour parts. Defaults to 8:00 AM. */
+export function parseTime24(value?: string | null): Time12Parts {
+  if (value) {
+    const [h, m] = value.split(':').map(Number);
+    if (Number.isFinite(h) && Number.isFinite(m)) {
+      const isPm = h >= 12;
+      const hour12 = h % 12 === 0 ? 12 : h % 12;
+      return { hour12, minute: m, isPm };
+    }
+  }
+  return { hour12: 8, minute: 0, isPm: false };
+}
+
+/** Convert 12-hour parts to stored "HH:MM" (24h). 8 AM -> 08:00, 8 PM -> 20:00. */
+export function toTime24(hour12: number, minute: number, isPm: boolean): string {
+  let hour24: number;
+  if (hour12 === 12) {
+    hour24 = isPm ? 12 : 0;
+  } else {
+    hour24 = isPm ? hour12 + 12 : hour12;
+  }
+  return `${String(hour24).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
 export function addDaysToIsoDate(iso: string, days: number): string {
   const date = parseIsoDate(iso);
   if (!date) return iso;
