@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -16,14 +17,17 @@ import { Colors } from '@/constants/theme';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import EmptyState from '@/components/ui/EmptyState';
-import HealthListItem from '@/components/health/HealthListItem';
+import HealthListItem, {
+  HEALTH_LIST_CARD_HEIGHT,
+  HEALTH_LIST_DESIGN_WIDTH,
+  HEALTH_LIST_ITEM_GAP,
+} from '@/components/health/HealthListItem';
 import Snackbar from '@/components/ui/Snackbar';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import { listRecords, deleteRecord } from '@/services/health';
+import { listRecords, deleteRecord, enrichRecordsWithLatestNoteReminders } from '@/services/health';
 import { getErrorMessage } from '@/services/errors';
-import { formatDisplayDate } from '@/utils/calendar';
 import type { MedicalRecord } from '@/types/api';
 
 const TABS = ['Active', 'Resolved'] as const;
@@ -47,6 +51,26 @@ export default function HealthScreen() {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState(t('health.deleted'));
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [scrollY, setScrollY] = useState(0);
+  const [listHeight, setListHeight] = useState(0);
+  const { width: screenWidth } = useWindowDimensions();
+
+  const listScale = screenWidth / HEALTH_LIST_DESIGN_WIDTH;
+  const cardHeight = HEALTH_LIST_CARD_HEIGHT * listScale;
+  const itemGap = HEALTH_LIST_ITEM_GAP * listScale;
+  const fadeZone = cardHeight * 0.89;
+
+  const getItemFadeIntensity = useCallback(
+    (index: number) => {
+      if (listHeight <= 0) return 0;
+      const listPaddingTop = 8;
+      const itemBottom =
+        listPaddingTop + (index + 1) * cardHeight + index * itemGap - scrollY;
+      if (itemBottom <= listHeight) return 0;
+      return Math.min(1, (itemBottom - listHeight) / fadeZone);
+    },
+    [cardHeight, fadeZone, itemGap, listHeight, scrollY],
+  );
 
   const items = listsByTab[activeTab];
 
@@ -79,7 +103,11 @@ export default function HealthScreen() {
         listRecords(activePetId, 'active'),
         listRecords(activePetId, 'resolved'),
       ]);
-      setListsByTab({ Active: active, Resolved: resolved });
+      const [enrichedActive, enrichedResolved] = await Promise.all([
+        enrichRecordsWithLatestNoteReminders(activePetId, active),
+        enrichRecordsWithLatestNoteReminders(activePetId, resolved),
+      ]);
+      setListsByTab({ Active: enrichedActive, Resolved: enrichedResolved });
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -188,55 +216,45 @@ export default function HealthScreen() {
           />
         </View>
       ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <HealthListItem
-              title={item.title}
-              subtitle={item.latest_note_preview ?? t('health.no_notes_preview')}
-              dateOrTime={formatDisplayDate(item.created_at)}
-              photoUrl={item.latest_note_photo_url}
-              reminderDate={
-                item.linked_reminder_date ? formatDisplayDate(item.linked_reminder_date) : null
-              }
-              reminderTime={item.linked_reminder_time}
-              noteId={item.latest_note_id}
-              onPress={() => router.push(`/health/${item.id}` as never)}
-              onLongPress={() => handleDeleteRecord(item.id)}
-              onPhotoPress={
-                item.latest_note_id
-                  ? () =>
-                      router.push({
-                        pathname: '/health/edit-note',
-                        params: {
-                          recordId: item.id,
-                          noteId: item.latest_note_id!,
-                          open: 'photo',
-                        },
-                      } as never)
-                  : undefined
-              }
-              onReminderPress={
-                item.latest_note_id
-                  ? () =>
-                      router.push({
-                        pathname: '/health/edit-note',
-                        params: {
-                          recordId: item.id,
-                          noteId: item.latest_note_id!,
-                          open: 'reminder',
-                        },
-                      } as never)
-                  : undefined
-              }
-            />
-          )}
-          ListEmptyComponent={renderEmptyState}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        />
+        <View
+          style={styles.listWrap}
+          onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
+        >
+          <FlatList
+            data={items}
+            keyExtractor={(item) => item.id}
+            scrollEventThrottle={16}
+            onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
+            renderItem={({ item, index }) => (
+              <HealthListItem
+                title={item.title}
+                subtitle={item.latest_note_preview ?? t('health.no_notes_preview')}
+                reminderDate={item.linked_reminder_date}
+                reminderTime={item.linked_reminder_time}
+                fadeIntensity={getItemFadeIntensity(index)}
+                onPress={() => router.push(`/health/${item.id}` as never)}
+                onLongPress={() => handleDeleteRecord(item.id)}
+                onReminderPress={
+                  item.latest_note_id
+                    ? () =>
+                        router.push({
+                          pathname: '/health/edit-note',
+                          params: {
+                            recordId: item.id,
+                            noteId: item.latest_note_id!,
+                            open: 'reminder',
+                          },
+                        } as never)
+                    : undefined
+                }
+              />
+            )}
+            ListEmptyComponent={renderEmptyState}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          />
+        </View>
       )}
 
       <TouchableOpacity
@@ -273,7 +291,11 @@ const styles = StyleSheet.create({
   centered: {
     flex: 1,
   },
+  listWrap: {
+    flex: 1,
+  },
   listContent: {
+    paddingTop: 8,
     paddingBottom: 120,
     flexGrow: 1,
   },

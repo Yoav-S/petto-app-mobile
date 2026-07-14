@@ -11,15 +11,99 @@ import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
 import type { Pet, Vaccination, Reminder, MedicalRecord } from '@/types/api';
+import { enrichRecordsWithLatestNoteReminders } from '@/services/health';
+import { isIsoDateToday, normalizeToDatePart, todayIsoDate } from '@/utils/calendar';
 
 import PetHeader, { PANEL_BACKGROUND } from '@/components/home/PetHeader';
 import VaccinesCard from '@/components/home/VaccinesCard';
 import RemindersCard from '@/components/home/RemindersCard';
 import HealthCard from '@/components/home/HealthCard';
+import HealthReminderLine from '@/components/health/HealthReminderLine';
 import FABMenu from '@/components/home/FABMenu';
 
 function reminderToScheduledAt(reminder: Reminder): string {
   return `${reminder.date}T${reminder.time}:00`;
+}
+
+type HomeReminder = {
+  title: string;
+  scheduled_at: string;
+  status: 'today' | 'scheduled';
+};
+
+function healthRecordToReminder(record: MedicalRecord): HomeReminder | null {
+  const date = normalizeToDatePart(record.linked_reminder_date ?? undefined);
+  const time = record.linked_reminder_time?.trim();
+  if (!date || !time) return null;
+  // Skip reminders whose date has already passed (health-linked only).
+  if (date < todayIsoDate()) return null;
+  return {
+    title: record.latest_note_preview?.trim() || record.title,
+    scheduled_at: `${date}T${time}:00`,
+    status: isIsoDateToday(date) ? 'today' : 'scheduled',
+  };
+}
+
+function dedupeReminders(items: HomeReminder[]): HomeReminder[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = `${item.scheduled_at}|${item.title}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function sortByScheduledAt(items: HomeReminder[]): HomeReminder[] {
+  return [...items].sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at));
+}
+
+function pickNextReminder(
+  apiToday: Reminder[],
+  apiUpcoming: Reminder[],
+  healthRecords: MedicalRecord[],
+): { next: HomeReminder | null; count: number } {
+  const healthReminders = healthRecords
+    .map(healthRecordToReminder)
+    .filter((r): r is HomeReminder => r != null);
+
+  const today = dedupeReminders(
+    sortByScheduledAt([
+      ...apiToday.map((r) => ({
+        title: r.title,
+        scheduled_at: reminderToScheduledAt(r),
+        status: 'today' as const,
+      })),
+      ...healthReminders.filter((r) => r.status === 'today'),
+    ]),
+  );
+
+  const upcoming = dedupeReminders(
+    sortByScheduledAt([
+      ...apiUpcoming.map((r) => ({
+        title: r.title,
+        scheduled_at: reminderToScheduledAt(r),
+        status: 'scheduled' as const,
+      })),
+      ...healthReminders.filter((r) => r.status === 'scheduled'),
+    ]),
+  );
+
+  return {
+    next: today[0] ?? upcoming[0] ?? null,
+    count: today.length + upcoming.length,
+  };
+}
+
+function pickLatestHealthRecord(records: MedicalRecord[]): MedicalRecord | null {
+  if (!records.length) return null;
+  return (
+    [...records].sort((a, b) => {
+      const aTime = a.updated_at ?? a.created_at;
+      const bTime = b.updated_at ?? b.created_at;
+      return bTime.localeCompare(aTime);
+    })[0] ?? null
+  );
 }
 
 export default function HomeScreen() {
@@ -40,6 +124,7 @@ export default function HomeScreen() {
     type: string;
     description?: string;
     date: string;
+    reminder_date?: string;
     reminder_time?: string;
   } | null>(null);
 
@@ -88,27 +173,30 @@ export default function HomeScreen() {
         apiGet<MedicalRecord[]>(`/pets/${currentPetId}/medical-records?status=active`),
       ]);
 
+      const enrichedRecords = await enrichRecordsWithLatestNoteReminders(currentPetId, records);
+
       setLatestVaccine(vaccinations[0] ?? null);
 
-      const next = todayReminders[0] ?? upcomingReminders[0] ?? null;
+      const { next, count } = pickNextReminder(todayReminders, upcomingReminders, enrichedRecords);
       if (next) {
         setNextReminder({
           title: next.title,
-          scheduled_at: reminderToScheduledAt(next),
-          status: next.status === 'today' ? 'today' : 'scheduled',
+          scheduled_at: next.scheduled_at,
+          status: next.status,
         });
       } else {
         setNextReminder(null);
       }
 
-      setUpcomingCount(todayReminders.length + upcomingReminders.length);
+      setUpcomingCount(count);
 
-      const record = records[0];
+      const record = pickLatestHealthRecord(enrichedRecords);
       if (record) {
         setLatestRecord({
           type: record.title,
           description: record.latest_note_preview ?? undefined,
           date: record.created_at,
+          reminder_date: record.linked_reminder_date ?? undefined,
           reminder_time: record.linked_reminder_time ?? undefined,
         });
       } else {

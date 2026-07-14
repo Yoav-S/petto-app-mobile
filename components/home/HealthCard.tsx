@@ -1,16 +1,17 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors, Radius, Spacing } from '@/constants/theme';
 import { homeCardTypography } from '@/components/home/homeCardTypography';
-import { formatDisplayDate } from '@/utils/calendar';
+import { Colors, Radius, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
+import HealthReminderLine from '@/components/health/HealthReminderLine';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface HealthCardProps {
   latestRecord: {
     type: string;
     description?: string;
     date: string;
+    reminder_date?: string;
     reminder_time?: string;
   } | null;
   loading: boolean;
@@ -59,16 +60,6 @@ export default function HealthCard({ latestRecord, loading, onPress }: HealthCar
           <View style={homeCardTypography.healthContent}>
             <View style={homeCardTypography.healthTitleRow}>
               <Text style={homeCardTypography.title}>{t('home.healthCard.title')}</Text>
-              {latestRecord ? (
-                <View style={homeCardTypography.healthDateMeta}>
-                  {latestRecord.reminder_time ? (
-                    <Ionicons name="notifications-outline" size={14} color={Colors.secondaryText} />
-                  ) : null}
-                  <Text style={homeCardTypography.meta} numberOfLines={1}>
-                    {formatDisplayDate(latestRecord.date)}
-                  </Text>
-                </View>
-              ) : null}
             </View>
 
             <View style={homeCardTypography.healthBodyBlock}>
@@ -81,6 +72,13 @@ export default function HealthCard({ latestRecord, loading, onPress }: HealthCar
                     <Text style={homeCardTypography.note} numberOfLines={1} ellipsizeMode="tail">
                       {latestRecord.description}
                     </Text>
+                  ) : null}
+                  {latestRecord.reminder_date || latestRecord.reminder_time ? (
+                    <HealthReminderLine
+                      date={latestRecord.reminder_date}
+                      time={latestRecord.reminder_time}
+                      style={styles.reminderLine}
+                    />
                   ) : null}
                 </>
               ) : (
@@ -140,5 +138,8 @@ const styles = StyleSheet.create({
     height: 14,
     backgroundColor: Colors.border,
     borderRadius: 6,
+  },
+  reminderLine: {
+    marginTop: 4,
   },
 });

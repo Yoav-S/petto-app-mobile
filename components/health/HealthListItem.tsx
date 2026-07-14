@@ -1,104 +1,188 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  I18nManager,
+  useWindowDimensions,
 } from 'react-native';
-import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors } from '@/constants/theme';
 import { t } from '@/i18n';
+import HealthListReminderMeta from '@/components/health/HealthListReminderMeta';
+
+export const HEALTH_LIST_DESIGN_WIDTH = 375;
+export const HEALTH_LIST_CARD_WIDTH = 335;
+export const HEALTH_LIST_CARD_HEIGHT = 122;
+export const HEALTH_LIST_ITEM_GAP = 10;
 
 interface HealthListItemProps {
   title: string;
   subtitle: string;
-  dateOrTime: string;
-  photoUrl?: string | null;
   reminderDate?: string | null;
   reminderTime?: string | null;
-  noteId?: string | null;
+  fadeIntensity?: number;
   onPress?: () => void;
   onLongPress?: () => void;
-  onPhotoPress?: () => void;
   onReminderPress?: () => void;
 }
 
-function reminderDisplayValue(date?: string | null, time?: string | null): string | null {
-  const parts = [date, time].filter(Boolean);
-  return parts.length > 0 ? parts.join(' • ') : null;
+function BottomFadeOverlay({ intensity }: { intensity: number }) {
+  if (intensity <= 0.01) return null;
+
+  const stops = [0, 0.22, 0.45, 0.68, 0.89, 1];
+
+  return (
+    <View style={styles.fadeOverlay} pointerEvents="none">
+      {stops.map((stop, index) => {
+        const nextStop = stops[index + 1] ?? 1;
+        const bandOpacity = intensity * stop * 0.95;
+        if (bandOpacity <= 0.01) return null;
+        return (
+          <View
+            key={stop}
+            style={[
+              styles.fadeBand,
+              {
+                top: `${stop * 100}%`,
+                height: `${(nextStop - stop) * 100}%`,
+                backgroundColor: Colors.surface,
+                opacity: bandOpacity,
+              },
+            ]}
+          />
+        );
+      })}
+    </View>
+  );
+}
+
+function SubtitleBlock({
+  subtitle,
+  width,
+  lineHeight,
+  fontSize,
+  readMoreSize,
+}: {
+  subtitle: string;
+  width: number;
+  lineHeight: number;
+  fontSize: number;
+  readMoreSize: number;
+}) {
+  const [overflows, setOverflows] = useState(false);
+
+  const handleFullLayout = useCallback(
+    (lineCount: number) => {
+      setOverflows(lineCount > 2);
+    },
+    [],
+  );
+
+  return (
+    <View style={styles.subtitleWrap}>
+      <Text
+        style={[styles.measureText, { width, fontSize, lineHeight }]}
+        onTextLayout={(e) => handleFullLayout(e.nativeEvent.lines.length)}
+      >
+        {subtitle}
+      </Text>
+      <Text
+        style={[styles.subtitle, { fontSize, lineHeight }]}
+        numberOfLines={2}
+        ellipsizeMode="tail"
+      >
+        {subtitle}
+        {overflows ? (
+          <Text style={[styles.readMore, { fontSize: readMoreSize, lineHeight }]}>
+            {' '}
+            {t('health.read_more')}
+          </Text>
+        ) : null}
+      </Text>
+    </View>
+  );
 }
 
 export default function HealthListItem({
   title,
   subtitle,
-  dateOrTime,
-  photoUrl,
   reminderDate,
   reminderTime,
-  noteId,
+  fadeIntensity = 0,
   onPress,
   onLongPress,
-  onPhotoPress,
   onReminderPress,
 }: HealthListItemProps) {
-  const reminderValue = reminderDisplayValue(reminderDate, reminderTime);
-  const rtl = I18nManager.isRTL;
+  const { width: screenWidth } = useWindowDimensions();
+  const sx = screenWidth / HEALTH_LIST_DESIGN_WIDTH;
+
+  const cardWidth = HEALTH_LIST_CARD_WIDTH * sx;
+  const cardHeight = HEALTH_LIST_CARD_HEIGHT * sx;
+  const padV = 14 * sx;
+  const padH = 16 * sx;
+  const innerGap = 12 * sx;
+  const textGap = 6 * sx;
+  const titleSize = 16 * sx;
+  const titleLine = 20 * sx;
+  const subtitleSize = 14 * sx;
+  const subtitleLine = 20 * sx;
+  const innerWidth = cardWidth - padH * 2;
+  const textBlockHeight = 66 * sx;
 
   return (
     <TouchableOpacity
-      style={styles.card}
+      style={[
+        styles.card,
+        {
+          width: cardWidth,
+          height: cardHeight,
+          paddingTop: padV,
+          paddingBottom: padV,
+          paddingHorizontal: padH,
+          borderRadius: 12 * sx,
+          marginBottom: HEALTH_LIST_ITEM_GAP * sx,
+          alignSelf: 'center',
+        },
+      ]}
       onPress={onPress}
       onLongPress={onLongPress}
       activeOpacity={0.7}
       disabled={!onPress}
     >
-      <View style={styles.contentContainer}>
-        <Text style={styles.title} numberOfLines={1}>
-          {title}
-        </Text>
-        <Text style={styles.subtitle} numberOfLines={2}>
-          {subtitle}
-        </Text>
-
-        {reminderValue ? (
-          <View style={[styles.reminderRow, rtl && styles.reminderRowRtl]}>
-            <Text style={styles.reminderLabel}>{t('health.reminder_label')}</Text>
-            <Text style={[styles.reminderValue, rtl && styles.reminderValueRtl]} numberOfLines={1}>
-              {reminderValue}
-            </Text>
-          </View>
-        ) : null}
-
-        <View style={[styles.bottomRow, rtl && styles.bottomRowRtl]}>
-          <Text style={styles.dateOrTime}>{dateOrTime}</Text>
-          {noteId ? (
-            <View style={styles.actionRow}>
-              <TouchableOpacity
-                onPress={onPhotoPress}
-                hitSlop={8}
-                activeOpacity={0.7}
-                disabled={!onPhotoPress}
-              >
-                {photoUrl ? (
-                  <Image source={{ uri: photoUrl }} style={styles.photoThumb} contentFit="cover" />
-                ) : (
-                  <Ionicons name="image-outline" size={22} color={Colors.secondaryText} />
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={onReminderPress}
-                hitSlop={8}
-                activeOpacity={0.7}
-                disabled={!onReminderPress}
-              >
-                <Ionicons name="notifications-outline" size={22} color={Colors.secondaryText} />
-              </TouchableOpacity>
-            </View>
-          ) : null}
+      <View style={[styles.inner, { width: innerWidth, gap: innerGap }]}>
+        <View style={[styles.textBlock, { width: innerWidth, height: textBlockHeight, gap: textGap }]}>
+          <Text
+            style={[styles.title, { fontSize: titleSize, lineHeight: titleLine }]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {title}
+          </Text>
+          <SubtitleBlock
+            subtitle={subtitle}
+            width={innerWidth}
+            lineHeight={subtitleLine}
+            fontSize={subtitleSize}
+            readMoreSize={subtitleSize}
+          />
         </View>
+
+        <TouchableOpacity
+          onPress={onReminderPress}
+          hitSlop={8}
+          activeOpacity={0.7}
+          disabled={!onReminderPress}
+          style={{ maxWidth: innerWidth }}
+        >
+          <HealthListReminderMeta
+            date={reminderDate}
+            time={reminderTime}
+            scale={sx}
+          />
+        </TouchableOpacity>
       </View>
+
+      <BottomFadeOverlay intensity={fadeIntensity} />
     </TouchableOpacity>
   );
 }
@@ -106,83 +190,53 @@ export default function HealthListItem({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    overflow: 'hidden',
+    shadowColor: '#2D2D2A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 20,
+    elevation: 3,
   },
-  contentContainer: {
-    padding: Spacing.lg,
-    gap: 6,
+  inner: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  textBlock: {
+    overflow: 'hidden',
   },
   title: {
     fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    lineHeight: 20,
     color: Colors.primaryText,
+    flexShrink: 1,
+  },
+  subtitleWrap: {
+    flex: 1,
+    minHeight: 0,
+    overflow: 'hidden',
+  },
+  measureText: {
+    position: 'absolute',
+    opacity: 0,
+    fontFamily: 'Rubik-Regular',
+    color: Colors.primaryText,
+    left: 0,
+    right: 0,
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    lineHeight: 20,
     color: Colors.primaryText,
   },
-  reminderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  reminderRowRtl: {
-    flexDirection: 'row-reverse',
-  },
-  reminderLabel: {
+  readMore: {
     fontFamily: 'Rubik-Medium',
-    fontSize: 14,
-    lineHeight: 20,
-    color: Colors.primaryText,
-    flexShrink: 0,
-  },
-  reminderValue: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: Colors.primaryText,
-    flex: 1,
-    textAlign: 'right',
-  },
-  reminderValueRtl: {
-    textAlign: 'left',
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 4,
-  },
-  bottomRowRtl: {
-    flexDirection: 'row-reverse',
-  },
-  dateOrTime: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 12,
-    lineHeight: 16,
     color: Colors.secondaryText,
   },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    height: 24,
+  fadeOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
   },
-  photoThumb: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    backgroundColor: Colors.background,
+  fadeBand: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
   },
 });

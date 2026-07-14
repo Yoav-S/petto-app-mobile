@@ -14,7 +14,6 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
@@ -22,7 +21,8 @@ import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { getRecord, resolveRecord } from '@/services/health';
 import { getErrorMessage } from '@/services/errors';
-import { formatDisplayDate } from '@/utils/calendar';
+import HealthReminderLine from '@/components/health/HealthReminderLine';
+import HealthNoteIconRow from '@/components/health/HealthNoteIconRow';
 import { normalizeRouteParam } from '@/utils/routeParams';
 import type { MedicalRecordDetail } from '@/types/api';
 
@@ -150,33 +150,44 @@ export default function HealthDetailsScreen() {
           <Text style={styles.emptyNotes}>{t('health.no_notes_yet')}</Text>
         ) : (
           (record.notes ?? []).map((note) => (
-            <TouchableOpacity
-              key={note.id}
-              style={styles.noteCard}
-              activeOpacity={0.7}
-              onPress={() =>
-                router.push({
-                  pathname: '/health/edit-note',
-                  params: { recordId: record.id, noteId: note.id },
-                } as never)
-              }
-            >
+            <View key={note.id} style={styles.noteCard}>
               {note.photo_url ? (
                 <Image source={{ uri: note.photo_url }} style={styles.noteImage} contentFit="cover" />
               ) : null}
-              <Text style={styles.noteText}>{note.text}</Text>
-              {note.linked_reminder_time ? (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() =>
+                  router.push({
+                    pathname: '/health/edit-note',
+                    params: { recordId: record.id, noteId: note.id },
+                  } as never)
+                }
+              >
+                <Text style={styles.noteText}>{note.text}</Text>
+              </TouchableOpacity>
+              {note.linked_reminder_date || note.linked_reminder_time ? (
                 <View style={styles.reminderRow}>
-                  <Ionicons name="notifications-outline" size={16} color={Colors.secondaryText} />
-                  <Text style={styles.reminderText}>
-                    {[formatDisplayDate(note.linked_reminder_date), note.linked_reminder_time]
-                      .filter(Boolean)
-                      .join(' • ')}
-                  </Text>
+                  <HealthReminderLine
+                    date={note.linked_reminder_date}
+                    time={note.linked_reminder_time}
+                  />
                 </View>
               ) : null}
-              <Text style={styles.noteDate}>{formatDisplayDate(note.created_at)}</Text>
-            </TouchableOpacity>
+              <HealthNoteIconRow
+                onPhotoPress={() =>
+                  router.push({
+                    pathname: '/health/edit-note',
+                    params: { recordId: record.id, noteId: note.id, open: 'photo' },
+                  } as never)
+                }
+                onReminderPress={() =>
+                  router.push({
+                    pathname: '/health/edit-note',
+                    params: { recordId: record.id, noteId: note.id, open: 'reminder' },
+                  } as never)
+                }
+              />
+            </View>
           ))
         )}
       </ScrollView>
@@ -280,20 +291,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   reminderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: Spacing.sm,
-  },
-  reminderText: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: Colors.secondaryText,
-  },
-  noteDate: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 12,
-    color: Colors.secondaryText,
     marginTop: Spacing.sm,
   },
   footer: {

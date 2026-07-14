@@ -64,9 +64,100 @@ export function todayIsoDate(): string {
   return toIsoDate(new Date());
 }
 
-export function parseIsoDate(value: string | null): Date | null {
+export function addDaysToIsoDate(iso: string, days: number): string {
+  const date = parseIsoDate(iso);
+  if (!date) return iso;
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return toIsoDate(next);
+}
+
+export function isIsoDateTomorrow(iso: string | null | undefined): boolean {
+  const datePart = normalizeToDatePart(iso);
+  if (!datePart) return false;
+  return datePart === addDaysToIsoDate(todayIsoDate(), 1);
+}
+
+/** 12-hour clock for reminder rows, e.g. "8:00 PM". */
+export function formatReminderClockTime(
+  time: string | null | undefined,
+  locale?: string,
+): string {
+  const trimmed = time?.trim();
+  if (!trimmed) return '';
+  const [h, m] = trimmed.split(':').map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return trimmed;
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' });
+}
+
+function parseDatePartToLocalDate(datePart: string): Date | null {
+  const parsed = parseIsoDate(datePart);
+  return parsed ?? null;
+}
+
+/** Short month + day for future reminders, e.g. "Apr 21". */
+export function formatReminderMonthDay(
+  isoDate: string | null | undefined,
+  locale?: string,
+): string {
+  const datePart = normalizeToDatePart(isoDate);
+  if (!datePart) return '';
+  const date = parseDatePartToLocalDate(datePart);
+  if (!date) return '';
+  return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+}
+
+/** Month name for past reminders, e.g. "March". */
+export function formatReminderMonthName(
+  isoDate: string | null | undefined,
+  locale?: string,
+): string {
+  const datePart = normalizeToDatePart(isoDate);
+  if (!datePart) return '';
+  const date = parseDatePartToLocalDate(datePart);
+  if (!date) return '';
+  return date.toLocaleDateString(locale, { month: 'long' });
+}
+
+export interface HealthReminderLabels {
+  today: string;
+  tomorrow: string;
+  sentSuccessfully: string;
+}
+
+/** Value portion after "Reminder:" — Today/Tomorrow/date + clock time, or sent successfully. */
+export function formatHealthReminderValue(
+  date: string | null | undefined,
+  time: string | null | undefined,
+  labels: HealthReminderLabels,
+  locale?: string,
+): string {
+  const datePart = normalizeToDatePart(date);
+  const timeStr = formatReminderClockTime(time, locale);
+  if (!datePart) return timeStr;
+
+  const today = todayIsoDate();
+  if (datePart < today) {
+    const month = formatReminderMonthName(datePart, locale);
+    return month ? `${labels.sentSuccessfully}, ${month}, ${timeStr}` : labels.sentSuccessfully;
+  }
+  if (isIsoDateToday(datePart)) {
+    return timeStr ? `${labels.today}, ${timeStr}` : labels.today;
+  }
+  if (isIsoDateTomorrow(datePart)) {
+    return timeStr ? `${labels.tomorrow}, ${timeStr}` : labels.tomorrow;
+  }
+  const monthDay = formatReminderMonthDay(datePart, locale);
+  return timeStr ? `${monthDay}, ${timeStr}` : monthDay;
+}
+
+export function parseIsoDate(value: string | null | undefined): Date | null {
   if (!value) return null;
-  const [y, m, d] = value.split('-').map(Number);
+  const datePart = value.length >= 10 ? value.slice(0, 10) : value;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return null;
+  const [y, m, d] = datePart.split('-').map(Number);
   if (!y || !m || !d) return null;
   return new Date(y, m - 1, d);
 }
@@ -131,6 +222,73 @@ export function formatDisplayDateLong(value: string | Date | null | undefined): 
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = String(date.getFullYear());
   return `${day}.${month}.${year}`;
+}
+
+/** True if an ISO date (YYYY-MM-DD) is the same calendar day as today. */
+export function isIsoDateToday(iso: string | null | undefined): boolean {
+  const datePart = normalizeToDatePart(iso);
+  if (!datePart) return false;
+  const parsed = parseIsoDate(datePart);
+  if (!parsed) return false;
+  return isSameDay(parsed, new Date());
+}
+
+/** Normalize API / display dates to YYYY-MM-DD when possible. */
+export function normalizeToDatePart(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) return trimmed.slice(0, 10);
+
+  const isoParsed = parseIsoDate(trimmed);
+  if (isoParsed) return toIsoDate(isoParsed);
+
+  const dotted = trimmed.match(/^(\d{2})\.(\d{2})\.(\d{2,4})$/);
+  if (dotted) {
+    const year = dotted[3].length === 2 ? `20${dotted[3]}` : dotted[3];
+    return `${year}-${dotted[2]}-${dotted[1]}`;
+  }
+
+  const parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) return toIsoDate(parsed);
+  return null;
+}
+
+function extractTimeFromIso(value: string): string {
+  if (!value || value.length <= 10) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '';
+  return `${String(parsed.getHours()).padStart(2, '0')}:${String(parsed.getMinutes()).padStart(2, '0')}`;
+}
+
+/** List meta: "Today HH:MM" when due today, otherwise formatted date. */
+export function formatListDateOrTime(
+  date: string | null | undefined,
+  time?: string | null | undefined,
+  todayLabel?: string,
+): string {
+  const timePart = time?.trim() ?? '';
+  const datePart = normalizeToDatePart(date ?? undefined);
+
+  if (datePart && isIsoDateToday(datePart)) {
+    if (todayLabel && timePart) return `${todayLabel} ${timePart}`;
+    if (todayLabel) return todayLabel;
+    if (timePart) return timePart;
+    return extractTimeFromIso(date ?? '');
+  }
+
+  if (datePart) return formatDisplayDate(datePart);
+  if (timePart) return timePart;
+  if (date) return formatDisplayDate(date);
+  return '';
+}
+
+/** @deprecated Use formatListDateOrTime */
+export function formatReminderListMeta(
+  isoDate: string | null | undefined,
+  time: string | null | undefined,
+  _todayLabel?: string,
+): string {
+  return formatListDateOrTime(isoDate, time);
 }
 
 export const MONTH_KEYS = [
