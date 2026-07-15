@@ -15,9 +15,8 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import HealthNoteEditorCard from '@/components/health/HealthNoteEditorCard';
 import HealthKeyboardFooter, {
   HealthKeyboardAvoidingView,
-  healthKeyboardScrollPadding,
+  healthDoneScrollPadding,
 } from '@/components/health/HealthKeyboardFooter';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
@@ -43,7 +42,6 @@ export default function AddNoteScreen() {
   const { recordId: recordIdParam } = useLocalSearchParams<{ recordId?: string }>();
   const recordId = normalizeRouteParam(recordIdParam);
   const { activePetId } = useActivePet();
-  const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const sy = height / DESIGN_HEIGHT;
 
@@ -142,7 +140,7 @@ export default function AddNoteScreen() {
             styles.content,
             {
               paddingTop: Math.max(Spacing.md, 16 * sy),
-              paddingBottom: healthKeyboardScrollPadding(sy, insets.bottom),
+              paddingBottom: healthDoneScrollPadding(sy),
             },
           ]}
           keyboardShouldPersistTaps="handled"

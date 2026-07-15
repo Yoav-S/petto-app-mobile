@@ -20,13 +20,17 @@ const DESIGN_FOOTER_BAR_HEIGHT = 104;
 const DESIGN_FOOTER_SAFE_EXTRA = 50;
 /** Total resting footer height on the 812 frame. */
 const DESIGN_FOOTER_REST_HEIGHT = DESIGN_FOOTER_BAR_HEIGHT + DESIGN_FOOTER_SAFE_EXTRA;
+/** Done button on add/edit note screens. */
+const DESIGN_DONE_BUTTON_WIDTH = 100;
+const DESIGN_DONE_BUTTON_HEIGHT = 40;
+const DESIGN_DONE_BOTTOM_OFFSET = 44;
 
 interface HealthKeyboardFooterProps {
   label: string;
   disabled?: boolean;
   loading?: boolean;
   onPress: () => void;
-  /** Full-width save bar (335×48). When false, compact button aligned right (Done). */
+  /** Full-width save bar (335×48). When false, compact Done button (100×40). */
   fullWidth?: boolean;
 }
 
@@ -73,9 +77,14 @@ export function HealthKeyboardAvoidingView({
   );
 }
 
-/** ScrollView bottom padding so fields clear the resting footer bar. */
+/** ScrollView bottom padding so fields clear the save footer bar. */
 export function healthKeyboardScrollPadding(scaleY = 1, safeBottom = 0): number {
   return DESIGN_FOOTER_REST_HEIGHT * scaleY + Math.max(12, safeBottom) + 16;
+}
+
+/** ScrollView bottom padding for Done button screens. */
+export function healthDoneScrollPadding(scaleY = 1): number {
+  return (DESIGN_DONE_BOTTOM_OFFSET + DESIGN_DONE_BUTTON_HEIGHT) * scaleY + 16;
 }
 
 export default function HealthKeyboardFooter({
@@ -93,24 +102,64 @@ export default function HealthKeyboardFooter({
 
   const layout = useMemo(
     () => ({
-      buttonWidth: 335 * sx,
-      buttonHeight: 48 * sx,
+      saveButtonWidth: 335 * sx,
+      saveButtonHeight: 48 * sx,
       buttonRadius: 12 * sx,
       footerPadH: 20 * sx,
       footerPadTop: 12 * sy,
       footerRadius: 24 * sx,
       footerHeightClosed: DESIGN_FOOTER_REST_HEIGHT * sy,
       footerPadBottomClosed: (DESIGN_FOOTER_REST_HEIGHT - 12 - 48) * sy,
+      doneButtonWidth: DESIGN_DONE_BUTTON_WIDTH * sx,
+      doneButtonHeight: DESIGN_DONE_BUTTON_HEIGHT * sy,
+      doneBottomOffset: DESIGN_DONE_BOTTOM_OFFSET * sy,
+      donePadTop: 12 * sy,
     }),
     [sx, sy],
   );
+
+  if (!fullWidth) {
+    return (
+      <View
+        style={[
+          styles.doneFooter,
+          {
+            paddingHorizontal: layout.footerPadH,
+            paddingTop: layout.donePadTop,
+            paddingBottom: keyboardOpen ? layout.donePadTop : layout.doneBottomOffset,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          style={[
+            styles.doneButton,
+            {
+              width: layout.doneButtonWidth,
+              height: layout.doneButtonHeight,
+              borderRadius: layout.buttonRadius,
+            },
+            disabled && styles.buttonDisabled,
+          ]}
+          onPress={onPress}
+          disabled={disabled || loading}
+          activeOpacity={0.85}
+        >
+          {loading ? (
+            <ActivityIndicator color={Colors.surface} />
+          ) : (
+            <Text style={[styles.buttonText, disabled && styles.buttonTextDisabled]}>{label}</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   const footerBottomPad = keyboardOpen ? layout.footerPadTop : layout.footerPadBottomClosed;
 
   return (
     <View
       style={[
-        styles.footer,
+        styles.saveFooter,
         keyboardOpen ? styles.footerOpen : styles.footerClosed,
         {
           height: keyboardOpen ? undefined : layout.footerHeightClosed,
@@ -124,10 +173,10 @@ export default function HealthKeyboardFooter({
     >
       <TouchableOpacity
         style={[
-          fullWidth ? styles.buttonFull : styles.buttonCompact,
-          fullWidth && {
-            width: layout.buttonWidth,
-            height: layout.buttonHeight,
+          styles.saveButton,
+          {
+            width: layout.saveButtonWidth,
+            height: layout.saveButtonHeight,
             borderRadius: layout.buttonRadius,
           },
           disabled && styles.buttonDisabled,
@@ -150,7 +199,7 @@ const styles = StyleSheet.create({
   avoiding: {
     flex: 1,
   },
-  footer: {
+  saveFooter: {
     width: '100%',
     backgroundColor: Colors.surface,
     alignItems: 'center',
@@ -160,25 +209,26 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 8,
   },
+  doneFooter: {
+    width: '100%',
+    backgroundColor: 'transparent',
+    alignItems: 'flex-end',
+  },
   footerClosed: {
     justifyContent: 'flex-start',
   },
   footerOpen: {
     justifyContent: 'center',
   },
-  buttonFull: {
+  saveButton: {
     backgroundColor: Colors.primaryText,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonCompact: {
-    alignSelf: 'flex-end',
+  doneButton: {
     backgroundColor: Colors.primaryText,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 12,
-    minWidth: 96,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonDisabled: {
     backgroundColor: Colors.button.disabledBg,

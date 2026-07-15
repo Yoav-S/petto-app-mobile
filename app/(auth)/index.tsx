@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
-import { isWelcomeContinueUnlocked } from '@/services/onboarding';
+import { setTermsAccepted } from '@/services/onboarding';
 import { t } from '@/i18n';
 import { Colors } from '@/constants/theme';
 import {
@@ -35,8 +34,6 @@ export default function OnboardingWelcomeScreen() {
   const sx = width / ONBOARDING_DESIGN_WIDTH;
   const sy = height / 812;
 
-  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
-
   const coverHeight = ONBOARDING_COVER_TOP * sy;
   const panelHeight = ONBOARDING_PANEL_HEIGHT * sy;
   const panelRadius = ONBOARDING_PANEL_RADIUS * sx;
@@ -44,18 +41,12 @@ export default function OnboardingWelcomeScreen() {
   const buttonTop =
     (ONBOARDING_BUTTON.top - ONBOARDING_COPY.blockTop - ONBOARDING_COPY.blockHeight) * sy;
 
-  useFocusEffect(
-    useCallback(() => {
-      setHasAcceptedTerms(isWelcomeContinueUnlocked());
-    }, []),
-  );
-
   const openTerms = () => {
     router.push('/(auth)/terms' as never);
   };
 
   const handleContinue = () => {
-    if (!hasAcceptedTerms) return;
+    void setTermsAccepted();
     router.push('/(auth)/email' as never);
   };
 
@@ -132,41 +123,21 @@ export default function OnboardingWelcomeScreen() {
           </Text>
         </View>
 
-        {hasAcceptedTerms ? (
-          <Pressable
-            style={[
-              styles.button,
-              {
-                marginTop: buttonTop,
-                width: ONBOARDING_BUTTON.width * sx,
-                height: ONBOARDING_BUTTON.height * sy,
-                borderRadius: ONBOARDING_BUTTON.radius * sx,
-              },
-            ]}
-            onPress={handleContinue}
-            accessibilityRole="button"
-          >
-            <Text style={[styles.buttonText, { fontSize: 16 * sx }]}>{t('onboarding.continue')}</Text>
-          </Pressable>
-        ) : (
-          <View
-            style={[
-              styles.button,
-              styles.buttonDisabled,
-              {
-                marginTop: buttonTop,
-                width: ONBOARDING_BUTTON.width * sx,
-                height: ONBOARDING_BUTTON.height * sy,
-                borderRadius: ONBOARDING_BUTTON.radius * sx,
-              },
-            ]}
-            pointerEvents="none"
-            accessibilityRole="button"
-            accessibilityState={{ disabled: true }}
-          >
-            <Text style={[styles.buttonText, { fontSize: 16 * sx }]}>{t('onboarding.continue')}</Text>
-          </View>
-        )}
+        <Pressable
+          style={[
+            styles.button,
+            {
+              marginTop: buttonTop,
+              width: ONBOARDING_BUTTON.width * sx,
+              height: ONBOARDING_BUTTON.height * sy,
+              borderRadius: ONBOARDING_BUTTON.radius * sx,
+            },
+          ]}
+          onPress={handleContinue}
+          accessibilityRole="button"
+        >
+          <Text style={[styles.buttonText, { fontSize: 16 * sx }]}>{t('onboarding.continue')}</Text>
+        </Pressable>
 
         <View style={styles.legalSpacer} />
 
@@ -245,9 +216,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'flex-start',
-  },
-  buttonDisabled: {
-    opacity: 0.4,
   },
   buttonText: {
     fontFamily: 'Rubik-Medium',
