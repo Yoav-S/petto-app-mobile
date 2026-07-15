@@ -338,6 +338,46 @@ export function formatReminderListMeta(
   return formatListDateOrTime(isoDate, time);
 }
 
+/** Truncate health record description for list subtitle (~25 chars). */
+export function truncateHealthDescription(text: string | null | undefined, max = 28): string {
+  const trimmed = text?.trim() ?? '';
+  if (!trimmed) return '';
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max).trimEnd()}…`;
+}
+
+function startOfLocalDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+/** Health list footer: Today HH:MM, Yesterday, or Created DD.MM.YYYY. */
+export function formatHealthCreatedLabel(
+  isoDateTime: string | null | undefined,
+  labels: { today: string; yesterday: string; createdPrefix: string },
+): string {
+  if (!isoDateTime) return '';
+  const created = new Date(isoDateTime);
+  if (Number.isNaN(created.getTime())) return '';
+
+  const now = new Date();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const diffDays = Math.floor(
+    (startOfLocalDay(now).getTime() - startOfLocalDay(created).getTime()) / dayMs,
+  );
+
+  if (diffDays <= 0) {
+    const time = formatReminderClockTime(extractTimeFromIso(isoDateTime));
+    return time ? `${labels.today} ${time}` : labels.today;
+  }
+  if (diffDays === 1) {
+    return labels.yesterday;
+  }
+  const day = String(created.getDate()).padStart(2, '0');
+  const month = String(created.getMonth() + 1).padStart(2, '0');
+  const year = created.getFullYear();
+  return `${labels.createdPrefix} ${day}.${month}.${year}`;
+}
+
 export const MONTH_KEYS = [
   'jan',
   'feb',

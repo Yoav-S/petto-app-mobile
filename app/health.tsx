@@ -21,6 +21,7 @@ import HealthListItem, {
   HEALTH_LIST_CARD_HEIGHT,
   HEALTH_LIST_DESIGN_WIDTH,
   HEALTH_LIST_ITEM_GAP,
+  healthRecordSubtitle,
 } from '@/components/health/HealthListItem';
 import Snackbar from '@/components/ui/Snackbar';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -149,7 +150,7 @@ export default function HealthScreen() {
 
   const addRecordAction = {
     actionTitle: t('health.add_first'),
-    onAction: () => router.push('/health/add-note' as never),
+    onAction: () => router.push('/health/add' as never),
   };
 
   const renderEmptyState = () => {
@@ -228,9 +229,9 @@ export default function HealthScreen() {
             renderItem={({ item, index }) => (
               <HealthListItem
                 title={item.title}
-                subtitle={item.latest_note_preview ?? t('health.no_notes_preview')}
-                reminderDate={item.linked_reminder_date}
-                reminderTime={item.linked_reminder_time}
+                subtitle={healthRecordSubtitle(item.description)}
+                createdAt={item.created_at}
+                hasReminder={Boolean(item.linked_reminder_date || item.linked_reminder_time)}
                 fadeIntensity={getItemFadeIntensity(index)}
                 onPress={() => router.push(`/health/${item.id}` as never)}
                 onLongPress={() => handleDeleteRecord(item.id)}
@@ -260,7 +261,7 @@ export default function HealthScreen() {
       <TouchableOpacity
         style={styles.fab}
         activeOpacity={0.8}
-        onPress={() => router.push('/health/add-note' as never)}
+        onPress={() => router.push('/health/add' as never)}
       >
         <Ionicons name="add" size={28} color={Colors.surface} />
       </TouchableOpacity>

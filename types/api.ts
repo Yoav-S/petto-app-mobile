@@ -51,6 +51,7 @@ export interface MedicalRecord {
   id: string;
   pet_id: string;
   title: string;
+  description?: string | null;
   status: string;
   created_at: string;
   updated_at?: string | null;

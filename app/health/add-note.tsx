@@ -1,26 +1,23 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   SafeAreaView,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   Alert,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import HealthNoteEditorCard from '@/components/health/HealthNoteEditorCard';
+import HealthKeyboardFooter from '@/components/health/HealthKeyboardFooter';
 import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import { addNote, createRecord } from '@/services/health';
+import { addNote, getRecord } from '@/services/health';
 import {
   healthReminderTitle,
   upsertHealthReminder,
@@ -31,6 +28,8 @@ import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDate } from '@/utils/calendar';
 import { normalizeRouteParam } from '@/utils/routeParams';
 
+const DESIGN_HEIGHT = 812;
+
 function reminderLabel(draft: HealthReminderDraft): string {
   return `${formatDisplayDate(draft.date)} ${draft.time}`;
 }
@@ -40,17 +39,33 @@ export default function AddNoteScreen() {
   const { recordId: recordIdParam } = useLocalSearchParams<{ recordId?: string }>();
   const recordId = normalizeRouteParam(recordIdParam);
   const { activePetId } = useActivePet();
+  const { height } = useWindowDimensions();
+  const sy = height / DESIGN_HEIGHT;
 
-  const [conditionTitle, setConditionTitle] = useState('');
+  const [recordTitle, setRecordTitle] = useState('');
+  const [loadingRecord, setLoadingRecord] = useState(true);
   const [note, setNote] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [reminderDraft, setReminderDraft] = useState<HealthReminderDraft | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [reminderSheetVisible, setReminderSheetVisible] = useState(false);
 
-  const needsTitle = !recordId;
-  const canSave =
-    note.trim().length > 0 && (!needsTitle || conditionTitle.trim().length > 0) && !submitting;
+  useEffect(() => {
+    if (!recordId) {
+      router.replace('/health/add' as never);
+      return;
+    }
+    if (!activePetId) {
+      setLoadingRecord(false);
+      return;
+    }
+    getRecord(activePetId, recordId)
+      .then((record) => setRecordTitle(record.title))
+      .catch(() => {})
+      .finally(() => setLoadingRecord(false));
+  }, [activePetId, recordId, router]);
+
+  const canSave = note.trim().length > 0 && !submitting && !loadingRecord;
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -68,15 +83,9 @@ export default function AddNoteScreen() {
   };
 
   const handleSave = async () => {
-    if (!canSave || !activePetId) return;
+    if (!canSave || !activePetId || !recordId) return;
     try {
       setSubmitting(true);
-
-      let targetRecordId = recordId ?? null;
-      if (!targetRecordId) {
-        const record = await createRecord(activePetId, { title: conditionTitle.trim() });
-        targetRecordId = record.id;
-      }
 
       let photoUrl: string | undefined;
       if (photoUri) {
@@ -88,11 +97,11 @@ export default function AddNoteScreen() {
         linkedReminderId = await upsertHealthReminder(
           activePetId,
           reminderDraft,
-          healthReminderTitle(note, conditionTitle),
+          healthReminderTitle(note, recordTitle),
         );
       }
 
-      await addNote(activePetId, targetRecordId, {
+      await addNote(activePetId, recordId, {
         text: note.trim(),
         photo_url: photoUrl,
         linked_reminder_id: linkedReminderId,
@@ -106,29 +115,27 @@ export default function AddNoteScreen() {
     }
   };
 
+  if (!recordId || loadingRecord) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ScreenHeader title={t('health.add_note')} />
+        <View style={styles.centered}>
+          <ActivityIndicator color={Colors.primaryText} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScreenHeader title={t('health.add_note')} />
 
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          {needsTitle ? (
-            <>
-              <Text style={styles.label}>{t('health.condition_title')}</Text>
-              <TextInput
-                style={styles.titleInput}
-                value={conditionTitle}
-                onChangeText={setConditionTitle}
-                placeholder={t('health.condition_title_placeholder')}
-                placeholderTextColor={Colors.secondaryText}
-                autoFocus
-              />
-            </>
-          ) : null}
-
+      <View style={styles.container}>
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingTop: Math.max(Spacing.md, 16 * sy) }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <HealthNoteEditorCard
             key={photoUri ?? 'no-photo'}
             noteText={note}
@@ -138,24 +145,18 @@ export default function AddNoteScreen() {
             reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
             onReminderPress={() => setReminderSheetVisible(true)}
             onRemoveReminder={() => setReminderDraft(null)}
+            placeholder={t('health.note_body_placeholder')}
           />
         </ScrollView>
 
-        <View style={styles.footer}>
-          <TouchableOpacity
-            style={[styles.addButton, !canSave && styles.addButtonDisabled]}
-            onPress={handleSave}
-            disabled={!canSave}
-            activeOpacity={0.8}
-          >
-            {submitting ? (
-              <ActivityIndicator color={Colors.surface} />
-            ) : (
-              <Text style={styles.addButtonText}>{t('health.add_note')}</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
+        <HealthKeyboardFooter
+          label={t('pickers.done')}
+          disabled={!canSave}
+          loading={submitting}
+          onPress={handleSave}
+          fullWidth={false}
+        />
+      </View>
 
       <ReminderPickerSheet
         visible={reminderSheetVisible}
@@ -176,50 +177,15 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    justifyContent: 'space-between',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   content: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
     paddingBottom: Spacing.xl,
-    gap: Spacing.lg,
-  },
-  label: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 14,
-    color: Colors.primaryText,
-    marginBottom: Spacing.sm,
-  },
-  titleInput: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: 14,
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    color: Colors.primaryText,
-    marginBottom: Spacing.lg,
-  },
-  footer: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    alignItems: 'flex-end',
-  },
-  addButton: {
-    backgroundColor: Colors.primaryText,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: Radius.md,
-    minWidth: 96,
-    alignItems: 'center',
-  },
-  addButtonDisabled: {
-    backgroundColor: Colors.button.disabledBg,
-  },
-  addButtonText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: Colors.surface,
   },
 });

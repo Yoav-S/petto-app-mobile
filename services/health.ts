@@ -16,7 +16,10 @@ export function listRecords(petId: string, status: RecordStatus): Promise<Medica
   return apiGet<MedicalRecord[]>(`/pets/${petId}/medical-records?status=${status}`);
 }
 
-export function createRecord(petId: string, input: { title: string }): Promise<MedicalRecord> {
+export function createRecord(
+  petId: string,
+  input: { title: string; description?: string | null },
+): Promise<MedicalRecord> {
   return apiPost<MedicalRecord>(`/pets/${petId}/medical-records`, input);
 }
 

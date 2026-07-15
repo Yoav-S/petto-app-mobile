@@ -6,8 +6,6 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
   Alert,
   ActivityIndicator,
   useWindowDimensions,
@@ -15,11 +13,12 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import HealthNoteEditorCard from '@/components/health/HealthNoteEditorCard';
+import HealthKeyboardFooter from '@/components/health/HealthKeyboardFooter';
 import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
@@ -246,7 +245,7 @@ export default function EditNoteScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScreenHeader title={t('health.edit_note')} />
 
-      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={styles.container}>
         <ScrollView
           contentContainerStyle={[styles.content, { paddingTop: Math.max(Spacing.md, 16 * sy) }]}
           keyboardShouldPersistTaps="handled"
@@ -261,6 +260,7 @@ export default function EditNoteScreen() {
             reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
             onReminderPress={() => setReminderSheetVisible(true)}
             onRemoveReminder={() => setReminderDraft(null)}
+            placeholder={t('health.note_body_placeholder')}
           />
 
           <TouchableOpacity
@@ -272,21 +272,14 @@ export default function EditNoteScreen() {
           </TouchableOpacity>
         </ScrollView>
 
-        <View style={styles.footer}>
-          <TouchableOpacity
-            style={[styles.doneButton, (!noteText.trim() || saving) && styles.doneButtonDisabled]}
-            onPress={handleSave}
-            disabled={!noteText.trim() || saving}
-            activeOpacity={0.8}
-          >
-            {saving ? (
-              <ActivityIndicator color={Colors.surface} />
-            ) : (
-              <Text style={styles.doneButtonText}>{t('common.save')}</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
+        <HealthKeyboardFooter
+          label={t('pickers.done')}
+          disabled={!noteText.trim() || saving}
+          loading={saving}
+          onPress={handleSave}
+          fullWidth={false}
+        />
+      </View>
 
       <ReminderPickerSheet
         visible={reminderSheetVisible}
@@ -316,6 +309,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    justifyContent: 'space-between',
   },
   centered: {
     flex: 1,
@@ -333,26 +327,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     color: Colors.error,
-  },
-  footer: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    alignItems: 'flex-end',
-  },
-  doneButton: {
-    backgroundColor: Colors.primaryText,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: Radius.md,
-    minWidth: 96,
-    alignItems: 'center',
-  },
-  doneButtonDisabled: {
-    backgroundColor: Colors.button.disabledBg,
-  },
-  doneButtonText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: Colors.surface,
   },
 });

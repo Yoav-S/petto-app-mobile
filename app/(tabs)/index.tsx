@@ -12,7 +12,7 @@ import { t } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
 import type { Pet, Vaccination, Reminder, MedicalRecord } from '@/types/api';
 import { enrichRecordsWithLatestNoteReminders } from '@/services/health';
-import { isIsoDateToday, normalizeToDatePart, todayIsoDate } from '@/utils/calendar';
+import { isIsoDateToday, normalizeToDatePart, todayIsoDate, truncateHealthDescription } from '@/utils/calendar';
 
 import PetHeader, { PANEL_BACKGROUND } from '@/components/home/PetHeader';
 import VaccinesCard from '@/components/home/VaccinesCard';
@@ -38,7 +38,7 @@ function healthRecordToReminder(record: MedicalRecord): HomeReminder | null {
   // Skip reminders whose date has already passed (health-linked only).
   if (date < todayIsoDate()) return null;
   return {
-    title: record.latest_note_preview?.trim() || record.title,
+    title: record.title,
     scheduled_at: `${date}T${time}:00`,
     status: isIsoDateToday(date) ? 'today' : 'scheduled',
   };
@@ -194,7 +194,7 @@ export default function HomeScreen() {
       if (record) {
         setLatestRecord({
           type: record.title,
-          description: record.latest_note_preview ?? undefined,
+          description: truncateHealthDescription(record.description) || undefined,
           date: record.created_at,
           reminder_date: record.linked_reminder_date ?? undefined,
           reminder_time: record.linked_reminder_time ?? undefined,
@@ -293,7 +293,7 @@ export default function HomeScreen() {
                   open={fabOpen}
                   onOpenChange={setFabOpen}
                   onVaccinePress={() => router.push('/vaccines' as never)}
-                  onHealthPress={() => router.push('/health/add-note' as never)}
+                  onHealthPress={() => router.push('/health/add' as never)}
                   onReminderPress={() => router.push('/reminders' as never)}
                 />
               </View>
