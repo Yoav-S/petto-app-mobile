@@ -5,14 +5,21 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  KeyboardAvoidingView,
   Keyboard,
   Platform,
   useWindowDimensions,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 
 const DESIGN_WIDTH = 375;
+const DESIGN_HEIGHT = 812;
+/** White save bar (button + padding). */
+const DESIGN_FOOTER_BAR_HEIGHT = 104;
+/** Extra space below the button for home indicator / safe area when keyboard is closed. */
+const DESIGN_FOOTER_SAFE_EXTRA = 50;
+/** Total resting footer height on the 812 frame. */
+const DESIGN_FOOTER_REST_HEIGHT = DESIGN_FOOTER_BAR_HEIGHT + DESIGN_FOOTER_SAFE_EXTRA;
 
 interface HealthKeyboardFooterProps {
   label: string;
@@ -23,40 +30,20 @@ interface HealthKeyboardFooterProps {
   fullWidth?: boolean;
 }
 
-export default function HealthKeyboardFooter({
-  label,
-  disabled = false,
-  loading = false,
-  onPress,
-  fullWidth = true,
-}: HealthKeyboardFooterProps) {
-  const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const sx = width / DESIGN_WIDTH;
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+interface HealthKeyboardAvoidingViewProps {
+  children: React.ReactNode;
+  keyboardVerticalOffset?: number;
+}
 
-  const layout = useMemo(
-    () => ({
-      buttonWidth: 335 * sx,
-      buttonHeight: 48 * sx,
-      buttonRadius: 12 * sx,
-      footerPadH: 20 * sx,
-      footerPadTop: 12 * sx,
-      footerRadius: 24 * sx,
-    }),
-    [sx],
-  );
+function useKeyboardOpen(): boolean {
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
-    const showSub = Keyboard.addListener(showEvent, (event) => {
-      setKeyboardHeight(event.endCoordinates.height);
-    });
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
-    });
+    const showSub = Keyboard.addListener(showEvent, () => setOpen(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setOpen(false));
 
     return () => {
       showSub.remove();
@@ -64,20 +51,74 @@ export default function HealthKeyboardFooter({
     };
   }, []);
 
-  const keyboardOffset =
-    keyboardHeight > 0 ? Math.max(0, keyboardHeight - insets.bottom) : 0;
+  return open;
+}
+
+/** Wraps scroll content + footer; lifts the footer only while the keyboard is open. */
+export function HealthKeyboardAvoidingView({
+  children,
+  keyboardVerticalOffset = 0,
+}: HealthKeyboardAvoidingViewProps) {
+  const keyboardOpen = useKeyboardOpen();
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.avoiding}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={keyboardVerticalOffset}
+      enabled={keyboardOpen}
+    >
+      {children}
+    </KeyboardAvoidingView>
+  );
+}
+
+/** ScrollView bottom padding so fields clear the resting footer bar. */
+export function healthKeyboardScrollPadding(scaleY = 1, safeBottom = 0): number {
+  return DESIGN_FOOTER_REST_HEIGHT * scaleY + Math.max(12, safeBottom) + 16;
+}
+
+export default function HealthKeyboardFooter({
+  label,
+  disabled = false,
+  loading = false,
+  onPress,
+  fullWidth = true,
+}: HealthKeyboardFooterProps) {
+  const { width, height } = useWindowDimensions();
+  const sx = width / DESIGN_WIDTH;
+  const sy = height / DESIGN_HEIGHT;
+
+  const keyboardOpen = useKeyboardOpen();
+
+  const layout = useMemo(
+    () => ({
+      buttonWidth: 335 * sx,
+      buttonHeight: 48 * sx,
+      buttonRadius: 12 * sx,
+      footerPadH: 20 * sx,
+      footerPadTop: 12 * sy,
+      footerRadius: 24 * sx,
+      footerHeightClosed: DESIGN_FOOTER_REST_HEIGHT * sy,
+      footerPadBottomClosed: (DESIGN_FOOTER_REST_HEIGHT - 12 - 48) * sy,
+    }),
+    [sx, sy],
+  );
+
+  const footerBottomPad = keyboardOpen ? layout.footerPadTop : layout.footerPadBottomClosed;
 
   return (
     <View
       style={[
         styles.footer,
+        keyboardOpen ? styles.footerOpen : styles.footerClosed,
         {
+          height: keyboardOpen ? undefined : layout.footerHeightClosed,
           paddingTop: layout.footerPadTop,
           paddingHorizontal: layout.footerPadH,
-          paddingBottom: keyboardHeight > 0 ? layout.footerPadTop : Math.max(12, insets.bottom),
+          paddingBottom: footerBottomPad,
           borderTopLeftRadius: layout.footerRadius,
           borderTopRightRadius: layout.footerRadius,
-          marginBottom: keyboardOffset,
         },
       ]}
     >
@@ -106,7 +147,11 @@ export default function HealthKeyboardFooter({
 }
 
 const styles = StyleSheet.create({
+  avoiding: {
+    flex: 1,
+  },
   footer: {
+    width: '100%',
     backgroundColor: Colors.surface,
     alignItems: 'center',
     shadowColor: '#2D2D2A',
@@ -114,6 +159,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 20,
     elevation: 8,
+  },
+  footerClosed: {
+    justifyContent: 'flex-start',
+  },
+  footerOpen: {
+    justifyContent: 'center',
   },
   buttonFull: {
     backgroundColor: Colors.primaryText,

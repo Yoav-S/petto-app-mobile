@@ -2,18 +2,22 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   Alert,
   ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors, Spacing } from '@/constants/theme';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import HealthNoteEditorCard from '@/components/health/HealthNoteEditorCard';
-import HealthKeyboardFooter from '@/components/health/HealthKeyboardFooter';
+import HealthKeyboardFooter, {
+  HealthKeyboardAvoidingView,
+  healthKeyboardScrollPadding,
+} from '@/components/health/HealthKeyboardFooter';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
@@ -39,6 +43,7 @@ export default function AddNoteScreen() {
   const { recordId: recordIdParam } = useLocalSearchParams<{ recordId?: string }>();
   const recordId = normalizeRouteParam(recordIdParam);
   const { activePetId } = useActivePet();
+  const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const sy = height / DESIGN_HEIGHT;
 
@@ -127,12 +132,19 @@ export default function AddNoteScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScreenHeader title={t('health.add_note')} />
 
-      <View style={styles.container}>
+      <HealthKeyboardAvoidingView>
         <ScrollView
-          contentContainerStyle={[styles.content, { paddingTop: Math.max(Spacing.md, 16 * sy) }]}
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.content,
+            {
+              paddingTop: Math.max(Spacing.md, 16 * sy),
+              paddingBottom: healthKeyboardScrollPadding(sy, insets.bottom),
+            },
+          ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -156,7 +168,7 @@ export default function AddNoteScreen() {
           onPress={handleSave}
           fullWidth={false}
         />
-      </View>
+      </HealthKeyboardAvoidingView>
 
       <ReminderPickerSheet
         visible={reminderSheetVisible}
@@ -177,7 +189,9 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    justifyContent: 'space-between',
+  },
+  scroll: {
+    flex: 1,
   },
   centered: {
     flex: 1,

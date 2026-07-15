@@ -83,7 +83,6 @@ export default function HealthListItem({
   const metaSize = 14 * sx;
   const metaLine = 20 * sx;
   const innerWidth = cardWidth - padH * 2;
-  const textBlockHeight = 66 * sx;
 
   const createdLabel = formatHealthCreatedLabel(createdAt, {
     today: t('common.today'),
@@ -138,7 +137,7 @@ export default function HealthListItem({
           )}
         </View>
 
-        <View style={[styles.textBlock, { width: innerWidth, height: textBlockHeight, gap: textGap }]}>
+        <View style={[styles.textBlock, { width: innerWidth, gap: textGap }]}>
           {subtitle ? (
             <Text
               style={[styles.subtitle, { fontSize: subtitleSize, lineHeight: subtitleLine }]}
@@ -151,7 +150,10 @@ export default function HealthListItem({
         </View>
 
         {createdLabel ? (
-          <Text style={[styles.createdMeta, { fontSize: metaSize, lineHeight: metaLine }]}>
+          <Text
+            style={[styles.createdMeta, { fontSize: metaSize, lineHeight: metaLine }]}
+            numberOfLines={1}
+          >
             {createdLabel}
           </Text>
         ) : null}
@@ -195,7 +197,8 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
   textBlock: {
-    overflow: 'hidden',
+    flexShrink: 1,
+    minHeight: 0,
     justifyContent: 'flex-start',
   },
   subtitle: {
@@ -205,6 +208,7 @@ const styles = StyleSheet.create({
   createdMeta: {
     fontFamily: 'Rubik-Regular',
     color: Colors.secondaryText,
+    flexShrink: 0,
   },
   fadeOverlay: {
     ...StyleSheet.absoluteFillObject,

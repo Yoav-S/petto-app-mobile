@@ -1,17 +1,20 @@
 import React, { useMemo, useState } from 'react';
 import {
   StyleSheet,
-  SafeAreaView,
   ScrollView,
-  View,
   Alert,
   useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/theme';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import HealthRecordFormFields from '@/components/health/HealthRecordFormFields';
-import HealthKeyboardFooter from '@/components/health/HealthKeyboardFooter';
+import HealthKeyboardFooter, {
+  HealthKeyboardAvoidingView,
+  healthKeyboardScrollPadding,
+} from '@/components/health/HealthKeyboardFooter';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { createRecord } from '@/services/health';
@@ -23,6 +26,7 @@ const DESIGN_HEIGHT = 812;
 export default function AddHealthScreen() {
   const router = useRouter();
   const { activePetId } = useActivePet();
+  const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const sx = width / DESIGN_WIDTH;
   const sy = height / DESIGN_HEIGHT;
@@ -55,7 +59,7 @@ export default function AddHealthScreen() {
       setSubmitting(true);
       await createRecord(activePetId, {
         title: name.trim(),
-        description: description.trim() || undefined,
+        description: description.trim() || null,
       });
       router.back();
     } catch (err) {
@@ -65,16 +69,23 @@ export default function AddHealthScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <VaccineScreenHeader
         title={t('health.add_health')}
         icon="close"
         extraTopOffset={44 * sy}
       />
 
-      <View style={styles.flex}>
+      <HealthKeyboardAvoidingView>
         <ScrollView
-          contentContainerStyle={[styles.content, { paddingTop: layout.formTop }]}
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.content,
+            {
+              paddingTop: layout.formTop,
+              paddingBottom: healthKeyboardScrollPadding(sy, insets.bottom),
+            },
+          ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -102,7 +113,7 @@ export default function AddHealthScreen() {
           onPress={handleSave}
           fullWidth
         />
-      </View>
+      </HealthKeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -112,11 +123,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  flex: {
+  scroll: {
     flex: 1,
-    justifyContent: 'space-between',
   },
   content: {
-    paddingBottom: 24,
+    flexGrow: 1,
   },
 });

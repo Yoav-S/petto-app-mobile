@@ -350,14 +350,22 @@ function startOfLocalDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+function parseApiDateTime(value: string | null | undefined): Date | null {
+  const trimmed = value?.trim() ?? '';
+  if (!trimmed) return null;
+  const hasZone = /[zZ]$|[+-]\d{2}:\d{2}$/.test(trimmed);
+  const parsed = new Date(hasZone ? trimmed : `${trimmed}Z`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 /** Health list footer: Today HH:MM, Yesterday, or Created DD.MM.YYYY. */
 export function formatHealthCreatedLabel(
   isoDateTime: string | null | undefined,
   labels: { today: string; yesterday: string; createdPrefix: string },
 ): string {
   if (!isoDateTime) return '';
-  const created = new Date(isoDateTime);
-  if (Number.isNaN(created.getTime())) return '';
+  const created = parseApiDateTime(isoDateTime);
+  if (!created) return '';
 
   const now = new Date();
   const dayMs = 24 * 60 * 60 * 1000;

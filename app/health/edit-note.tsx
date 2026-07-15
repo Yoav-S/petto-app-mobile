@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   ScrollView,
   Alert,
   ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -18,7 +18,11 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import HealthNoteEditorCard from '@/components/health/HealthNoteEditorCard';
-import HealthKeyboardFooter from '@/components/health/HealthKeyboardFooter';
+import HealthKeyboardFooter, {
+  HealthKeyboardAvoidingView,
+  healthKeyboardScrollPadding,
+} from '@/components/health/HealthKeyboardFooter';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
@@ -52,6 +56,7 @@ export default function EditNoteScreen() {
   const noteId = normalizeRouteParam(noteIdParam);
   const open = normalizeRouteParam(openParam);
   const { activePetId } = useActivePet();
+  const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const sy = height / DESIGN_HEIGHT;
   const openHandled = useRef(false);
@@ -242,12 +247,19 @@ export default function EditNoteScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScreenHeader title={t('health.edit_note')} />
 
-      <View style={styles.container}>
+      <HealthKeyboardAvoidingView>
         <ScrollView
-          contentContainerStyle={[styles.content, { paddingTop: Math.max(Spacing.md, 16 * sy) }]}
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.content,
+            {
+              paddingTop: Math.max(Spacing.md, 16 * sy),
+              paddingBottom: healthKeyboardScrollPadding(sy, insets.bottom),
+            },
+          ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -279,7 +291,7 @@ export default function EditNoteScreen() {
           onPress={handleSave}
           fullWidth={false}
         />
-      </View>
+      </HealthKeyboardAvoidingView>
 
       <ReminderPickerSheet
         visible={reminderSheetVisible}
@@ -309,7 +321,9 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    justifyContent: 'space-between',
+  },
+  scroll: {
+    flex: 1,
   },
   centered: {
     flex: 1,
