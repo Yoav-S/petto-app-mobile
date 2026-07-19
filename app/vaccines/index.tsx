@@ -13,7 +13,8 @@ import {
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AddFabButton, { ADD_FAB_BOTTOM, ADD_FAB_RIGHT } from '@/components/ui/AddFabButton';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import VaccineScreenHeader, { getVaccineHeaderContentOffset } from '@/components/vaccines/VaccineScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
@@ -160,13 +161,11 @@ export default function VaccinesScreen() {
       <VaccineScreenHeader title={t('vaccines.list_title')} />
       {renderContent()}
 
-      <TouchableOpacity
+      <AddFabButton
         style={styles.fab}
-        activeOpacity={0.85}
         onPress={() => router.push('/vaccines/add' as never)}
-      >
-        <Ionicons name="add" size={28} color={Colors.surface} />
-      </TouchableOpacity>
+        accessibilityLabel={t('vaccines.add')}
+      />
     </SafeAreaView>
   );
 }
@@ -245,19 +244,8 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 32,
-    right: 16,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primaryText,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    bottom: ADD_FAB_BOTTOM,
+    right: ADD_FAB_RIGHT,
     zIndex: 20,
   },
 });

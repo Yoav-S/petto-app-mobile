@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
   },
   continueBtn: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },

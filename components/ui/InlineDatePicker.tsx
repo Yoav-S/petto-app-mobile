@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selectedDateCell: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
   },
   dateText: {
     fontFamily: 'Rubik-Regular',
@@ -232,8 +232,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   selectedLargeGridCell: {
-    backgroundColor: Colors.primaryText,
-    borderColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
+    borderColor: Colors.brand,
   },
   largeGridText: {
     fontFamily: 'Rubik-Regular',

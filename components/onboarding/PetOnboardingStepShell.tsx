@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   doneBtn: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     color: Colors.secondaryText,
   },
   doneButton: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
     borderRadius: Radius.md,
     paddingVertical: 16,
     alignItems: 'center',

@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   continueBtn: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,

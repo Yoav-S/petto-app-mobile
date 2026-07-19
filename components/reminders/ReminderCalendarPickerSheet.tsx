@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   doneButton: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,

@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
     color: Colors.primaryText,
   },
   btn: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.22,

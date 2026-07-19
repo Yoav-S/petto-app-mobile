@@ -42,7 +42,8 @@
     "sign_out": "Log out",
     "save": "Save",
     "cancel": "Cancel",
-    "delete": "Delete"
+    "delete": "Delete",
+    "clear": "Clear"
   },
   "pickers": {
     "time_title": "Choose time",

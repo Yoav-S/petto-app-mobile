@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   dayCellSelected: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
   },
   dayText: {
     fontFamily: 'Rubik-Regular',

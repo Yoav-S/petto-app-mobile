@@ -38,7 +38,7 @@ export const ONBOARDING_BUTTON = {
   radius: 12,
   paddingV: 12,
   paddingH: 16,
-  bg: '#1F2937',
+  bg: '#004741',
 } as const;
 
 export const ONBOARDING_LEGAL = {

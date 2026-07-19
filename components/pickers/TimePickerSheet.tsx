@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   doneButton: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,

@@ -8,12 +8,14 @@ import { Platform } from 'react-native';
 export const Colors = {
   background: '#F7F5F0',
   surface: '#FFFFFF',
+  /** Peto brand green — primary actions, FAB, focused inputs */
+  brand: '#004741',
   primaryText: '#1F2937',
   secondaryText: '#6B7280',
   border: '#E5E7EB',
   error: '#C96A6A',
   button: {
-    primaryBg: '#1F2937',
+    primaryBg: '#004741',
     primaryText: '#FFFFFF',
     disabledBg: '#C7C9CC',
     disabledText: '#FFFFFF',

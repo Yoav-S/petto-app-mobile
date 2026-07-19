@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ApiError } from '@/services/api';
@@ -26,6 +27,7 @@ export default function EmailAuthScreen() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [focused, setFocused] = useState(false);
 
   const canSubmit = EMAIL_REGEX.test(email.trim());
 
@@ -69,25 +71,43 @@ export default function EmailAuthScreen() {
           <Text style={styles.title}>{t('auth.email_title')}</Text>
           <Text style={styles.subtitle}>{t('auth.email_subtitle')}</Text>
 
-          <TextInput
-            ref={inputRef}
-            style={styles.input}
-            value={email}
-            onChangeText={(v) => {
-              setEmail(v);
-              if (error) setError('');
-            }}
-            placeholder={t('auth.email_placeholder')}
-            placeholderTextColor={Colors.secondaryText}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="email"
-            textContentType="emailAddress"
-            autoFocus
-            returnKeyType="done"
-            onSubmitEditing={handleContinue}
-          />
+          <View style={[styles.inputWrap, focused && styles.inputWrapFocused]}>
+            <TextInput
+              ref={inputRef}
+              style={styles.input}
+              value={email}
+              onChangeText={(v) => {
+                setEmail(v);
+                if (error) setError('');
+              }}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              placeholder={t('auth.email_placeholder')}
+              placeholderTextColor={Colors.secondaryText}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+              textContentType="emailAddress"
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={handleContinue}
+            />
+            {email.length > 0 ? (
+              <Pressable
+                style={styles.clearBtn}
+                onPress={() => {
+                  setEmail('');
+                  inputRef.current?.focus();
+                }}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.clear')}
+              >
+                <Ionicons name="close-circle" size={20} color={Colors.secondaryText} />
+              </Pressable>
+            ) : null}
+          </View>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -152,17 +172,29 @@ const styles = StyleSheet.create({
     color: Colors.secondaryText,
     marginBottom: Spacing.xl,
   },
-  input: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    color: Colors.primaryText,
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: Radius.md,
     backgroundColor: Colors.surface,
+    paddingRight: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  inputWrapFocused: {
+    borderColor: Colors.brand,
+  },
+  input: {
+    flex: 1,
+    fontFamily: 'Rubik-Regular',
+    fontSize: 16,
+    color: Colors.primaryText,
     paddingHorizontal: Spacing.lg,
     paddingVertical: 14,
-    marginBottom: Spacing.md,
+  },
+  clearBtn: {
+    padding: Spacing.xs,
   },
   errorText: {
     fontFamily: 'Rubik-Regular',
@@ -171,7 +203,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   button: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
     height: 48,
     borderRadius: Radius.md,
     alignItems: 'center',

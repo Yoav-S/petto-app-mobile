@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   doneBtn: {
     position: 'absolute',
     zIndex: 2,
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 14,

@@ -42,7 +42,8 @@
     "sign_out": "התנתק",
     "save": "שמור",
     "cancel": "ביטול",
-    "delete": "מחק"
+    "delete": "מחק",
+    "clear": "נקה"
   },
   "pickers": {
     "time_title": "בחר שעה",

@@ -4,14 +4,13 @@ import {
   StyleSheet,
   FlatList,
   SafeAreaView,
-  TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import AddFabButton, { ADD_FAB_BOTTOM, ADD_FAB_RIGHT } from '@/components/ui/AddFabButton';
 import { Colors } from '@/constants/theme';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import SegmentedControl from '@/components/ui/SegmentedControl';
@@ -275,13 +274,11 @@ export default function RemindersScreen() {
         />
       )}
 
-      <TouchableOpacity
+      <AddFabButton
         style={styles.fab}
-        activeOpacity={0.8}
         onPress={() => router.push('/reminders/add' as never)}
-      >
-        <Ionicons name="add" size={28} color={Colors.surface} />
-      </TouchableOpacity>
+        accessibilityLabel={t('reminders.add')}
+      />
 
       <Snackbar
         visible={snackbarVisible}
@@ -321,19 +318,8 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 32,
-    right: 16,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primaryText,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    bottom: ADD_FAB_BOTTOM,
+    right: ADD_FAB_RIGHT,
     zIndex: 20,
   },
 });

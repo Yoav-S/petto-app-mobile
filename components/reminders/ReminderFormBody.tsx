@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'center',
   },
   saveButton: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },

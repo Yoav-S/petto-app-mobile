@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   addButton: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
     borderRadius: Radius.md,
     paddingVertical: 16,
     alignItems: 'center',

@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
   },
   keyboardDoneBtn: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
     paddingHorizontal: 28,
     paddingVertical: 12,
     borderRadius: Radius.md,
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
     color: Colors.surface,
   },
   saveButton: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },

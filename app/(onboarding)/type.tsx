@@ -148,7 +148,7 @@ export default function PetTypeOnboardingScreen() {
                       height: PET_TYPE_STEP.pickerHeight * sy,
                       borderRadius: 12 * sx,
                       borderWidth: isSelected ? 2 : 1,
-                      borderColor: isSelected ? Colors.primaryText : Colors.border,
+                      borderColor: isSelected ? Colors.brand : Colors.border,
                     },
                   ]}
                   accessibilityRole="button"
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   continueBtn: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,

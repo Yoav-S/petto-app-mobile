@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   chipActive: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
   },
   chipLabel: {
     fontFamily: 'Rubik-Medium',
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.border,
   },
   doneButton: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
     borderRadius: Radius.md,
     paddingVertical: 16,
     alignItems: 'center',

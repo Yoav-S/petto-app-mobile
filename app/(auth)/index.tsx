@@ -67,11 +67,11 @@ export default function OnboardingWelcomeScreen() {
               top: ONBOARDING_LOGO.top * sy,
               fontSize: ONBOARDING_LOGO.fontSize * sx,
               lineHeight: ONBOARDING_LOGO.lineHeight * sy,
-              color: '#1F2937',
+              color: Colors.brand,
             },
           ]}
         >
-          petto
+          peto
         </Text>
       </View>
 

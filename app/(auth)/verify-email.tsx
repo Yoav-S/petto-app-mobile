@@ -303,9 +303,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: Colors.background,
   },
-  otpBoxFilled: { borderColor: Colors.primaryText },
+  otpBoxFilled: { borderColor: Colors.brand },
   otpBoxActive: {
-    borderColor: Colors.primaryText,
+    borderColor: Colors.brand,
     borderWidth: 2,
   },
   otpDigit: {
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     bottom: 10,
     width: 2,
     height: 20,
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
   },
   otpInputOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   button: {
-    backgroundColor: Colors.primaryText,
+    backgroundColor: Colors.brand,
     padding: Spacing.lg,
     borderRadius: Radius.md,
     alignItems: 'center',
@@ -364,9 +364,9 @@ const styles = StyleSheet.create({
   resendText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
-    color: Colors.primaryText,
+    color: Colors.brand,
   },
-  resendMuted: { color: Colors.secondaryText },
+  resendMuted: { color: Colors.brand, opacity: 0.55 },
   backButton: { alignItems: 'center', marginTop: Spacing.xl },
   backText: {
     fontFamily: 'Rubik-Regular',
