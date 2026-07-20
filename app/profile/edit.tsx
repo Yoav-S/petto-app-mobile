@@ -60,8 +60,10 @@ export default function EditProfileScreen() {
   const [weight, setWeight] = useState('');
   const [isNeutered, setIsNeutered] = useState<boolean | null>(null);
   const [chipId, setChipId] = useState('');
+  const [passport, setPassport] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoChanged, setPhotoChanged] = useState(false);
+  const [petCount, setPetCount] = useState(0);
 
   const [dateSheetVisible, setDateSheetVisible] = useState(false);
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
@@ -79,8 +81,14 @@ export default function EditProfileScreen() {
           return;
         }
         try {
-          const pet = await apiGet<Pet>(`/pets/${activePetId}`);
+          const pets = await apiGet<Pet[]>('/pets');
           if (cancelled) return;
+          const pet = pets.find((p) => p.id === activePetId);
+          if (!pet) {
+            setNotFound(true);
+            return;
+          }
+          setPetCount(pets.length);
           setName(pet.name ?? '');
           setSex(pet.sex ?? null);
           setBirthDate(pet.birth_date ?? null);
@@ -89,6 +97,7 @@ export default function EditProfileScreen() {
           setWeight(pet.weight != null ? String(pet.weight) : '');
           setIsNeutered(pet.is_neutered ?? null);
           setChipId(pet.chip_id ?? '');
+          setPassport(pet.passport_number ?? '');
           setPhotoUri(pet.photo_url ?? null);
           setPhotoChanged(false);
           setNotFound(false);
@@ -164,6 +173,7 @@ export default function EditProfileScreen() {
         weight: weightValue != null && Number.isFinite(weightValue) ? weightValue : null,
         is_neutered: isNeutered,
         chip_id: trimOrNull(chipId),
+        passport_number: trimOrNull(passport),
         ...(photoChanged ? { photo_url: photoUrl } : {}),
       });
       router.back();
@@ -172,6 +182,17 @@ export default function EditProfileScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleRemovePress = () => {
+    if (petCount <= 1) {
+      Alert.alert(
+        t('profile.edit.last_pet_title'),
+        t('profile.edit.last_pet_body'),
+      );
+      return;
+    }
+    setDeleteVisible(true);
   };
 
   const handleDelete = async () => {
@@ -287,9 +308,16 @@ export default function EditProfileScreen() {
                 autoCapitalize="characters"
               />
 
+              <ProfileTextField
+                label={t('profile.passport')}
+                value={passport}
+                onChangeText={setPassport}
+                autoCapitalize="characters"
+              />
+
               <TouchableOpacity
                 style={styles.removeBtn}
-                onPress={() => setDeleteVisible(true)}
+                onPress={handleRemovePress}
                 activeOpacity={0.7}
               >
                 <Text style={styles.removeText}>{t('profile.edit.remove_pet')}</Text>
