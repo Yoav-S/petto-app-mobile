@@ -95,7 +95,13 @@
     "account_email": "אימייל",
     "delete_account": "מחיקת חשבון",
     "delete_account_confirm_title": "למחוק את החשבון?",
-    "delete_account_confirm_body": "פעולה זו תמחק לצמיתות את החשבון וכל החיות, הרשומות, התזכורות והתמונות שלך. לא ניתן לבטל."
+    "delete_account_confirm_body": "פעולה זו תמחק לצמיתות את החשבון וכל החיות, הרשומות, התזכורות והתמונות שלך. לא ניתן לבטל.",
+    "notif_all": "כל ההתראות",
+    "notif_all_subtitle": "כולל תזכורות, עדכוני חיסונים, התראות בריאות ועדכונים במייל",
+    "notif_reminders": "תזכורות",
+    "notif_vaccine_updates": "עדכוני חיסונים",
+    "notif_health_reminders": "תזכורות בריאות",
+    "notif_email_updates": "עדכונים במייל"
   },
   "pickers": {
     "time_title": "בחר שעה",

@@ -1,6 +1,25 @@
 import { Platform } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
-import { apiPost } from './api';
+import { apiPost, apiGet, apiPatch } from './api';
+
+/** Per-user notification switches. `all` is the master gate. */
+export interface NotificationPrefs {
+  all: boolean;
+  reminders: boolean;
+  vaccine_updates: boolean;
+  health_reminders: boolean;
+  email_updates: boolean;
+}
+
+export async function getNotificationPrefs(): Promise<NotificationPrefs> {
+  return apiGet<NotificationPrefs>('/notifications/preferences');
+}
+
+export async function updateNotificationPrefs(
+  patch: Partial<NotificationPrefs>,
+): Promise<NotificationPrefs> {
+  return apiPatch<NotificationPrefs>('/notifications/preferences', patch);
+}
 
 // Expo Go (SDK 53+) removed remote push support. Importing expo-notifications
 // there triggers a red LogBox error from its auto-registration side-effect, so

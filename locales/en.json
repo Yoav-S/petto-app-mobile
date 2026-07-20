@@ -95,7 +95,13 @@
     "account_email": "Email",
     "delete_account": "Delete account",
     "delete_account_confirm_title": "Delete account?",
-    "delete_account_confirm_body": "This permanently deletes your account and all your pets, records, reminders, and photos. This can't be undone."
+    "delete_account_confirm_body": "This permanently deletes your account and all your pets, records, reminders, and photos. This can't be undone.",
+    "notif_all": "All notifications",
+    "notif_all_subtitle": "Includes reminders, vaccine updates, health alerts and email updates",
+    "notif_reminders": "Reminders",
+    "notif_vaccine_updates": "Vaccine updates",
+    "notif_health_reminders": "Health reminders",
+    "notif_email_updates": "Email updates"
   },
   "pickers": {
     "time_title": "Choose time",
