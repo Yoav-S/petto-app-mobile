@@ -54,14 +54,27 @@
     "sex_male": "זכר",
     "sex_female": "נקבה",
     "birth_date": "תאריך לידה",
+    "breed": "גזע",
     "weight": "משקל",
+    "weight_label": "משקל (ק\"ג)",
     "weight_unit": "ק\"ג",
     "color": "צבע",
     "neutered": "מעוקר/ת",
     "serial": "דרכון / מספר סידורי",
     "chip_id": "מספר שבב",
+    "return_home": "חזרה לבית",
+    "edit_profile": "עריכת פרופיל",
     "cover_open_a11y": "פתח פרופיל חיה",
-    "cover_back_a11y": "חזרה לבית"
+    "cover_back_a11y": "חזרה לבית",
+    "edit": {
+      "title": "עריכת פרופיל",
+      "name_required": "השם לא יכול להיות ריק.",
+      "not_found": "החיה לא נמצאה.",
+      "change_photo": "החלף תמונה",
+      "remove_pet": "מחק חיה",
+      "remove_confirm_title": "למחוק את החיה?",
+      "remove_confirm_body": "פעולה זו תמחק לצמיתות את החיה וכל החיסונים, התזכורות ורשומות הבריאות שלה."
+    }
   },
   "pickers": {
     "time_title": "בחר שעה",

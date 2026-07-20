@@ -263,11 +263,9 @@ export default function HomeScreen() {
             onLogout={() => {
               void signOut();
             }}
-            onCoverPress={
-              pet
-                ? () => setPanelMode((mode) => (mode === 'home' ? 'profile' : 'home'))
-                : undefined
-            }
+            onSettingsPress={pet ? () => setPanelMode('profile') : undefined}
+            onReturnHome={() => setPanelMode('home')}
+            onEditProfile={() => router.push('/profile/edit' as never)}
             profileActive={effectiveMode === 'profile'}
           >
             {effectiveMode === 'profile' ? (

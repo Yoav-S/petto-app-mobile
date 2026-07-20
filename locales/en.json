@@ -54,14 +54,27 @@
     "sex_male": "Male",
     "sex_female": "Female",
     "birth_date": "Birth date",
+    "breed": "Breed",
     "weight": "Weight",
+    "weight_label": "Weight (kg)",
     "weight_unit": "kg",
     "color": "Color",
     "neutered": "Neutered",
     "serial": "Passport / Serial",
     "chip_id": "Chip ID",
+    "return_home": "Back to home",
+    "edit_profile": "Edit profile",
     "cover_open_a11y": "Open pet profile",
-    "cover_back_a11y": "Back to home"
+    "cover_back_a11y": "Back to home",
+    "edit": {
+      "title": "Edit profile",
+      "name_required": "Name can't be empty.",
+      "not_found": "Pet not found.",
+      "change_photo": "Change photo",
+      "remove_pet": "Remove pet",
+      "remove_confirm_title": "Remove pet?",
+      "remove_confirm_body": "This permanently deletes this pet and all its vaccines, reminders, and health records."
+    }
   },
   "pickers": {
     "time_title": "Choose time",

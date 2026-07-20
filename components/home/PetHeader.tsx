@@ -2,10 +2,9 @@ import { Colors, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Animated,
-  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -34,7 +33,9 @@ interface PetHeaderProps {
   loading: boolean;
   onSwitchPress: () => void;
   onLogout?: () => void;
-  onCoverPress?: () => void;
+  onSettingsPress?: () => void;
+  onEditProfile?: () => void;
+  onReturnHome?: () => void;
   profileActive?: boolean;
   children?: React.ReactNode;
 }
@@ -62,14 +63,15 @@ export default function PetHeader({
   loading,
   onSwitchPress,
   onLogout,
-  onCoverPress,
+  onSettingsPress,
+  onEditProfile,
+  onReturnHome,
   profileActive,
   children,
 }: PetHeaderProps) {
   const insets = useSafeAreaInsets();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const scaleX = screenWidth / DESIGN_WIDTH;
   const scaleY = screenHeight / DESIGN_HEIGHT;
@@ -96,65 +98,67 @@ export default function PetHeader({
   return (
     <View style={styles.wrapper}>
       <View style={[styles.cover, { height: coverHeight }]}>
-        <Pressable
-          style={styles.coverPressable}
-          onPress={onCoverPress}
-          disabled={loading || !onCoverPress}
-          accessibilityRole={onCoverPress ? 'button' : undefined}
-          accessibilityLabel={
-            onCoverPress
-              ? profileActive
-                ? t('profile.cover_back_a11y')
-                : t('profile.cover_open_a11y')
-              : undefined
-          }
-        >
-          {loading ? (
-            <Animated.View style={[styles.coverPlaceholder, { opacity: fadeAnim }]} />
-          ) : pet?.photo_url ? (
-            <Image
-              key={pet.id}
-              source={{ uri: pet.photo_url }}
-              style={styles.coverImage}
-              contentFit="cover"
-              accessibilityLabel={pet.name ? `${pet.name} photo` : 'Pet photo'}
-            />
-          ) : (
-            <View style={styles.coverPlaceholder}>
-              <Ionicons name="paw" size={72} color={Colors.secondaryText} />
-            </View>
-          )}
-        </Pressable>
-
-        <TouchableOpacity
-          style={[styles.settingsButton, { top: insets.top + Spacing.sm }]}
-          onPress={() => setMenuOpen((v) => !v)}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel={t('home.settings')}
-        >
-          <Ionicons name="settings-outline" size={22} color={Colors.primaryText} />
-        </TouchableOpacity>
-      </View>
-
-      {menuOpen ? (
-        <>
-          <Pressable style={styles.menuBackdrop} onPress={() => setMenuOpen(false)} />
-          <View style={[styles.settingsMenu, { top: insets.top + Spacing.sm + 44 + Spacing.xs }]}>
-            <TouchableOpacity
-              style={styles.settingsMenuItem}
-              onPress={() => {
-                setMenuOpen(false);
-                onLogout?.();
-              }}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="log-out-outline" size={18} color={Colors.primaryText} />
-              <Text style={styles.settingsMenuItemText}>{t('common.sign_out')}</Text>
-            </TouchableOpacity>
+        {loading ? (
+          <Animated.View style={[styles.coverPlaceholder, { opacity: fadeAnim }]} />
+        ) : pet?.photo_url ? (
+          <Image
+            key={pet.id}
+            source={{ uri: pet.photo_url }}
+            style={styles.coverImage}
+            contentFit="cover"
+            accessibilityLabel={pet.name ? `${pet.name} photo` : 'Pet photo'}
+          />
+        ) : (
+          <View style={styles.coverPlaceholder}>
+            <Ionicons name="paw" size={72} color={Colors.secondaryText} />
           </View>
-        </>
-      ) : null}
+        )}
+
+        {profileActive ? (
+          <View style={[styles.actionBar, { top: insets.top + Spacing.xs }]}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={onReturnHome}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={t('profile.return_home')}
+            >
+              <Ionicons name="arrow-back" size={20} color={Colors.primaryText} />
+            </TouchableOpacity>
+
+            <View style={styles.actionRight}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={onEditProfile}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={t('profile.edit_profile')}
+              >
+                <Ionicons name="pencil" size={18} color={Colors.primaryText} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={onLogout}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.sign_out')}
+              >
+                <Ionicons name="log-out-outline" size={18} color={Colors.primaryText} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={[styles.settingsButton, { top: insets.top + Spacing.sm }]}
+            onPress={onSettingsPress}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={t('home.settings')}
+          >
+            <Ionicons name="settings-outline" size={22} color={Colors.primaryText} />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <View style={[styles.panelOuter, { marginTop: -panelOverlap }]}>
         <View
@@ -180,7 +184,7 @@ export default function PetHeader({
               >
                 <Text style={styles.name}>{pet?.name ?? t('home.noPet')}</Text>
                 {canSwitch ? (
-                  <Ionicons name="chevron-down" size={22} color={Colors.primaryText} />
+                  <Ionicons name="chevron-down" size={24} color={Colors.primaryText} />
                 ) : null}
               </TouchableOpacity>
               {pet ? (
@@ -210,10 +214,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8E2D8',
     overflow: 'hidden',
   },
-  coverPressable: {
-    width: '100%',
-    height: '100%',
-  },
   coverImage: {
     width: '100%',
     height: '100%',
@@ -239,35 +239,35 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  menuBackdrop: {
-    ...StyleSheet.absoluteFillObject,
+  actionBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
     zIndex: 90,
   },
-  settingsMenu: {
-    position: 'absolute',
-    right: Spacing.lg,
-    minWidth: 160,
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    paddingVertical: Spacing.xs,
-    zIndex: 95,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  settingsMenuItem: {
+  actionRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
   },
-  settingsMenuItemText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 15,
-    color: Colors.primaryText,
+  actionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    padding: 4,
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
   },
   panelOuter: {
     flex: 1,
