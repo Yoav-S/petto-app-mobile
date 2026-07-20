@@ -79,6 +79,20 @@
       "last_pet_body": "You need at least one pet. Add another pet first, then you can remove this one."
     }
   },
+  "settings": {
+    "title": "Settings",
+    "account": "Account",
+    "notifications": "Notifications",
+    "theme": "Theme",
+    "language": "Language",
+    "subscription": "Subscription",
+    "help": "Help",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "language_en": "English",
+    "language_he": "עברית",
+    "coming_soon": "Coming soon"
+  },
   "pickers": {
     "time_title": "Choose time",
     "hours": "Hour",

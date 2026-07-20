@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -34,6 +35,7 @@ interface PetHeaderProps {
   onSwitchPress: () => void;
   onLogout?: () => void;
   onSettingsPress?: () => void;
+  onCoverPress?: () => void;
   onEditProfile?: () => void;
   onReturnHome?: () => void;
   profileActive?: boolean;
@@ -62,8 +64,8 @@ export default function PetHeader({
   petCount,
   loading,
   onSwitchPress,
-  onLogout,
   onSettingsPress,
+  onCoverPress,
   onEditProfile,
   onReturnHome,
   profileActive,
@@ -98,21 +100,35 @@ export default function PetHeader({
   return (
     <View style={styles.wrapper}>
       <View style={[styles.cover, { height: coverHeight }]}>
-        {loading ? (
-          <Animated.View style={[styles.coverPlaceholder, { opacity: fadeAnim }]} />
-        ) : pet?.photo_url ? (
-          <Image
-            key={pet.id}
-            source={{ uri: pet.photo_url }}
-            style={styles.coverImage}
-            contentFit="cover"
-            accessibilityLabel={pet.name ? `${pet.name} photo` : 'Pet photo'}
-          />
-        ) : (
-          <View style={styles.coverPlaceholder}>
-            <Ionicons name="paw" size={72} color={Colors.secondaryText} />
-          </View>
-        )}
+        <Pressable
+          style={styles.coverPressable}
+          onPress={onCoverPress}
+          disabled={loading || !pet || !onCoverPress}
+          accessibilityRole={onCoverPress ? 'button' : undefined}
+          accessibilityLabel={
+            onCoverPress
+              ? profileActive
+                ? t('profile.cover_back_a11y')
+                : t('profile.cover_open_a11y')
+              : undefined
+          }
+        >
+          {loading ? (
+            <Animated.View style={[styles.coverPlaceholder, { opacity: fadeAnim }]} />
+          ) : pet?.photo_url ? (
+            <Image
+              key={pet.id}
+              source={{ uri: pet.photo_url }}
+              style={styles.coverImage}
+              contentFit="cover"
+              accessibilityLabel={pet.name ? `${pet.name} photo` : 'Pet photo'}
+            />
+          ) : (
+            <View style={styles.coverPlaceholder}>
+              <Ionicons name="paw" size={72} color={Colors.secondaryText} />
+            </View>
+          )}
+        </Pressable>
 
         {profileActive ? (
           <View style={[styles.actionBar, { top: insets.top + Spacing.xs }]}>
@@ -126,26 +142,15 @@ export default function PetHeader({
               <Ionicons name="arrow-back" size={20} color={Colors.primaryText} />
             </TouchableOpacity>
 
-            <View style={styles.actionRight}>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={onEditProfile}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel={t('profile.edit_profile')}
-              >
-                <Ionicons name="pencil" size={18} color={Colors.primaryText} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={onLogout}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel={t('common.sign_out')}
-              >
-                <Ionicons name="log-out-outline" size={18} color={Colors.primaryText} />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={onEditProfile}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={t('profile.edit_profile')}
+            >
+              <Ionicons name="pencil" size={18} color={Colors.primaryText} />
+            </TouchableOpacity>
           </View>
         ) : (
           <TouchableOpacity
@@ -214,6 +219,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8E2D8',
     overflow: 'hidden',
   },
+  coverPressable: {
+    width: '100%',
+    height: '100%',
+  },
   coverImage: {
     width: '100%',
     height: '100%',
@@ -249,11 +258,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     zIndex: 90,
-  },
-  actionRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
   },
   actionButton: {
     width: 32,

@@ -79,6 +79,20 @@
       "last_pet_body": "צריך לפחות חיה אחת. הוסף חיה נוספת ואז תוכל למחוק את זו."
     }
   },
+  "settings": {
+    "title": "הגדרות",
+    "account": "חשבון",
+    "notifications": "התראות",
+    "theme": "ערכת נושא",
+    "language": "שפה",
+    "subscription": "מנוי",
+    "help": "עזרה",
+    "privacy": "מדיניות פרטיות",
+    "terms": "תנאי שימוש",
+    "language_en": "English",
+    "language_he": "עברית",
+    "coming_soon": "בקרוב"
+  },
   "pickers": {
     "time_title": "בחר שעה",
     "hours": "שעה",
