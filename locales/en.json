@@ -91,7 +91,11 @@
     "terms": "Terms of Service",
     "language_en": "English",
     "language_he": "עברית",
-    "coming_soon": "Coming soon"
+    "coming_soon": "Coming soon",
+    "account_email": "Email",
+    "delete_account": "Delete account",
+    "delete_account_confirm_title": "Delete account?",
+    "delete_account_confirm_body": "This permanently deletes your account and all your pets, records, reminders, and photos. This can't be undone."
   },
   "pickers": {
     "time_title": "Choose time",

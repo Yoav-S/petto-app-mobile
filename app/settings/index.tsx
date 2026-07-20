@@ -42,23 +42,27 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.card}>
-          {ROWS.map((row, index) => (
-            <TouchableOpacity
-              key={row.key}
-              style={[styles.row, index < ROWS.length - 1 && styles.rowSpacing]}
-              onPress={() => router.push(row.route as never)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-            >
-              <Text style={styles.rowLabel}>{t(`settings.${row.key}`)}</Text>
-              <View style={styles.rowRight}>
-                {row.key === 'language' ? (
-                  <Text style={styles.rowValue}>{languageLabel}</Text>
-                ) : null}
-                <Ionicons name="chevron-forward" size={20} color={Colors.secondaryText} />
-              </View>
-            </TouchableOpacity>
-          ))}
+          <View style={styles.inner}>
+            {ROWS.map((row, index) => (
+              <React.Fragment key={row.key}>
+                <TouchableOpacity
+                  style={styles.row}
+                  onPress={() => router.push(row.route as never)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.rowLabel}>{t(`settings.${row.key}`)}</Text>
+                  <View style={styles.rowRight}>
+                    {row.key === 'language' ? (
+                      <Text style={styles.rowValue}>{languageLabel}</Text>
+                    ) : null}
+                    <Ionicons name="chevron-forward" size={20} color={Colors.secondaryText} />
+                  </View>
+                </TouchableOpacity>
+                {index < ROWS.length - 1 ? <View style={styles.divider} /> : null}
+              </React.Fragment>
+            ))}
+          </View>
         </View>
 
         <TouchableOpacity
@@ -67,7 +71,7 @@ export default function SettingsScreen() {
           activeOpacity={0.7}
           accessibilityRole="button"
         >
-          <Ionicons name="log-out-outline" size={24} color={Colors.error} />
+          <Ionicons name="log-out-outline" size={24} color="#EF4444" />
           <Text style={styles.signOutText}>{t('common.sign_out')}</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -84,6 +88,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+    flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 22,
   },
@@ -97,19 +102,24 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 2,
   },
+  inner: {
+    gap: 12,
+  },
   row: {
     minHeight: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  rowSpacing: {
-    marginBottom: 12,
+  divider: {
+    height: 1,
+    backgroundColor: Colors.border,
   },
   rowLabel: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     lineHeight: 20,
+    letterSpacing: 0,
     color: Colors.primaryText,
   },
   rowRight: {
@@ -127,13 +137,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 24,
+    marginTop: 'auto',
     paddingVertical: 8,
   },
   signOutText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     lineHeight: 20,
-    color: Colors.error,
+    color: '#EF4444',
   },
 });

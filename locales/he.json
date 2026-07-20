@@ -91,7 +91,11 @@
     "terms": "תנאי שימוש",
     "language_en": "English",
     "language_he": "עברית",
-    "coming_soon": "בקרוב"
+    "coming_soon": "בקרוב",
+    "account_email": "אימייל",
+    "delete_account": "מחיקת חשבון",
+    "delete_account_confirm_title": "למחוק את החשבון?",
+    "delete_account_confirm_body": "פעולה זו תמחק לצמיתות את החשבון וכל החיות, הרשומות, התזכורות והתמונות שלך. לא ניתן לבטל."
   },
   "pickers": {
     "time_title": "בחר שעה",
