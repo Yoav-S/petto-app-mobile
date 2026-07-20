@@ -43,7 +43,25 @@
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
-    "clear": "Clear"
+    "clear": "Clear",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "profile": {
+    "tab_general": "General",
+    "tab_details": "Details",
+    "sex": "Sex",
+    "sex_male": "Male",
+    "sex_female": "Female",
+    "birth_date": "Birth date",
+    "weight": "Weight",
+    "weight_unit": "kg",
+    "color": "Color",
+    "neutered": "Neutered",
+    "serial": "Passport / Serial",
+    "chip_id": "Chip ID",
+    "cover_open_a11y": "Open pet profile",
+    "cover_back_a11y": "Back to home"
   },
   "pickers": {
     "time_title": "Choose time",

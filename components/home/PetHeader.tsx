@@ -34,6 +34,8 @@ interface PetHeaderProps {
   loading: boolean;
   onSwitchPress: () => void;
   onLogout?: () => void;
+  onCoverPress?: () => void;
+  profileActive?: boolean;
   children?: React.ReactNode;
 }
 
@@ -60,6 +62,8 @@ export default function PetHeader({
   loading,
   onSwitchPress,
   onLogout,
+  onCoverPress,
+  profileActive,
   children,
 }: PetHeaderProps) {
   const insets = useSafeAreaInsets();
@@ -92,21 +96,35 @@ export default function PetHeader({
   return (
     <View style={styles.wrapper}>
       <View style={[styles.cover, { height: coverHeight }]}>
-        {loading ? (
-          <Animated.View style={[styles.coverPlaceholder, { opacity: fadeAnim }]} />
-        ) : pet?.photo_url ? (
-          <Image
-            key={pet.id}
-            source={{ uri: pet.photo_url }}
-            style={styles.coverImage}
-            contentFit="cover"
-            accessibilityLabel={pet.name ? `${pet.name} photo` : 'Pet photo'}
-          />
-        ) : (
-          <View style={styles.coverPlaceholder}>
-            <Ionicons name="paw" size={72} color={Colors.secondaryText} />
-          </View>
-        )}
+        <Pressable
+          style={styles.coverPressable}
+          onPress={onCoverPress}
+          disabled={loading || !onCoverPress}
+          accessibilityRole={onCoverPress ? 'button' : undefined}
+          accessibilityLabel={
+            onCoverPress
+              ? profileActive
+                ? t('profile.cover_back_a11y')
+                : t('profile.cover_open_a11y')
+              : undefined
+          }
+        >
+          {loading ? (
+            <Animated.View style={[styles.coverPlaceholder, { opacity: fadeAnim }]} />
+          ) : pet?.photo_url ? (
+            <Image
+              key={pet.id}
+              source={{ uri: pet.photo_url }}
+              style={styles.coverImage}
+              contentFit="cover"
+              accessibilityLabel={pet.name ? `${pet.name} photo` : 'Pet photo'}
+            />
+          ) : (
+            <View style={styles.coverPlaceholder}>
+              <Ionicons name="paw" size={72} color={Colors.secondaryText} />
+            </View>
+          )}
+        </Pressable>
 
         <TouchableOpacity
           style={[styles.settingsButton, { top: insets.top + Spacing.sm }]}
@@ -191,6 +209,10 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#E8E2D8',
     overflow: 'hidden',
+  },
+  coverPressable: {
+    width: '100%',
+    height: '100%',
   },
   coverImage: {
     width: '100%',

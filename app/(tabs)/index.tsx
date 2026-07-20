@@ -20,6 +20,7 @@ import RemindersCard from '@/components/home/RemindersCard';
 import HealthCard from '@/components/home/HealthCard';
 import HealthReminderLine from '@/components/health/HealthReminderLine';
 import FABMenu from '@/components/home/FABMenu';
+import PetProfilePanel from '@/components/home/PetProfilePanel';
 
 function reminderToScheduledAt(reminder: Reminder): string {
   return `${reminder.date}T${reminder.time}:00`;
@@ -132,6 +133,7 @@ export default function HomeScreen() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [fabOpen, setFabOpen] = useState(false);
   const [switchVisible, setSwitchVisible] = useState(false);
+  const [panelMode, setPanelMode] = useState<'home' | 'profile'>('home');
 
   const fetchData = useCallback(async () => {
     if (!user) {
@@ -223,6 +225,8 @@ export default function HomeScreen() {
     }, [fetchData, authLoading]),
   );
 
+  const effectiveMode = pet ? panelMode : 'home';
+
   const handleSelectPet = async (petId: string) => {
     setSwitchVisible(false);
     if (petId !== activePetId) {
@@ -259,45 +263,55 @@ export default function HomeScreen() {
             onLogout={() => {
               void signOut();
             }}
+            onCoverPress={
+              pet
+                ? () => setPanelMode((mode) => (mode === 'home' ? 'profile' : 'home'))
+                : undefined
+            }
+            profileActive={effectiveMode === 'profile'}
           >
-            <View style={styles.cardsGrid}>
-              <View style={styles.row}>
-                <VaccinesCard
-                  latestVaccine={
-                    latestVaccine
-                      ? {
-                          name: latestVaccine.name,
-                          date: latestVaccine.date,
-                          next_date: latestVaccine.next_date ?? undefined,
-                        }
-                      : null
-                  }
-                  loading={loading}
-                  onPress={() => router.push('/vaccines' as never)}
-                />
-                <RemindersCard
-                  nextReminder={nextReminder}
-                  upcomingCount={upcomingCount}
-                  loading={loading}
-                  onPress={() => router.push('/reminders' as never)}
-                />
-              </View>
+            {effectiveMode === 'profile' ? (
+              <PetProfilePanel pet={pet} />
+            ) : (
+              <View style={styles.cardsGrid}>
+                <View style={styles.row}>
+                  <VaccinesCard
+                    latestVaccine={
+                      latestVaccine
+                        ? {
+                            name: latestVaccine.name,
+                            date: latestVaccine.date,
+                            next_date: latestVaccine.next_date ?? undefined,
+                          }
+                        : null
+                    }
+                    loading={loading}
+                    onPress={() => router.push('/vaccines' as never)}
+                  />
+                  <RemindersCard
+                    nextReminder={nextReminder}
+                    upcomingCount={upcomingCount}
+                    loading={loading}
+                    onPress={() => router.push('/reminders' as never)}
+                  />
+                </View>
 
-              <View style={styles.healthWrap}>
-                <HealthCard
-                  latestRecord={latestRecord}
-                  loading={loading}
-                  onPress={() => router.push('/health' as never)}
-                />
-                <FABMenu
-                  open={fabOpen}
-                  onOpenChange={setFabOpen}
-                  onVaccinePress={() => router.push('/vaccines' as never)}
-                  onHealthPress={() => router.push('/health/add' as never)}
-                  onReminderPress={() => router.push('/reminders' as never)}
-                />
+                <View style={styles.healthWrap}>
+                  <HealthCard
+                    latestRecord={latestRecord}
+                    loading={loading}
+                    onPress={() => router.push('/health' as never)}
+                  />
+                  <FABMenu
+                    open={fabOpen}
+                    onOpenChange={setFabOpen}
+                    onVaccinePress={() => router.push('/vaccines' as never)}
+                    onHealthPress={() => router.push('/health/add' as never)}
+                    onReminderPress={() => router.push('/reminders' as never)}
+                  />
+                </View>
               </View>
-            </View>
+            )}
           </PetHeader>
         </View>
       </View>

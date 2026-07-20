@@ -16,6 +16,14 @@ export interface Pet {
   photo_url?: string | null;
   breed?: string | null;
   birth_date?: string | null;
+  /** Not yet stored server-side; populated once edit-profile wiring lands. */
+  sex?: string | null;
+  weight?: number | null;
+  color?: string | null;
+  is_neutered?: boolean | null;
+  chip_id?: string | null;
+  passport_number?: string | null;
+  notes?: string | null;
 }
 
 export interface Vaccination {

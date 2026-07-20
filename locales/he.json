@@ -43,7 +43,25 @@
     "save": "שמור",
     "cancel": "ביטול",
     "delete": "מחק",
-    "clear": "נקה"
+    "clear": "נקה",
+    "yes": "כן",
+    "no": "לא"
+  },
+  "profile": {
+    "tab_general": "כללי",
+    "tab_details": "פרטים",
+    "sex": "מין",
+    "sex_male": "זכר",
+    "sex_female": "נקבה",
+    "birth_date": "תאריך לידה",
+    "weight": "משקל",
+    "weight_unit": "ק\"ג",
+    "color": "צבע",
+    "neutered": "מעוקר/ת",
+    "serial": "דרכון / מספר סידורי",
+    "chip_id": "מספר שבב",
+    "cover_open_a11y": "פתח פרופיל חיה",
+    "cover_back_a11y": "חזרה לבית"
   },
   "pickers": {
     "time_title": "בחר שעה",
