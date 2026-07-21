@@ -106,7 +106,9 @@
     "notif_email_updates": "Email updates",
     "theme_light": "Light",
     "theme_dark": "Dark",
-    "theme_system": "System"
+    "theme_system": "System",
+    "support_title": "Support",
+    "contact_support": "Contact support"
   },
   "pickers": {
     "time_title": "Choose time",

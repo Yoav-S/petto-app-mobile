@@ -106,7 +106,9 @@
     "notif_email_updates": "עדכונים במייל",
     "theme_light": "בהיר",
     "theme_dark": "כהה",
-    "theme_system": "מערכת"
+    "theme_system": "מערכת",
+    "support_title": "תמיכה",
+    "contact_support": "צור קשר עם התמיכה"
   },
   "pickers": {
     "time_title": "בחר שעה",

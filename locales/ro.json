@@ -106,7 +106,9 @@
     "notif_email_updates": "Actualizări pe e-mail",
     "theme_light": "Luminos",
     "theme_dark": "Întunecat",
-    "theme_system": "Sistem"
+    "theme_system": "Sistem",
+    "support_title": "Asistență",
+    "contact_support": "Contactează asistența"
   },
   "pickers": {
     "time_title": "Alege ora",

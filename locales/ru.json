@@ -106,7 +106,9 @@
     "notif_email_updates": "Рассылка на почту",
     "theme_light": "Светлая",
     "theme_dark": "Тёмная",
-    "theme_system": "Системная"
+    "theme_system": "Системная",
+    "support_title": "Поддержка",
+    "contact_support": "Связаться с поддержкой"
   },
   "pickers": {
     "time_title": "Выберите время",
