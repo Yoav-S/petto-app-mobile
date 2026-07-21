@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import { REPEAT_OPTIONS, type RepeatOption } from '@/services/reminders';
 
@@ -18,6 +19,8 @@ export function repeatLabel(value: RepeatOption): string {
 }
 
 export default function RepeatPickerSheet({ visible, value, onClose, onSelect }: RepeatPickerSheetProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -29,7 +32,7 @@ export default function RepeatPickerSheet({ visible, value, onClose, onSelect }:
             <View style={styles.headerSpacer} />
             <Text style={styles.title}>{t('reminders.repeat_title')}</Text>
             <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
-              <Ionicons name="close" size={20} color={Colors.primaryText} />
+              <Ionicons name="close" size={20} color={colors.primaryText} />
             </Pressable>
           </View>
 
@@ -44,7 +47,7 @@ export default function RepeatPickerSheet({ visible, value, onClose, onSelect }:
                 >
                   <Text style={styles.rowText}>{repeatLabel(option)}</Text>
                   {isActive ? (
-                    <Ionicons name="checkmark" size={20} color={Colors.primaryText} />
+                    <Ionicons name="checkmark" size={20} color={colors.primaryText} />
                   ) : null}
                   {index < REPEAT_OPTIONS.length - 1 ? <View style={styles.divider} /> : null}
                 </Pressable>
@@ -57,14 +60,14 @@ export default function RepeatPickerSheet({ visible, value, onClose, onSelect }:
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: Spacing.lg,
@@ -80,18 +83,18 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Rubik-Medium',
     fontSize: 20,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   closeButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
   list: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
   },
   row: {
     flexDirection: 'row',
@@ -102,7 +105,7 @@ const styles = StyleSheet.create({
   rowText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   divider: {
     position: 'absolute',
@@ -110,6 +113,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
   },
 });

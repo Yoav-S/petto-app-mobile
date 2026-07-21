@@ -1,14 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet } from 'react-native';
+import { useColors } from '@/context/ThemeContext';
 
 const TRACK_WIDTH = 44;
 const TRACK_HEIGHT = 24;
 const THUMB_SIZE = 20;
 const PADDING = 2;
 const TRAVEL = TRACK_WIDTH - THUMB_SIZE - PADDING * 2;
-
-const ON_COLOR = '#004741';
-const OFF_COLOR = '#E5E7EB';
 
 interface ToggleProps {
   value: boolean;
@@ -17,6 +15,7 @@ interface ToggleProps {
 }
 
 export default function Toggle({ value, onValueChange, disabled = false }: ToggleProps) {
+  const colors = useColors();
   const anim = useRef(new Animated.Value(value ? 1 : 0)).current;
 
   useEffect(() => {
@@ -29,7 +28,7 @@ export default function Toggle({ value, onValueChange, disabled = false }: Toggl
 
   const trackColor = anim.interpolate({
     inputRange: [0, 1],
-    outputRange: [OFF_COLOR, ON_COLOR],
+    outputRange: [colors.track, colors.brand],
   });
   const translateX = anim.interpolate({
     inputRange: [0, 1],

@@ -1,5 +1,6 @@
-import { homeCardTypography } from '@/components/home/homeCardTypography';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import HealthReminderLine from '@/components/health/HealthReminderLine';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -19,14 +20,18 @@ interface HealthCardProps {
 }
 
 function CategoryIcon() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
-    <View style={[styles.iconContainer, { backgroundColor: Colors.category.notesBg }]}>
-      <MaterialCommunityIcons name="heart-pulse" size={18} color={Colors.category.notes} />
+    <View style={[styles.iconContainer, { backgroundColor: colors.category.notesBg }]}>
+      <MaterialCommunityIcons name="heart-pulse" size={18} color={colors.category.notes} />
     </View>
   );
 }
 
 export default function HealthCard({ latestRecord, loading, onPress }: HealthCardProps) {
+  const styles = useThemedStyles(makeStyles);
+  const homeCardTypography = useThemedStyles(makeHomeCardTypography);
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
@@ -102,9 +107,9 @@ const cardShadow = {
   elevation: 2,
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
     width: '100%',
@@ -127,7 +132,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
   },
   skeletonContent: {
     flex: 1,
@@ -136,7 +141,7 @@ const styles = StyleSheet.create({
   },
   skeletonLine: {
     height: 14,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
     borderRadius: 6,
   },
   reminderLine: {

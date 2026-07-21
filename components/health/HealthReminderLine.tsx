@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, StyleSheet, TextStyle } from 'react-native';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/context/ThemeContext';
 import { t, currentLocale } from '@/i18n';
 import { formatHealthReminderValue } from '@/utils/calendar';
 
@@ -17,6 +18,7 @@ export default function HealthReminderLine({
   style,
   numberOfLines = 1,
 }: HealthReminderLineProps) {
+  const styles = useThemedStyles(makeStyles);
   const value = formatHealthReminderValue(date, time, {
     today: t('common.today'),
     tomorrow: t('health.reminder_tomorrow'),
@@ -33,7 +35,7 @@ export default function HealthReminderLine({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   row: {
     flexShrink: 1,
   },
@@ -41,12 +43,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 20,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   value: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
 });

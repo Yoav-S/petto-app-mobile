@@ -19,7 +19,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -36,6 +37,8 @@ type PickerTarget = 'date' | 'next' | null;
 
 export default function VaccineDetailsScreen() {
   const router = useRouter();
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
   const { activePetId } = useActivePet();
 
@@ -142,7 +145,7 @@ export default function VaccineDetailsScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScreenHeader title={t('vaccines.list_title')} />
         <View style={styles.centered}>
-          <ActivityIndicator color={Colors.primaryText} />
+          <ActivityIndicator color={colors.primaryText} />
         </View>
       </SafeAreaView>
     );
@@ -181,7 +184,7 @@ export default function VaccineDetailsScreen() {
               onChangeText={setName}
               onBlur={handleNameBlur}
               placeholder={t('vaccines.field_name')}
-              placeholderTextColor={Colors.secondaryText}
+              placeholderTextColor={colors.secondaryText}
               returnKeyType="done"
             />
           </View>
@@ -214,21 +217,21 @@ export default function VaccineDetailsScreen() {
                   onPress={() => setViewerVisible(true)}
                   hitSlop={8}
                 >
-                  <Ionicons name="expand-outline" size={18} color={Colors.primaryText} />
+                  <Ionicons name="expand-outline" size={18} color={colors.primaryText} />
                 </TouchableOpacity>
                 {uploading ? (
                   <View style={styles.photoOverlay}>
-                    <ActivityIndicator color={Colors.surface} />
+                    <ActivityIndicator color={colors.surface} />
                   </View>
                 ) : null}
               </View>
             ) : (
               <TouchableOpacity style={styles.photoPlaceholder} onPress={pickImage} activeOpacity={0.7}>
                 {uploading ? (
-                  <ActivityIndicator color={Colors.secondaryText} />
+                  <ActivityIndicator color={colors.secondaryText} />
                 ) : (
                   <>
-                    <Ionicons name="camera-outline" size={28} color={Colors.secondaryText} />
+                    <Ionicons name="camera-outline" size={28} color={colors.secondaryText} />
                     <Text style={styles.photoPlaceholderText}>{t('vaccines.add_photo')}</Text>
                   </>
                 )}
@@ -245,7 +248,7 @@ export default function VaccineDetailsScreen() {
               onChangeText={setClinic}
               onBlur={handleClinicBlur}
               placeholder={t('vaccines.vet_clinic_placeholder')}
-              placeholderTextColor={Colors.secondaryText}
+              placeholderTextColor={colors.secondaryText}
               returnKeyType="done"
             />
           </View>
@@ -294,7 +297,7 @@ export default function VaccineDetailsScreen() {
             onPress={() => setViewerVisible(false)}
             hitSlop={10}
           >
-            <Ionicons name="close" size={28} color={Colors.surface} />
+            <Ionicons name="close" size={28} color={colors.surface} />
           </TouchableOpacity>
           {vaccine.photo_url ? (
             <Image source={{ uri: vaccine.photo_url }} style={styles.viewerImage} contentFit="contain" />
@@ -305,10 +308,10 @@ export default function VaccineDetailsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   flex: {
     flex: 1,
@@ -322,7 +325,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xl,
   },
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.lg,
@@ -335,7 +338,7 @@ const styles = StyleSheet.create({
   nameInput: {
     fontFamily: 'Rubik-Medium',
     fontSize: 22,
-    color: Colors.primaryText,
+    color: c.primaryText,
     padding: 0,
   },
   dateRow: {
@@ -347,27 +350,27 @@ const styles = StyleSheet.create({
   dateRowLabel: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
     flex: 1,
     marginRight: Spacing.md,
   },
   dateRowValue: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   dateRowPlaceholder: {
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
     marginVertical: Spacing.xs,
   },
   sectionLabel: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
     marginBottom: Spacing.md,
   },
   photoWrap: {
@@ -381,7 +384,7 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 1.6,
     borderRadius: Radius.md,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   expandButton: {
     position: 'absolute',
@@ -403,24 +406,24 @@ const styles = StyleSheet.create({
   },
   photoPlaceholder: {
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
     borderStyle: 'dashed',
     borderRadius: Radius.md,
     aspectRatio: 1.6,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   photoPlaceholderText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     marginTop: Spacing.sm,
   },
   clinicInput: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
     padding: 0,
   },
   deleteButton: {
@@ -431,7 +434,7 @@ const styles = StyleSheet.create({
   deleteText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.error,
+    color: c.error,
   },
   viewerOverlay: {
     flex: 1,

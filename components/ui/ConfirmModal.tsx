@@ -8,7 +8,8 @@ import {
   TouchableWithoutFeedback,
   useWindowDimensions,
 } from 'react-native';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 
 const DESIGN_WIDTH = 375;
@@ -37,6 +38,7 @@ export default function ConfirmModal({
   cancelText,
 }: ConfirmModalProps) {
   const { width, height } = useWindowDimensions();
+  const styles = useThemedStyles(makeStyles);
   const sx = width / DESIGN_WIDTH;
   const sy = height / DESIGN_HEIGHT;
 
@@ -148,16 +150,16 @@ export default function ConfirmModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: c.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
   },
   modalContainer: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -169,14 +171,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     lineHeight: 20,
-    color: Colors.primaryText,
+    color: c.primaryText,
     textAlign: 'center',
   },
   message: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     textAlign: 'center',
   },
   buttonRow: {
@@ -185,7 +187,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cancelButton: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -198,7 +200,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 18,
-    color: Colors.primaryText,
+    color: c.primaryText,
     textAlign: 'center',
   },
   confirmText: {

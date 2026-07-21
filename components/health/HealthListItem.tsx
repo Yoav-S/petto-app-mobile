@@ -7,7 +7,8 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import { formatHealthCreatedLabel, truncateHealthDescription } from '@/utils/calendar';
 
@@ -28,6 +29,8 @@ interface HealthListItemProps {
 }
 
 function BottomFadeOverlay({ intensity }: { intensity: number }) {
+  const styles = useThemedStyles(makeStyles);
+  const colors = useColors();
   if (intensity <= 0.01) return null;
 
   const stops = [0, 0.22, 0.45, 0.68, 0.89, 1];
@@ -46,7 +49,7 @@ function BottomFadeOverlay({ intensity }: { intensity: number }) {
               {
                 top: `${stop * 100}%`,
                 height: `${(nextStop - stop) * 100}%`,
-                backgroundColor: Colors.surface,
+                backgroundColor: colors.surface,
                 opacity: bandOpacity,
               },
             ]}
@@ -67,6 +70,8 @@ export default function HealthListItem({
   onLongPress,
   onReminderPress,
 }: HealthListItemProps) {
+  const styles = useThemedStyles(makeStyles);
+  const colors = useColors();
   const { width: screenWidth } = useWindowDimensions();
   const sx = screenWidth / HEALTH_LIST_DESIGN_WIDTH;
 
@@ -130,7 +135,7 @@ export default function HealthListItem({
               disabled={!onReminderPress}
               style={styles.reminderIconBtn}
             >
-              <Ionicons name="notifications-outline" size={16 * sx} color={Colors.secondaryText} />
+              <Ionicons name="notifications-outline" size={16 * sx} color={colors.secondaryText} />
             </TouchableOpacity>
           ) : (
             <View style={{ width: 16 * sx }} />
@@ -168,9 +173,9 @@ export function healthRecordSubtitle(description?: string | null): string {
   return truncateHealthDescription(description);
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     overflow: 'hidden',
     shadowColor: '#2D2D2A',
     shadowOffset: { width: 0, height: 4 },
@@ -189,7 +194,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: 'Rubik-Medium',
-    color: Colors.primaryText,
+    color: c.primaryText,
     flex: 1,
   },
   reminderIconBtn: {
@@ -203,11 +208,11 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   createdMeta: {
     fontFamily: 'Rubik-Regular',
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     flexShrink: 0,
   },
   fadeOverlay: {

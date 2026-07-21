@@ -9,7 +9,8 @@ import {
   type KeyboardTypeOptions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 const BRAND = '#004741';
 const PILL_UNSELECTED_BG = '#F3F4F6';
@@ -29,6 +30,7 @@ interface CardShellProps {
 }
 
 function CardShell({ minHeight, children }: CardShellProps) {
+  const styles = useThemedStyles(makeStyles);
   return <View style={[styles.card, CARD_SHADOW, { minHeight }]}>{children}</View>;
 }
 
@@ -40,13 +42,15 @@ export function ProfileNameField({
   value: string;
   onChangeText: (text: string) => void;
 }) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <CardShell minHeight={52}>
       <TextInput
         style={styles.nameInput}
         value={value}
         onChangeText={onChangeText}
-        placeholderTextColor={Colors.secondaryText}
+        placeholderTextColor={colors.secondaryText}
         textAlignVertical="center"
       />
     </CardShell>
@@ -73,6 +77,8 @@ export function ProfileTextField({
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   minHeight?: number;
 }) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [focused, setFocused] = useState(false);
   const floated = focused || value.trim().length > 0;
 
@@ -87,7 +93,7 @@ export function ProfileTextField({
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           placeholder={floated ? undefined : label}
-          placeholderTextColor={Colors.secondaryText}
+          placeholderTextColor={colors.secondaryText}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
         />
@@ -108,6 +114,8 @@ export function ProfileSelectField({
   onPress: () => void;
   icon?: keyof typeof Ionicons.glyphMap;
 }) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const floated = !!valueText;
   return (
     <Pressable onPress={onPress} accessibilityRole="button">
@@ -119,7 +127,7 @@ export function ProfileSelectField({
               {valueText ?? label}
             </Text>
           </View>
-          <Ionicons name={icon} size={20} color={Colors.secondaryText} />
+          <Ionicons name={icon} size={20} color={colors.secondaryText} />
         </View>
       </CardShell>
     </Pressable>
@@ -143,6 +151,7 @@ export function ProfilePillField({
   value: string | null;
   onChange: (value: string) => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <CardShell minHeight={90}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -169,10 +178,10 @@ export function ProfilePillField({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
     width: '100%',
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -196,7 +205,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 20,
     lineHeight: 24,
-    color: Colors.primaryText,
+    color: c.primaryText,
     padding: 0,
     margin: 0,
   },
@@ -204,7 +213,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
     lineHeight: 24,
-    color: Colors.primaryText,
+    color: c.primaryText,
     padding: 0,
     margin: 0,
   },
@@ -223,13 +232,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
     lineHeight: 24,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   selectPlaceholder: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
     lineHeight: 24,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   pillRow: {
     flexDirection: 'row',
@@ -264,6 +273,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   pillTextUnselected: {
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
 });

@@ -7,7 +7,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/context/ThemeContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import HealthRecordFormFields from '@/components/health/HealthRecordFormFields';
 import HealthKeyboardFooter, {
@@ -24,6 +25,7 @@ const DESIGN_WIDTH = 375;
 const DESIGN_HEIGHT = 812;
 
 export default function AddHealthScreen() {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { activePetId } = useActivePet();
   const insets = useSafeAreaInsets();
@@ -118,10 +120,10 @@ export default function AddHealthScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   scroll: {
     flex: 1,

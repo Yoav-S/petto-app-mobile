@@ -20,7 +20,8 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import InlineCalendarPicker from '@/components/vaccines/InlineCalendarPicker';
 import VaccinePhotoSourceSheet from '@/components/vaccines/VaccinePhotoSourceSheet';
@@ -44,6 +45,8 @@ const DESIGN_HEIGHT = 812;
 
 export default function AddVaccineScreen() {
   const router = useRouter();
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { activePetId } = useActivePet();
   const { width, height } = useWindowDimensions();
   const sx = width / DESIGN_WIDTH;
@@ -227,7 +230,7 @@ export default function AddVaccineScreen() {
               value={name}
               onChangeText={setName}
               placeholder={t('vaccines.field_name_placeholder')}
-              placeholderTextColor={Colors.secondaryText}
+              placeholderTextColor={colors.secondaryText}
               autoFocus
               returnKeyType="next"
             />
@@ -311,7 +314,7 @@ export default function AddVaccineScreen() {
                   onPress={() => setViewerVisible(true)}
                   hitSlop={8}
                 >
-                  <Ionicons name="expand-outline" size={18} color={Colors.primaryText} />
+                  <Ionicons name="expand-outline" size={18} color={colors.primaryText} />
                 </TouchableOpacity>
               </View>
             ) : (
@@ -320,7 +323,7 @@ export default function AddVaccineScreen() {
                 onPress={() => setPhotoSheetVisible(true)}
                 activeOpacity={0.7}
               >
-                <Ionicons name="image-outline" size={24} color={Colors.secondaryText} />
+                <Ionicons name="image-outline" size={24} color={colors.secondaryText} />
                 <Text style={styles.photoPlaceholderText}>{t('vaccines.add_vaccine_photo')}</Text>
               </TouchableOpacity>
             )}
@@ -347,7 +350,7 @@ export default function AddVaccineScreen() {
               value={clinic}
               onChangeText={setClinic}
               placeholder={t('vaccines.vet_clinic_placeholder')}
-              placeholderTextColor={Colors.secondaryText}
+              placeholderTextColor={colors.secondaryText}
               returnKeyType="done"
               onSubmitEditing={() => Keyboard.dismiss()}
             />
@@ -377,7 +380,7 @@ export default function AddVaccineScreen() {
             activeOpacity={0.85}
           >
             {submitting ? (
-              <ActivityIndicator color={Colors.surface} />
+              <ActivityIndicator color={colors.surface} />
             ) : (
               <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>
                 {t('common.save')}
@@ -398,7 +401,7 @@ export default function AddVaccineScreen() {
         <View style={styles.viewerOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setViewerVisible(false)} />
           <TouchableOpacity style={styles.viewerClose} onPress={() => setViewerVisible(false)} hitSlop={10}>
-            <Ionicons name="close" size={28} color={Colors.surface} />
+            <Ionicons name="close" size={28} color={colors.surface} />
           </TouchableOpacity>
           {photoUri ? (
             <Image source={{ uri: photoUri }} style={styles.viewerImage} contentFit="contain" />
@@ -409,10 +412,10 @@ export default function AddVaccineScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   flex: {
     flex: 1,
@@ -421,7 +424,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -431,7 +434,7 @@ const styles = StyleSheet.create({
   nameInput: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
     padding: 0,
     margin: 0,
   },
@@ -443,23 +446,23 @@ const styles = StyleSheet.create({
   dateRowLabel: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
     flex: 1,
     marginRight: Spacing.md,
   },
   dateRowValue: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
   },
   sectionLabel: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   photoWrap: {
     position: 'relative',
@@ -470,7 +473,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: Radius.md,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   expandButton: {
     position: 'absolute',
@@ -484,7 +487,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   photoPlaceholder: {
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
     borderRadius: Radius.md,
     alignItems: 'center',
     justifyContent: 'center',
@@ -492,18 +495,18 @@ const styles = StyleSheet.create({
   photoPlaceholderText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     marginTop: 6,
   },
   fieldLabel: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   clinicInput: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
     padding: 0,
   },
   keyboardDoneRow: {
@@ -511,7 +514,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
   },
   keyboardDoneBtn: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     paddingHorizontal: 28,
     paddingVertical: 12,
     borderRadius: Radius.md,
@@ -519,23 +522,23 @@ const styles = StyleSheet.create({
   keyboardDoneText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.surface,
+    color: c.surface,
   },
   saveButton: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },
   saveButtonDisabled: {
-    backgroundColor: Colors.button.disabledBg,
+    backgroundColor: c.button.disabledBg,
   },
   saveText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.surface,
+    color: c.surface,
   },
   saveTextDisabled: {
-    color: Colors.button.disabledText,
+    color: c.button.disabledText,
   },
   viewerOverlay: {
     flex: 1,

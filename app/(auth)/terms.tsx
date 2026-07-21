@@ -10,16 +10,19 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { t } from '@/i18n';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 export default function TermsScreen() {
   const router = useRouter();
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={Colors.primaryText} />
+          <Ionicons name="chevron-back" size={24} color={colors.primaryText} />
         </Pressable>
         <Text style={styles.headerTitle}>{t('onboarding.terms_screen_title')}</Text>
         <View style={styles.backBtn} />
@@ -36,10 +39,10 @@ export default function TermsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
   },
   header: {
     flexDirection: 'row',
@@ -48,7 +51,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: c.border,
   },
   backBtn: {
     width: 40,
@@ -59,7 +62,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   scroll: {
     flex: 1,
@@ -72,6 +75,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     lineHeight: 22,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
 });

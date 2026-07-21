@@ -8,7 +8,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 interface GoogleSignInButtonProps {
   label?: string;
@@ -18,6 +19,8 @@ export default function GoogleSignInButton({
   label = 'Continue with Google',
 }: GoogleSignInButtonProps) {
   const { signInWithGoogle, isGoogleLoading, googleAuthError } = useAuth();
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <View>
@@ -31,13 +34,13 @@ export default function GoogleSignInButton({
         activeOpacity={0.8}
       >
         {isGoogleLoading ? (
-          <ActivityIndicator color={Colors.primaryText} />
+          <ActivityIndicator color={colors.primaryText} />
         ) : (
           <>
             <Ionicons
               name="logo-google"
               size={20}
-              color={Colors.primaryText}
+              color={colors.primaryText}
               style={styles.icon}
             />
             <Text style={styles.buttonText}>{label}</Text>
@@ -48,23 +51,23 @@ export default function GoogleSignInButton({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   errorText: {
     fontFamily: 'Rubik-Regular',
-    color: Colors.error,
+    color: c.error,
     fontSize: 13,
     textAlign: 'center',
     marginBottom: Spacing.sm,
   },
   button: {
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     padding: Spacing.lg,
     borderRadius: Radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -75,6 +78,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
 });

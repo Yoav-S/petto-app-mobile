@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/context/ThemeContext';
 
 interface ReminderListItemProps {
   title: string;
@@ -17,6 +18,7 @@ export default function ReminderListItem({
   categoryAccent,
   onPress 
 }: ReminderListItemProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <TouchableOpacity 
       style={styles.card} 
@@ -48,9 +50,9 @@ export default function ReminderListItem({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: Radius.lg,
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.md,
@@ -81,13 +83,13 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
     marginBottom: 4,
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   rightContent: {
     justifyContent: 'center',
@@ -96,11 +98,11 @@ const styles = StyleSheet.create({
   timeOrDate: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     textAlign: 'right',
   },
   primaryTime: {
-    color: Colors.primaryText,
+    color: c.primaryText,
     marginBottom: 2,
   },
 });

@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import {
   getNotificationPrefs,
@@ -25,6 +26,8 @@ export default function NotificationsSettingsScreen() {
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
 
   const load = useCallback(async () => {
     try {
@@ -73,7 +76,7 @@ export default function NotificationsSettingsScreen() {
 
       <View style={styles.content}>
         {loading ? (
-          <ActivityIndicator style={styles.loader} color={Colors.brand} />
+          <ActivityIndicator style={styles.loader} color={colors.brand} />
         ) : error ? (
           <Text style={styles.error}>{error}</Text>
         ) : prefs ? (
@@ -101,10 +104,10 @@ export default function NotificationsSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   content: {
     paddingHorizontal: 20,
@@ -118,10 +121,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 12,
     padding: 16,
     shadowColor: '#2D2D2A',
@@ -151,17 +154,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
     lineHeight: 24,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
     fontSize: 12,
     lineHeight: 16,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     maxWidth: 210,
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
   },
 });

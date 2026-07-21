@@ -11,7 +11,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AddFabButton, { ADD_FAB_BOTTOM, ADD_FAB_RIGHT } from '@/components/ui/AddFabButton';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import EmptyState from '@/components/ui/EmptyState';
@@ -59,6 +60,8 @@ function reminderTimeOrDate(item: Reminder, tab: TabName): string {
 }
 
 export default function RemindersScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { activePetId } = useActivePet();
   const { deletedId } = useLocalSearchParams();
@@ -238,7 +241,7 @@ export default function RemindersScreen() {
 
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator color={Colors.primaryText} />
+          <ActivityIndicator color={colors.primaryText} />
         </View>
       ) : error ? (
         <View style={styles.centered}>
@@ -261,7 +264,7 @@ export default function RemindersScreen() {
               title={item.title}
               subtitle={reminderSubtitle(item)}
               timeOrDate={reminderTimeOrDate(item, activeTab)}
-              categoryAccent={Colors.category.reminders}
+              categoryAccent={colors.category.reminders}
               onPress={
                 activeTab === 'Recent' ? undefined : () => handleReminderPress(item)
               }
@@ -304,10 +307,10 @@ export default function RemindersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   centered: {
     flex: 1,

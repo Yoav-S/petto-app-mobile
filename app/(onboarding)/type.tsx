@@ -13,7 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
 import { usePetOnboardingDraft, type PetType } from '@/store/petOnboardingDraft';
 import { t } from '@/i18n';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_TYPE_STEP } from '@/constants/petOnboarding';
 import { getPetOnboardingScale, scaleOffset } from '@/utils/petOnboardingScale';
 
@@ -24,6 +25,8 @@ const catImage = require('@/assets/images/pet-onboarding-cat.png');
 const DISABLED_BTN_BG = '#D1D5DB';
 
 export default function PetTypeOnboardingScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -72,7 +75,7 @@ export default function PetTypeOnboardingScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('petOnboarding.back')}
         >
-          <Ionicons name="chevron-back" size={24 * sx} color={Colors.primaryText} />
+          <Ionicons name="chevron-back" size={24 * sx} color={colors.primaryText} />
         </Pressable>
 
         <View style={styles.headerCenter}>
@@ -148,7 +151,7 @@ export default function PetTypeOnboardingScreen() {
                       height: PET_TYPE_STEP.pickerHeight * sy,
                       borderRadius: 12 * sx,
                       borderWidth: isSelected ? 2 : 1,
-                      borderColor: isSelected ? Colors.brand : Colors.border,
+                      borderColor: isSelected ? colors.brand : colors.border,
                     },
                   ]}
                   accessibilityRole="button"
@@ -223,10 +226,10 @@ export default function PetTypeOnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   flex: {
     flex: 1,
@@ -245,7 +248,7 @@ const styles = StyleSheet.create({
   },
   card: {
     alignSelf: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
   },
   title: {
@@ -262,19 +265,19 @@ const styles = StyleSheet.create({
   petTile: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     paddingVertical: 8,
   },
   petLabel: {
     fontFamily: 'Rubik-Regular',
-    color: Colors.primaryText,
+    color: c.primaryText,
     marginTop: 4,
   },
   footer: {
     alignItems: 'center',
   },
   continueBtn: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
@@ -286,7 +289,7 @@ const styles = StyleSheet.create({
   continueText: {
     fontFamily: 'Rubik-Medium',
     fontWeight: '500',
-    color: Colors.surface,
+    color: c.surface,
     textAlign: 'center',
   },
 });

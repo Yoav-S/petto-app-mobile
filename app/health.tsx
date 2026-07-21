@@ -12,7 +12,8 @@ import {
 import AddFabButton, { ADD_FAB_BOTTOM, ADD_FAB_RIGHT } from '@/components/ui/AddFabButton';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import EmptyState from '@/components/ui/EmptyState';
@@ -39,6 +40,8 @@ const EMPTY_LISTS: Record<TabName, MedicalRecord[]> = {
 };
 
 export default function HealthScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { activePetId } = useActivePet();
   const { deletedNote } = useLocalSearchParams();
@@ -201,7 +204,7 @@ export default function HealthScreen() {
 
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator color={Colors.primaryText} />
+          <ActivityIndicator color={colors.primaryText} />
         </View>
       ) : error ? (
         <View style={styles.centered}>
@@ -281,10 +284,10 @@ export default function HealthScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   centered: {
     flex: 1,

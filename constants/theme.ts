@@ -5,7 +5,14 @@
 
 import { Platform } from 'react-native';
 
-export const Colors = {
+/**
+ * The app has two palettes with identical shape (see `ThemeColors`). Every
+ * "purpose" (background, text, brand, category tints, …) has a light and a dark
+ * value so a single `colors` object can be swapped at runtime by the theme
+ * provider. The dark values below are a first pass ("temp") and can be tuned by
+ * design later without touching any component.
+ */
+export const lightColors = {
   background: '#F7F5F0',
   surface: '#FFFFFF',
   /** Peto brand green — primary actions, FAB, focused inputs */
@@ -14,6 +21,10 @@ export const Colors = {
   secondaryText: '#6B7280',
   border: '#E5E7EB',
   error: '#C96A6A',
+  /** Neutral track for off-state switches / inactive controls */
+  track: '#E5E7EB',
+  /** Dimmed overlay behind modals */
+  overlay: 'rgba(0, 0, 0, 0.4)',
   button: {
     primaryBg: '#004741',
     primaryText: '#FFFFFF',
@@ -31,6 +42,45 @@ export const Colors = {
     remindersBg: '#EAF2EE',
   },
 };
+
+export const darkColors: ThemeColors = {
+  background: '#111315',
+  surface: '#1C1F22',
+  brand: '#2E9E90',
+  primaryText: '#F2F4F5',
+  secondaryText: '#9BA1A6',
+  border: '#2C3033',
+  error: '#E5847F',
+  track: '#3A3F43',
+  overlay: 'rgba(0, 0, 0, 0.6)',
+  button: {
+    primaryBg: '#2E9E90',
+    primaryText: '#FFFFFF',
+    disabledBg: '#3A3F43',
+    disabledText: '#8A9096',
+  },
+  category: {
+    vaccines: '#7FA8DC',
+    vaccinesBg: '#1A2230',
+    medical: '#9FB2C6',
+    medicalBg: '#1E252C',
+    notes: '#E8AE7A',
+    notesBg: '#2A2015',
+    reminders: '#6DB39A',
+    remindersBg: '#16241F',
+  },
+};
+
+/** Shape shared by both palettes — use this type for theme-aware style factories. */
+export type ThemeColors = typeof lightColors;
+
+/**
+ * Backwards-compatible default export: points at the light palette.
+ * Screens that have not yet migrated to `useColors()` keep working (they simply
+ * render with light values). New/updated code should read colors via the theme
+ * hook so they react to the user's selection.
+ */
+export const Colors = lightColors;
 
 export const Radius = {
   sm: 8,

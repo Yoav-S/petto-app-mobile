@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/context/ThemeContext';
 
 interface EmptyStateProps {
   title: string;
@@ -21,6 +22,7 @@ export default function EmptyState({
   topOffset,
   contentGap,
 }: EmptyStateProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View
       style={[
@@ -42,7 +44,7 @@ export default function EmptyState({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -58,17 +60,17 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Rubik-Medium',
     fontSize: 20,
-    color: Colors.primaryText,
+    color: c.primaryText,
     textAlign: 'center',
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     textAlign: 'center',
   },
   button: {
-    backgroundColor: Colors.button.primaryBg,
+    backgroundColor: c.button.primaryBg,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 12,
@@ -77,6 +79,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.button.primaryText,
+    color: c.button.primaryText,
   },
 });

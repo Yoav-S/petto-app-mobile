@@ -14,7 +14,8 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import { t } from '@/i18n';
@@ -30,6 +31,8 @@ const DESIGN_WIDTH = 375;
 const DESIGN_HEIGHT = 812;
 
 export default function HealthDetailsScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const recordId = normalizeRouteParam(id);
@@ -117,7 +120,7 @@ export default function HealthDetailsScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScreenHeader title={t('health.title')} />
         <View style={styles.centered}>
-          <ActivityIndicator color={Colors.primaryText} />
+          <ActivityIndicator color={colors.primaryText} />
         </View>
       </SafeAreaView>
     );
@@ -247,10 +250,10 @@ export default function HealthDetailsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   centered: {
     flex: 1,
@@ -263,12 +266,12 @@ const styles = StyleSheet.create({
   emptyNotes: {
     fontFamily: 'Rubik-Regular',
     fontSize: 15,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     textAlign: 'center',
     marginTop: Spacing.xl,
   },
   noteCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.md,
@@ -287,7 +290,7 @@ const styles = StyleSheet.create({
   noteText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
     lineHeight: 22,
   },
   reminderRow: {
@@ -303,18 +306,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
+    borderColor: c.border,
+    backgroundColor: c.surface,
   },
   resolveText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 18,
-    color: Colors.primaryText,
+    color: c.primaryText,
     textAlign: 'center',
   },
   addButton: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -322,7 +325,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 18,
-    color: Colors.surface,
+    color: c.surface,
     textAlign: 'center',
   },
 });

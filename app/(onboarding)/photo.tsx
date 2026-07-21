@@ -16,13 +16,16 @@ import * as ImagePicker from 'expo-image-picker';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
 import { t } from '@/i18n';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_PHOTO_STEP, PET_PHOTO_SHEET } from '@/constants/petOnboarding';
 import { getPetOnboardingScale, scaleOffset } from '@/utils/petOnboardingScale';
 
 const addPhotoImage = require('@/assets/images/pet-onboarding-add-photo.png');
 
 export default function PetPhotoOnboardingScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -112,7 +115,7 @@ export default function PetPhotoOnboardingScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('petOnboarding.back')}
         >
-          <Ionicons name="chevron-back" size={24 * sx} color={Colors.primaryText} />
+          <Ionicons name="chevron-back" size={24 * sx} color={colors.primaryText} />
         </Pressable>
 
         <View style={styles.headerCenter}>
@@ -274,7 +277,7 @@ export default function PetPhotoOnboardingScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={t('petOnboarding.photo_close_a11y')}
               >
-                <Ionicons name="close" size={PET_PHOTO_SHEET.closeSize * sx} color={Colors.primaryText} />
+                <Ionicons name="close" size={PET_PHOTO_SHEET.closeSize * sx} color={colors.primaryText} />
               </Pressable>
             </View>
 
@@ -341,10 +344,10 @@ export default function PetPhotoOnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   flex: {
     flex: 1,
@@ -363,7 +366,7 @@ const styles = StyleSheet.create({
   },
   card: {
     alignSelf: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
   },
   inner: {
@@ -390,7 +393,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   continueBtn: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
@@ -399,7 +402,7 @@ const styles = StyleSheet.create({
   continueText: {
     fontFamily: 'Rubik-Medium',
     fontWeight: '500',
-    color: Colors.surface,
+    color: c.surface,
     textAlign: 'center',
   },
   sheetBackdrop: {
@@ -425,7 +428,7 @@ const styles = StyleSheet.create({
     color: '#1F2937',
   },
   sheetOptions: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     alignSelf: 'center',
   },
   sheetOptionRow: {
@@ -441,7 +444,7 @@ const styles = StyleSheet.create({
   },
   sheetDivider: {
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
   },
   sheetCancelSection: {
     width: '100%',

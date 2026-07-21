@@ -12,7 +12,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
 import { usePetOnboardingLayout } from '@/hooks/usePetOnboardingLayout';
 import { t } from '@/i18n';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/context/ThemeContext';
 
 interface PetOnboardingStepShellProps {
   step: number;
@@ -27,6 +28,7 @@ export default function PetOnboardingStepShell({
   onDone,
   children,
 }: PetOnboardingStepShellProps) {
+  const styles = useThemedStyles(makeStyles);
   const { s, horizontalPadding, contentWidth } = usePetOnboardingLayout();
 
   const doneBtnStyle = {
@@ -99,10 +101,10 @@ export default function PetOnboardingStepShell({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   flex: {
     flex: 1,
@@ -118,7 +120,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   doneBtn: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -127,7 +129,7 @@ const styles = StyleSheet.create({
   },
   doneText: {
     fontFamily: 'Rubik-Medium',
-    color: Colors.surface,
+    color: c.surface,
   },
   scrollContent: {
     flexGrow: 1,
@@ -136,7 +138,7 @@ const styles = StyleSheet.create({
   },
   card: {
     alignSelf: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
   },
 });

@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import { formatReminderClockTime, parseTime24, toTime24 } from '@/utils/calendar';
 
@@ -58,6 +59,7 @@ function WheelColumn<T extends string | number>({
   mountKey,
   formatItem,
 }: WheelColumnProps<T>) {
+  const styles = useThemedStyles(makeStyles);
   const listRef = useRef<FlatList<T>>(null);
   const padding = ((VISIBLE_ROWS - 1) / 2) * ITEM_HEIGHT;
   const scrollingRef = useRef(false);
@@ -148,6 +150,8 @@ function WheelColumn<T extends string | number>({
 }
 
 export default function TimePickerSheet({ visible, value, onClose, onConfirm }: TimePickerSheetProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const sx = width / DESIGN_WIDTH;
@@ -211,7 +215,7 @@ export default function TimePickerSheet({ visible, value, onClose, onConfirm }: 
             <View style={styles.headerSpacer} />
             <Text style={styles.title}>{t('pickers.time_title')}</Text>
             <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
-              <Ionicons name="close" size={20} color={Colors.primaryText} />
+              <Ionicons name="close" size={20} color={colors.primaryText} />
             </Pressable>
           </View>
 
@@ -264,14 +268,14 @@ export default function TimePickerSheet({ visible, value, onClose, onConfirm }: 
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     justifyContent: 'space-between',
   },
   header: {
@@ -284,20 +288,20 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Rubik-Medium',
     fontSize: 20,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   closeButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
   preview: {
     fontFamily: 'Rubik-Medium',
     fontSize: 18,
-    color: Colors.primaryText,
+    color: c.primaryText,
     textAlign: 'center',
     marginBottom: 8,
   },
@@ -313,7 +317,7 @@ const styles = StyleSheet.create({
   columnLabel: {
     fontFamily: 'Rubik-Regular',
     fontSize: 13,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     textAlign: 'center',
     marginBottom: 8,
     height: 16,
@@ -333,7 +337,7 @@ const styles = StyleSheet.create({
     color: '#D1D5DB',
   },
   cellTextActive: {
-    color: Colors.primaryText,
+    color: c.primaryText,
     fontFamily: 'Rubik-Medium',
     fontSize: 22,
   },
@@ -347,7 +351,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: 'rgba(31, 41, 55, 0.06)',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
   },
   fade: {
     position: 'absolute',
@@ -357,16 +361,16 @@ const styles = StyleSheet.create({
   },
   fadeTop: {
     top: 0,
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     opacity: 0.85,
   },
   fadeBottom: {
     bottom: 0,
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     opacity: 0.85,
   },
   doneButton: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
@@ -374,6 +378,6 @@ const styles = StyleSheet.create({
   doneText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.surface,
+    color: c.surface,
   },
 });

@@ -9,7 +9,8 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import {
   getCalendarCells,
@@ -37,6 +38,8 @@ export default function InlineCalendarPicker({
   allowFuture = true,
   minDate,
 }: InlineCalendarPickerProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [viewYear, setViewYear] = useState(value?.getFullYear() ?? new Date().getFullYear());
   const [viewMonth, setViewMonth] = useState(value?.getMonth() ?? new Date().getMonth());
   const [openPicker, setOpenPicker] = useState<'month' | 'year' | null>(null);
@@ -103,11 +106,11 @@ export default function InlineCalendarPicker({
           <Text style={styles.dropdownText} numberOfLines={1}>
             {t(`petOnboarding.month_${MONTH_KEYS[viewMonth]}`)}
           </Text>
-          <Ionicons name="chevron-down" size={16} color={Colors.primaryText} />
+          <Ionicons name="chevron-down" size={16} color={colors.primaryText} />
         </Pressable>
         <Pressable style={styles.dropdown} onPress={() => setOpenPicker('year')}>
           <Text style={styles.dropdownText}>{viewYear}</Text>
-          <Ionicons name="chevron-down" size={16} color={Colors.primaryText} />
+          <Ionicons name="chevron-down" size={16} color={colors.primaryText} />
         </Pressable>
       </View>
 
@@ -126,7 +129,7 @@ export default function InlineCalendarPicker({
           const color = disabled
             ? '#D1D5DB'
             : cell.inCurrentMonth
-              ? Colors.primaryText
+              ? colors.primaryText
               : '#D1D5DB';
 
           return (
@@ -207,7 +210,7 @@ export default function InlineCalendarPicker({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   wrap: {
     paddingTop: Spacing.md,
   },
@@ -220,9 +223,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
     borderRadius: Radius.md,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -231,7 +234,7 @@ const styles = StyleSheet.create({
   dropdownText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.primaryText,
+    color: c.primaryText,
     marginRight: 4,
   },
   weekdayRow: {
@@ -242,7 +245,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.primaryText,
+    color: c.primaryText,
     textAlign: 'center',
   },
   grid: {
@@ -257,7 +260,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   dayCellSelected: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
   },
   dayText: {
     fontFamily: 'Rubik-Regular',
@@ -265,7 +268,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   dayTextSelected: {
-    color: Colors.surface,
+    color: c.surface,
     fontFamily: 'Rubik-Medium',
   },
   modalOverlay: {
@@ -275,9 +278,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
   },
   pickerList: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
     borderRadius: Radius.md,
     maxHeight: 320,
     overflow: 'hidden',
@@ -295,7 +298,7 @@ const styles = StyleSheet.create({
   pickerItemText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
     textAlign: 'center',
   },
   pickerItemTextDisabled: {

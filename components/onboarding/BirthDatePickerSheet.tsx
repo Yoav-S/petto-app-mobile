@@ -11,7 +11,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@/i18n';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_BIRTH_SHEET } from '@/constants/petOnboarding';
 import { getPetOnboardingScale } from '@/utils/petOnboardingScale';
 import {
@@ -44,6 +45,8 @@ export default function BirthDatePickerSheet({
   allowFuture = false,
   title,
 }: BirthDatePickerSheetProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const { sx, sy } = getPetOnboardingScale(width, height, insets.top, insets.bottom);
@@ -184,7 +187,7 @@ export default function BirthDatePickerSheet({
               accessibilityRole="button"
               accessibilityLabel={t('petOnboarding.photo_close_a11y')}
             >
-              <Ionicons name="close" size={PET_BIRTH_SHEET.closeSize * sx} color={Colors.primaryText} />
+              <Ionicons name="close" size={PET_BIRTH_SHEET.closeSize * sx} color={colors.primaryText} />
             </Pressable>
           </View>
 
@@ -205,14 +208,14 @@ export default function BirthDatePickerSheet({
                 <Text style={styles.dropdownText} numberOfLines={1}>
                   {t(`petOnboarding.month_${MONTH_KEYS[viewMonth]}`)}
                 </Text>
-                <Ionicons name="chevron-down" size={16 * sx} color={Colors.primaryText} />
+                <Ionicons name="chevron-down" size={16 * sx} color={colors.primaryText} />
               </Pressable>
               <Pressable
                 style={[styles.dropdown, dropdownStyle, { width: PET_BIRTH_SHEET.yearBtnWidth * sx }]}
                 onPress={() => setOpenPicker('year')}
               >
                 <Text style={styles.dropdownText}>{viewYear}</Text>
-                <Ionicons name="chevron-down" size={16 * sx} color={Colors.primaryText} />
+                <Ionicons name="chevron-down" size={16 * sx} color={colors.primaryText} />
               </Pressable>
             </View>
 
@@ -249,7 +252,7 @@ export default function BirthDatePickerSheet({
                 const color = isFuture
                   ? PET_BIRTH_SHEET.mutedDayColor
                   : cell.inCurrentMonth
-                    ? Colors.primaryText
+                    ? colors.primaryText
                     : PET_BIRTH_SHEET.mutedDayColor;
 
                 return (
@@ -329,7 +332,7 @@ export default function BirthDatePickerSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
@@ -365,14 +368,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
   },
   dropdownText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.primaryText,
+    color: c.primaryText,
     flex: 1,
   },
   weekdayRow: {
@@ -382,7 +385,7 @@ const styles = StyleSheet.create({
   weekday: {
     fontFamily: 'Rubik-Regular',
     fontWeight: '400',
-    color: Colors.primaryText,
+    color: c.primaryText,
     textAlign: 'center',
   },
   grid: {
@@ -408,7 +411,7 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
   },
   continueBtn: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -418,7 +421,7 @@ const styles = StyleSheet.create({
   continueText: {
     fontFamily: 'Rubik-Medium',
     fontWeight: '500',
-    color: Colors.surface,
+    color: c.surface,
     textAlign: 'center',
   },
   pickerOverlay: {
@@ -427,9 +430,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   pickerList: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
     zIndex: 10,
   },
   pickerItem: {
@@ -439,7 +442,7 @@ const styles = StyleSheet.create({
   pickerItemText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
     textAlign: 'center',
   },
   pickerItemTextDisabled: {

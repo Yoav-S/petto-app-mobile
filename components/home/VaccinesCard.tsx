@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors, Radius, Spacing } from '@/constants/theme';
-import { homeCardTypography } from '@/components/home/homeCardTypography';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
 import { t } from '@/i18n';
 
 interface VaccinesCardProps {
@@ -25,14 +26,18 @@ function formatDate(isoString?: string) {
 }
 
 function CategoryIcon() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
-    <View style={[styles.iconContainer, { backgroundColor: Colors.category.vaccinesBg }]}>
-      <MaterialCommunityIcons name="needle" size={20} color={Colors.category.vaccines} />
+    <View style={[styles.iconContainer, { backgroundColor: colors.category.vaccinesBg }]}>
+      <MaterialCommunityIcons name="needle" size={20} color={colors.category.vaccines} />
     </View>
   );
 }
 
 export default function VaccinesCard({ latestVaccine, loading, onPress }: VaccinesCardProps) {
+  const styles = useThemedStyles(makeStyles);
+  const homeCardTypography = useThemedStyles(makeHomeCardTypography);
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
@@ -98,9 +103,9 @@ const cardShadow = {
   elevation: 2,
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
     flex: 1,
@@ -120,7 +125,7 @@ const styles = StyleSheet.create({
   },
   skeletonLine: {
     height: 14,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
     borderRadius: 6,
   },
 });

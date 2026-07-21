@@ -1,4 +1,5 @@
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { DESIGN_WIDTH } from '@/components/home/PetHeader';
 import { t } from '@/i18n';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -102,6 +103,8 @@ export default function FABMenu({
   onHealthPress,
   onReminderPress,
 }: FABMenuProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const layout = useFabLayout();
   const progress = useSharedValue(open ? 1 : 0);
 
@@ -204,8 +207,8 @@ export default function FABMenu({
             height={layout.menuItemH}
             padded={false}
             label={t('fab.vaccines')}
-            iconBg={Colors.category.vaccinesBg}
-            icon={<MaterialCommunityIcons name="needle" size={18 * layout.s} color={Colors.category.vaccines} />}
+            iconBg={colors.category.vaccinesBg}
+            icon={<MaterialCommunityIcons name="needle" size={18 * layout.s} color={colors.category.vaccines} />}
             onPress={() => {
               close();
               onVaccinePress();
@@ -218,8 +221,8 @@ export default function FABMenu({
             height={layout.menuItemH}
             padded
             label={t('fab.health')}
-            iconBg={Colors.category.notesBg}
-            icon={<MaterialCommunityIcons name="heart-pulse" size={18 * layout.s} color={Colors.category.notes} />}
+            iconBg={colors.category.notesBg}
+            icon={<MaterialCommunityIcons name="heart-pulse" size={18 * layout.s} color={colors.category.notes} />}
             onPress={() => {
               close();
               onHealthPress();
@@ -232,8 +235,8 @@ export default function FABMenu({
             height={layout.menuItemH}
             padded
             label={t('fab.reminders')}
-            iconBg={Colors.category.remindersBg}
-            icon={<Ionicons name="notifications-outline" size={18 * layout.s} color={Colors.category.reminders} />}
+            iconBg={colors.category.remindersBg}
+            icon={<Ionicons name="notifications-outline" size={18 * layout.s} color={colors.category.reminders} />}
             onPress={() => {
               close();
               onReminderPress();
@@ -249,7 +252,7 @@ export default function FABMenu({
           activeOpacity={0.9}
         >
           <Animated.View style={[styles.iconBox, { width: layout.iconSize, height: layout.iconSize }, iconStyle]}>
-            <Ionicons name="add" size={layout.iconSize} color={Colors.surface} />
+            <Ionicons name="add" size={layout.iconSize} color={colors.surface} />
           </Animated.View>
         </TouchableOpacity>
       </Animated.View>
@@ -275,6 +278,7 @@ function MenuItem({
   icon: React.ReactNode;
   onPress: () => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <TouchableOpacity
       style={[
@@ -291,7 +295,7 @@ function MenuItem({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   scrim: {
     position: 'absolute',
     top: -2000,
@@ -321,7 +325,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
     gap: 10,
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -345,10 +349,10 @@ const styles = StyleSheet.create({
   menuLabel: {
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   btn: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.22,

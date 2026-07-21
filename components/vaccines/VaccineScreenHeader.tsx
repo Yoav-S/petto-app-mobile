@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from 'r
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 const DESIGN_WIDTH = 375;
 const DESIGN_HEIGHT = 812;
@@ -25,6 +26,8 @@ export default function VaccineScreenHeader({
   extraTopOffset = 0,
 }: VaccineScreenHeaderProps) {
   const router = useRouter();
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const sx = width / DESIGN_WIDTH;
@@ -69,7 +72,7 @@ export default function VaccineScreenHeader({
         <Ionicons
           name={icon === 'close' ? 'close' : 'chevron-back'}
           size={icon === 'close' ? 22 : 24}
-          color={Colors.primaryText}
+          color={colors.primaryText}
         />
       </TouchableOpacity>
 
@@ -88,15 +91,15 @@ export function getVaccineHeaderContentOffset(screenHeight: number): number {
   return (HEADER_TOP + HEADER_HEIGHT) * sy;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   iconButton: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -109,7 +112,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Rubik-Regular',
     fontSize: 24,
-    color: Colors.primaryText,
+    color: c.primaryText,
     textAlign: 'center',
   },
 });

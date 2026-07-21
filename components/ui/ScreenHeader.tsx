@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 interface ScreenHeaderProps {
   title: string;
@@ -10,6 +11,8 @@ interface ScreenHeaderProps {
 
 export default function ScreenHeader({ title }: ScreenHeaderProps) {
   const router = useRouter();
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -19,7 +22,7 @@ export default function ScreenHeader({ title }: ScreenHeaderProps) {
           onPress={() => router.back()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="chevron-back" size={24} color={Colors.primaryText} />
+          <Ionicons name="chevron-back" size={24} color={colors.primaryText} />
         </TouchableOpacity>
         
         <Text style={styles.title}>{title}</Text>
@@ -30,9 +33,9 @@ export default function ScreenHeader({ title }: ScreenHeaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   container: {
     flexDirection: 'row',
@@ -46,7 +49,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -58,7 +61,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Rubik-Regular',
     fontSize: 24,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   rightPlaceholder: {
     width: 40,

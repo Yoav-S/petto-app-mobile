@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 interface HealthLogCardProps {
   text: string;
@@ -11,6 +12,8 @@ interface HealthLogCardProps {
 }
 
 export default function HealthLogCard({ text, reminder, imageUrl }: HealthLogCardProps) {
+  const styles = useThemedStyles(makeStyles);
+  const colors = useColors();
   return (
     <View style={styles.card}>
       {imageUrl && (
@@ -31,16 +34,16 @@ export default function HealthLogCard({ text, reminder, imageUrl }: HealthLogCar
       )}
       
       <View style={styles.iconRow}>
-        <Ionicons name="image-outline" size={20} color={Colors.secondaryText} style={styles.icon} />
-        <Ionicons name="notifications-outline" size={20} color={Colors.secondaryText} style={styles.icon} />
+        <Ionicons name="image-outline" size={20} color={colors.secondaryText} style={styles.icon} />
+        <Ionicons name="notifications-outline" size={20} color={colors.secondaryText} style={styles.icon} />
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.md,
@@ -59,7 +62,7 @@ const styles = StyleSheet.create({
   text: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
     lineHeight: 22,
     marginBottom: Spacing.md,
   },
@@ -73,12 +76,12 @@ const styles = StyleSheet.create({
   reminderLabel: {
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   reminderValue: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   iconRow: {
     flexDirection: 'row',

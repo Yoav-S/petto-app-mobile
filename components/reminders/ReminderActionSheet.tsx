@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Pressable } from 'react-native';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { t } from '@/i18n';
 
@@ -34,6 +35,8 @@ export default function ReminderActionSheet({
   onDone,
   onMissed,
 }: ReminderActionSheetProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const CardWrapper = showDetailsLink && onDetailsPress ? TouchableOpacity : View;
 
   return (
@@ -53,7 +56,7 @@ export default function ReminderActionSheet({
             </View>
             <Text style={styles.title}>{t('reminders.action_sheet_title')}</Text>
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Ionicons name="close" size={20} color={Colors.primaryText} />
+              <Ionicons name="close" size={20} color={colors.primaryText} />
             </TouchableOpacity>
           </View>
 
@@ -83,14 +86,14 @@ export default function ReminderActionSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingBottom: 40,
@@ -99,7 +102,7 @@ const styles = StyleSheet.create({
   dragHandle: {
     width: 40,
     height: 4,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
     borderRadius: 2,
     alignSelf: 'center',
     marginTop: Spacing.md,
@@ -119,18 +122,18 @@ const styles = StyleSheet.create({
   paginationText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   title: {
     fontFamily: 'Rubik-Medium',
     fontSize: 18,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   closeButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -140,7 +143,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.xl,
@@ -159,28 +162,28 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontFamily: 'Rubik-Medium',
     fontSize: 18,
-    color: Colors.primaryText,
+    color: c.primaryText,
     flex: 1,
     marginRight: Spacing.md,
   },
   cardTime: {
     fontFamily: 'Rubik-Regular',
     fontSize: 20,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   cardSubtitle: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.primaryText,
+    color: c.primaryText,
     marginBottom: 8,
   },
   cardContext: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   doneButton: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     borderRadius: Radius.md,
     paddingVertical: 16,
     alignItems: 'center',
@@ -192,16 +195,16 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   missedButton: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: Radius.md,
     paddingVertical: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
   },
   missedText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
 });

@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 
 interface VaccinePhotoSourceSheetProps {
@@ -18,6 +19,8 @@ export default function VaccinePhotoSourceSheet({
   onTakePhoto,
   onChooseLibrary,
 }: VaccinePhotoSourceSheetProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -31,7 +34,7 @@ export default function VaccinePhotoSourceSheet({
             <View style={styles.headerSpacer} />
             <Text style={styles.title}>{t('vaccines.photo_sheet_title')}</Text>
             <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
-              <Ionicons name="close" size={20} color={Colors.primaryText} />
+              <Ionicons name="close" size={20} color={colors.primaryText} />
             </Pressable>
           </View>
 
@@ -54,14 +57,14 @@ export default function VaccinePhotoSourceSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: Spacing.md,
@@ -70,7 +73,7 @@ const styles = StyleSheet.create({
   dragHandle: {
     width: 40,
     height: 4,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: Spacing.md,
@@ -87,18 +90,18 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   closeButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   options: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: Radius.lg,
     paddingVertical: Spacing.xs,
     marginBottom: Spacing.lg,
@@ -110,11 +113,11 @@ const styles = StyleSheet.create({
   optionText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
     marginHorizontal: Spacing.lg,
   },
   cancelButton: {
@@ -124,6 +127,6 @@ const styles = StyleSheet.create({
   cancelText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
 });

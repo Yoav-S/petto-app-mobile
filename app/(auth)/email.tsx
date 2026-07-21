@@ -17,12 +17,15 @@ import { ApiError } from '@/services/api';
 import { getErrorMessage } from '@/services/errors';
 import { sendOtp, setPendingEmail } from '@/services/auth';
 import { t } from '@/i18n';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function EmailAuthScreen() {
   const router = useRouter();
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const inputRef = useRef<TextInput>(null);
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
@@ -83,7 +86,7 @@ export default function EmailAuthScreen() {
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
               placeholder={t('auth.email_placeholder')}
-              placeholderTextColor={Colors.secondaryText}
+              placeholderTextColor={colors.secondaryText}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -104,7 +107,7 @@ export default function EmailAuthScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={t('common.clear')}
               >
-                <Ionicons name="close-circle" size={20} color={Colors.secondaryText} />
+                <Ionicons name="close-circle" size={20} color={colors.secondaryText} />
               </Pressable>
             ) : null}
           </View>
@@ -119,7 +122,7 @@ export default function EmailAuthScreen() {
               accessibilityRole="button"
             >
               {isLoading ? (
-                <ActivityIndicator color={Colors.surface} />
+                <ActivityIndicator color={colors.surface} />
               ) : (
                 <Text style={styles.buttonText}>{t('onboarding.continue')}</Text>
               )}
@@ -135,10 +138,10 @@ export default function EmailAuthScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   flex: {
     flex: 1,
@@ -156,40 +159,40 @@ const styles = StyleSheet.create({
   backText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   title: {
     fontFamily: 'Rubik-Regular',
     fontSize: 24,
     lineHeight: 28,
-    color: Colors.primaryText,
+    color: c.primaryText,
     marginBottom: Spacing.sm,
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     marginBottom: Spacing.xl,
   },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
     borderRadius: Radius.md,
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     paddingRight: Spacing.sm,
     marginBottom: Spacing.md,
   },
   inputWrapFocused: {
-    borderColor: Colors.brand,
+    borderColor: c.brand,
   },
   input: {
     flex: 1,
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
     paddingHorizontal: Spacing.lg,
     paddingVertical: 14,
   },
@@ -199,11 +202,11 @@ const styles = StyleSheet.create({
   errorText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 13,
-    color: Colors.error,
+    color: c.error,
     marginBottom: Spacing.md,
   },
   button: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     height: 48,
     borderRadius: Radius.md,
     alignItems: 'center',
@@ -215,6 +218,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.surface,
+    color: c.surface,
   },
 });

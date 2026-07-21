@@ -13,7 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
@@ -45,6 +46,8 @@ function reminderLabel(draft: HealthReminderDraft): string {
 }
 
 export default function EditNoteScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { recordId: recordIdParam, noteId: noteIdParam, open: openParam } = useLocalSearchParams<{
     recordId: string;
@@ -222,7 +225,7 @@ export default function EditNoteScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScreenHeader title={t('health.edit_note')} />
         <View style={styles.centered}>
-          <ActivityIndicator color={Colors.primaryText} />
+          <ActivityIndicator color={colors.primaryText} />
         </View>
       </SafeAreaView>
     );
@@ -312,10 +315,10 @@ export default function EditNoteScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   container: {
     flex: 1,
@@ -338,6 +341,6 @@ const styles = StyleSheet.create({
   deleteText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.error,
+    color: c.error,
   },
 });

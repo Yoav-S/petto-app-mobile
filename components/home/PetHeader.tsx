@@ -1,4 +1,5 @@
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -71,6 +72,8 @@ export default function PetHeader({
   profileActive,
   children,
 }: PetHeaderProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
@@ -125,7 +128,7 @@ export default function PetHeader({
             />
           ) : (
             <View style={styles.coverPlaceholder}>
-              <Ionicons name="paw" size={72} color={Colors.secondaryText} />
+              <Ionicons name="paw" size={72} color={colors.secondaryText} />
             </View>
           )}
         </Pressable>
@@ -139,7 +142,7 @@ export default function PetHeader({
               accessibilityRole="button"
               accessibilityLabel={t('profile.return_home')}
             >
-              <Ionicons name="arrow-back" size={20} color={Colors.primaryText} />
+              <Ionicons name="arrow-back" size={20} color={colors.primaryText} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -149,7 +152,7 @@ export default function PetHeader({
               accessibilityRole="button"
               accessibilityLabel={t('profile.edit_profile')}
             >
-              <Ionicons name="pencil" size={18} color={Colors.primaryText} />
+              <Ionicons name="pencil" size={18} color={colors.primaryText} />
             </TouchableOpacity>
           </View>
         ) : (
@@ -160,7 +163,7 @@ export default function PetHeader({
             accessibilityRole="button"
             accessibilityLabel={t('home.settings')}
           >
-            <Ionicons name="settings-outline" size={22} color={Colors.primaryText} />
+            <Ionicons name="settings-outline" size={22} color={colors.primaryText} />
           </TouchableOpacity>
         )}
       </View>
@@ -189,7 +192,7 @@ export default function PetHeader({
               >
                 <Text style={styles.name}>{pet?.name ?? t('home.noPet')}</Text>
                 {canSwitch ? (
-                  <Ionicons name="chevron-down" size={24} color={Colors.primaryText} />
+                  <Ionicons name="chevron-down" size={24} color={colors.primaryText} />
                 ) : null}
               </TouchableOpacity>
               {pet ? (
@@ -209,7 +212,7 @@ export default function PetHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   wrapper: {
     flex: 1,
     backgroundColor: PANEL_BACKGROUND,
@@ -239,7 +242,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -264,7 +267,7 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 10,
     padding: 4,
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -304,30 +307,30 @@ const styles = StyleSheet.create({
   name: {
     fontFamily: 'Rubik-Regular',
     fontSize: 28,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   emptySubtitle: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     textAlign: 'center',
   },
   nameSkeleton: {
     width: 160,
     height: 28,
     borderRadius: 6,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
     marginBottom: 8,
   },
   subtitleSkeleton: {
     width: 120,
     height: 14,
     borderRadius: 6,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
   },
 });

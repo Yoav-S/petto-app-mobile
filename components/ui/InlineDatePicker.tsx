@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 
 type ViewMode = 'days' | 'months' | 'years';
 
 export default function InlineDatePicker() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [viewMode, setViewMode] = useState<ViewMode>('days');
 
   const days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -132,7 +135,7 @@ export default function InlineDatePicker() {
           onPress={() => setViewMode(viewMode === 'months' ? 'days' : 'months')}
         >
           <Text style={styles.dropdownText}>April</Text>
-          <Ionicons name={viewMode === 'months' ? "chevron-up" : "chevron-down"} size={16} color={Colors.primaryText} style={styles.icon} />
+          <Ionicons name={viewMode === 'months' ? "chevron-up" : "chevron-down"} size={16} color={colors.primaryText} style={styles.icon} />
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -140,7 +143,7 @@ export default function InlineDatePicker() {
           onPress={() => setViewMode(viewMode === 'years' ? 'days' : 'years')}
         >
           <Text style={styles.dropdownText}>2026</Text>
-          <Ionicons name={viewMode === 'years' ? "chevron-up" : "chevron-down"} size={16} color={Colors.primaryText} style={styles.icon} />
+          <Ionicons name={viewMode === 'years' ? "chevron-up" : "chevron-down"} size={16} color={colors.primaryText} style={styles.icon} />
         </TouchableOpacity>
       </View>
       
@@ -151,7 +154,7 @@ export default function InlineDatePicker() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     paddingVertical: Spacing.md,
   },
@@ -162,18 +165,18 @@ const styles = StyleSheet.create({
   dropdown: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
     marginRight: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
   },
   dropdownText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   icon: {
     marginLeft: 4,
@@ -189,7 +192,7 @@ const styles = StyleSheet.create({
   dayHeader: {
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     width: 32,
     textAlign: 'center',
   },
@@ -201,12 +204,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selectedDateCell: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
   },
   dateText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   selectedDateText: {
     color: '#FFFFFF',
@@ -226,19 +229,19 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
   },
   selectedLargeGridCell: {
-    backgroundColor: Colors.brand,
-    borderColor: Colors.brand,
+    backgroundColor: c.brand,
+    borderColor: c.brand,
   },
   largeGridText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   selectedLargeGridText: {
     color: '#FFFFFF',

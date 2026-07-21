@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import type { Pet } from '@/types/api';
 
@@ -37,6 +38,7 @@ function formatNeutered(value?: boolean | null): string {
 }
 
 function ProfileRow({ label, value, height }: { label: string; value: string; height: number }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.row, { minHeight: height }]}>
       <Text style={styles.rowLabel}>{label}</Text>
@@ -48,6 +50,7 @@ function ProfileRow({ label, value, height }: { label: string; value: string; he
 }
 
 export default function PetProfilePanel({ pet }: PetProfilePanelProps) {
+  const styles = useThemedStyles(makeStyles);
   const [tab, setTab] = useState<ProfileTab>('general');
 
   return (
@@ -100,7 +103,7 @@ const cardShadow = {
   elevation: 2,
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   wrapper: {
     paddingHorizontal: Spacing.lg,
     gap: Spacing.lg,
@@ -111,7 +114,7 @@ const styles = StyleSheet.create({
     width: 220,
     height: 36,
     borderRadius: 10,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
     paddingVertical: 2,
     paddingHorizontal: 4,
     gap: 4,
@@ -123,7 +126,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   segmentActive: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -133,13 +136,13 @@ const styles = StyleSheet.create({
   segmentText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   segmentTextActive: {
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   container: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 16,
     padding: Spacing.lg,
     gap: Spacing.lg,
@@ -152,11 +155,11 @@ const styles = StyleSheet.create({
   rowLabel: {
     fontFamily: 'Rubik-Regular',
     fontSize: 12,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   rowValue: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
 });

@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Radius, Spacing } from '@/constants/theme';
-import { homeCardTypography } from '@/components/home/homeCardTypography';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
 import { t, currentLocale } from '@/i18n';
 
 interface RemindersCardProps {
@@ -17,9 +18,11 @@ interface RemindersCardProps {
 }
 
 function CategoryIcon() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
-    <View style={[styles.iconContainer, { backgroundColor: Colors.category.remindersBg }]}>
-      <Ionicons name="notifications-outline" size={20} color={Colors.category.reminders} />
+    <View style={[styles.iconContainer, { backgroundColor: colors.category.remindersBg }]}>
+      <Ionicons name="notifications-outline" size={20} color={colors.category.reminders} />
     </View>
   );
 }
@@ -30,6 +33,9 @@ export default function RemindersCard({
   loading,
   onPress,
 }: RemindersCardProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const homeCardTypography = useThemedStyles(makeHomeCardTypography);
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
@@ -84,7 +90,7 @@ export default function RemindersCard({
               <Text style={homeCardTypography.meta} numberOfLines={1}>
                 {upcomingCount} {t('home.remindersCard.upcoming')}
               </Text>
-              <Ionicons name="chevron-forward" size={16} color={Colors.secondaryText} />
+              <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
             </View>
           ) : null}
         </View>
@@ -101,9 +107,9 @@ const cardShadow = {
   elevation: 2,
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
     flex: 1,
@@ -127,7 +133,7 @@ const styles = StyleSheet.create({
   },
   skeletonLine: {
     height: 14,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
     borderRadius: 6,
   },
 });

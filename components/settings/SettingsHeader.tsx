@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 
 interface SettingsHeaderProps {
@@ -11,6 +12,8 @@ interface SettingsHeaderProps {
 
 export default function SettingsHeader({ title }: SettingsHeaderProps) {
   const router = useRouter();
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <View style={styles.header}>
@@ -21,7 +24,7 @@ export default function SettingsHeader({ title }: SettingsHeaderProps) {
         accessibilityRole="button"
         accessibilityLabel={t('petOnboarding.back')}
       >
-        <Ionicons name="chevron-back" size={20} color={Colors.primaryText} />
+        <Ionicons name="chevron-back" size={20} color={colors.primaryText} />
       </TouchableOpacity>
 
       <Text style={styles.title}>{title}</Text>
@@ -31,7 +34,7 @@ export default function SettingsHeader({ title }: SettingsHeaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   header: {
     height: 44,
     flexDirection: 'row',
@@ -45,7 +48,7 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 10,
     padding: 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#2D2D2A',
@@ -58,7 +61,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 18,
     lineHeight: 24,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   rightSpacer: {
     width: 32,

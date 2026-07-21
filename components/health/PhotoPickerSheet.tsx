@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 interface PhotoPickerSheetProps {
   visible: boolean;
@@ -10,6 +11,8 @@ interface PhotoPickerSheetProps {
 }
 
 export default function PhotoPickerSheet({ visible, onClose, onAdd }: PhotoPickerSheetProps) {
+  const styles = useThemedStyles(makeStyles);
+  const colors = useColors();
   const photos: string[] = [];
 
   return (
@@ -24,14 +27,14 @@ export default function PhotoPickerSheet({ visible, onClose, onAdd }: PhotoPicke
             <View style={styles.headerSpacer} />
             <Text style={styles.title}>Change photo</Text>
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Ionicons name="close" size={20} color={Colors.primaryText} />
+              <Ionicons name="close" size={20} color={colors.primaryText} />
             </TouchableOpacity>
           </View>
           
           <View style={styles.gridContainer}>
             {photos.length === 0 ? (
               <View style={styles.emptyState}>
-                <Ionicons name="images-outline" size={40} color={Colors.secondaryText} />
+                <Ionicons name="images-outline" size={40} color={colors.secondaryText} />
                 <Text style={styles.emptyText}>No photos yet</Text>
               </View>
             ) : (
@@ -56,7 +59,7 @@ export default function PhotoPickerSheet({ visible, onClose, onAdd }: PhotoPicke
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -66,7 +69,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   sheet: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     paddingTop: Spacing.md,
@@ -75,7 +78,7 @@ const styles = StyleSheet.create({
   dragHandle: {
     width: 36,
     height: 4,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: Spacing.md,
@@ -93,12 +96,12 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Rubik-Medium',
     fontSize: 18,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   closeButton: {
     width: 32,
     height: 32,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
@@ -116,7 +119,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     marginTop: Spacing.md,
   },
   footer: {
@@ -124,11 +127,11 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
     paddingBottom: Spacing.xl * 2,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    backgroundColor: Colors.surface,
+    borderTopColor: c.border,
+    backgroundColor: c.surface,
   },
   addButton: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     borderRadius: Radius.md,
     paddingVertical: 16,
     alignItems: 'center',

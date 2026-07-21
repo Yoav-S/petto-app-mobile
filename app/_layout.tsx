@@ -1,11 +1,12 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { View } from 'react-native';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { PetStoreProvider } from '@/store/petStore';
 import { PetOnboardingDraftProvider } from '@/store/petOnboardingDraft';
 
@@ -62,19 +63,33 @@ function RootLayoutNav() {
   );
 }
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+function ThemedApp() {
+  const { isDark, colors } = useTheme();
+
+  const navTheme = isDark
+    ? { ...DarkTheme, colors: { ...DarkTheme.colors, background: colors.background } }
+    : { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colors.background } };
 
   return (
-    <AuthProvider>
-      <PetStoreProvider>
-        <PetOnboardingDraftProvider>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <RootLayoutNav />
-            <StatusBar style="auto" />
-          </ThemeProvider>
-        </PetOnboardingDraftProvider>
-      </PetStoreProvider>
-    </AuthProvider>
+    <NavThemeProvider value={navTheme}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <RootLayoutNav />
+      </View>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+    </NavThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <PetStoreProvider>
+          <PetOnboardingDraftProvider>
+            <ThemedApp />
+          </PetOnboardingDraftProvider>
+        </PetStoreProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

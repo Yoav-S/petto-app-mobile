@@ -1,7 +1,8 @@
 import React from 'react';
 import { Pressable, StyleSheet, ViewStyle, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { DESIGN_WIDTH } from '@/components/home/PetHeader';
 
 const DESIGN = {
@@ -42,6 +43,8 @@ export default function AddFabButton({
   open = false,
   accessibilityLabel,
 }: AddFabButtonProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const metrics = useAddFabMetrics();
 
   return (
@@ -62,7 +65,7 @@ export default function AddFabButton({
       <Ionicons
         name="add"
         size={metrics.iconSize}
-        color={Colors.surface}
+        color={colors.surface}
         style={{
           transform: [{ rotate: `${open ? DESIGN.openDeg : DESIGN.closedDeg}deg` }],
         }}
@@ -71,9 +74,9 @@ export default function AddFabButton({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   btn: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',

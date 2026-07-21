@@ -101,7 +101,10 @@
     "notif_reminders": "Reminders",
     "notif_vaccine_updates": "Vaccine updates",
     "notif_health_reminders": "Health reminders",
-    "notif_email_updates": "Email updates"
+    "notif_email_updates": "Email updates",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
+    "theme_system": "System"
   },
   "pickers": {
     "time_title": "Choose time",

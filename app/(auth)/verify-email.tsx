@@ -24,13 +24,16 @@ import {
   resendOtp,
   consumeVerifyScreenMessage,
 } from '@/services/auth';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SEC = 20;
 
 export default function VerifyEmailScreen() {
   const router = useRouter();
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { height: screenHeight } = useWindowDimensions();
   const email = getPendingEmail() ?? '';
   const inputRef = useRef<TextInput>(null);
@@ -212,7 +215,7 @@ export default function VerifyEmailScreen() {
               disabled={otp.length !== OTP_LENGTH || isVerifying}
             >
               {isVerifying ? (
-                <ActivityIndicator color={Colors.surface} />
+                <ActivityIndicator color={colors.surface} />
               ) : (
                 <Text style={styles.buttonText}>Verify</Text>
               )}
@@ -248,8 +251,8 @@ export default function VerifyEmailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: c.background },
   flex: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
@@ -258,30 +261,30 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xl,
   },
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: Radius.lg ?? Radius.md,
     padding: Spacing.xl,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
   },
   title: {
     fontFamily: 'Rubik-SemiBold',
     fontSize: 22,
-    color: Colors.primaryText,
+    color: c.primaryText,
     textAlign: 'center',
     marginBottom: Spacing.sm,
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
     fontSize: 15,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     textAlign: 'center',
     marginBottom: Spacing.xl,
     lineHeight: 22,
   },
   email: {
     fontFamily: 'Rubik-Medium',
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   otpPressable: {
     position: 'relative',
@@ -298,27 +301,27 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
-  otpBoxFilled: { borderColor: Colors.brand },
+  otpBoxFilled: { borderColor: c.brand },
   otpBoxActive: {
-    borderColor: Colors.brand,
+    borderColor: c.brand,
     borderWidth: 2,
   },
   otpDigit: {
     fontFamily: 'Rubik-SemiBold',
     fontSize: 22,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   cursor: {
     position: 'absolute',
     bottom: 10,
     width: 2,
     height: 20,
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
   },
   otpInputOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -329,26 +332,26 @@ const styles = StyleSheet.create({
   tapHint: {
     fontFamily: 'Rubik-Regular',
     fontSize: 12,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     textAlign: 'center',
     marginBottom: Spacing.md,
   },
   infoText: {
     fontFamily: 'Rubik-Regular',
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     textAlign: 'center',
     marginBottom: Spacing.sm,
     fontSize: 13,
   },
   errorText: {
     fontFamily: 'Rubik-Regular',
-    color: Colors.error,
+    color: c.error,
     textAlign: 'center',
     marginBottom: Spacing.md,
     fontSize: 13,
   },
   button: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     padding: Spacing.lg,
     borderRadius: Radius.md,
     alignItems: 'center',
@@ -358,19 +361,19 @@ const styles = StyleSheet.create({
   buttonText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.surface,
+    color: c.surface,
   },
   resendRow: { alignItems: 'center', marginTop: Spacing.lg },
   resendText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
-    color: Colors.brand,
+    color: c.brand,
   },
-  resendMuted: { color: Colors.brand, opacity: 0.55 },
+  resendMuted: { color: c.brand, opacity: 0.55 },
   backButton: { alignItems: 'center', marginTop: Spacing.xl },
   backText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
 });

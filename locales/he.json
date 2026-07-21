@@ -101,7 +101,10 @@
     "notif_reminders": "תזכורות",
     "notif_vaccine_updates": "עדכוני חיסונים",
     "notif_health_reminders": "תזכורות בריאות",
-    "notif_email_updates": "עדכונים במייל"
+    "notif_email_updates": "עדכונים במייל",
+    "theme_light": "בהיר",
+    "theme_dark": "כהה",
+    "theme_system": "מערכת"
   },
   "pickers": {
     "time_title": "בחר שעה",

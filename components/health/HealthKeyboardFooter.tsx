@@ -10,7 +10,8 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 const DESIGN_WIDTH = 375;
 const DESIGN_HEIGHT = 812;
@@ -63,6 +64,7 @@ export function HealthKeyboardAvoidingView({
   children,
   keyboardVerticalOffset = 0,
 }: HealthKeyboardAvoidingViewProps) {
+  const styles = useThemedStyles(makeStyles);
   const keyboardOpen = useKeyboardOpen();
 
   return (
@@ -94,6 +96,8 @@ export default function HealthKeyboardFooter({
   onPress,
   fullWidth = true,
 }: HealthKeyboardFooterProps) {
+  const styles = useThemedStyles(makeStyles);
+  const colors = useColors();
   const { width, height } = useWindowDimensions();
   const sx = width / DESIGN_WIDTH;
   const sy = height / DESIGN_HEIGHT;
@@ -145,7 +149,7 @@ export default function HealthKeyboardFooter({
           activeOpacity={0.85}
         >
           {loading ? (
-            <ActivityIndicator color={Colors.surface} />
+            <ActivityIndicator color={colors.surface} />
           ) : (
             <Text style={[styles.buttonText, disabled && styles.buttonTextDisabled]}>{label}</Text>
           )}
@@ -186,7 +190,7 @@ export default function HealthKeyboardFooter({
         activeOpacity={0.85}
       >
         {loading ? (
-          <ActivityIndicator color={Colors.surface} />
+          <ActivityIndicator color={colors.surface} />
         ) : (
           <Text style={[styles.buttonText, disabled && styles.buttonTextDisabled]}>{label}</Text>
         )}
@@ -195,13 +199,13 @@ export default function HealthKeyboardFooter({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   avoiding: {
     flex: 1,
   },
   saveFooter: {
     width: '100%',
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
     shadowColor: '#2D2D2A',
     shadowOffset: { width: 0, height: -4 },
@@ -221,24 +225,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   saveButton: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },
   doneButton: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonDisabled: {
-    backgroundColor: Colors.button.disabledBg,
+    backgroundColor: c.button.disabledBg,
   },
   buttonText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.surface,
+    color: c.surface,
   },
   buttonTextDisabled: {
-    color: Colors.button.disabledText,
+    color: c.button.disabledText,
   },
 });

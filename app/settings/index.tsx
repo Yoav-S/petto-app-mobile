@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t, currentLocale } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
@@ -29,6 +30,8 @@ export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { signOut } = useAuth();
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
 
   const languageLabel = t(`settings.language_${currentLocale}`);
 
@@ -56,7 +59,7 @@ export default function SettingsScreen() {
                     {row.key === 'language' ? (
                       <Text style={styles.rowValue}>{languageLabel}</Text>
                     ) : null}
-                    <Ionicons name="chevron-forward" size={20} color={Colors.secondaryText} />
+                    <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
                   </View>
                 </TouchableOpacity>
                 {index < ROWS.length - 1 ? <View style={styles.divider} /> : null}
@@ -79,10 +82,10 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   flex: {
     flex: 1,
@@ -93,7 +96,7 @@ const styles = StyleSheet.create({
     paddingTop: 22,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 12,
     padding: 16,
     shadowColor: '#2D2D2A',
@@ -113,14 +116,14 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
   },
   rowLabel: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     lineHeight: 20,
     letterSpacing: 0,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   rowRight: {
     flexDirection: 'row',
@@ -131,7 +134,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 12,
     lineHeight: 16,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   signOut: {
     flexDirection: 'row',

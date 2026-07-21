@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 
 interface SettingRowProps {
@@ -22,6 +23,8 @@ export default function SettingRow({
   children,
   hideDivider 
 }: SettingRowProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <>
       <TouchableOpacity 
@@ -31,7 +34,7 @@ export default function SettingRow({
         disabled={!onPress}
       >
         <View style={styles.left}>
-          <Ionicons name={icon} size={20} color={Colors.primaryText} style={styles.icon} />
+          <Ionicons name={icon} size={20} color={colors.primaryText} style={styles.icon} />
           <Text style={styles.label}>{label}</Text>
         </View>
         <Text style={styles.value}>{value}</Text>
@@ -48,7 +51,7 @@ export default function SettingRow({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -65,19 +68,19 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   value: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   expandedContent: {
     paddingHorizontal: Spacing.xs,
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
     width: '100%',
   },
 });

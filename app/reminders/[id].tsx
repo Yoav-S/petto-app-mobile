@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import ReminderFormBody, { ReminderAutosaveStatus } from '@/components/reminders/ReminderFormBody';
@@ -36,6 +37,8 @@ type AutosaveState = 'idle' | 'saving' | 'saved' | 'error';
 const AUTOSAVE_MS = 700;
 
 export default function EditReminderScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { activePetId } = useActivePet();
@@ -250,7 +253,7 @@ export default function EditReminderScreen() {
       <SafeAreaView style={styles.safeArea}>
         <VaccineScreenHeader title={t('reminders.edit_title')} icon="close" extraTopOffset={44 * sy} />
         <View style={styles.centered}>
-          <ActivityIndicator color={Colors.primaryText} />
+          <ActivityIndicator color={colors.primaryText} />
         </View>
       </SafeAreaView>
     );
@@ -302,10 +305,10 @@ export default function EditReminderScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   centered: {
     flex: 1,

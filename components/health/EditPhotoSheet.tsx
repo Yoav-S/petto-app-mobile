@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 interface EditPhotoSheetProps {
   visible: boolean;
@@ -11,6 +12,8 @@ interface EditPhotoSheetProps {
 }
 
 export default function EditPhotoSheet({ visible, onClose, onTake, onChoose }: EditPhotoSheetProps) {
+  const styles = useThemedStyles(makeStyles);
+  const colors = useColors();
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.overlay}>
@@ -23,7 +26,7 @@ export default function EditPhotoSheet({ visible, onClose, onTake, onChoose }: E
             <View style={styles.headerSpacer} />
             <Text style={styles.title}>Edit photo</Text>
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Ionicons name="close" size={20} color={Colors.primaryText} />
+              <Ionicons name="close" size={20} color={colors.primaryText} />
             </TouchableOpacity>
           </View>
           
@@ -46,7 +49,7 @@ export default function EditPhotoSheet({ visible, onClose, onTake, onChoose }: E
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)', // Dimmed background to simulate blur for mockup
@@ -56,7 +59,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   sheet: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     paddingHorizontal: Spacing.lg,
@@ -66,7 +69,7 @@ const styles = StyleSheet.create({
   dragHandle: {
     width: 36,
     height: 4,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: Spacing.md,
@@ -83,18 +86,18 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Rubik-Medium',
     fontSize: 18,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   closeButton: {
     width: 32,
     height: 32,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   menuContainer: {
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
     borderRadius: Radius.lg,
     marginBottom: Spacing.lg,
   },
@@ -105,15 +108,15 @@ const styles = StyleSheet.create({
   menuItemText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
     marginHorizontal: Spacing.lg,
   },
   cancelButton: {
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
     borderRadius: Radius.lg,
     paddingVertical: 16,
     alignItems: 'center',
@@ -121,6 +124,6 @@ const styles = StyleSheet.create({
   cancelText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
 });

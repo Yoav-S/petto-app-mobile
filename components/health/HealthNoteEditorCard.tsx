@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t, isRTL } from '@/i18n';
 
 const DESIGN_WIDTH = 375;
@@ -56,6 +57,8 @@ export default function HealthNoteEditorCard({
   onRemoveReminder,
   placeholder,
 }: HealthNoteEditorCardProps) {
+  const styles = useThemedStyles(makeStyles);
+  const colors = useColors();
   const layout = useHealthNoteCardLayout();
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(photoUri) && !imageFailed;
@@ -92,7 +95,7 @@ export default function HealthNoteEditorCard({
           onChangeText={onChangeNoteText}
           multiline
           placeholder={placeholder ?? t('health.note_placeholder')}
-          placeholderTextColor={Colors.secondaryText}
+          placeholderTextColor={colors.secondaryText}
           textAlignVertical="top"
         />
 
@@ -110,7 +113,7 @@ export default function HealthNoteEditorCard({
             </TouchableOpacity>
             {onRemoveReminder ? (
               <TouchableOpacity onPress={onRemoveReminder} hitSlop={8}>
-                <Ionicons name="close-circle" size={16} color={Colors.secondaryText} />
+                <Ionicons name="close-circle" size={16} color={colors.secondaryText} />
               </TouchableOpacity>
             ) : null}
           </View>
@@ -123,10 +126,10 @@ export default function HealthNoteEditorCard({
           ]}
         >
           <TouchableOpacity onPress={onPickImage} hitSlop={8} activeOpacity={0.7}>
-            <Ionicons name="image-outline" size={24} color={Colors.secondaryText} />
+            <Ionicons name="image-outline" size={24} color={colors.secondaryText} />
           </TouchableOpacity>
           <TouchableOpacity onPress={onReminderPress} hitSlop={8} activeOpacity={0.7}>
-            <Ionicons name="notifications-outline" size={24} color={Colors.secondaryText} />
+            <Ionicons name="notifications-outline" size={24} color={colors.secondaryText} />
           </TouchableOpacity>
         </View>
       </View>
@@ -134,9 +137,9 @@ export default function HealthNoteEditorCard({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     width: '100%',
     shadowColor: '#2D2D2A',
     shadowOffset: { width: 0, height: 4 },
@@ -151,7 +154,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: Colors.primaryText,
+    color: c.primaryText,
     padding: 0,
     minHeight: 40,
   },
@@ -172,14 +175,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 20,
-    color: Colors.primaryText,
+    color: c.primaryText,
     flexShrink: 0,
   },
   reminderValue: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: Colors.primaryText,
+    color: c.primaryText,
     flex: 1,
     textAlign: isRTL ? 'left' : 'right',
   },

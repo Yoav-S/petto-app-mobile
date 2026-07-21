@@ -12,7 +12,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import ReminderCalendarPickerSheet from '@/components/reminders/ReminderCalendarPickerSheet';
 import TimePickerSheet from '@/components/pickers/TimePickerSheet';
 import RepeatPickerSheet from '@/components/pickers/RepeatPickerSheet';
@@ -82,6 +83,8 @@ export default function ReminderFormBody({
   autoFocus = false,
   footer,
 }: ReminderFormBodyProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const showNoteLabel = noteFocused || note.trim().length > 0;
 
   return (
@@ -122,7 +125,7 @@ export default function ReminderFormBody({
               value={title}
               onChangeText={onTitleChange}
               placeholder={t('reminders.field_name_placeholder')}
-              placeholderTextColor={Colors.secondaryText}
+              placeholderTextColor={colors.secondaryText}
               autoFocus={autoFocus}
               returnKeyType="next"
             />
@@ -148,7 +151,7 @@ export default function ReminderFormBody({
               activeOpacity={0.6}
             >
               <View style={styles.scheduleLeft}>
-                <Ionicons name="calendar-outline" size={18} color={Colors.primaryText} />
+                <Ionicons name="calendar-outline" size={18} color={colors.primaryText} />
                 <Text style={styles.scheduleLabel}>{t('reminders.field_date')}</Text>
               </View>
               <Text style={[styles.scheduleValue, !date && styles.placeholder]}>
@@ -162,7 +165,7 @@ export default function ReminderFormBody({
               activeOpacity={0.6}
             >
               <View style={styles.scheduleLeft}>
-                <Ionicons name="time-outline" size={18} color={Colors.primaryText} />
+                <Ionicons name="time-outline" size={18} color={colors.primaryText} />
                 <Text style={styles.scheduleLabel}>{t('reminders.field_time')}</Text>
               </View>
               <Text style={[styles.scheduleValue, !time && styles.placeholder]}>
@@ -176,7 +179,7 @@ export default function ReminderFormBody({
               activeOpacity={0.6}
             >
               <View style={styles.scheduleLeft}>
-                <Ionicons name="repeat-outline" size={18} color={Colors.primaryText} />
+                <Ionicons name="repeat-outline" size={18} color={colors.primaryText} />
                 <Text style={styles.scheduleLabel}>{t('reminders.field_repeat')}</Text>
               </View>
               <Text style={styles.scheduleValue}>{repeatToggleLabel(repeat)}</Text>
@@ -210,7 +213,7 @@ export default function ReminderFormBody({
                 placeholder={
                   showNoteLabel ? undefined : t('reminders.field_description_placeholder')
                 }
-                placeholderTextColor={Colors.secondaryText}
+                placeholderTextColor={colors.secondaryText}
                 multiline
                 textAlignVertical={showNoteLabel ? 'top' : 'center'}
                 returnKeyType="done"
@@ -259,6 +262,8 @@ export function ReminderSaveButton({
   saving: boolean;
   onPress: () => void;
 }) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <TouchableOpacity
       style={[
@@ -275,7 +280,7 @@ export function ReminderSaveButton({
       activeOpacity={0.85}
     >
       {saving ? (
-        <ActivityIndicator color={Colors.surface} />
+        <ActivityIndicator color={colors.surface} />
       ) : (
         <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>
           {t('common.save')}
@@ -292,6 +297,8 @@ export function ReminderAutosaveStatus({
   layout: ReminderFormLayout;
   state: 'idle' | 'saving' | 'saved' | 'error';
 }) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   if (state === 'idle') return null;
   const label =
     state === 'saving'
@@ -307,20 +314,20 @@ export function ReminderAutosaveStatus({
         { width: layout.cardWidth, height: layout.footerHeight, borderRadius: layout.cardRadius },
       ]}
     >
-      {state === 'saving' ? <ActivityIndicator size="small" color={Colors.secondaryText} /> : null}
+      {state === 'saving' ? <ActivityIndicator size="small" color={colors.secondaryText} /> : null}
       <Text style={styles.autosaveText}>{label}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 0 },
-  card: { backgroundColor: Colors.surface },
+  card: { backgroundColor: c.surface },
   nameInput: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
     padding: 0,
     margin: 0,
   },
@@ -337,26 +344,26 @@ const styles = StyleSheet.create({
   scheduleLabel: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   scheduleValue: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
-  placeholder: { color: Colors.secondaryText },
+  placeholder: { color: c.secondaryText },
   noteInner: { width: '100%' },
   noteLabel: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   noteInput: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
     lineHeight: 24,
-    color: Colors.primaryText,
+    color: c.primaryText,
     padding: 0,
     margin: 0,
     minHeight: 24,
@@ -366,27 +373,27 @@ const styles = StyleSheet.create({
     textAlignVertical: 'center',
   },
   saveButton: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  saveButtonDisabled: { backgroundColor: Colors.button.disabledBg },
+  saveButtonDisabled: { backgroundColor: c.button.disabledBg },
   saveText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.surface,
+    color: c.surface,
   },
-  saveTextDisabled: { color: Colors.button.disabledText },
+  saveTextDisabled: { color: c.button.disabledText },
   autosaveRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
   },
   autosaveText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
 });

@@ -5,7 +5,8 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useActivePet } from '@/store/petStore';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { apiGet } from '@/services/api';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
@@ -108,6 +109,8 @@ function pickLatestHealthRecord(records: MedicalRecord[]): MedicalRecord | null 
 }
 
 export default function HomeScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { user, isLoading: authLoading, syncError, retryBackendSync, isSyncing, signOut } = useAuth();
   const { activePetId, setActivePetId } = useActivePet();
@@ -339,7 +342,7 @@ export default function HomeScreen() {
                 >
                   <Text style={styles.switchName}>{p.name}</Text>
                   {isActive ? (
-                    <Ionicons name="checkmark" size={20} color={Colors.primaryText} />
+                    <Ionicons name="checkmark" size={20} color={colors.primaryText} />
                   ) : null}
                 </TouchableOpacity>
               );
@@ -351,7 +354,7 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: PANEL_BACKGROUND,
@@ -371,21 +374,21 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.sm,
     padding: Spacing.md,
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
   },
   errorBannerText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 13,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     marginBottom: 4,
   },
   errorBannerAction: {
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   cardsGrid: {
     paddingHorizontal: Spacing.lg,
@@ -408,14 +411,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
   },
   switchSheet: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 16,
     padding: Spacing.lg,
   },
   switchTitle: {
     fontFamily: 'Rubik-Medium',
     fontSize: 18,
-    color: Colors.primaryText,
+    color: c.primaryText,
     marginBottom: Spacing.sm,
   },
   switchRow: {
@@ -424,11 +427,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: c.border,
   },
   switchName: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
 });

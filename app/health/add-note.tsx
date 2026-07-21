@@ -10,7 +10,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import HealthNoteEditorCard from '@/components/health/HealthNoteEditorCard';
 import HealthKeyboardFooter, {
@@ -38,6 +39,8 @@ function reminderLabel(draft: HealthReminderDraft): string {
 }
 
 export default function AddNoteScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { recordId: recordIdParam } = useLocalSearchParams<{ recordId?: string }>();
   const recordId = normalizeRouteParam(recordIdParam);
@@ -123,7 +126,7 @@ export default function AddNoteScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScreenHeader title={t('health.add_note')} />
         <View style={styles.centered}>
-          <ActivityIndicator color={Colors.primaryText} />
+          <ActivityIndicator color={colors.primaryText} />
         </View>
       </SafeAreaView>
     );
@@ -180,10 +183,10 @@ export default function AddNoteScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   container: {
     flex: 1,

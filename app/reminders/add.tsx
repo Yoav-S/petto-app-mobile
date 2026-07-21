@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, SafeAreaView, Alert, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/context/ThemeContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import ReminderFormBody, { ReminderSaveButton } from '@/components/reminders/ReminderFormBody';
 import {
@@ -18,6 +19,7 @@ import { getErrorMessage } from '@/services/errors';
 import type { Reminder } from '@/types/api';
 
 export default function AddReminderScreen() {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { activePetId } = useActivePet();
   const { width, height } = useWindowDimensions();
@@ -163,9 +165,9 @@ export default function AddReminderScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
 });

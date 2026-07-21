@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TextInput } from 'react-native';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 const CARD_SHADOW = {
   shadowColor: '#2D2D2A',
@@ -22,6 +23,7 @@ interface FieldCardShellProps {
 }
 
 function FieldCardShell({ cardStyle, children }: FieldCardShellProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View
       style={[
@@ -70,6 +72,8 @@ function NameFieldCard({
   cardStyle,
   autoFocus = false,
 }: Omit<NameFieldCardProps, 'label'>) {
+  const styles = useThemedStyles(makeStyles);
+  const colors = useColors();
   return (
     <FieldCardShell cardStyle={cardStyle}>
       <View style={[styles.inner, styles.nameInnerCentered]}>
@@ -80,7 +84,7 @@ function NameFieldCard({
           onFocus={onFocus}
           onBlur={onBlur}
           placeholder={focused ? undefined : placeholder}
-          placeholderTextColor={Colors.secondaryText}
+          placeholderTextColor={colors.secondaryText}
           textAlignVertical="center"
           autoFocus={autoFocus}
         />
@@ -115,6 +119,8 @@ function DescriptionFieldCard({
   onBlur,
   cardStyle,
 }: DescriptionFieldCardProps) {
+  const styles = useThemedStyles(makeStyles);
+  const colors = useColors();
   const showTopLabel = focused;
   const centerPlaceholder = !focused && !value.trim();
 
@@ -141,7 +147,7 @@ function DescriptionFieldCard({
           onFocus={onFocus}
           onBlur={onBlur}
           placeholder={showTopLabel ? undefined : label}
-          placeholderTextColor={Colors.secondaryText}
+          placeholderTextColor={colors.secondaryText}
           multiline
           textAlignVertical={centerPlaceholder ? 'center' : 'top'}
         />
@@ -189,6 +195,7 @@ export default function HealthRecordFormFields({
   onDescriptionBlur,
   layout,
 }: HealthRecordFormFieldsProps) {
+  const styles = useThemedStyles(makeStyles);
   const cardBase = {
     width: layout.cardWidth,
     borderRadius: layout.cardRadius,
@@ -221,12 +228,12 @@ export default function HealthRecordFormFields({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   wrap: {
     alignSelf: 'center',
   },
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     justifyContent: 'center',
   },
   inner: {
@@ -247,13 +254,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   input: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
     lineHeight: 24,
-    color: Colors.primaryText,
+    color: c.primaryText,
     padding: 0,
     margin: 0,
   },

@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t, currentLocale } from '@/i18n';
 import { formatHealthReminderValue } from '@/utils/calendar';
 
@@ -22,6 +23,8 @@ export default function HealthListReminderMeta({
   scale = 1,
   style,
 }: HealthListReminderMetaProps) {
+  const styles = useThemedStyles(makeStyles);
+  const colors = useColors();
   const hasReminder = Boolean(date || time);
   const value = hasReminder
     ? formatHealthReminderValue(date, time, {
@@ -47,7 +50,7 @@ export default function HealthListReminderMeta({
           marginRight: 4 * scale,
         }}
       >
-        <Ionicons name="notifications-outline" size={iconSize} color={Colors.secondaryText} />
+        <Ionicons name="notifications-outline" size={iconSize} color={colors.secondaryText} />
       </View>
       <Text
         style={[styles.value, { fontSize: 14 * scale, lineHeight: 20 * scale }]}
@@ -60,7 +63,7 @@ export default function HealthListReminderMeta({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -68,7 +71,7 @@ const styles = StyleSheet.create({
   },
   value: {
     fontFamily: 'Rubik-Regular',
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     flexShrink: 1,
   },
 });

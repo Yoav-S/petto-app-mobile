@@ -16,7 +16,8 @@ import { useRouter } from 'expo-router';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
 import { t } from '@/i18n';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import {
   PET_NAME_STEP,
 } from '@/constants/petOnboarding';
@@ -32,6 +33,8 @@ function isValidPetName(name: string): boolean {
 }
 
 export default function PetNameOnboardingScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -176,7 +179,7 @@ export default function PetNameOnboardingScreen() {
               value={name}
               onChangeText={handleNameChange}
               placeholder={t('petOnboarding.name_placeholder')}
-              placeholderTextColor={Colors.secondaryText}
+              placeholderTextColor={colors.secondaryText}
               autoFocus
               autoCapitalize="words"
               autoCorrect={false}
@@ -192,10 +195,10 @@ export default function PetNameOnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   flex: {
     flex: 1,
@@ -207,7 +210,7 @@ const styles = StyleSheet.create({
   doneBtn: {
     position: 'absolute',
     zIndex: 2,
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 14,
@@ -215,14 +218,14 @@ const styles = StyleSheet.create({
   },
   doneText: {
     fontFamily: 'Rubik-Medium',
-    color: Colors.surface,
+    color: c.surface,
   },
   doneBtnDisabled: {
     opacity: 0.4,
   },
   card: {
     alignSelf: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
   },
   copyBlock: {
@@ -243,10 +246,10 @@ const styles = StyleSheet.create({
   },
   input: {
     fontFamily: 'Rubik-Regular',
-    color: Colors.primaryText,
+    color: c.primaryText,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
+    borderColor: c.border,
+    backgroundColor: c.surface,
     paddingHorizontal: 16,
     paddingVertical: 12,
     textAlign: 'center',

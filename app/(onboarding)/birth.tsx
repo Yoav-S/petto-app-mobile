@@ -21,7 +21,8 @@ import { uploadPetPhoto } from '@/services/storage';
 import { setOnboardingComplete } from '@/services/onboarding';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_BIRTH_STEP } from '@/constants/petOnboarding';
 import { getPetOnboardingScale, scaleOffset } from '@/utils/petOnboardingScale';
 import { parseIsoDate } from '@/utils/calendar';
@@ -35,6 +36,8 @@ function formatDisplayDate(iso: string): string {
 }
 
 export default function PetBirthOnboardingScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -118,7 +121,7 @@ export default function PetBirthOnboardingScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('petOnboarding.back')}
         >
-          <Ionicons name="chevron-back" size={24 * sx} color={Colors.primaryText} />
+          <Ionicons name="chevron-back" size={24 * sx} color={colors.primaryText} />
         </Pressable>
 
         <View style={styles.headerCenter}>
@@ -219,7 +222,7 @@ export default function PetBirthOnboardingScreen() {
                   {
                     fontSize: 16 * sx,
                     lineHeight: 24 * sy,
-                    color: birthDate ? Colors.primaryText : Colors.secondaryText,
+                    color: birthDate ? colors.primaryText : colors.secondaryText,
                   },
                 ]}
               >
@@ -255,7 +258,7 @@ export default function PetBirthOnboardingScreen() {
           accessibilityRole="button"
         >
           {isSubmitting ? (
-            <ActivityIndicator color={Colors.surface} />
+            <ActivityIndicator color={colors.surface} />
           ) : (
             <Text style={[styles.continueText, { fontSize: 16 * sx, lineHeight: 24 * sy }]}>
               {t('onboarding.continue')}
@@ -274,10 +277,10 @@ export default function PetBirthOnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   flex: {
     flex: 1,
@@ -296,7 +299,7 @@ const styles = StyleSheet.create({
   },
   card: {
     alignSelf: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
   },
   copyBlock: {
@@ -317,8 +320,8 @@ const styles = StyleSheet.create({
   },
   selectBtn: {
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
+    borderColor: c.border,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -331,7 +334,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   continueBtn: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
@@ -340,7 +343,7 @@ const styles = StyleSheet.create({
   continueText: {
     fontFamily: 'Rubik-Medium',
     fontWeight: '500',
-    color: Colors.surface,
+    color: c.surface,
     textAlign: 'center',
   },
 });

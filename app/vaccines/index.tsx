@@ -15,7 +15,8 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AddFabButton, { ADD_FAB_BOTTOM, ADD_FAB_RIGHT } from '@/components/ui/AddFabButton';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import VaccineScreenHeader, { getVaccineHeaderContentOffset } from '@/components/vaccines/VaccineScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import { t } from '@/i18n';
@@ -30,18 +31,22 @@ const EMPTY_TOP = 304;
 const EMPTY_GAP = 20;
 
 function VaccineThumbnail({ uri }: { uri?: string | null }) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   if (uri) {
     return <Image source={{ uri }} style={styles.thumb} contentFit="cover" />;
   }
   return (
     <View style={[styles.thumb, styles.thumbPlaceholder]}>
-      <MaterialCommunityIcons name="needle" size={22} color={Colors.category.vaccines} />
+      <MaterialCommunityIcons name="needle" size={22} color={colors.category.vaccines} />
     </View>
   );
 }
 
 export default function VaccinesScreen() {
   const router = useRouter();
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { activePetId } = useActivePet();
   const { height } = useWindowDimensions();
   const sy = height / DESIGN_HEIGHT;
@@ -88,7 +93,7 @@ export default function VaccinesScreen() {
     if (loading) {
       return (
         <View style={styles.centered}>
-          <ActivityIndicator color={Colors.primaryText} />
+          <ActivityIndicator color={colors.primaryText} />
         </View>
       );
     }
@@ -170,10 +175,10 @@ export default function VaccinesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   centered: {
     flex: 1,
@@ -187,7 +192,7 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: Radius.lg,
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.md,
@@ -204,12 +209,12 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: Radius.sm,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   thumbPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.category.vaccinesBg,
+    backgroundColor: c.category.vaccinesBg,
   },
   cardBody: {
     flex: 1,
@@ -218,7 +223,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
     marginBottom: Spacing.sm,
   },
   datesRow: {
@@ -234,13 +239,13 @@ const styles = StyleSheet.create({
   dateLabel: {
     fontFamily: 'Rubik-Regular',
     fontSize: 13,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     marginBottom: 2,
   },
   dateValue: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   fab: {
     position: 'absolute',

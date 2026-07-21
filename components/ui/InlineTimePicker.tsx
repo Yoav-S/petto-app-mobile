@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/context/ThemeContext';
 
 export default function InlineTimePicker() {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.container}>
       <View style={styles.wheelContainer}>
@@ -39,7 +41,7 @@ export default function InlineTimePicker() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     paddingVertical: Spacing.lg,
     alignItems: 'center',
@@ -63,7 +65,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
     width: '100%',
   },
   activeRow: {
@@ -76,14 +78,14 @@ const styles = StyleSheet.create({
   activeText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 22,
-    color: Colors.primaryText,
+    color: c.primaryText,
     width: 40,
     textAlign: 'center',
   },
   colon: {
     fontFamily: 'Rubik-Medium',
     fontSize: 22,
-    color: Colors.primaryText,
+    color: c.primaryText,
     marginHorizontal: Spacing.sm,
   },
 });

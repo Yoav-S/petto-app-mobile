@@ -17,7 +17,8 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { apiGet } from '@/services/api';
@@ -46,6 +47,8 @@ function trimOrNull(value: string): string | null {
 export default function EditProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { activePetId } = useActivePet();
 
   const [loading, setLoading] = useState(true);
@@ -218,7 +221,7 @@ export default function EditProfileScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('petOnboarding.back')}
         >
-          <Ionicons name="chevron-back" size={24} color={Colors.primaryText} />
+          <Ionicons name="chevron-back" size={24} color={colors.primaryText} />
         </Pressable>
         <Text style={styles.headerTitle}>{t('profile.edit.title')}</Text>
         <View style={styles.headerBtn} />
@@ -226,7 +229,7 @@ export default function EditProfileScreen() {
 
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator color={Colors.primaryText} />
+          <ActivityIndicator color={colors.primaryText} />
         </View>
       ) : notFound ? (
         <View style={styles.centered}>
@@ -257,7 +260,7 @@ export default function EditProfileScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={t('profile.edit.change_photo')}
               >
-                <Ionicons name="pencil" size={14} color={Colors.primaryText} />
+                <Ionicons name="pencil" size={14} color={colors.primaryText} />
               </TouchableOpacity>
             </View>
 
@@ -333,7 +336,7 @@ export default function EditProfileScreen() {
               accessibilityRole="button"
             >
               {saving ? (
-                <ActivityIndicator color={Colors.surface} />
+                <ActivityIndicator color={colors.surface} />
               ) : (
                 <Text style={styles.saveText}>{t('common.save')}</Text>
               )}
@@ -371,10 +374,10 @@ export default function EditProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   flex: {
     flex: 1,
@@ -396,7 +399,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: 'Rubik-Medium',
     fontSize: 18,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   centered: {
     flex: 1,
@@ -406,7 +409,7 @@ const styles = StyleSheet.create({
   notFoundText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   content: {
     paddingHorizontal: 20,
@@ -432,7 +435,7 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 10,
     padding: 4,
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -454,14 +457,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 18,
-    color: Colors.error,
+    color: c.error,
   },
   footer: {
     paddingTop: 12,
     paddingHorizontal: 20,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.05,
@@ -471,7 +474,7 @@ const styles = StyleSheet.create({
   saveBtn: {
     height: 48,
     borderRadius: 12,
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -481,6 +484,6 @@ const styles = StyleSheet.create({
   saveText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.surface,
+    color: c.surface,
   },
 });

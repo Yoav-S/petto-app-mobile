@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/theme';
+import { useColors } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 
 interface HealthNoteIconRowProps {
@@ -17,6 +17,7 @@ export default function HealthNoteIconRow({
   onPhotoPress,
   onReminderPress,
 }: HealthNoteIconRowProps) {
+  const colors = useColors();
   return (
     <View style={[styles.row, { gap }]}>
       <TouchableOpacity
@@ -25,7 +26,7 @@ export default function HealthNoteIconRow({
         activeOpacity={0.7}
         accessibilityLabel={t('health.add_photo')}
       >
-        <Ionicons name="image-outline" size={iconSize} color={Colors.secondaryText} />
+        <Ionicons name="image-outline" size={iconSize} color={colors.secondaryText} />
       </TouchableOpacity>
       <TouchableOpacity
         onPress={onReminderPress}
@@ -33,7 +34,7 @@ export default function HealthNoteIconRow({
         activeOpacity={0.7}
         accessibilityLabel={t('health.add_reminder')}
       >
-        <Ionicons name="notifications-outline" size={iconSize} color={Colors.secondaryText} />
+        <Ionicons name="notifications-outline" size={iconSize} color={colors.secondaryText} />
       </TouchableOpacity>
     </View>
   );

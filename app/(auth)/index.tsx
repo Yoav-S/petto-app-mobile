@@ -12,7 +12,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { setTermsAccepted } from '@/services/onboarding';
 import { t } from '@/i18n';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import {
   ONBOARDING_DESIGN_WIDTH,
   ONBOARDING_COVER_TOP,
@@ -29,6 +30,8 @@ const coverImage = require('@/assets/images/onboarding-cover.png');
 
 export default function OnboardingWelcomeScreen() {
   const router = useRouter();
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const sx = width / ONBOARDING_DESIGN_WIDTH;
@@ -67,7 +70,7 @@ export default function OnboardingWelcomeScreen() {
               top: ONBOARDING_LOGO.top * sy,
               fontSize: ONBOARDING_LOGO.fontSize * sx,
               lineHeight: ONBOARDING_LOGO.lineHeight * sy,
-              color: Colors.brand,
+              color: colors.brand,
             },
           ]}
         >
@@ -162,7 +165,7 @@ export default function OnboardingWelcomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -207,7 +210,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: 'Rubik-Regular',
     fontWeight: '400',
-    color: Colors.secondaryText,
+    color: c.secondaryText,
     textAlign: 'center',
     letterSpacing: 0,
   },

@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors, Spacing, Radius } from '@/constants/theme';
+import { Spacing, Radius, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/context/ThemeContext';
 
 export default function InlineRepeatPicker() {
+  const styles = useThemedStyles(makeStyles);
   const options = [
     'Off',
     'Every day',
@@ -29,17 +31,17 @@ export default function InlineRepeatPicker() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     paddingVertical: Spacing.md,
     alignItems: 'center',
   },
   list: {
     width: '80%',
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -54,11 +56,11 @@ const styles = StyleSheet.create({
   optionText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
     marginHorizontal: Spacing.md,
   },
 });

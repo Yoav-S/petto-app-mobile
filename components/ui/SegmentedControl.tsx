@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/context/ThemeContext';
 
 interface SegmentedControlProps {
   tabs: string[];
@@ -9,6 +10,7 @@ interface SegmentedControlProps {
 }
 
 export default function SegmentedControl({ tabs, activeTab, onTabChange }: SegmentedControlProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.container}>
       {tabs.map((tab) => {
@@ -30,10 +32,10 @@ export default function SegmentedControl({ tabs, activeTab, onTabChange }: Segme
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: Colors.border, // using border color as light gray background
+    backgroundColor: c.border, // using border color as light gray background
     borderRadius: Radius.md,
     padding: 4,
     marginHorizontal: Spacing.lg,
@@ -47,7 +49,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.sm,
   },
   activeTab: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -57,9 +59,9 @@ const styles = StyleSheet.create({
   tabText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   activeTabText: {
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
 });

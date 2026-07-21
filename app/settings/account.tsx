@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
 import { deleteAccount } from '@/services/auth';
@@ -13,6 +14,7 @@ const DANGER = '#EF4444';
 
 export default function AccountSettingsScreen() {
   const { user, signOut } = useAuth();
+  const styles = useThemedStyles(makeStyles);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -76,17 +78,17 @@ export default function AccountSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
   },
   content: {
     paddingHorizontal: 20,
     paddingTop: 22,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 12,
     padding: 16,
     gap: 12,
@@ -103,17 +105,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: Colors.secondaryText,
+    color: c.secondaryText,
   },
   emailValue: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
     lineHeight: 24,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: c.border,
   },
   deleteRow: {
     minHeight: 20,

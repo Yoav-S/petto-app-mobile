@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import InlineCalendarPicker from '@/components/vaccines/InlineCalendarPicker';
 import { t } from '@/i18n';
 import { parseIsoDate, minReminderDateIso } from '@/utils/calendar';
@@ -32,6 +33,8 @@ export default function ReminderCalendarPickerSheet({
   onClose,
   onConfirm,
 }: ReminderCalendarPickerSheetProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const sx = width / DESIGN_WIDTH;
@@ -83,7 +86,7 @@ export default function ReminderCalendarPickerSheet({
             <View style={styles.headerSpacer} />
             <Text style={styles.title}>{t('reminders.field_date')}</Text>
             <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
-              <Ionicons name="close" size={20} color={Colors.primaryText} />
+              <Ionicons name="close" size={20} color={colors.primaryText} />
             </Pressable>
           </View>
 
@@ -118,14 +121,14 @@ export default function ReminderCalendarPickerSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.surface,
+    backgroundColor: c.surface,
     justifyContent: 'space-between',
   },
   header: {
@@ -138,13 +141,13 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Rubik-Medium',
     fontSize: 20,
-    color: Colors.primaryText,
+    color: c.primaryText,
   },
   closeButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -152,7 +155,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   doneButton: {
-    backgroundColor: Colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
@@ -163,6 +166,6 @@ const styles = StyleSheet.create({
   doneText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: Colors.surface,
+    color: c.surface,
   },
 });
