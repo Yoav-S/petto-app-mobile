@@ -47,7 +47,7 @@ export function mapErrorCode(
     return t('errors.invalid_token');
   }
   if (status === 403) {
-    return t('errors.email_not_verified');
+    return t('errors.generic');
   }
   if (status === 404) {
     return t('errors.not_found');

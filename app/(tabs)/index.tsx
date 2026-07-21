@@ -11,6 +11,7 @@ import { apiGet } from '@/services/api';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
+import { guardAddPet } from '@/services/subscription';
 import type { Pet, Vaccination, Reminder, MedicalRecord } from '@/types/api';
 import { enrichRecordsWithLatestNoteReminders } from '@/services/health';
 import { isIsoDateToday, normalizeToDatePart, todayIsoDate, truncateHealthDescription } from '@/utils/calendar';
@@ -237,6 +238,12 @@ export default function HomeScreen() {
     }
   };
 
+  const handleAddPet = async () => {
+    if (!(await guardAddPet(router, pets.length))) return;
+    setSwitchVisible(false);
+    router.push('/(onboarding)/name' as never);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <View style={styles.screen}>
@@ -347,6 +354,16 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               );
             })}
+            <TouchableOpacity
+              style={styles.switchRow}
+              onPress={() => {
+                void handleAddPet();
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.switchAdd}>{t('home.add_pet')}</Text>
+              <Ionicons name="add" size={20} color={colors.brand} />
+            </TouchableOpacity>
           </Pressable>
         </Pressable>
       </Modal>
@@ -433,5 +450,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
     color: c.primaryText,
+  },
+  switchAdd: {
+    fontFamily: 'Rubik-Medium',
+    fontSize: 16,
+    color: c.brand,
   },
 });

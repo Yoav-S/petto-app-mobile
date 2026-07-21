@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import auth from '@/services/firebaseAuth';
 import { syncUserWithBackend } from '@/services/auth';
+import { loginPurchases, logoutPurchases } from '@/services/purchases';
 import { registerForPushNotifications } from '@/services/notifications';
 import { clearOnboardingComplete } from '@/services/onboarding';
 import { getErrorMessage } from '@/services/errors';
@@ -107,6 +108,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSyncError(null);
     try {
       await syncUserWithBackend();
+      // Identify RevenueCat with Firebase UID (no-op if keys missing).
+      void loginPurchases(firebaseUser.uid);
       // Fire-and-forget: register push token + timezone. Never blocks login.
       void registerForPushNotifications();
     } catch (error) {
@@ -196,6 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      await logoutPurchases();
       await firebaseSignOut(auth);
       await clearOnboardingComplete();
     } catch (error) {

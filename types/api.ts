@@ -1,3 +1,12 @@
+export interface UserSubscription {
+  plan: 'free' | 'premium';
+  provider?: string | null;
+  product_id?: string | null;
+  expires_at?: string | null;
+  will_renew?: boolean;
+  updated_at?: string | null;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -7,6 +16,7 @@ export interface UserProfile {
   last_login_at?: string | null;
   // Server-driven post-login routing: true → go to app, false → onboarding.
   has_pets: boolean;
+  subscription?: UserSubscription;
 }
 
 export interface Pet {

@@ -97,7 +97,7 @@ export default function PetHeader({
     }
   }, [loading, fadeAnim]);
 
-  const canSwitch = petCount > 1;
+  const canSwitch = Boolean(pet);
 
   return (
     <View style={styles.wrapper}>

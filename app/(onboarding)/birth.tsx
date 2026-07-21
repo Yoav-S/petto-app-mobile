@@ -93,7 +93,18 @@ export default function PetBirthOnboardingScreen() {
       setActivePetId(pet.id);
       router.replace('/(tabs)' as never);
     } catch (err: unknown) {
-      Alert.alert(t('errors.load_failed'), getErrorMessage(err));
+      const message = getErrorMessage(err);
+      if (message === t('errors.premium_required_pet')) {
+        Alert.alert(t('settings.limit_pet_title'), message, [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('settings.upgrade'),
+            onPress: () => router.push('/settings/subscription' as never),
+          },
+        ]);
+      } else {
+        Alert.alert(t('errors.load_failed'), message);
+      }
     } finally {
       setIsSubmitting(false);
     }

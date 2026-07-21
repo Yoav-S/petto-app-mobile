@@ -108,7 +108,18 @@ export default function AddReminderScreen() {
       });
       router.back();
     } catch (err) {
-      Alert.alert(t('common.error'), getErrorMessage(err));
+      const message = getErrorMessage(err);
+      if (message === t('errors.premium_required_reminder')) {
+        Alert.alert(t('settings.limit_reminder_title'), message, [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('settings.upgrade'),
+            onPress: () => router.push('/settings/subscription' as never),
+          },
+        ]);
+      } else {
+        Alert.alert(t('common.error'), message);
+      }
       setSubmitting(false);
     }
   };

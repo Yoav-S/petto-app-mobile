@@ -32,7 +32,9 @@ import {
 import { repeatLabel } from '@/components/pickers/RepeatPickerSheet';
 import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDate } from '@/utils/calendar';
-import type { Reminder } from '@/types/api';
+import { guardAddReminder } from '@/services/subscription';
+import { apiGet } from '@/services/api';
+import type { Pet, Reminder } from '@/types/api';
 import type { RepeatOption } from '@/services/reminders';
 
 const TABS = ['Today', 'Upcoming', 'Recent'] as const;
@@ -187,9 +189,21 @@ export default function RemindersScreen() {
     }
   };
 
+  const goAddReminder = useCallback(async () => {
+    try {
+      const pets = await apiGet<Pet[]>('/pets');
+      if (!(await guardAddReminder(router, pets))) return;
+    } catch {
+      // If the pre-check fails, still allow navigation — server enforces.
+    }
+    router.push('/reminders/add' as never);
+  }, [router]);
+
   const addReminderAction = {
     actionTitle: t('reminders.add'),
-    onAction: () => router.push('/reminders/add' as never),
+    onAction: () => {
+      void goAddReminder();
+    },
   };
 
   const renderEmptyState = () => {
@@ -280,7 +294,9 @@ export default function RemindersScreen() {
 
       <AddFabButton
         style={styles.fab}
-        onPress={() => router.push('/reminders/add' as never)}
+        onPress={() => {
+          void goAddReminder();
+        }}
         accessibilityLabel={t('reminders.add')}
       />
 
