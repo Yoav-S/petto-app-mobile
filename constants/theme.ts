@@ -15,6 +15,8 @@ import { Platform } from 'react-native';
 export const lightColors = {
   background: '#F7F5F0',
   surface: '#FFFFFF',
+  /** Home bottom sheet / panel behind the cards — slightly off from `surface`. */
+  panel: '#F6F7F9',
   /** Peto brand green — primary actions, FAB, focused inputs */
   brand: '#004741',
   primaryText: '#1F2937',
@@ -46,6 +48,8 @@ export const lightColors = {
 export const darkColors: ThemeColors = {
   background: '#111315',
   surface: '#1C1F22',
+  // A hair darker than `surface` so the cards still lift off the panel.
+  panel: '#16181B',
   brand: '#2E9E90',
   primaryText: '#F2F4F5',
   secondaryText: '#9BA1A6',

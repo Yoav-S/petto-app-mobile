@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
+import { LocaleProvider, useLocale } from '@/context/LocaleContext';
 import { PetStoreProvider } from '@/store/petStore';
 import { PetOnboardingDraftProvider } from '@/store/petOnboardingDraft';
 
@@ -65,6 +66,7 @@ function RootLayoutNav() {
 
 function ThemedApp() {
   const { isDark, colors } = useTheme();
+  const { locale } = useLocale();
 
   const navTheme = isDark
     ? { ...DarkTheme, colors: { ...DarkTheme.colors, background: colors.background } }
@@ -72,7 +74,8 @@ function ThemedApp() {
 
   return (
     <NavThemeProvider value={navTheme}>
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Re-key on locale so every `t()` call re-evaluates when the language changes. */}
+      <View key={locale} style={{ flex: 1, backgroundColor: colors.background }}>
         <RootLayoutNav />
       </View>
       <StatusBar style={isDark ? 'light' : 'dark'} />
@@ -83,13 +86,15 @@ function ThemedApp() {
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <PetStoreProvider>
-          <PetOnboardingDraftProvider>
-            <ThemedApp />
-          </PetOnboardingDraftProvider>
-        </PetStoreProvider>
-      </AuthProvider>
+      <LocaleProvider>
+        <AuthProvider>
+          <PetStoreProvider>
+            <PetOnboardingDraftProvider>
+              <ThemedApp />
+            </PetOnboardingDraftProvider>
+          </PetStoreProvider>
+        </AuthProvider>
+      </LocaleProvider>
     </ThemeProvider>
   );
 }

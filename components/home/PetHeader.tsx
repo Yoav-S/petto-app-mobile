@@ -21,7 +21,6 @@ export const DESIGN_COVER_HEIGHT = 340;
 export const DESIGN_PANEL_TOP = 316;
 export const DESIGN_PANEL_HEIGHT = 496;
 export const DESIGN_PANEL_RADIUS = 24;
-export const PANEL_BACKGROUND = '#F6F7F9';
 
 interface PetHeaderProps {
   pet: {
@@ -215,7 +214,7 @@ export default function PetHeader({
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: PANEL_BACKGROUND,
+    backgroundColor: c.panel,
   },
   cover: {
     width: '100%',
@@ -282,12 +281,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     overflow: 'visible',
   },
   panelHeaderClip: {
-    backgroundColor: PANEL_BACKGROUND,
+    backgroundColor: c.panel,
     paddingTop: Spacing.xl,
     overflow: 'hidden',
   },
   panelBody: {
-    backgroundColor: PANEL_BACKGROUND,
+    backgroundColor: c.panel,
     paddingBottom: Spacing.lg,
     overflow: 'visible',
     flex: 1,

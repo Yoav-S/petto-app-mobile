@@ -20,23 +20,25 @@ export default function ThemeSettingsScreen() {
       <View style={styles.content}>
         <View style={styles.card}>
           <View style={styles.inner}>
-            {OPTIONS.map((option) => {
+            {OPTIONS.map((option, index) => {
               const selected = mode === option;
               return (
-                <Pressable
-                  key={option}
-                  style={styles.row}
-                  onPress={() => setMode(option)}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected }}
-                >
-                  <Text style={styles.rowLabel}>{t(`settings.theme_${option}`)}</Text>
-                  <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
-                    {selected && (
-                      <Ionicons name="checkmark" size={16} color={colors.button.primaryText} />
-                    )}
-                  </View>
-                </Pressable>
+                <React.Fragment key={option}>
+                  <Pressable
+                    style={styles.row}
+                    onPress={() => setMode(option)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                  >
+                    <Text style={styles.rowLabel}>{t(`settings.theme_${option}`)}</Text>
+                    <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
+                      {selected && (
+                        <Ionicons name="checkmark" size={16} color={colors.button.primaryText} />
+                      )}
+                    </View>
+                  </Pressable>
+                  {index < OPTIONS.length - 1 ? <View style={styles.divider} /> : null}
+                </React.Fragment>
               );
             })}
           </View>
@@ -84,14 +86,19 @@ const makeStyles = (c: ThemeColors) =>
     checkbox: {
       width: 24,
       height: 24,
-      borderRadius: 6,
+      borderRadius: 999,
       borderWidth: 2,
       borderColor: c.border,
       alignItems: 'center',
       justifyContent: 'center',
+      overflow: 'hidden',
     },
     checkboxChecked: {
       backgroundColor: c.brand,
       borderColor: c.brand,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: c.border,
     },
   });

@@ -15,7 +15,7 @@ import type { Pet, Vaccination, Reminder, MedicalRecord } from '@/types/api';
 import { enrichRecordsWithLatestNoteReminders } from '@/services/health';
 import { isIsoDateToday, normalizeToDatePart, todayIsoDate, truncateHealthDescription } from '@/utils/calendar';
 
-import PetHeader, { PANEL_BACKGROUND } from '@/components/home/PetHeader';
+import PetHeader from '@/components/home/PetHeader';
 import VaccinesCard from '@/components/home/VaccinesCard';
 import RemindersCard from '@/components/home/RemindersCard';
 import HealthCard from '@/components/home/HealthCard';
@@ -357,7 +357,7 @@ export default function HomeScreen() {
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: PANEL_BACKGROUND,
+    backgroundColor: c.panel,
   },
   screen: {
     flex: 1,
