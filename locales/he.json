@@ -151,6 +151,9 @@
   },
   "reminders": {
     "title": "תזכורות",
+    "tab_today": "היום",
+    "tab_upcoming": "הקרובות",
+    "tab_recent": "אחרונות",
     "add": "הוסף תזכורת",
     "add_title": "הוסף תזכורת",
     "edit_title": "ערוך תזכורת",
@@ -209,6 +212,8 @@
   },
   "health": {
     "title": "בריאות",
+    "tab_active": "פעילים",
+    "tab_resolved": "נפתרו",
     "add_health": "הוסף בריאות",
     "add_note": "הוסף פתק",
     "edit_note": "ערוך פתק",

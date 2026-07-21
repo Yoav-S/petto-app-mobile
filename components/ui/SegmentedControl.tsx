@@ -7,9 +7,16 @@ interface SegmentedControlProps {
   tabs: string[];
   activeTab: string;
   onTabChange: (tab: string) => void;
+  /** Maps a tab value to its display label (e.g. for translations). */
+  getLabel?: (tab: string) => string;
 }
 
-export default function SegmentedControl({ tabs, activeTab, onTabChange }: SegmentedControlProps) {
+export default function SegmentedControl({
+  tabs,
+  activeTab,
+  onTabChange,
+  getLabel,
+}: SegmentedControlProps) {
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.container}>
@@ -23,7 +30,7 @@ export default function SegmentedControl({ tabs, activeTab, onTabChange }: Segme
             activeOpacity={0.7}
           >
             <Text style={[styles.tabText, isActive && styles.activeTabText]}>
-              {tab}
+              {getLabel ? getLabel(tab) : tab}
             </Text>
           </TouchableOpacity>
         );

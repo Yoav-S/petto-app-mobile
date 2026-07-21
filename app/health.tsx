@@ -200,6 +200,7 @@ export default function HealthScreen() {
         tabs={[...TABS]}
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab as TabName)}
+        getLabel={(tab) => t(`health.tab_${tab.toLowerCase()}`)}
       />
 
       {loading ? (

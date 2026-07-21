@@ -151,6 +151,9 @@
   },
   "reminders": {
     "title": "Memento-uri",
+    "tab_today": "Astăzi",
+    "tab_upcoming": "Următoare",
+    "tab_recent": "Recente",
     "add": "Adaugă memento",
     "add_title": "Adaugă memento",
     "edit_title": "Editează memento",
@@ -209,6 +212,8 @@
   },
   "health": {
     "title": "Sănătate",
+    "tab_active": "Active",
+    "tab_resolved": "Rezolvate",
     "add_health": "Adaugă sănătate",
     "add_note": "Adaugă notă",
     "edit_note": "Editează nota",

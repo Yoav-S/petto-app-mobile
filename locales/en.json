@@ -151,6 +151,9 @@
   },
   "reminders": {
     "title": "Reminders",
+    "tab_today": "Today",
+    "tab_upcoming": "Upcoming",
+    "tab_recent": "Recent",
     "add": "Add reminder",
     "add_title": "Add reminder",
     "edit_title": "Edit reminder",
@@ -209,6 +212,8 @@
   },
   "health": {
     "title": "Health",
+    "tab_active": "Active",
+    "tab_resolved": "Resolved",
     "add_health": "Add health",
     "add_note": "Add note",
     "edit_note": "Edit note",

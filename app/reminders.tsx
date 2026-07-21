@@ -237,6 +237,7 @@ export default function RemindersScreen() {
         tabs={[...TABS]}
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab as TabName)}
+        getLabel={(tab) => t(`reminders.tab_${tab.toLowerCase()}`)}
       />
 
       {loading ? (
