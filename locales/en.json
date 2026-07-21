@@ -108,7 +108,18 @@
     "theme_dark": "Dark",
     "theme_system": "System",
     "support_title": "Support",
-    "contact_support": "Contact support"
+    "contact_support": "Contact support",
+    "last_updated": "Last updated"
+  },
+  "legal": {
+    "privacy_intro": "Petto (\u201cwe\u201d, \u201cour\u201d, or \u201cus\u201d) respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, and protect information when you use the Petto mobile application.",
+    "privacy_section1_title": "Information We Collect",
+    "privacy_section1_body": "When using Petto, we may collect the following information:\nAccount Information\nEmail address\nAuthentication information\nPet Information\nPet names\nBreed, age, weight, sex, and other profile details\nVaccination records\nHealth information and notes\nReminder data\nUploaded photos and documents\nUsage Information\nApp activity and interactions\nDevice information\nCrash reports and diagnostics\nNotification preferences",
+    "terms_intro": "Welcome to Petto. These Terms of Service (\u201cTerms\u201d) govern your use of the Petto mobile application and related services (\u201cService\u201d).\nBy using Petto, you agree to these Terms.",
+    "terms_section1_title": "Use of the Service",
+    "terms_section1_body": "You may use Petto only for lawful personal purposes related to caring for your pets.\nYou agree not to:\nMisuse the Service or interfere with its normal operation\nAttempt to access accounts or data that do not belong to you\nCopy, modify, or reverse engineer any part of the app\nUse the Service in a way that violates applicable laws or third-party rights\nWe may update, suspend, or change features of the Service at any time.\nContinued use of Petto after changes means you accept the updated Terms.",
+    "terms_section2_title": "Accounts",
+    "terms_section2_body": "To use certain features, you may need to create an account.\nYou are responsible for:\nMaintaining the security of your account\nKeeping your login credentials confidential\nAll activity that occurs under your account\nYou agree to provide accurate information when creating and managing your account."
   },
   "pickers": {
     "time_title": "Choose time",

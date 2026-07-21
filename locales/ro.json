@@ -108,7 +108,18 @@
     "theme_dark": "Întunecat",
     "theme_system": "Sistem",
     "support_title": "Asistență",
-    "contact_support": "Contactează asistența"
+    "contact_support": "Contactează asistența",
+    "last_updated": "Ultima actualizare"
+  },
+  "legal": {
+    "privacy_intro": "Petto (\u201enoi\u201d, \u201eal nostru\u201d) îți respectă confidențialitatea și se angajează să îți protejeze informațiile personale. Această Politică de confidențialitate explică modul în care colectăm, folosim și protejăm informațiile atunci când folosești aplicația mobilă Petto.",
+    "privacy_section1_title": "Informațiile pe care le colectăm",
+    "privacy_section1_body": "Când folosești Petto, este posibil să colectăm următoarele informații:\nInformații despre cont\nAdresă de e-mail\nInformații de autentificare\nInformații despre animal\nNumele animalelor\nRasă, vârstă, greutate, sex și alte detalii de profil\nÎnregistrări de vaccinare\nInformații și note de sănătate\nDate despre memento-uri\nFotografii și documente încărcate\nInformații de utilizare\nActivitate și interacțiuni în aplicație\nInformații despre dispozitiv\nRapoarte de eroare și diagnosticare\nPreferințe de notificare",
+    "terms_intro": "Bine ai venit la Petto. Acești Termeni și condiții (\u201eTermeni\u201d) reglementează utilizarea aplicației mobile Petto și a serviciilor conexe (\u201eServiciul\u201d).\nFolosind Petto, ești de acord cu acești Termeni.",
+    "terms_section1_title": "Utilizarea serviciului",
+    "terms_section1_body": "Poți folosi Petto doar în scopuri personale legale legate de îngrijirea animalelor tale.\nEști de acord să nu:\nFolosești abuziv Serviciul sau să îi interferi cu funcționarea normală\nÎncerci să accesezi conturi sau date care nu îți aparțin\nCopiezi, modifici sau faci inginerie inversă a oricărei părți din aplicație\nFolosești Serviciul într-un mod care încalcă legile aplicabile sau drepturile terților\nPutem actualiza, suspenda sau modifica funcțiile Serviciului în orice moment.\nContinuarea utilizării Petto după modificări înseamnă că accepți Termenii actualizați.",
+    "terms_section2_title": "Conturi",
+    "terms_section2_body": "Pentru a folosi anumite funcții, este posibil să fie nevoie să creezi un cont.\nEști responsabil pentru:\nMenținerea securității contului tău\nPăstrarea confidențialității datelor tale de autentificare\nToate activitățile care au loc în contul tău\nEști de acord să furnizezi informații corecte la crearea și gestionarea contului tău."
   },
   "pickers": {
     "time_title": "Alege ora",
