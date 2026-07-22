@@ -12,10 +12,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
-const BRAND = '#004741';
-const PILL_UNSELECTED_BG = '#F3F4F6';
-const LABEL_COLOR = '#6B7280';
-
 const CARD_SHADOW = {
   shadowColor: '#2D2D2A',
   shadowOffset: { width: 0, height: 4 },
@@ -199,7 +195,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: LABEL_COLOR,
+    color: c.secondaryText,
   },
   nameInput: {
     fontFamily: 'Rubik-Medium',
@@ -254,7 +250,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   pillSelected: {
-    backgroundColor: BRAND,
+    backgroundColor: c.brand,
     shadowColor: '#1E1E1E',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.04,
@@ -262,7 +258,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     elevation: 2,
   },
   pillUnselected: {
-    backgroundColor: PILL_UNSELECTED_BG,
+    backgroundColor: c.track,
   },
   pillText: {
     fontFamily: 'Rubik-Medium',
@@ -270,7 +266,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     lineHeight: 18,
   },
   pillTextSelected: {
-    color: '#FFFFFF',
+    color: c.button.primaryText,
   },
   pillTextUnselected: {
     color: c.primaryText,
