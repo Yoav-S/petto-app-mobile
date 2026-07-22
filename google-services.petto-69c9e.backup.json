@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "780176600503",
+    "project_id": "petto-69c9e",
+    "storage_bucket": "petto-69c9e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:780176600503:android:9d3aabe1950d3bcf408c32",
+        "android_client_info": {
+          "package_name": "com.yoavshamir.petto"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "780176600503-7biagt7j6ubglsjhnfn1svjsreaka184.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfKFjNDHeiXAMwjevdh0tpWeYW3YDbYmE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "780176600503-7biagt7j6ubglsjhnfn1svjsreaka184.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "780176600503-a3moveietuf2p28p5r1enhp7gn3qlu5a.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.yoavshamir.petto"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

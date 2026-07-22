@@ -44,8 +44,8 @@ The LLM must respect these app identifiers:
 
 - App name: Petto
 - Slug: petto
-- Android package: com.yoavshamir.petto
-- iOS bundleIdentifier: com.yoavshamir.petto
+- Android package: com.yoav.petto
+- iOS bundleIdentifier: com.yoav.petto
 
 ### Windows / Expo Development Constraints (STRICT)
 

@@ -1,7 +1,10 @@
 {
   "home": {
     "switch": "החלף",
+    "switch_title": "החלף חיה",
     "add_pet": "הוסף חיה",
+    "view_all_pets": "כל החיות",
+    "pets_title": "חיות",
     "settings": "הגדרות",
     "noPet": "אין חיה עדיין",
     "addFirstPet": "הוסף את החיה הראשונה שלך כדי להתחיל",

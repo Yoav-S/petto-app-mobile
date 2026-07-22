@@ -117,9 +117,34 @@ export async function loginPurchases(firebaseUid: string): Promise<void> {
   try {
     await Purchases.logIn(firebaseUid);
     console.log(`${LOG} logged in appUserId=${firebaseUid}`);
+    await syncFirebaseAnalyticsInstanceId();
     await logSubscriptionReadiness(firebaseUid);
   } catch (error) {
     console.warn(`${LOG} logIn failed:`, error);
+  }
+}
+
+/**
+ * Links this device to GA4 so RevenueCat can send purchase events to Firebase Analytics.
+ * Requires a native build with @react-native-firebase/analytics (no-op in Expo Go).
+ */
+async function syncFirebaseAnalyticsInstanceId(): Promise<void> {
+  try {
+    // Dynamic import so Expo Go / web don't crash if native module is missing.
+    const analyticsModule = await import('@react-native-firebase/analytics');
+    const analytics = analyticsModule.default;
+    const instanceId = await analytics().getAppInstanceId();
+    if (!instanceId) {
+      console.warn(`${LOG} Firebase Analytics appInstanceId is null`);
+      return;
+    }
+    await Purchases.setFirebaseAppInstanceID(instanceId);
+    console.log(`${LOG} set Firebase Analytics appInstanceId for RC → GA`);
+  } catch (error) {
+    console.log(
+      `${LOG} skipped Firebase Analytics instance id (need native/dev build):`,
+      error instanceof Error ? error.message : error,
+    );
   }
 }
 

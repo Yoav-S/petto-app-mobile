@@ -1,7 +1,10 @@
 {
   "home": {
     "switch": "Schimbă",
+    "switch_title": "Schimbă animalul",
     "add_pet": "Adaugă animal",
+    "view_all_pets": "Vezi toate animalele",
+    "pets_title": "Animale",
     "settings": "Setări",
     "noPet": "Niciun animal încă",
     "addFirstPet": "Adaugă primul animal pentru a începe",

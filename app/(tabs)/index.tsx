@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Modal, Pressable } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import { useActivePet } from '@/store/petStore';
 import { Spacing, type ThemeColors } from '@/constants/theme';
-import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useThemedStyles } from '@/context/ThemeContext';
 import { apiGet } from '@/services/api';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
@@ -23,6 +22,7 @@ import HealthCard from '@/components/home/HealthCard';
 import HealthReminderLine from '@/components/health/HealthReminderLine';
 import FABMenu from '@/components/home/FABMenu';
 import PetProfilePanel from '@/components/home/PetProfilePanel';
+import PetSwitcherSheet from '@/components/home/PetSwitcherSheet';
 
 function reminderToScheduledAt(reminder: Reminder): string {
   return `${reminder.date}T${reminder.time}:00`;
@@ -110,7 +110,6 @@ function pickLatestHealthRecord(records: MedicalRecord[]): MedicalRecord | null 
 }
 
 export default function HomeScreen() {
-  const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { user, isLoading: authLoading, syncError, retryBackendSync, isSyncing, signOut } = useAuth();
@@ -244,6 +243,11 @@ export default function HomeScreen() {
     router.push('/(onboarding)/name' as never);
   };
 
+  const handleViewAllPets = () => {
+    setSwitchVisible(false);
+    router.push('/pets' as never);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <View style={styles.screen}>
@@ -329,44 +333,19 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <Modal
+      <PetSwitcherSheet
         visible={switchVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSwitchVisible(false)}
-      >
-        <Pressable style={styles.switchOverlay} onPress={() => setSwitchVisible(false)}>
-          <Pressable style={styles.switchSheet} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.switchTitle}>{t('home.switch')}</Text>
-            {pets.map((p) => {
-              const isActive = p.id === activePetId;
-              return (
-                <TouchableOpacity
-                  key={p.id}
-                  style={styles.switchRow}
-                  onPress={() => handleSelectPet(p.id)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.switchName}>{p.name}</Text>
-                  {isActive ? (
-                    <Ionicons name="checkmark" size={20} color={colors.primaryText} />
-                  ) : null}
-                </TouchableOpacity>
-              );
-            })}
-            <TouchableOpacity
-              style={styles.switchRow}
-              onPress={() => {
-                void handleAddPet();
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.switchAdd}>{t('home.add_pet')}</Text>
-              <Ionicons name="add" size={20} color={colors.brand} />
-            </TouchableOpacity>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        pets={pets}
+        activePetId={activePetId}
+        onClose={() => setSwitchVisible(false)}
+        onSelectPet={(petId) => {
+          void handleSelectPet(petId);
+        }}
+        onAddPet={() => {
+          void handleAddPet();
+        }}
+        onViewAll={handleViewAllPets}
+      />
     </SafeAreaView>
   );
 }
@@ -420,40 +399,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     position: 'relative',
     overflow: 'visible',
     zIndex: 50,
-  },
-  switchOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.xl,
-  },
-  switchSheet: {
-    backgroundColor: c.surface,
-    borderRadius: 16,
-    padding: Spacing.lg,
-  },
-  switchTitle: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 18,
-    color: c.primaryText,
-    marginBottom: Spacing.sm,
-  },
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: c.border,
-  },
-  switchName: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    color: c.primaryText,
-  },
-  switchAdd: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: c.brand,
   },
 });
