@@ -10,6 +10,7 @@ import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { LocaleProvider, useLocale } from '@/context/LocaleContext';
 import { PetStoreProvider } from '@/store/petStore';
 import { PetOnboardingDraftProvider } from '@/store/petOnboardingDraft';
+import { useReminderNotificationRouting } from '@/hooks/useReminderNotificationRouting';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -19,6 +20,8 @@ function RootLayoutNav() {
   const { user, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+
+  useReminderNotificationRouting(Boolean(user?.emailVerified));
 
   useEffect(() => {
     if (isLoading) return;

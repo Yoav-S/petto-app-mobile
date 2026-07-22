@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AddFabButton, { ADD_FAB_BOTTOM, ADD_FAB_RIGHT } from '@/components/ui/AddFabButton';
@@ -19,10 +18,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import ReminderListItem from '@/components/reminders/ReminderListItem';
 import ReminderActionSheet from '@/components/reminders/ReminderActionSheet';
 import Snackbar from '@/components/ui/Snackbar';
-import {
-  needsStatusPrompt,
-  statusPromptKey,
-} from '@/components/reminders/reminderFormShared';
+import { needsStatusPrompt } from '@/components/reminders/reminderFormShared';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import {
@@ -31,7 +27,11 @@ import {
 } from '@/services/reminders';
 import { repeatLabel } from '@/components/pickers/RepeatPickerSheet';
 import { getErrorMessage } from '@/services/errors';
-import { formatDisplayDate } from '@/utils/calendar';
+import {
+  addDaysToIsoDate,
+  formatDisplayDate,
+  todayIsoDate,
+} from '@/utils/calendar';
 import { guardAddReminder } from '@/services/subscription';
 import { apiGet } from '@/services/api';
 import type { Pet, Reminder } from '@/types/api';
@@ -61,12 +61,39 @@ function reminderTimeOrDate(item: Reminder, tab: TabName): string {
   return `${formatDisplayDate(item.date)}\n${item.time}`;
 }
 
+function reminderDateLabel(date: string): string {
+  const today = todayIsoDate();
+  if (date === today) return t('common.today');
+  if (date === addDaysToIsoDate(today, -1)) return t('common.yesterday');
+  return formatDisplayDate(date);
+}
+
+function sortPromptQueue(items: Reminder[], focusId?: string | null): Reminder[] {
+  const unique = new Map<string, Reminder>();
+  for (const item of items) {
+    if (needsStatusPrompt(item)) unique.set(item.id, item);
+  }
+  const list = Array.from(unique.values()).sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return a.time.localeCompare(b.time);
+  });
+  if (!focusId) return list;
+  const idx = list.findIndex((r) => r.id === focusId);
+  if (idx <= 0) return list;
+  const [focused] = list.splice(idx, 1);
+  return [focused, ...list];
+}
+
 export default function RemindersScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { activePetId } = useActivePet();
-  const { deletedId } = useLocalSearchParams();
+  const params = useLocalSearchParams<{
+    deletedId?: string;
+    prompt?: string;
+    focusId?: string;
+  }>();
 
   const [activeTab, setActiveTab] = useState<TabName>('Today');
   const [listsByTab, setListsByTab] = useState<Record<TabName, Reminder[]>>(EMPTY_LISTS);
@@ -75,11 +102,16 @@ export default function RemindersScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [actionSheetVisible, setActionSheetVisible] = useState(false);
-  const [selectedReminder, setSelectedReminder] = useState<Reminder | null>(null);
+  const [promptQueue, setPromptQueue] = useState<Reminder[]>([]);
+  const [promptTotal, setPromptTotal] = useState(0);
+  const sessionSkipRef = useRef(false);
   const autoPromptCheckedRef = useRef(false);
 
   const items = listsByTab[activeTab];
+  const selectedReminder = promptQueue[0] ?? null;
+  const actionSheetVisible = selectedReminder != null;
+  const promptPosition =
+    promptTotal > 1 ? promptTotal - promptQueue.length + 1 : undefined;
 
   const tabPresence = useMemo(
     () => ({
@@ -93,14 +125,14 @@ export default function RemindersScreen() {
   const hasAnyReminders = tabPresence.today || tabPresence.upcoming || tabPresence.recent;
 
   React.useEffect(() => {
-    if (deletedId) setSnackbarVisible(true);
-  }, [deletedId]);
+    if (params.deletedId) setSnackbarVisible(true);
+  }, [params.deletedId]);
 
   const fetchData = useCallback(async () => {
     if (!activePetId) {
       setListsByTab(EMPTY_LISTS);
       setLoading(false);
-      return;
+      return { today: [] as Reminder[], recent: [] as Reminder[] };
     }
     try {
       setError(null);
@@ -110,43 +142,46 @@ export default function RemindersScreen() {
         listReminders(activePetId, 'recent'),
       ]);
       setListsByTab({ Today: today, Upcoming: upcoming, Recent: recent });
-      return today;
+      return { today, recent };
     } catch (err) {
       setError(getErrorMessage(err));
-      return [];
+      return { today: [] as Reminder[], recent: [] as Reminder[] };
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [activePetId]);
 
-  const maybeAutoPromptStatus = useCallback(async (today: Reminder[]) => {
-    if (autoPromptCheckedRef.current) return;
-    autoPromptCheckedRef.current = true;
+  const openPromptQueue = useCallback(
+    (today: Reminder[], recent: Reminder[], focusId?: string | null, force = false) => {
+      if (force) sessionSkipRef.current = false;
+      if (sessionSkipRef.current && !force) return;
+      const queue = sortPromptQueue([...today, ...recent], focusId);
+      setPromptQueue(queue);
+      setPromptTotal(queue.length);
+      if (queue.length) setActiveTab('Today');
+    },
+    [],
+  );
 
-    for (const item of today) {
-      if (!needsStatusPrompt(item)) continue;
-      const key = statusPromptKey(item);
-      const seen = await AsyncStorage.getItem(key);
-      if (!seen) {
-        setSelectedReminder(item);
-        setActionSheetVisible(true);
-        break;
+  const maybeAutoPromptStatus = useCallback(
+    (today: Reminder[], recent: Reminder[]) => {
+      const force = params.prompt === '1' || Boolean(params.focusId);
+      if (!force) {
+        if (autoPromptCheckedRef.current) return;
+        autoPromptCheckedRef.current = true;
       }
-    }
-  }, []);
-
-  const markStatusPrompted = useCallback(async (reminder: Reminder | null) => {
-    if (!reminder || !needsStatusPrompt(reminder)) return;
-    await AsyncStorage.setItem(statusPromptKey(reminder), '1');
-  }, []);
+      openPromptQueue(today, recent, params.focusId, force);
+    },
+    [openPromptQueue, params.focusId, params.prompt],
+  );
 
   useFocusEffect(
     useCallback(() => {
       autoPromptCheckedRef.current = false;
       setLoading(true);
-      fetchData().then((today) => {
-        if (today?.length) maybeAutoPromptStatus(today);
+      fetchData().then(({ today, recent }) => {
+        maybeAutoPromptStatus(today, recent);
       });
     }, [fetchData, maybeAutoPromptStatus]),
   );
@@ -157,8 +192,22 @@ export default function RemindersScreen() {
   }, [fetchData]);
 
   const closeActionSheet = useCallback(() => {
-    setActionSheetVisible(false);
-    setSelectedReminder(null);
+    // X dismisses the rest of the queue for this session; next cold open / force
+    // (notification tap) will show unanswered items again.
+    sessionSkipRef.current = true;
+    setPromptQueue([]);
+    setPromptTotal(0);
+    if (params.prompt || params.focusId) {
+      router.setParams({ prompt: undefined, focusId: undefined } as never);
+    }
+  }, [params.focusId, params.prompt, router]);
+
+  const advanceOrCloseQueue = useCallback(() => {
+    setPromptQueue((prev) => {
+      const next = prev.slice(1);
+      if (next.length === 0) setPromptTotal(0);
+      return next;
+    });
   }, []);
 
   const handleReminderPress = useCallback(
@@ -168,21 +217,19 @@ export default function RemindersScreen() {
         return;
       }
       if (activeTab === 'Today') {
-        setSelectedReminder(item);
-        setActionSheetVisible(true);
+        sessionSkipRef.current = false;
+        openPromptQueue([item], [], item.id, true);
       }
     },
-    [activeTab, router],
+    [activeTab, openPromptQueue, router],
   );
 
   const handleStatus = async (status: 'completed' | 'missed') => {
     if (!activePetId || !selectedReminder) return;
     const reminder = selectedReminder;
-    setActionSheetVisible(false);
-    setSelectedReminder(null);
     try {
       await updateReminderStatus(activePetId, reminder.id, status);
-      await markStatusPrompted(reminder);
+      advanceOrCloseQueue();
       fetchData();
     } catch {
       /* keep list as-is; a transient error shouldn't block the UI */
@@ -311,35 +358,38 @@ export default function RemindersScreen() {
         title={selectedReminder?.title}
         subtitle={selectedReminder ? reminderSubtitle(selectedReminder) : undefined}
         time={selectedReminder?.time}
-        context={activeTab === 'Today' ? t('common.today') : undefined}
-        showDetailsLink={false}
-        onClose={async () => {
-          await markStatusPrompted(selectedReminder);
-          closeActionSheet();
+        dateLabel={selectedReminder ? reminderDateLabel(selectedReminder.date) : undefined}
+        currentIndex={promptPosition}
+        totalCount={promptTotal > 1 ? promptTotal : undefined}
+        onClose={closeActionSheet}
+        onDone={() => {
+          void handleStatus('completed');
         }}
-        onDone={() => handleStatus('completed')}
-        onMissed={() => handleStatus('missed')}
+        onMissed={() => {
+          void handleStatus('missed');
+        }}
       />
     </SafeAreaView>
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: c.background,
-  },
-  centered: {
-    flex: 1,
-  },
-  listContent: {
-    paddingBottom: 120,
-    flexGrow: 1,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: ADD_FAB_BOTTOM,
-    right: ADD_FAB_RIGHT,
-    zIndex: 20,
-  },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    centered: {
+      flex: 1,
+    },
+    listContent: {
+      paddingBottom: 120,
+      flexGrow: 1,
+    },
+    fab: {
+      position: 'absolute',
+      bottom: ADD_FAB_BOTTOM,
+      right: ADD_FAB_RIGHT,
+      zIndex: 20,
+    },
+  });

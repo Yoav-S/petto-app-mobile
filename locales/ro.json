@@ -40,6 +40,7 @@
   },
   "common": {
     "today": "Astăzi",
+    "yesterday": "Ieri",
     "loading": "Se încarcă...",
     "error": "Ceva n-a mers bine",
     "retry": "Reîncearcă",
@@ -204,6 +205,7 @@
     "action_sheet_title": "Memento",
     "mark_done": "Gata",
     "mark_missed": "Ratat",
+    "show_more": "Arată mai mult",
     "details_title": "Memento",
     "deleted": "Memento șters",
     "back": "Înapoi la memento-uri",

@@ -40,6 +40,7 @@
   },
   "common": {
     "today": "היום",
+    "yesterday": "אתמול",
     "loading": "טוען...",
     "error": "משהו השתבש",
     "retry": "נסה שוב",
@@ -204,6 +205,7 @@
     "action_sheet_title": "תזכורת",
     "mark_done": "בוצע",
     "mark_missed": "הוחמץ",
+    "show_more": "הצג עוד",
     "details_title": "תזכורת",
     "deleted": "התזכורת נמחקה",
     "back": "חזרה לתזכורות",

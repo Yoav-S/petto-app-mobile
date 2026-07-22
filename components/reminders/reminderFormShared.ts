@@ -54,9 +54,17 @@ export function isBeforeMinReminderDate(nextDate: string): boolean {
 }
 
 export function needsStatusPrompt(reminder: Reminder): boolean {
-  return reminder.status === 'today' && Boolean(reminder.notified_at);
+  // After a push fires we keep `notified_at` until Done/Missed. Prompt for
+  // today's items and auto-missed leftovers that were still never answered.
+  if (!reminder.notified_at) return false;
+  return reminder.status === 'today' || reminder.status === 'missed';
 }
 
-export function statusPromptKey(reminder: Reminder): string {
-  return `prompted:${reminder.id}:${reminder.notified_at ?? ''}`;
+/** Compact clock for the action sheet (matches design "8:00"). */
+export function formatSheetClockTime(time: string): string {
+  const normalized = normalizeTime(time);
+  const [h, m] = normalized.split(':');
+  if (!h || !m) return time;
+  return `${Number(h)}:${m}`;
 }
+

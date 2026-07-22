@@ -11,6 +11,12 @@ export interface NotificationPrefs {
   email_updates: boolean;
 }
 
+export interface ReminderPushData {
+  type: 'reminder';
+  reminderId?: string;
+  petId?: string;
+}
+
 export async function getNotificationPrefs(): Promise<NotificationPrefs> {
   return apiGet<NotificationPrefs>('/notifications/preferences');
 }
@@ -27,6 +33,7 @@ export async function updateNotificationPrefs(
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 let handlerConfigured = false;
+let handledColdStartResponseId: string | null = null;
 
 function getDeviceTimezone(): string {
   try {
@@ -44,11 +51,18 @@ function getProjectId(): string | undefined {
   );
 }
 
-async function resolvePushToken(): Promise<string | null> {
-  // Lazy import so expo-notifications never loads (and never errors) in Expo Go.
-  const Notifications = await import('expo-notifications');
-  const Device = await import('expo-device');
+export function parseReminderPushData(data: unknown): ReminderPushData | null {
+  if (!data || typeof data !== 'object') return null;
+  const raw = data as Record<string, unknown>;
+  const reminderId = typeof raw.reminderId === 'string' ? raw.reminderId : undefined;
+  const petId = typeof raw.petId === 'string' ? raw.petId : undefined;
+  if (!reminderId && !petId) return null;
+  return { type: 'reminder', reminderId, petId };
+}
 
+async function ensureNotificationHandler(): Promise<typeof import('expo-notifications') | null> {
+  if (isExpoGo) return null;
+  const Notifications = await import('expo-notifications');
   if (!handlerConfigured) {
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
@@ -60,6 +74,13 @@ async function resolvePushToken(): Promise<string | null> {
     });
     handlerConfigured = true;
   }
+  return Notifications;
+}
+
+async function resolvePushToken(): Promise<string | null> {
+  const Notifications = await ensureNotificationHandler();
+  if (!Notifications) return null;
+  const Device = await import('expo-device');
 
   if (!Device.isDevice) return null;
 
@@ -115,4 +136,42 @@ export async function registerForPushNotifications(): Promise<void> {
   } catch (err) {
     if (__DEV__) console.log('[push] register failed:', err);
   }
+}
+
+/**
+ * Subscribe to notification taps (and consume a cold-start tap once).
+ * Returns an unsubscribe function.
+ */
+export async function subscribeToReminderNotificationResponses(
+  onOpen: (data: ReminderPushData) => void,
+): Promise<() => void> {
+  const Notifications = await ensureNotificationHandler();
+  if (!Notifications) return () => {};
+
+  const deliver = (data: unknown) => {
+    const parsed = parseReminderPushData(data);
+    if (!parsed) return;
+    onOpen(parsed);
+  };
+
+  const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+    deliver(response.notification.request.content.data);
+  });
+
+  try {
+    const last = await Notifications.getLastNotificationResponseAsync();
+    if (last) {
+      const id = last.notification.request.identifier;
+      if (handledColdStartResponseId !== id) {
+        handledColdStartResponseId = id;
+        deliver(last.notification.request.content.data);
+      }
+    }
+  } catch (err) {
+    if (__DEV__) console.log('[push] last response unavailable:', err);
+  }
+
+  return () => {
+    sub.remove();
+  };
 }

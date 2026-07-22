@@ -40,6 +40,7 @@
   },
   "common": {
     "today": "Today",
+    "yesterday": "Yesterday",
     "loading": "Loading...",
     "error": "Something went wrong",
     "retry": "Retry",
@@ -204,6 +205,7 @@
     "action_sheet_title": "Reminder",
     "mark_done": "Done",
     "mark_missed": "Missed",
+    "show_more": "Show more",
     "details_title": "Reminder",
     "deleted": "Reminder deleted",
     "back": "Back to reminders",
