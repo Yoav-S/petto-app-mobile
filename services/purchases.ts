@@ -5,7 +5,8 @@
  * development build (IAP does not work in Expo Go).
  * Test Store keys (test_…) are fine until App Store / Play products are live.
  */
-import { Platform } from 'react-native';
+import { NativeModules, Platform } from 'react-native';
+import Constants from 'expo-constants';
 import Purchases, {
   LOG_LEVEL,
   PACKAGE_TYPE,
@@ -20,6 +21,18 @@ export const PREMIUM_PRODUCT_ID = 'sub_premium';
 const LOG = '[Subscription]';
 
 let configured = false;
+
+/** Expo Go has no custom native modules (RNFB / full StoreKit). */
+function isExpoGo(): boolean {
+  return (
+    Constants.appOwnership === 'expo' ||
+    Constants.executionEnvironment === 'storeClient'
+  );
+}
+
+function hasNativeFirebaseApp(): boolean {
+  return Boolean((NativeModules as { RNFBAppModule?: unknown }).RNFBAppModule);
+}
 
 function iosKey(): string {
   return (process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '').trim();
@@ -103,6 +116,10 @@ export async function logSubscriptionReadiness(firebaseUid: string): Promise<voi
       console.log(
         `${LOG} READY — offering/package wired. Purchase works on a native build with Test Store / sandbox.`,
       );
+    } else if (isExpoGo()) {
+      console.log(
+        `${LOG} offerings empty in Expo Go (Browser Mode) — expected. Test purchases on a dev build.`,
+      );
     } else {
       console.warn(`${LOG} NOT READY — fix RevenueCat offering: default → Monthly → ${PREMIUM_PRODUCT_ID}`);
     }
@@ -126,14 +143,29 @@ export async function loginPurchases(firebaseUid: string): Promise<void> {
 
 /**
  * Links this device to GA4 so RevenueCat can send purchase events to Firebase Analytics.
- * Requires a native build with @react-native-firebase/analytics (no-op in Expo Go).
+ * No-op in Expo Go — never import @react-native-firebase there (crashes without native binary).
  */
 async function syncFirebaseAnalyticsInstanceId(): Promise<void> {
+  if (isExpoGo() || !hasNativeFirebaseApp()) {
+    console.log(
+      `${LOG} skipped Firebase Analytics instance id (use a dev/production build, not Expo Go)`,
+    );
+    return;
+  }
+
   try {
-    // Dynamic import so Expo Go / web don't crash if native module is missing.
     const analyticsModule = await import('@react-native-firebase/analytics');
-    const analytics = analyticsModule.default;
-    const instanceId = await analytics().getAppInstanceId();
+    const analyticsFactory =
+      typeof analyticsModule.default === 'function'
+        ? analyticsModule.default
+        : (analyticsModule as { default?: unknown }).default;
+
+    if (typeof analyticsFactory !== 'function') {
+      console.log(`${LOG} skipped Firebase Analytics (unexpected module shape)`);
+      return;
+    }
+
+    const instanceId = await analyticsFactory().getAppInstanceId();
     if (!instanceId) {
       console.warn(`${LOG} Firebase Analytics appInstanceId is null`);
       return;
@@ -142,7 +174,7 @@ async function syncFirebaseAnalyticsInstanceId(): Promise<void> {
     console.log(`${LOG} set Firebase Analytics appInstanceId for RC → GA`);
   } catch (error) {
     console.log(
-      `${LOG} skipped Firebase Analytics instance id (need native/dev build):`,
+      `${LOG} skipped Firebase Analytics instance id:`,
       error instanceof Error ? error.message : error,
     );
   }
