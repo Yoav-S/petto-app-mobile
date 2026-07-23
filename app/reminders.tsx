@@ -5,6 +5,7 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -91,6 +92,8 @@ export default function RemindersScreen() {
   const router = useRouter();
   const toast = useToast();
   const { activePetId } = useActivePet();
+  const { height: screenHeight } = useWindowDimensions();
+  const headerGapSy = screenHeight / 812;
   const params = useLocalSearchParams<{
     deletedId?: string;
     prompt?: string;
@@ -302,6 +305,8 @@ export default function RemindersScreen() {
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab as TabName)}
         getLabel={(tab) => t(`reminders.tab_${tab.toLowerCase()}`)}
+        width={335}
+        style={{ marginTop: 40 * headerGapSy }}
       />
 
       {loading ? (

@@ -17,13 +17,15 @@ interface SegmentedControlProps {
   onTabChange: (tab: string) => void;
   /** Maps a tab value to its display label (e.g. for translations). */
   getLabel?: (tab: string) => string;
+  /** Design-frame width (375 canvas). Health: 220, Reminders: 335. */
+  width?: number;
   style?: StyleProp<ViewStyle>;
 }
 
 const DESIGN_WIDTH = 375;
 const DESIGN_HEIGHT = 812;
 
-/** Figma Active / Resolved (and similar) pill. */
+/** Figma segmented pill chrome. */
 const SEGMENT = {
   width: 220,
   height: 36,
@@ -38,6 +40,7 @@ export default function SegmentedControl({
   activeTab,
   onTabChange,
   getLabel,
+  width: designWidth = SEGMENT.width,
   style,
 }: SegmentedControlProps) {
   const styles = useThemedStyles(makeStyles);
@@ -47,7 +50,7 @@ export default function SegmentedControl({
 
   const layout = useMemo(
     () => ({
-      width: SEGMENT.width * sx,
+      width: designWidth * sx,
       height: SEGMENT.height * sy,
       padV: SEGMENT.padV * sy,
       padH: SEGMENT.padH * sx,
@@ -55,7 +58,7 @@ export default function SegmentedControl({
       radius: SEGMENT.radius * sx,
       tabRadius: Math.max(6, (SEGMENT.radius - 2) * sx),
     }),
-    [sx, sy],
+    [designWidth, sx, sy],
   );
 
   return (
