@@ -301,6 +301,7 @@
     "no_reminder_for_note": "No reminder for this note",
     "add_photo": "Add photo",
     "add_reminder": "Add reminder",
+    "set_reminder": "Set reminder",
     "remove_reminder": "Remove reminder",
     "reminder_chip_morning": "Morning",
     "reminder_chip_afternoon": "Afternoon",

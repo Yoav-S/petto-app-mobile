@@ -70,6 +70,7 @@ export default function EditNoteScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoChanged, setPhotoChanged] = useState(false);
 
+  const [recordTitle, setRecordTitle] = useState('');
   const [linkedReminderId, setLinkedReminderId] = useState<string | null>(null);
   const [reminderDraft, setReminderDraft] = useState<HealthReminderDraft | null>(null);
   const [reminderSheetVisible, setReminderSheetVisible] = useState(false);
@@ -102,6 +103,7 @@ export default function EditNoteScreen() {
           }
           if (!cancelled) {
             setNotFound(false);
+            setRecordTitle(detail.title ?? '');
             setNoteText(note.text);
             setPhotoUri(note.photo_url ?? null);
             setPhotoChanged(false);
@@ -188,7 +190,7 @@ export default function EditNoteScreen() {
         nextLinkedReminderId = await upsertHealthReminder(
           activePetId,
           reminderDraft,
-          healthReminderTitle(noteText),
+          healthReminderTitle(noteText, recordTitle),
           linkedReminderId,
         );
       } else if (linkedReminderId) {

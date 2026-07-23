@@ -301,6 +301,7 @@
     "no_reminder_for_note": "Для этой заметки нет напоминания",
     "add_photo": "Добавить фото",
     "add_reminder": "Добавить напоминание",
+    "set_reminder": "Установить напоминание",
     "remove_reminder": "Удалить напоминание",
     "reminder_chip_morning": "Утро",
     "reminder_chip_afternoon": "День",
