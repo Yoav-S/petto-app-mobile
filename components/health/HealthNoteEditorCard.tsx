@@ -112,7 +112,12 @@ export default function HealthNoteEditorCard({
               </Text>
             </TouchableOpacity>
             {onRemoveReminder ? (
-              <TouchableOpacity onPress={onRemoveReminder} hitSlop={8}>
+              <TouchableOpacity
+                onPress={onRemoveReminder}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t('health.remove_reminder')}
+              >
                 <Ionicons name="close-circle" size={16} color={colors.secondaryText} />
               </TouchableOpacity>
             ) : null}
@@ -128,7 +133,12 @@ export default function HealthNoteEditorCard({
           <TouchableOpacity onPress={onPickImage} hitSlop={8} activeOpacity={0.7}>
             <Ionicons name="image-outline" size={24} color={colors.secondaryText} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={onReminderPress} hitSlop={8} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={onReminderPress}
+            hitSlop={8}
+            activeOpacity={0.7}
+            accessibilityLabel={t('health.add_reminder')}
+          >
             <Ionicons name="notifications-outline" size={24} color={colors.secondaryText} />
           </TouchableOpacity>
         </View>

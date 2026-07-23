@@ -12,7 +12,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
-import SettingRow from '@/components/ui/SettingRow';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import TimePickerSheet from '@/components/pickers/TimePickerSheet';
 import RepeatPickerSheet, { repeatLabel } from '@/components/pickers/RepeatPickerSheet';
@@ -44,11 +43,33 @@ const SHEET = {
   radius: 24,
   headerTop: 32,
   headerHeight: 32,
-  /** Distance from sheet top to body (header 32+32 + 22 gap). */
   bodyTop: 86,
-  bodyHeight: 352,
   bodyGap: 22,
   footerHeight: 84,
+  contentWidth: 335,
+  cardHeight: 246,
+  cardPadTop: 16,
+  cardPadBottom: 8,
+  cardPadH: 16,
+  cardRadius: 12,
+  innerHeight: 222,
+  innerGap: 22,
+  todayBlockHeight: 80,
+  todayTitleHeight: 20,
+  todayBlockGap: 12,
+  chipsRowHeight: 48,
+  chipsGap: 16,
+  chipWidth: 72,
+  chipHeight: 48,
+  chipPadV: 6,
+  chipPadH: 12,
+  chipGap: 4,
+  chipRadius: 12,
+  settingsHeight: 120,
+  settingsPadV: 14,
+  settingsPadH: 16,
+  settingsInnerGap: 8,
+  settingsRowHeight: 20,
   buttonWidth: 335,
   buttonHeight: 48,
   buttonRadius: 12,
@@ -76,7 +97,6 @@ function formatTimeDisplay(time: string): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-/** Prefer the given time; if past, first future chip; else leave empty so Save stays disabled. */
 function resolveInitialTime(isoDate: string, preferred: string): { time: string; chipId: string | null } {
   if (preferred && !isReminderDateTimeInPast(isoDate, preferred)) {
     return { time: preferred, chipId: chipForTime(preferred) };
@@ -127,28 +147,46 @@ export default function ReminderPickerSheet({
     [date, time],
   );
 
-  const layout = useMemo(() => {
-    const bodyHeight = SHEET.bodyHeight * sy;
-    const bodyGap = SHEET.bodyGap * sy;
-    const footerHeight = SHEET.footerHeight * sy;
-    return {
-      /** Content chrome matches Figma 438; safe area is extra below. */
+  const layout = useMemo(
+    () => ({
       sheetHeight: SHEET.height * sy + Math.max(0, insets.bottom),
       radius: SHEET.radius * sx,
       headerTop: SHEET.headerTop * sy,
       headerHeight: SHEET.headerHeight * sy,
-      bodyHeight,
-      bodyGap,
-      footerHeight,
-      cardHeight: Math.max(0, bodyHeight - bodyGap - footerHeight),
+      bodyGap: SHEET.bodyGap * sy,
+      footerHeight: SHEET.footerHeight * sy,
+      contentWidth: SHEET.contentWidth * sx,
+      cardHeight: SHEET.cardHeight * sy,
+      cardPadTop: SHEET.cardPadTop * sy,
+      cardPadBottom: SHEET.cardPadBottom * sy,
+      cardPadH: SHEET.cardPadH * sx,
+      cardRadius: SHEET.cardRadius * sx,
+      innerGap: SHEET.innerGap * sy,
+      todayBlockHeight: SHEET.todayBlockHeight * sy,
+      todayTitleHeight: SHEET.todayTitleHeight * sy,
+      todayBlockGap: SHEET.todayBlockGap * sy,
+      chipsRowHeight: SHEET.chipsRowHeight * sy,
+      chipsGap: SHEET.chipsGap * sx,
+      chipWidth: SHEET.chipWidth * sx,
+      chipHeight: SHEET.chipHeight * sy,
+      chipPadV: SHEET.chipPadV * sy,
+      chipPadH: SHEET.chipPadH * sx,
+      chipGap: SHEET.chipGap * sy,
+      chipRadius: SHEET.chipRadius * sx,
+      settingsHeight: SHEET.settingsHeight * sy,
+      settingsPadV: SHEET.settingsPadV * sy,
+      settingsPadH: SHEET.settingsPadH * sx,
+      settingsInnerGap: SHEET.settingsInnerGap * sy,
+      settingsRowHeight: SHEET.settingsRowHeight * sy,
       buttonWidth: SHEET.buttonWidth * sx,
       buttonHeight: SHEET.buttonHeight * sy,
       buttonRadius: SHEET.buttonRadius * sx,
       closeSize: SHEET.closeSize * sx,
       closeRadius: SHEET.closeRadius * sx,
       padH: SHEET.padH * sx,
-    };
-  }, [sx, sy, insets.bottom]);
+    }),
+    [sx, sy, insets.bottom],
+  );
 
   const handleChipPress = (chipId: string, chipTime: string) => {
     if (isReminderDateTimeInPast(date, chipTime)) return;
@@ -171,6 +209,32 @@ export default function ReminderPickerSheet({
     onConfirm({ date, time, repeat });
     onClose();
   };
+
+  const scheduleRows: {
+    key: SubSheet;
+    icon: keyof typeof Ionicons.glyphMap;
+    label: string;
+    value: string;
+  }[] = [
+    {
+      key: 'date',
+      icon: 'calendar-outline',
+      label: t('reminders.field_date'),
+      value: formatDisplayDate(date),
+    },
+    {
+      key: 'time',
+      icon: 'time-outline',
+      label: t('reminders.field_time'),
+      value: formatTimeDisplay(time),
+    },
+    {
+      key: 'repeat',
+      icon: 'repeat-outline',
+      label: t('reminders.field_repeat'),
+      value: repeatLabel(repeat),
+    },
+  ];
 
   return (
     <>
@@ -223,79 +287,141 @@ export default function ReminderPickerSheet({
               style={[
                 styles.body,
                 {
-                  height: layout.bodyHeight,
                   marginTop: layout.bodyGap,
                   gap: layout.bodyGap,
-                  paddingHorizontal: layout.padH,
+                  alignItems: 'center',
                 },
               ]}
             >
-              <View style={[styles.contentCard, { height: layout.cardHeight }]}>
-                <Text style={styles.sectionTitle}>{t('common.today')}</Text>
+              <View
+                style={[
+                  styles.contentCard,
+                  {
+                    width: layout.contentWidth,
+                    height: layout.cardHeight,
+                    borderRadius: layout.cardRadius,
+                    paddingTop: layout.cardPadTop,
+                    paddingBottom: layout.cardPadBottom,
+                    paddingHorizontal: layout.cardPadH,
+                  },
+                ]}
+              >
+                <View style={[styles.cardInner, { gap: layout.innerGap }]}>
+                  <View
+                    style={[
+                      styles.todayBlock,
+                      {
+                        height: layout.todayBlockHeight,
+                        gap: layout.todayBlockGap,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[styles.sectionTitle, { height: layout.todayTitleHeight, lineHeight: layout.todayTitleHeight }]}
+                    >
+                      {t('common.today')}
+                    </Text>
 
-                <View style={styles.chipsContainer}>
-                  {TIME_CHIPS.map((chip) => {
-                    const isSelected = selectedChip === chip.id;
-                    const chipPast = isReminderDateTimeInPast(date, chip.time);
-                    return (
+                    <View
+                      style={[
+                        styles.chipsContainer,
+                        {
+                          height: layout.chipsRowHeight,
+                          gap: layout.chipsGap,
+                        },
+                      ]}
+                    >
+                      {TIME_CHIPS.map((chip) => {
+                        const isSelected = selectedChip === chip.id;
+                        const chipPast = isReminderDateTimeInPast(date, chip.time);
+                        return (
+                          <TouchableOpacity
+                            key={chip.id}
+                            style={[
+                              styles.chip,
+                              {
+                                width: layout.chipWidth,
+                                height: layout.chipHeight,
+                                borderRadius: layout.chipRadius,
+                                paddingVertical: layout.chipPadV,
+                                paddingHorizontal: layout.chipPadH,
+                                gap: layout.chipGap,
+                              },
+                              isSelected && styles.chipActive,
+                              chipPast && !isSelected && styles.chipDisabled,
+                            ]}
+                            onPress={() => handleChipPress(chip.id, chip.time)}
+                            disabled={chipPast}
+                            activeOpacity={0.8}
+                          >
+                            <Text
+                              style={[
+                                styles.chipLabel,
+                                isSelected && styles.chipLabelActive,
+                                chipPast && !isSelected && styles.chipLabelDisabled,
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {t(chip.labelKey)}
+                            </Text>
+                            <Text
+                              style={[
+                                styles.chipTime,
+                                isSelected && styles.chipTimeActive,
+                                chipPast && !isSelected && styles.chipTimeDisabled,
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {formatTimeDisplay(chip.time)}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.settingsBlock,
+                      {
+                        height: layout.settingsHeight,
+                        borderRadius: layout.cardRadius,
+                        paddingVertical: layout.settingsPadV,
+                        paddingHorizontal: layout.settingsPadH,
+                        gap: layout.settingsInnerGap,
+                      },
+                    ]}
+                  >
+                    {scheduleRows.map((row, index) => (
                       <TouchableOpacity
-                        key={chip.id}
+                        key={row.key}
                         style={[
-                          styles.chip,
-                          isSelected && styles.chipActive,
-                          chipPast && !isSelected && styles.chipDisabled,
+                          styles.scheduleRow,
+                          { height: layout.settingsRowHeight },
+                          index < scheduleRows.length - 1 && styles.scheduleRowDivider,
                         ]}
-                        onPress={() => handleChipPress(chip.id, chip.time)}
-                        disabled={chipPast}
-                        activeOpacity={0.8}
+                        onPress={() => setSubSheet(row.key)}
+                        activeOpacity={0.7}
                       >
-                        <Text
-                          style={[
-                            styles.chipLabel,
-                            isSelected && styles.chipLabelActive,
-                            chipPast && !isSelected && styles.chipLabelDisabled,
-                          ]}
-                        >
-                          {t(chip.labelKey)}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.chipTime,
-                            isSelected && styles.chipTimeActive,
-                            chipPast && !isSelected && styles.chipTimeDisabled,
-                          ]}
-                        >
-                          {formatTimeDisplay(chip.time)}
+                        <View style={styles.scheduleLeft}>
+                          <Ionicons
+                            name={row.icon}
+                            size={18}
+                            color={colors.primaryText}
+                            style={styles.scheduleIcon}
+                          />
+                          <Text style={styles.scheduleLabel}>{row.label}</Text>
+                        </View>
+                        <Text style={styles.scheduleValue} numberOfLines={1}>
+                          {row.value}
                         </Text>
                       </TouchableOpacity>
-                    );
-                  })}
-                </View>
-
-                <View style={styles.settingsWrapper}>
-                  <SettingRow
-                    icon="calendar-outline"
-                    label={t('reminders.field_date')}
-                    value={formatDisplayDate(date)}
-                    onPress={() => setSubSheet('date')}
-                  />
-                  <SettingRow
-                    icon="time-outline"
-                    label={t('reminders.field_time')}
-                    value={formatTimeDisplay(time)}
-                    onPress={() => setSubSheet('time')}
-                  />
-                  <SettingRow
-                    icon="repeat-outline"
-                    label={t('reminders.field_repeat')}
-                    value={repeatLabel(repeat)}
-                    hideDivider
-                    onPress={() => setSubSheet('repeat')}
-                  />
+                    ))}
+                  </View>
                 </View>
               </View>
 
-              <View style={[styles.footer, { height: layout.footerHeight }]}>
+              <View style={[styles.footer, { height: layout.footerHeight, width: layout.contentWidth }]}>
                 <TouchableOpacity
                   style={[
                     styles.doneButton,
@@ -361,6 +487,14 @@ const CARD_SHADOW = {
   elevation: 3,
 };
 
+const CHIP_SHADOW = {
+  shadowColor: '#2D2D2A',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.08,
+  shadowRadius: 20,
+  elevation: 3,
+};
+
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     overlay: {
@@ -371,7 +505,6 @@ const makeStyles = (c: ThemeColors) =>
     sheet: {
       width: '100%',
       backgroundColor: c.panel,
-      overflow: 'hidden',
       shadowColor: '#1E1E1E',
       shadowOffset: { width: 0, height: -3 },
       shadowOpacity: 0.08,
@@ -406,35 +539,33 @@ const makeStyles = (c: ThemeColors) =>
     },
     contentCard: {
       backgroundColor: c.surface,
-      borderRadius: 12,
-      padding: 16,
-      overflow: 'hidden',
       ...CARD_SHADOW,
+    },
+    cardInner: {
+      flex: 1,
+      width: '100%',
+    },
+    todayBlock: {
+      width: '100%',
     },
     sectionTitle: {
       fontFamily: 'Rubik-Medium',
       fontSize: 16,
       color: c.primaryText,
-      marginBottom: 12,
     },
     chipsContainer: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
-      gap: 8,
-      marginBottom: 16,
+      alignItems: 'center',
+      width: '100%',
     },
     chip: {
-      flex: 1,
-      backgroundColor: c.panel,
-      borderRadius: 12,
-      paddingVertical: 12,
+      backgroundColor: c.surface,
       alignItems: 'center',
-      borderWidth: 1,
-      borderColor: 'transparent',
+      justifyContent: 'center',
+      ...CHIP_SHADOW,
     },
     chipActive: {
       backgroundColor: c.brand,
-      borderColor: c.brand,
     },
     chipDisabled: {
       opacity: 0.45,
@@ -442,8 +573,9 @@ const makeStyles = (c: ThemeColors) =>
     chipLabel: {
       fontFamily: 'Rubik-Medium',
       fontSize: 12,
+      lineHeight: 16,
+      textAlign: 'center',
       color: c.secondaryText,
-      marginBottom: 4,
     },
     chipLabelActive: {
       color: c.button.primaryText,
@@ -453,8 +585,10 @@ const makeStyles = (c: ThemeColors) =>
     },
     chipTime: {
       fontFamily: 'Rubik-Medium',
-      fontSize: 14,
-      color: c.primaryText,
+      fontSize: 12,
+      lineHeight: 16,
+      textAlign: 'center',
+      color: c.secondaryText,
     },
     chipTimeActive: {
       color: c.button.primaryText,
@@ -462,13 +596,47 @@ const makeStyles = (c: ThemeColors) =>
     chipTimeDisabled: {
       color: c.secondaryText,
     },
-    settingsWrapper: {
-      marginTop: 4,
+    settingsBlock: {
+      width: '100%',
+      justifyContent: 'center',
+    },
+    scheduleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      width: '100%',
+    },
+    scheduleLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexShrink: 1,
+      minWidth: 0,
+    },
+    scheduleIcon: {
+      marginRight: 8,
+    },
+    scheduleLabel: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 14,
+      lineHeight: 20,
+      color: c.primaryText,
+    },
+    scheduleValue: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 14,
+      lineHeight: 20,
+      color: c.secondaryText,
+      marginLeft: 8,
+      flexShrink: 1,
+      textAlign: 'right',
+    },
+    scheduleRowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border,
     },
     footer: {
       alignItems: 'center',
       justifyContent: 'center',
-      // No divider / border — panel gap only between card and Save.
       borderTopWidth: 0,
     },
     doneButton: {
