@@ -14,10 +14,11 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import AddFabButton, { ADD_FAB_BOTTOM, ADD_FAB_RIGHT } from '@/components/ui/AddFabButton';
+import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import VaccineScreenHeader, { getVaccineHeaderContentOffset } from '@/components/vaccines/VaccineScreenHeader';
+import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import EmptyState from '@/components/ui/EmptyState';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
@@ -166,9 +167,15 @@ export default function VaccinesScreen() {
       <VaccineScreenHeader title={t('vaccines.list_title')} />
       {renderContent()}
 
-      <AddFabButton
-        style={styles.fab}
-        onPress={() => router.push('/vaccines/add' as never)}
+      <SpeedDialFab
+        items={[
+          {
+            key: 'add',
+            label: t('vaccines.add'),
+            icon: HOME_CATEGORY_ICONS.vaccines,
+            onPress: () => router.push('/vaccines/add' as never),
+          },
+        ]}
         accessibilityLabel={t('vaccines.add')}
       />
     </SafeAreaView>
@@ -246,11 +253,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     color: c.primaryText,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: ADD_FAB_BOTTOM,
-    right: ADD_FAB_RIGHT,
-    zIndex: 20,
   },
 });

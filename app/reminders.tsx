@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import AddFabButton, { ADD_FAB_BOTTOM, ADD_FAB_RIGHT } from '@/components/ui/AddFabButton';
+import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -19,6 +19,7 @@ import ReminderListItem from '@/components/reminders/ReminderListItem';
 import ReminderActionSheet from '@/components/reminders/ReminderActionSheet';
 import Snackbar from '@/components/ui/Snackbar';
 import { needsStatusPrompt } from '@/components/reminders/reminderFormShared';
+import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import {
@@ -339,11 +340,17 @@ export default function RemindersScreen() {
         />
       )}
 
-      <AddFabButton
-        style={styles.fab}
-        onPress={() => {
-          void goAddReminder();
-        }}
+      <SpeedDialFab
+        items={[
+          {
+            key: 'add',
+            label: t('reminders.add'),
+            icon: HOME_CATEGORY_ICONS.reminders,
+            onPress: () => {
+              void goAddReminder();
+            },
+          },
+        ]}
         accessibilityLabel={t('reminders.add')}
       />
 
@@ -385,11 +392,5 @@ const makeStyles = (c: ThemeColors) =>
     listContent: {
       paddingBottom: 120,
       flexGrow: 1,
-    },
-    fab: {
-      position: 'absolute',
-      bottom: ADD_FAB_BOTTOM,
-      right: ADD_FAB_RIGHT,
-      zIndex: 20,
     },
   });

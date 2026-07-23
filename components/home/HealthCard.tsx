@@ -1,11 +1,11 @@
 import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
+import { HOME_CATEGORY_ICON_BG, HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
-import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import HealthReminderLine from '@/components/health/HealthReminderLine';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface HealthCardProps {
   latestRecord: {
@@ -20,11 +20,10 @@ interface HealthCardProps {
 }
 
 function CategoryIcon() {
-  const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   return (
-    <View style={[styles.iconContainer, { backgroundColor: colors.category.notesBg }]}>
-      <MaterialCommunityIcons name="heart-pulse" size={18} color={colors.category.notes} />
+    <View style={[styles.iconContainer, { backgroundColor: HOME_CATEGORY_ICON_BG.health }]}>
+      <Image source={HOME_CATEGORY_ICONS.health} style={styles.iconImage} resizeMode="contain" />
     </View>
   );
 }
@@ -122,15 +121,20 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     gap: 8,
   },
   iconContainer: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     borderRadius: 10,
+    padding: 4,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  iconImage: {
+    width: 24,
+    height: 24,
+  },
   skeletonIcon: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     borderRadius: 10,
     backgroundColor: c.border,
   },

@@ -1,9 +1,10 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
+import { HOME_CATEGORY_ICON_BG, HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { t, currentLocale } from '@/i18n';
 
 interface RemindersCardProps {
@@ -18,11 +19,10 @@ interface RemindersCardProps {
 }
 
 function CategoryIcon() {
-  const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   return (
-    <View style={[styles.iconContainer, { backgroundColor: colors.category.remindersBg }]}>
-      <Ionicons name="notifications-outline" size={20} color={colors.category.reminders} />
+    <View style={[styles.iconContainer, { backgroundColor: HOME_CATEGORY_ICON_BG.reminders }]}>
+      <Image source={HOME_CATEGORY_ICONS.reminders} style={styles.iconImage} resizeMode="contain" />
     </View>
   );
 }
@@ -123,10 +123,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   iconContainer: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacing.xs,
+  },
+  iconImage: {
+    width: 24,
+    height: 24,
   },
   upcomingRow: {
     marginTop: 'auto',

@@ -25,6 +25,7 @@
     }
   },
   "fab": {
+    "add": "Adaugă",
     "vaccines": "Vaccinuri",
     "health": "Sănătate",
     "reminders": "Memento-uri"
@@ -325,6 +326,8 @@
     "cannot_delete_last_pet": "Ai nevoie de cel puțin un animal. Adaugă alt animal înainte de a-l elimina pe acesta.",
     "premium_required_pet": "Planul gratuit include 1 animal. Treci la Petto Premium pentru a adăuga mai multe.",
     "premium_required_reminder": "Planul gratuit include până la 10 memento-uri active. Treci la Petto Premium pentru memento-uri nelimitate.",
+    "vaccination_date_in_future": "Data vaccinării nu poate fi în viitor.",
+    "vaccination_valid_until_before_date": "Valabil până nu poate fi înainte de data vaccinării.",
     "network_timeout": "Cererea a expirat. Verifică conexiunea și încearcă din nou.",
     "invalid_email": "Introdu o adresă de e-mail validă.",
     "otp_length": "Introdu codul din 6 cifre din e-mailul tău.",

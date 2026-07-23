@@ -9,11 +9,12 @@ import {
   Alert,
   useWindowDimensions,
 } from 'react-native';
-import AddFabButton, { ADD_FAB_BOTTOM, ADD_FAB_RIGHT } from '@/components/ui/AddFabButton';
+import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import EmptyState from '@/components/ui/EmptyState';
@@ -261,10 +262,22 @@ export default function HealthScreen() {
         </View>
       )}
 
-      <AddFabButton
-        style={styles.fab}
-        onPress={() => router.push('/health/add-note' as never)}
-        accessibilityLabel={t('health.add_note')}
+      <SpeedDialFab
+        items={[
+          {
+            key: 'add-health',
+            label: t('health.add_health'),
+            icon: HOME_CATEGORY_ICONS.health,
+            onPress: () => router.push('/health/add' as never),
+          },
+          {
+            key: 'add-note',
+            label: t('health.add_note'),
+            icon: HOME_CATEGORY_ICONS.health,
+            onPress: () => router.push('/health/add-note' as never),
+          },
+        ]}
+        accessibilityLabel={t('fab.add')}
       />
 
       <Snackbar
@@ -300,11 +313,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 120,
     flexGrow: 1,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: ADD_FAB_BOTTOM,
-    right: ADD_FAB_RIGHT,
-    zIndex: 20,
   },
 });

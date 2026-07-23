@@ -33,6 +33,7 @@ import { getErrorMessage } from '@/services/errors';
 import {
   addYearsToIsoDate,
   formatDisplayDate,
+  isIsoDateAfter,
   isIsoDateBefore,
   parseIsoDate,
   todayIsoDate,
@@ -164,6 +165,10 @@ export default function AddVaccineScreen() {
 
   const handleSave = async () => {
     if (!canSave || !activePetId) return;
+    if (isIsoDateAfter(date, todayIsoDate())) {
+      Alert.alert(t('common.error'), t('errors.vaccination_date_in_future'));
+      return;
+    }
     if (isIsoDateBefore(nextDate, date)) {
       Alert.alert(t('common.error'), t('vaccines.valid_until_before_vaccinated'));
       return;
@@ -383,7 +388,6 @@ export default function AddVaccineScreen() {
         initialDate={parseIsoDate(date)}
         onClose={() => setDateSheet(null)}
         onConfirm={handleVaccinatedDateChange}
-        allowFuture
         title={t('vaccines.vaccinated_on')}
         confirmLabel={t('pickers.done')}
       />

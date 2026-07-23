@@ -215,6 +215,11 @@ export function isIsoDateBefore(a: string, b: string): boolean {
   return compareIsoDates(a, b) < 0;
 }
 
+/** True if ISO date `a` is strictly after ISO date `b` (YYYY-MM-DD). */
+export function isIsoDateAfter(a: string, b: string): boolean {
+  return compareIsoDates(a, b) > 0;
+}
+
 /** True if `date` is strictly before `minIso` (YYYY-MM-DD). */
 export function isBeforeIsoDate(date: Date, minIso: string): boolean {
   return isIsoDateBefore(toIsoDate(date), minIso);

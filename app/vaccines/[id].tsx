@@ -30,7 +30,7 @@ import { useActivePet } from '@/store/petStore';
 import { getVaccination, updateVaccination, deleteVaccination } from '@/services/vaccines';
 import { uploadImage } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
-import { formatDisplayDate, parseIsoDate } from '@/utils/calendar';
+import { addYearsToIsoDate, formatDisplayDate, isIsoDateAfter, parseIsoDate, todayIsoDate } from '@/utils/calendar';
 import type { Vaccination } from '@/types/api';
 
 type PickerTarget = 'date' | 'next' | null;
@@ -262,22 +262,35 @@ export default function VaccineDetailsScreen() {
       <BirthDatePickerSheet
         visible={picker === 'date'}
         initialDate={parseIsoDate(vaccine.date)}
-        allowFuture
         onClose={() => setPicker(null)}
         onConfirm={(iso) => {
           setPicker(null);
-          if (iso !== vaccine.date) save({ date: iso });
+          if (isIsoDateAfter(iso, todayIsoDate())) {
+            Alert.alert(t('common.error'), t('errors.vaccination_date_in_future'));
+            return;
+          }
+          if (iso === vaccine.date) return;
+          const patch: Partial<Vaccination> = { date: iso };
+          if (vaccine.next_date && iso > vaccine.next_date) {
+            patch.next_date = addYearsToIsoDate(iso, 1);
+          }
+          save(patch);
         }}
+        title={t('vaccines.vaccinated_on')}
+        confirmLabel={t('pickers.done')}
       />
       <BirthDatePickerSheet
         visible={picker === 'next'}
         initialDate={parseIsoDate(vaccine.next_date ?? null)}
         allowFuture
+        minDate={vaccine.date}
         onClose={() => setPicker(null)}
         onConfirm={(iso) => {
           setPicker(null);
           if (iso !== vaccine.next_date) save({ next_date: iso });
         }}
+        title={t('vaccines.valid_until')}
+        confirmLabel={t('pickers.done')}
       />
 
       <ConfirmModal

@@ -25,6 +25,7 @@
     }
   },
   "fab": {
+    "add": "Add",
     "vaccines": "Vaccines",
     "health": "Health",
     "reminders": "Reminders"
@@ -325,6 +326,8 @@
     "cannot_delete_last_pet": "You need at least one pet. Add another pet before removing this one.",
     "premium_required_pet": "Free includes 1 pet. Upgrade to Petto Premium to add more.",
     "premium_required_reminder": "Free includes up to 10 active reminders. Upgrade to Petto Premium for unlimited reminders.",
+    "vaccination_date_in_future": "Vaccinated on can't be a future date.",
+    "vaccination_valid_until_before_date": "Valid until can't be earlier than the vaccinated on date.",
     "network_timeout": "The request timed out. Check your connection and try again.",
     "invalid_email": "Please enter a valid email address.",
     "otp_length": "Enter the 6-digit code from your email.",

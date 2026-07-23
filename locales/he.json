@@ -25,6 +25,7 @@
     }
   },
   "fab": {
+    "add": "הוסף",
     "vaccines": "חיסון",
     "health": "בריאות",
     "reminders": "תזכורת"
@@ -325,6 +326,8 @@
     "cannot_delete_last_pet": "צריך לפחות חיה אחת. הוסף חיה נוספת לפני מחיקת זו.",
     "premium_required_pet": "בחינם כלולה חיה אחת. שדרג ל-Petto Premium כדי להוסיף עוד.",
     "premium_required_reminder": "בחינם כלולות עד 10 תזכורות פעילות. שדרג ל-Petto Premium לתזכורות ללא הגבלה.",
+    "vaccination_date_in_future": "תאריך החיסון לא יכול להיות בעתיד.",
+    "vaccination_valid_until_before_date": "תוקף עד לא יכול להיות לפני תאריך החיסון.",
     "network_timeout": "הבקשה נמשכה יותר מדי. בדוק את החיבור ונסה שוב.",
     "invalid_email": "הזן כתובת אימייל תקינה.",
     "otp_length": "הזן את קוד בן 6 הספרות מהאימייל.",
