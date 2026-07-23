@@ -18,7 +18,7 @@ export default function SettingsPlaceholder({ title, icon = 'construct-outline' 
   const styles = useThemedStyles(makeStyles);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <SettingsHeader title={title} />
       <View style={styles.body}>
         <Ionicons name={icon} size={40} color={colors.secondaryText} />

@@ -36,7 +36,7 @@ export default function SettingsScreen() {
   const languageLabel = t(`settings.language_${currentLocale}`);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <SettingsHeader title={t('settings.title')} />
 
       <ScrollView

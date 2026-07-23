@@ -27,7 +27,7 @@ import { uploadPetPhoto } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import type { Pet } from '@/types/api';
 import { formatDisplayDateLong, parseIsoDate } from '@/utils/calendar';
-import { useHeaderTopMargin } from '@/utils/headerLayout';
+import { useHeaderTopPadding } from '@/utils/headerLayout';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import EditPhotoSheet from '@/components/health/EditPhotoSheet';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -51,7 +51,7 @@ export default function EditProfileScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const { activePetId } = useActivePet();
-  const headerTopMargin = useHeaderTopMargin();
+  const headerTopPadding = useHeaderTopPadding();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -214,19 +214,21 @@ export default function EditProfileScreen() {
   const birthDateLabel = birthDate ? formatDisplayDateLong(birthDate) : null;
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <View style={[styles.header, { marginTop: headerTopMargin }]}>
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={12}
-          style={styles.headerBtn}
-          accessibilityRole="button"
-          accessibilityLabel={t('petOnboarding.back')}
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.primaryText} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{t('profile.edit.title')}</Text>
-        <View style={styles.headerBtn} />
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+      <View style={{ paddingTop: headerTopPadding, backgroundColor: colors.background }}>
+        <View style={styles.header}>
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={12}
+            style={styles.headerBtn}
+            accessibilityRole="button"
+            accessibilityLabel={t('petOnboarding.back')}
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.primaryText} />
+          </Pressable>
+          <Text style={styles.headerTitle}>{t('profile.edit.title')}</Text>
+          <View style={styles.headerBtn} />
+        </View>
       </View>
 
       {loading ? (

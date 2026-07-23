@@ -14,18 +14,23 @@ export const HEADER_LAYOUT = {
 } as const;
 
 /**
- * Margin below a parent that already applies `insets.top` (SafeAreaView),
- * so the header row lands at Figma `top: 56` (or at the safe area if taller).
+ * Absolute padding from the physical top of the screen to the header row.
+ * Matches Figma top: 56 (or the device safe-area if it's taller).
  *
- * screenY = insets.top + marginTop ≈ max(insets.top, 56 * sy)
+ * The header owns this — parent screens must NOT also apply top safe-area padding.
  */
-export function useHeaderTopMargin(): number {
+export function useHeaderTopPadding(): number {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   return useMemo(() => {
     const sy = height / HEADER_LAYOUT.designHeight;
-    return Math.max(0, HEADER_LAYOUT.top * sy - insets.top);
+    return Math.max(insets.top, HEADER_LAYOUT.top * sy);
   }, [height, insets.top]);
+}
+
+/** @deprecated Use useHeaderTopPadding — same value, absolute from screen top. */
+export function useHeaderTopMargin(): number {
+  return useHeaderTopPadding();
 }
 
 export function useHeaderLayout() {
@@ -37,7 +42,8 @@ export function useHeaderLayout() {
     return {
       sx,
       sy,
-      marginTop: Math.max(0, HEADER_LAYOUT.top * sy - insets.top),
+      /** Absolute from screen top — do not stack under another top SafeArea. */
+      paddingTop: Math.max(insets.top, HEADER_LAYOUT.top * sy),
       height: HEADER_LAYOUT.height * sy,
       paddingHorizontal: HEADER_LAYOUT.padH * sx,
       paddingVertical: HEADER_LAYOUT.padV * sy,

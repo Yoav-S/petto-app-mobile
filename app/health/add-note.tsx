@@ -123,7 +123,7 @@ export default function AddNoteScreen() {
 
   if (!recordId || loadingRecord) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <ScreenHeader title={t('health.add_note')} />
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primaryText} />
@@ -133,7 +133,7 @@ export default function AddNoteScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <ScreenHeader title={t('health.add_note')} />
 
       <HealthKeyboardAvoidingView>

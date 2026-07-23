@@ -14,8 +14,8 @@ interface ScreenHeaderProps {
 }
 
 /**
- * App-wide title row. Parent must own the top safe area (SafeAreaView).
- * Positions at Figma top: 56 relative to the screen.
+ * App-wide title row. Owns top safe-area + Figma gap so every screen matches
+ * Add Health (header row at top: 56). Parent must NOT pad the top safe area.
  */
 export default function ScreenHeader({ title, icon = 'back', onBack }: ScreenHeaderProps) {
   const router = useRouter();
@@ -25,52 +25,55 @@ export default function ScreenHeader({ title, icon = 'back', onBack }: ScreenHea
   const buttonSize = 40 * layout.sx;
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          marginTop: layout.marginTop,
-          height: layout.height,
-          paddingHorizontal: layout.paddingHorizontal,
-          paddingVertical: layout.paddingVertical,
-        },
-      ]}
-    >
-      <TouchableOpacity
+    <View style={[styles.wrap, { paddingTop: layout.paddingTop, backgroundColor: colors.background }]}>
+      <View
         style={[
-          styles.iconButton,
+          styles.container,
           {
-            width: buttonSize,
-            height: buttonSize,
-            borderRadius: 12 * layout.sx,
+            height: layout.height,
+            paddingHorizontal: layout.paddingHorizontal,
+            paddingVertical: layout.paddingVertical,
           },
         ]}
-        onPress={onBack ?? (() => router.back())}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <Ionicons
-          name={icon === 'close' ? 'close' : 'chevron-back'}
-          size={icon === 'close' ? 22 : 24}
-          color={colors.primaryText}
-        />
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.iconButton,
+            {
+              width: buttonSize,
+              height: buttonSize,
+              borderRadius: 12 * layout.sx,
+            },
+          ]}
+          onPress={onBack ?? (() => router.back())}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons
+            name={icon === 'close' ? 'close' : 'chevron-back'}
+            size={icon === 'close' ? 22 : 24}
+            color={colors.primaryText}
+          />
+        </TouchableOpacity>
 
-      <Text style={styles.title} numberOfLines={1}>
-        {title}
-      </Text>
+        <Text style={styles.title} numberOfLines={1}>
+          {title}
+        </Text>
 
-      <View style={{ width: buttonSize }} />
+        <View style={{ width: buttonSize }} />
+      </View>
     </View>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    wrap: {
+      width: '100%',
+    },
     container: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      backgroundColor: c.background,
     },
     iconButton: {
       backgroundColor: c.surface,

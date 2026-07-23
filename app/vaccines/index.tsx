@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
   useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -163,7 +163,7 @@ export default function VaccinesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
       <VaccineScreenHeader title={t('vaccines.list_title')} />
       {renderContent()}
 

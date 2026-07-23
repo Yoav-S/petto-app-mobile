@@ -87,7 +87,7 @@ export default function LegalScreen({ title, lastUpdatedISO, blocks }: LegalScre
   const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <SettingsHeader title={title} />
 
       <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, 8) }]}>

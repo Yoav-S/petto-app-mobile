@@ -27,7 +27,7 @@ export default function HelpSettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <SettingsHeader title={t('settings.support_title')} />
 
       <View style={styles.content}>

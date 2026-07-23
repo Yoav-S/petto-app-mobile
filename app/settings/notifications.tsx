@@ -71,7 +71,7 @@ export default function NotificationsSettingsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <SettingsHeader title={t('settings.notifications')} />
 
       <View style={styles.content}>

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TextInput,
   TouchableOpacity,
   ScrollView,
@@ -16,6 +15,7 @@ import {
   Keyboard,
   useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
@@ -194,7 +194,7 @@ export default function AddVaccineScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
       <VaccineScreenHeader title={t('vaccines.add_title')} icon="close" />
 
       <KeyboardAvoidingView

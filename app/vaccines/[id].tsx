@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   TextInput,
@@ -14,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -142,7 +142,7 @@ export default function VaccineDetailsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
         <ScreenHeader title={t('vaccines.list_title')} />
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primaryText} />
@@ -153,7 +153,7 @@ export default function VaccineDetailsScreen() {
 
   if (notFound || !vaccine) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
         <ScreenHeader title={t('vaccines.list_title')} />
         <View style={styles.centered}>
           <EmptyState
@@ -168,7 +168,7 @@ export default function VaccineDetailsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
       <ScreenHeader title={t('vaccines.list_title')} />
 
       <KeyboardAvoidingView

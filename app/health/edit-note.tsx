@@ -222,7 +222,7 @@ export default function EditNoteScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <ScreenHeader title={t('health.edit_note')} />
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primaryText} />
@@ -233,7 +233,7 @@ export default function EditNoteScreen() {
 
   if (notFound) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <ScreenHeader title={t('health.edit_note')} />
         <View style={styles.centered}>
           <EmptyState
@@ -248,7 +248,7 @@ export default function EditNoteScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <ScreenHeader title={t('health.edit_note')} />
 
       <HealthKeyboardAvoidingView>

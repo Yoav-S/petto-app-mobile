@@ -62,7 +62,7 @@ export default function PetsListScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <SettingsHeader title={t('home.pets_title')} />
 
       {loading ? (

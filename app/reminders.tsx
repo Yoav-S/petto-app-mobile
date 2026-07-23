@@ -3,10 +3,10 @@ import {
   View,
   StyleSheet,
   FlatList,
-  SafeAreaView,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
@@ -292,7 +292,7 @@ export default function RemindersScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
       <ScreenHeader title={t('reminders.title')} />
 
       <SegmentedControl

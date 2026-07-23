@@ -155,7 +155,7 @@ export default function SubscriptionSettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <SettingsHeader title={t('settings.subscription')} />
 
       {loading ? (

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
@@ -12,7 +11,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -117,7 +116,7 @@ export default function HealthDetailsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <ScreenHeader title={t('health.title')} />
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primaryText} />
@@ -128,7 +127,7 @@ export default function HealthDetailsScreen() {
 
   if (error || !record) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <ScreenHeader title={t('health.title')} />
         <View style={styles.centered}>
           <EmptyState
@@ -145,7 +144,7 @@ export default function HealthDetailsScreen() {
   const isActive = record.status === 'active';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <ScreenHeader title={record.title} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>

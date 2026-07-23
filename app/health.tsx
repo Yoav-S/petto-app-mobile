@@ -3,12 +3,12 @@ import {
   View,
   StyleSheet,
   FlatList,
-  SafeAreaView,
   ActivityIndicator,
   RefreshControl,
   Alert,
   useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -201,7 +201,7 @@ export default function HealthScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
       <ScreenHeader title={t('health.title')} />
 
       <SegmentedControl

@@ -2,11 +2,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   View,
   StyleSheet,
-  SafeAreaView,
   Alert,
   ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
@@ -250,7 +250,7 @@ export default function EditReminderScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
         <VaccineScreenHeader title={t('reminders.edit_title')} icon="close" />
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primaryText} />
@@ -261,7 +261,7 @@ export default function EditReminderScreen() {
 
   if (notFound) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
         <VaccineScreenHeader title={t('reminders.edit_title')} icon="close" />
         <View style={styles.centered}>
           <EmptyState
@@ -276,7 +276,7 @@ export default function EditReminderScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
       <VaccineScreenHeader title={t('reminders.edit_title')} icon="close" />
       <ReminderFormBody
         layout={layout}

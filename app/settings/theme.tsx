@@ -14,7 +14,7 @@ export default function ThemeSettingsScreen() {
   const styles = useThemedStyles(makeStyles);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <SettingsHeader title={t('settings.theme')} />
 
       <View style={styles.content}>

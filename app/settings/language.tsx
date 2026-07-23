@@ -22,7 +22,7 @@ export default function LanguageSettingsScreen() {
   const styles = useThemedStyles(makeStyles);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <SettingsHeader title={t('settings.language')} />
 
       <View style={styles.content}>

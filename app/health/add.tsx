@@ -71,7 +71,7 @@ export default function AddHealthScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <VaccineScreenHeader title={t('health.add_health')} icon="close" />
 
       <HealthKeyboardAvoidingView>

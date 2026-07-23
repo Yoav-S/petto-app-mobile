@@ -5,43 +5,49 @@ import { useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
-import { useHeaderTopMargin } from '@/utils/headerLayout';
+import { useHeaderTopPadding } from '@/utils/headerLayout';
 
 interface SettingsHeaderProps {
   title: string;
 }
 
 /**
- * Settings-style header (compact title). Parent owns top safe area;
- * marginTop aligns the row to Figma top: 56.
+ * Settings-style header. Owns top inset like ScreenHeader so it matches
+ * Add Health title height. Parent must NOT pad the top safe area.
  */
 export default function SettingsHeader({ title }: SettingsHeaderProps) {
   const router = useRouter();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const marginTop = useHeaderTopMargin();
+  const paddingTop = useHeaderTopPadding();
 
   return (
-    <View style={[styles.header, { marginTop }]}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.back()}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        accessibilityRole="button"
-        accessibilityLabel={t('petOnboarding.back')}
-      >
-        <Ionicons name="chevron-back" size={20} color={colors.primaryText} />
-      </TouchableOpacity>
+    <View style={[styles.wrap, { paddingTop }]}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={t('petOnboarding.back')}
+        >
+          <Ionicons name="chevron-back" size={20} color={colors.primaryText} />
+        </TouchableOpacity>
 
-      <Text style={styles.title}>{title}</Text>
+        <Text style={styles.title}>{title}</Text>
 
-      <View style={styles.rightSpacer} />
+        <View style={styles.rightSpacer} />
+      </View>
     </View>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    wrap: {
+      width: '100%',
+      backgroundColor: c.background,
+    },
     header: {
       height: 44,
       flexDirection: 'row',
