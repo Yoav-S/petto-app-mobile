@@ -140,11 +140,7 @@ export default function AddReminderScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <VaccineScreenHeader
-        title={t('reminders.add_title')}
-        icon="close"
-        extraTopOffset={44 * sy}
-      />
+      <VaccineScreenHeader title={t('reminders.add_title')} icon="close" />
       <ReminderFormBody
         layout={layout}
         title={title}

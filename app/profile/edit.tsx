@@ -27,6 +27,7 @@ import { uploadPetPhoto } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import type { Pet } from '@/types/api';
 import { formatDisplayDateLong, parseIsoDate } from '@/utils/calendar';
+import { useHeaderTopMargin } from '@/utils/headerLayout';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import EditPhotoSheet from '@/components/health/EditPhotoSheet';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -50,6 +51,7 @@ export default function EditProfileScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const { activePetId } = useActivePet();
+  const headerTopMargin = useHeaderTopMargin();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -213,7 +215,7 @@ export default function EditProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
+      <View style={[styles.header, { marginTop: headerTopMargin }]}>
         <Pressable
           onPress={() => router.back()}
           hitSlop={12}

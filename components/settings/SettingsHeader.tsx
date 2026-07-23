@@ -5,18 +5,24 @@ import { useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
+import { useHeaderTopMargin } from '@/utils/headerLayout';
 
 interface SettingsHeaderProps {
   title: string;
 }
 
+/**
+ * Settings-style header (compact title). Parent owns top safe area;
+ * marginTop aligns the row to Figma top: 56.
+ */
 export default function SettingsHeader({ title }: SettingsHeaderProps) {
   const router = useRouter();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const marginTop = useHeaderTopMargin();
 
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { marginTop }]}>
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => router.back()}
@@ -34,37 +40,38 @@ export default function SettingsHeader({ title }: SettingsHeaderProps) {
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  header: {
-    height: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 6,
-  },
-  backButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    padding: 4,
-    backgroundColor: c.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#2D2D2A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    elevation: 3,
-  },
-  title: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 18,
-    lineHeight: 24,
-    color: c.primaryText,
-  },
-  rightSpacer: {
-    width: 32,
-    height: 32,
-  },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    header: {
+      height: 44,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 6,
+    },
+    backButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      padding: 4,
+      backgroundColor: c.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#2D2D2A',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 20,
+      elevation: 3,
+    },
+    title: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 18,
+      lineHeight: 24,
+      color: c.primaryText,
+    },
+    rightSpacer: {
+      width: 32,
+      height: 32,
+    },
+  });

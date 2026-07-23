@@ -251,7 +251,7 @@ export default function EditReminderScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <VaccineScreenHeader title={t('reminders.edit_title')} icon="close" extraTopOffset={44 * sy} />
+        <VaccineScreenHeader title={t('reminders.edit_title')} icon="close" />
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primaryText} />
         </View>
@@ -262,7 +262,7 @@ export default function EditReminderScreen() {
   if (notFound) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <VaccineScreenHeader title={t('reminders.edit_title')} icon="close" extraTopOffset={44 * sy} />
+        <VaccineScreenHeader title={t('reminders.edit_title')} icon="close" />
         <View style={styles.centered}>
           <EmptyState
             title={t('reminders.not_found_title')}
@@ -277,11 +277,7 @@ export default function EditReminderScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <VaccineScreenHeader
-        title={t('reminders.edit_title')}
-        icon="close"
-        extraTopOffset={44 * sy}
-      />
+      <VaccineScreenHeader title={t('reminders.edit_title')} icon="close" />
       <ReminderFormBody
         layout={layout}
         title={title}

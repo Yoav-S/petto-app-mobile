@@ -24,6 +24,7 @@ import HealthListItem, {
   HEALTH_LIST_ITEM_GAP,
   healthRecordSubtitle,
 } from '@/components/health/HealthListItem';
+import HealthRecordPickerSheet from '@/components/health/HealthRecordPickerSheet';
 import Snackbar from '@/components/ui/Snackbar';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { t } from '@/i18n';
@@ -55,6 +56,7 @@ export default function HealthScreen() {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState(t('health.deleted'));
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [recordPickerVisible, setRecordPickerVisible] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [listHeight, setListHeight] = useState(0);
   const { width: screenWidth } = useWindowDimensions();
@@ -87,6 +89,11 @@ export default function HealthScreen() {
   );
 
   const hasAnyRecords = tabPresence.active || tabPresence.resolved;
+
+  const noteTargetRecords = useMemo(
+    () => [...listsByTab.Active, ...listsByTab.Resolved],
+    [listsByTab],
+  );
 
   React.useEffect(() => {
     if (deletedNote) {
@@ -274,10 +281,23 @@ export default function HealthScreen() {
             key: 'add-note',
             label: t('health.add_note'),
             icon: HOME_CATEGORY_ICONS.health,
-            onPress: () => router.push('/health/add-note' as never),
+            onPress: () => setRecordPickerVisible(true),
           },
         ]}
         accessibilityLabel={t('fab.add')}
+      />
+
+      <HealthRecordPickerSheet
+        visible={recordPickerVisible}
+        records={noteTargetRecords}
+        onClose={() => setRecordPickerVisible(false)}
+        onSelect={(record) => {
+          setRecordPickerVisible(false);
+          router.push({
+            pathname: '/health/add-note',
+            params: { recordId: record.id },
+          } as never);
+        }}
       />
 
       <Snackbar

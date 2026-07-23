@@ -1,69 +1,92 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Spacing, type ThemeColors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useHeaderLayout } from '@/utils/headerLayout';
 
 interface ScreenHeaderProps {
   title: string;
+  /** Back chevron (default) or close X. */
+  icon?: 'back' | 'close';
+  onBack?: () => void;
 }
 
-export default function ScreenHeader({ title }: ScreenHeaderProps) {
+/**
+ * App-wide title row. Parent must own the top safe area (SafeAreaView).
+ * Positions at Figma top: 56 relative to the screen.
+ */
+export default function ScreenHeader({ title, icon = 'back', onBack }: ScreenHeaderProps) {
   const router = useRouter();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const layout = useHeaderLayout();
+  const buttonSize = 40 * layout.sx;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => router.back()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.primaryText} />
-        </TouchableOpacity>
-        
-        <Text style={styles.title}>{title}</Text>
-        
-        <View style={styles.rightPlaceholder} />
-      </View>
-    </SafeAreaView>
+    <View
+      style={[
+        styles.container,
+        {
+          marginTop: layout.marginTop,
+          height: layout.height,
+          paddingHorizontal: layout.paddingHorizontal,
+          paddingVertical: layout.paddingVertical,
+        },
+      ]}
+    >
+      <TouchableOpacity
+        style={[
+          styles.iconButton,
+          {
+            width: buttonSize,
+            height: buttonSize,
+            borderRadius: 12 * layout.sx,
+          },
+        ]}
+        onPress={onBack ?? (() => router.back())}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Ionicons
+          name={icon === 'close' ? 'close' : 'chevron-back'}
+          size={icon === 'close' ? 22 : 24}
+          color={colors.primaryText}
+        />
+      </TouchableOpacity>
+
+      <Text style={styles.title} numberOfLines={1}>
+        {title}
+      </Text>
+
+      <View style={{ width: buttonSize }} />
+    </View>
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safeArea: {
-    backgroundColor: c.background,
-  },
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    marginTop: 16,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: c.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  title: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 24,
-    color: c.primaryText,
-  },
-  rightPlaceholder: {
-    width: 40,
-  },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: c.background,
+    },
+    iconButton: {
+      backgroundColor: c.surface,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    title: {
+      flex: 1,
+      fontFamily: 'Rubik-Regular',
+      fontSize: 24,
+      color: c.primaryText,
+      textAlign: 'center',
+    },
+  });
