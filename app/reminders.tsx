@@ -12,12 +12,12 @@ import { useFocusEffect } from '@react-navigation/native';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import EmptyState from '@/components/ui/EmptyState';
 import ReminderListItem from '@/components/reminders/ReminderListItem';
 import ReminderActionSheet from '@/components/reminders/ReminderActionSheet';
-import Snackbar from '@/components/ui/Snackbar';
 import { needsStatusPrompt } from '@/components/reminders/reminderFormShared';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { t } from '@/i18n';
@@ -89,6 +89,7 @@ export default function RemindersScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
+  const toast = useToast();
   const { activePetId } = useActivePet();
   const params = useLocalSearchParams<{
     deletedId?: string;
@@ -102,7 +103,6 @@ export default function RemindersScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [promptQueue, setPromptQueue] = useState<Reminder[]>([]);
   const [promptTotal, setPromptTotal] = useState(0);
   const sessionSkipRef = useRef(false);
@@ -126,8 +126,10 @@ export default function RemindersScreen() {
   const hasAnyReminders = tabPresence.today || tabPresence.upcoming || tabPresence.recent;
 
   React.useEffect(() => {
-    if (params.deletedId) setSnackbarVisible(true);
-  }, [params.deletedId]);
+    if (params.deletedId) {
+      toast.show({ message: t('reminders.deleted'), aboveFab: true });
+    }
+  }, [params.deletedId, toast]);
 
   const fetchData = useCallback(async () => {
     if (!activePetId) {
@@ -352,12 +354,6 @@ export default function RemindersScreen() {
           },
         ]}
         accessibilityLabel={t('reminders.add')}
-      />
-
-      <Snackbar
-        visible={snackbarVisible}
-        message={t('reminders.deleted')}
-        onHide={() => setSnackbarVisible(false)}
       />
 
       <ReminderActionSheet

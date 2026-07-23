@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import ReminderFormBody, { ReminderSaveButton } from '@/components/reminders/ReminderFormBody';
 import {
@@ -21,6 +22,7 @@ import type { Reminder } from '@/types/api';
 
 export default function AddReminderScreen() {
   const styles = useThemedStyles(makeStyles);
+  const toast = useToast();
   const router = useRouter();
   const { activePetId } = useActivePet();
   const { width, height } = useWindowDimensions();
@@ -78,17 +80,17 @@ export default function AddReminderScreen() {
   const warnDuplicate = useCallback(
     (nextDate: string, nextTime: string, list = existingReminders) => {
       if (!hasDuplicateInList(list, nextDate, nextTime)) return false;
-      Alert.alert(t('common.error'), t('reminders.duplicate_datetime'));
+      toast.showError(t('reminders.duplicate_datetime'));
       return true;
     },
-    [existingReminders],
+    [existingReminders, toast],
   );
 
   const warnBeforeMinDate = useCallback((nextDate: string) => {
     if (!isBeforeMinReminderDate(nextDate)) return false;
-    Alert.alert(t('common.error'), t('reminders.past_datetime'));
+    toast.showError(t('reminders.past_datetime'));
     return true;
-  }, []);
+  }, [toast]);
 
   const canSave = title.trim().length > 0 && !!date && !!time && !submitting;
 
@@ -119,7 +121,7 @@ export default function AddReminderScreen() {
           },
         ]);
       } else {
-        Alert.alert(t('common.error'), message);
+        toast.showError(message);
       }
       setSubmitting(false);
     }

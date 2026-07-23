@@ -21,6 +21,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -39,6 +40,7 @@ export default function VaccineDetailsScreen() {
   const router = useRouter();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { activePetId } = useActivePet();
 
@@ -88,11 +90,11 @@ export default function VaccineDetailsScreen() {
         const updated = await updateVaccination(activePetId, id, patch);
         setVaccine(updated);
       } catch (err) {
-        Alert.alert(t('common.error'), getErrorMessage(err));
+        toast.showError(getErrorMessage(err));
         fetchData();
       }
     },
-    [activePetId, id, fetchData],
+    [activePetId, id, fetchData, toast],
   );
 
   const handleNameBlur = () => {
@@ -123,21 +125,27 @@ export default function VaccineDetailsScreen() {
       const url = await uploadImage(result.assets[0].uri, 'vaccines');
       await save({ photo_url: url });
     } catch (err) {
-      Alert.alert(t('common.error'), getErrorMessage(err));
+      toast.showError(getErrorMessage(err));
     } finally {
       setUploading(false);
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!activePetId || !id) return;
     setDeleteVisible(false);
-    try {
-      await deleteVaccination(activePetId, id);
-      router.back();
-    } catch (err) {
-      Alert.alert(t('common.error'), getErrorMessage(err));
-    }
+    toast.showUndo({
+      message: t('vaccines.deleted'),
+      onUndo: () => {},
+      onCommit: async () => {
+        try {
+          await deleteVaccination(activePetId, id);
+          router.back();
+        } catch (err) {
+          toast.showError(getErrorMessage(err));
+        }
+      },
+    });
   };
 
   if (loading) {
@@ -266,7 +274,7 @@ export default function VaccineDetailsScreen() {
         onConfirm={(iso) => {
           setPicker(null);
           if (isIsoDateAfter(iso, todayIsoDate())) {
-            Alert.alert(t('common.error'), t('errors.vaccination_date_in_future'));
+            toast.showError(t('errors.vaccination_date_in_future'));
             return;
           }
           if (iso === vaccine.date) return;

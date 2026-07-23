@@ -5,7 +5,6 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
-  Alert,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import SegmentedControl from '@/components/ui/SegmentedControl';
@@ -25,7 +25,6 @@ import HealthListItem, {
   healthRecordSubtitle,
 } from '@/components/health/HealthListItem';
 import HealthRecordPickerSheet from '@/components/health/HealthRecordPickerSheet';
-import Snackbar from '@/components/ui/Snackbar';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
@@ -45,6 +44,7 @@ export default function HealthScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
+  const toast = useToast();
   const { activePetId } = useActivePet();
   const { deletedNote } = useLocalSearchParams();
 
@@ -53,15 +53,14 @@ export default function HealthScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState(t('health.deleted'));
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [recordPickerVisible, setRecordPickerVisible] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [listHeight, setListHeight] = useState(0);
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const listScale = screenWidth / HEALTH_LIST_DESIGN_WIDTH;
+  const headerGapSy = screenHeight / 812;
   const cardHeight = HEALTH_LIST_CARD_HEIGHT * listScale;
   const itemGap = HEALTH_LIST_ITEM_GAP * listScale;
   const fadeZone = cardHeight * 0.89;
@@ -97,10 +96,9 @@ export default function HealthScreen() {
 
   React.useEffect(() => {
     if (deletedNote) {
-      setSnackbarMessage(t('health.deleted'));
-      setSnackbarVisible(true);
+      toast.show({ message: t('health.deleted'), aboveFab: true });
     }
-  }, [deletedNote]);
+  }, [deletedNote, toast]);
 
   const fetchData = useCallback(async () => {
     if (!activePetId) {
@@ -144,18 +142,61 @@ export default function HealthScreen() {
     setDeleteTargetId(id);
   };
 
-  const confirmDeleteRecord = async () => {
+  const confirmDeleteRecord = () => {
     if (!activePetId || !deleteTargetId) return;
     const id = deleteTargetId;
     setDeleteTargetId(null);
-    try {
-      await deleteRecord(activePetId, id);
-      setSnackbarMessage(t('health.record_deleted'));
-      setSnackbarVisible(true);
-      fetchData();
-    } catch (err) {
-      Alert.alert(t('common.error'), getErrorMessage(err));
+
+    let removed: MedicalRecord | null = null;
+    let fromTab: TabName = 'Active';
+    let fromIndex = -1;
+
+    for (const tab of TABS) {
+      const idx = listsByTab[tab].findIndex((r) => r.id === id);
+      if (idx >= 0) {
+        removed = listsByTab[tab][idx];
+        fromTab = tab;
+        fromIndex = idx;
+        break;
+      }
     }
+
+    if (!removed) return;
+
+    const restore = removed;
+    const restoreTab = fromTab;
+    const restoreIndex = fromIndex;
+
+    setListsByTab((prev) => ({
+      ...prev,
+      [restoreTab]: prev[restoreTab].filter((r) => r.id !== id),
+    }));
+
+    toast.showUndo({
+      message: t('health.record_deleted'),
+      aboveFab: true,
+      onUndo: () => {
+        setListsByTab((prev) => {
+          const list = [...prev[restoreTab]];
+          const insertAt = Math.min(restoreIndex, list.length);
+          list.splice(insertAt, 0, restore);
+          return { ...prev, [restoreTab]: list };
+        });
+      },
+      onCommit: async () => {
+        try {
+          await deleteRecord(activePetId, id);
+        } catch (err) {
+          setListsByTab((prev) => {
+            const list = [...prev[restoreTab]];
+            const insertAt = Math.min(restoreIndex, list.length);
+            list.splice(insertAt, 0, restore);
+            return { ...prev, [restoreTab]: list };
+          });
+          toast.showError(getErrorMessage(err), { aboveFab: true });
+        }
+      },
+    });
   };
 
   const addRecordAction = {
@@ -209,6 +250,7 @@ export default function HealthScreen() {
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab as TabName)}
         getLabel={(tab) => t(`health.tab_${tab.toLowerCase()}`)}
+        style={{ marginTop: 40 * headerGapSy }}
       />
 
       {loading ? (
@@ -298,12 +340,6 @@ export default function HealthScreen() {
             params: { recordId: record.id },
           } as never);
         }}
-      />
-
-      <Snackbar
-        visible={snackbarVisible}
-        message={snackbarMessage}
-        onHide={() => setSnackbarVisible(false)}
       />
 
       <ConfirmModal

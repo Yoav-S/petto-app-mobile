@@ -15,6 +15,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useFocusEffect } from '@react-navigation/native';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import { t } from '@/i18n';
@@ -32,6 +33,7 @@ const DESIGN_HEIGHT = 812;
 export default function HealthDetailsScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const toast = useToast();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const recordId = normalizeRouteParam(id);
@@ -107,7 +109,7 @@ export default function HealthDetailsScreen() {
             await resolveRecord(activePetId, recordId);
             router.back();
           } catch (err) {
-            Alert.alert(t('common.error'), getErrorMessage(err));
+            toast.showError(getErrorMessage(err));
           }
         },
       },

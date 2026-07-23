@@ -12,6 +12,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import HealthNoteEditorCard from '@/components/health/HealthNoteEditorCard';
 import HealthKeyboardFooter, {
@@ -41,6 +42,7 @@ function reminderLabel(draft: HealthReminderDraft): string {
 export default function AddNoteScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const toast = useToast();
   const router = useRouter();
   const { recordId: recordIdParam } = useLocalSearchParams<{ recordId?: string }>();
   const recordId = normalizeRouteParam(recordIdParam);
@@ -70,6 +72,17 @@ export default function AddNoteScreen() {
       .catch(() => {})
       .finally(() => setLoadingRecord(false));
   }, [activePetId, recordId, router]);
+
+  const handleRemoveReminder = () => {
+    if (!reminderDraft) return;
+    const snapshot = reminderDraft;
+    setReminderDraft(null);
+    toast.showUndo({
+      message: t('reminders.deleted'),
+      onUndo: () => setReminderDraft(snapshot),
+      onCommit: () => {},
+    });
+  };
 
   const canSave = note.trim().length > 0 && !submitting && !loadingRecord;
 
@@ -115,7 +128,7 @@ export default function AddNoteScreen() {
 
       router.back();
     } catch (err) {
-      Alert.alert(t('common.error'), getErrorMessage(err));
+      toast.showError(getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -157,7 +170,7 @@ export default function AddNoteScreen() {
             onPickImage={pickImage}
             reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
             onReminderPress={() => setReminderSheetVisible(true)}
-            onRemoveReminder={() => setReminderDraft(null)}
+            onRemoveReminder={handleRemoveReminder}
             placeholder={t('health.note_body_placeholder')}
           />
         </ScrollView>

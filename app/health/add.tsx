@@ -2,13 +2,13 @@ import React, { useMemo, useState } from 'react';
 import {
   StyleSheet,
   ScrollView,
-  Alert,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import HealthRecordFormFields from '@/components/health/HealthRecordFormFields';
 import HealthKeyboardFooter, {
@@ -26,6 +26,7 @@ const DESIGN_HEIGHT = 812;
 
 export default function AddHealthScreen() {
   const styles = useThemedStyles(makeStyles);
+  const toast = useToast();
   const router = useRouter();
   const { activePetId } = useActivePet();
   const insets = useSafeAreaInsets();
@@ -65,7 +66,7 @@ export default function AddHealthScreen() {
       });
       router.back();
     } catch (err) {
-      Alert.alert(t('common.error'), getErrorMessage(err));
+      toast.showError(getErrorMessage(err));
       setSubmitting(false);
     }
   };

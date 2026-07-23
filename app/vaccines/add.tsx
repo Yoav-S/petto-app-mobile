@@ -22,6 +22,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import VaccinePhotoSourceSheet from '@/components/vaccines/VaccinePhotoSourceSheet';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
@@ -48,6 +49,7 @@ export default function AddVaccineScreen() {
   const router = useRouter();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const toast = useToast();
   const { activePetId } = useActivePet();
   const { width, height } = useWindowDimensions();
   const sx = width / DESIGN_WIDTH;
@@ -122,7 +124,7 @@ export default function AddVaccineScreen() {
 
   const handleValidUntilChange = (iso: string) => {
     if (isIsoDateBefore(iso, date)) {
-      Alert.alert(t('common.error'), t('vaccines.valid_until_before_vaccinated'));
+      toast.showError(t('vaccines.valid_until_before_vaccinated'));
       return;
     }
     setNextDate(iso);
@@ -166,11 +168,11 @@ export default function AddVaccineScreen() {
   const handleSave = async () => {
     if (!canSave || !activePetId) return;
     if (isIsoDateAfter(date, todayIsoDate())) {
-      Alert.alert(t('common.error'), t('errors.vaccination_date_in_future'));
+      toast.showError(t('errors.vaccination_date_in_future'));
       return;
     }
     if (isIsoDateBefore(nextDate, date)) {
-      Alert.alert(t('common.error'), t('vaccines.valid_until_before_vaccinated'));
+      toast.showError(t('vaccines.valid_until_before_vaccinated'));
       return;
     }
     try {
@@ -188,7 +190,7 @@ export default function AddVaccineScreen() {
       });
       router.back();
     } catch (err) {
-      Alert.alert(t('common.error'), getErrorMessage(err));
+      toast.showError(getErrorMessage(err));
       setSubmitting(false);
     }
   };

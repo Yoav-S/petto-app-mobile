@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
-  Alert,
   ActivityIndicator,
+  TouchableOpacity,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,8 +12,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import ReminderFormBody, { ReminderAutosaveStatus } from '@/components/reminders/ReminderFormBody';
 import {
   DESIGN_HEIGHT,
@@ -27,6 +30,7 @@ import {
   getReminder,
   listReminders,
   updateReminder,
+  deleteReminder,
   type RepeatOption,
 } from '@/services/reminders';
 import { getErrorMessage } from '@/services/errors';
@@ -39,6 +43,7 @@ const AUTOSAVE_MS = 700;
 export default function EditReminderScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const toast = useToast();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { activePetId } = useActivePet();
@@ -59,6 +64,7 @@ export default function EditReminderScreen() {
   const [sheet, setSheet] = useState<ReminderSheet>(null);
   const [autosaveState, setAutosaveState] = useState<AutosaveState>('idle');
   const [existingReminders, setExistingReminders] = useState<Reminder[]>([]);
+  const [deleteVisible, setDeleteVisible] = useState(false);
 
   const hydratedRef = useRef(false);
   const snapshotRef = useRef('');
@@ -163,17 +169,17 @@ export default function EditReminderScreen() {
   const warnDuplicate = useCallback(
     (nextDate: string, nextTime: string, list = existingReminders) => {
       if (!hasDuplicateInList(list, nextDate, nextTime, id)) return false;
-      Alert.alert(t('common.error'), t('reminders.duplicate_datetime'));
+      toast.showError(t('reminders.duplicate_datetime'));
       return true;
     },
-    [existingReminders, id],
+    [existingReminders, id, toast],
   );
 
   const warnBeforeMinDate = useCallback((nextDate: string) => {
     if (!isBeforeMinReminderDate(nextDate)) return false;
-    Alert.alert(t('common.error'), t('reminders.past_datetime'));
+    toast.showError(t('reminders.past_datetime'));
     return true;
-  }, []);
+  }, [toast]);
 
   const persist = useCallback(async () => {
     if (!activePetId || !id || !hydratedRef.current) return;
@@ -202,7 +208,7 @@ export default function EditReminderScreen() {
       setAutosaveState('saved');
     } catch (err) {
       setAutosaveState('error');
-      Alert.alert(t('common.error'), getErrorMessage(err));
+      toast.showError(getErrorMessage(err));
     }
   }, [
     activePetId,
@@ -216,6 +222,7 @@ export default function EditReminderScreen() {
     warnDuplicate,
     warnBeforeMinDate,
     buildSnapshot,
+    toast,
   ]);
 
   useEffect(() => {
@@ -246,6 +253,23 @@ export default function EditReminderScreen() {
     if (warnDuplicate(date, value)) return;
     setTime(value);
     setSheet(null);
+  };
+
+  const handleDelete = () => {
+    if (!activePetId || !id) return;
+    setDeleteVisible(false);
+    toast.showUndo({
+      message: t('reminders.deleted'),
+      onUndo: () => {},
+      onCommit: async () => {
+        try {
+          await deleteReminder(activePetId, id);
+          router.replace('/reminders' as never);
+        } catch (err) {
+          toast.showError(getErrorMessage(err));
+        }
+      },
+    });
   };
 
   if (loading) {
@@ -295,7 +319,27 @@ export default function EditReminderScreen() {
         onDateConfirm={handleDateConfirm}
         onTimeConfirm={handleTimeConfirm}
         onRepeatSelect={setRepeat}
-        footer={<ReminderAutosaveStatus layout={layout} state={autosaveState} />}
+        footer={
+          <View>
+            <ReminderAutosaveStatus layout={layout} state={autosaveState} />
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => setDeleteVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.deleteText}>{t('reminders.delete')}</Text>
+            </TouchableOpacity>
+          </View>
+        }
+      />
+
+      <ConfirmModal
+        visible={deleteVisible}
+        title={t('reminders.delete_confirm_title')}
+        message={t('reminders.delete_confirm_body')}
+        confirmText={t('common.delete')}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteVisible(false)}
       />
     </SafeAreaView>
   );
@@ -308,5 +352,15 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   centered: {
     flex: 1,
+  },
+  deleteButton: {
+    marginTop: 24,
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  deleteText: {
+    fontFamily: 'Rubik-Medium',
+    fontSize: 16,
+    color: c.error,
   },
 });

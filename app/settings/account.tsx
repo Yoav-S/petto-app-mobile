@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
 import { t } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
 import { deleteAccount } from '@/services/auth';
@@ -15,6 +16,7 @@ const DANGER = '#EF4444';
 export default function AccountSettingsScreen() {
   const { user, signOut } = useAuth();
   const styles = useThemedStyles(makeStyles);
+  const toast = useToast();
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -29,7 +31,7 @@ export default function AccountSettingsScreen() {
       await signOut();
     } catch (err) {
       setDeleting(false);
-      Alert.alert(t('common.error'), getErrorMessage(err));
+      toast.showError(getErrorMessage(err));
     }
   };
 

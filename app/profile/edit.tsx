@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { apiGet } from '@/services/api';
@@ -50,6 +51,7 @@ export default function EditProfileScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const toast = useToast();
   const { activePetId } = useActivePet();
   const headerTopPadding = useHeaderTopPadding();
 
@@ -183,7 +185,7 @@ export default function EditProfileScreen() {
       });
       router.back();
     } catch (err) {
-      Alert.alert(t('common.error'), getErrorMessage(err));
+      toast.showError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -207,7 +209,7 @@ export default function EditProfileScreen() {
       await deletePet(activePetId);
       router.replace('/(tabs)' as never);
     } catch (err) {
-      Alert.alert(t('common.error'), getErrorMessage(err));
+      toast.showError(getErrorMessage(err));
     }
   };
 

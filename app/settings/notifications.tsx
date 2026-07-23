@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
 import { t } from '@/i18n';
 import {
   getNotificationPrefs,
@@ -28,6 +29,7 @@ export default function NotificationsSettingsScreen() {
   const [error, setError] = useState<string | null>(null);
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const toast = useToast();
 
   const load = useCallback(async () => {
     try {
@@ -53,10 +55,10 @@ export default function NotificationsSettingsScreen() {
       } catch (err) {
         // Revert on failure so the UI never lies about the saved state.
         setPrefs((prev) => (prev ? { ...prev, [key]: !next } : prev));
-        Alert.alert(t('common.error'), getErrorMessage(err));
+        toast.showError(getErrorMessage(err));
       }
     },
-    [],
+    [toast],
   );
 
   const renderRow = (key: PrefKey, disabled: boolean) => (

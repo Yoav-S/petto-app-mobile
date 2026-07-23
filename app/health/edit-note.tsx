@@ -15,6 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
@@ -48,6 +49,7 @@ function reminderLabel(draft: HealthReminderDraft): string {
 export default function EditNoteScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const toast = useToast();
   const router = useRouter();
   const { recordId: recordIdParam, noteId: noteIdParam, open: openParam } = useLocalSearchParams<{
     recordId: string;
@@ -174,6 +176,34 @@ export default function EditNoteScreen() {
     }
   }, [loading, notFound, open, pickImage]);
 
+  const handleRemoveReminder = () => {
+    if (!reminderDraft) return;
+    const snapshot = reminderDraft;
+    const reminderId = linkedReminderId;
+
+    setReminderDraft(null);
+    if (reminderId) setLinkedReminderId(null);
+
+    toast.showUndo({
+      message: t('reminders.deleted'),
+      onUndo: () => {
+        setReminderDraft(snapshot);
+        if (reminderId) setLinkedReminderId(reminderId);
+      },
+      onCommit: async () => {
+        if (!activePetId || !reminderId || !recordId || !noteId) return;
+        try {
+          await removeHealthReminder(activePetId, reminderId);
+          await updateNote(activePetId, recordId, noteId, { linked_reminder_id: null });
+        } catch (err) {
+          setReminderDraft(snapshot);
+          setLinkedReminderId(reminderId);
+          toast.showError(getErrorMessage(err));
+        }
+      },
+    });
+  };
+
   const handleSave = async () => {
     if (!activePetId || !recordId || !noteId || !noteText.trim()) return;
     try {
@@ -194,6 +224,7 @@ export default function EditNoteScreen() {
           linkedReminderId,
         );
       } else if (linkedReminderId) {
+        // Fallback if UI cleared draft but toast commit hasn't run yet.
         await removeHealthReminder(activePetId, linkedReminderId);
         nextLinkedReminderId = null;
       }
@@ -205,21 +236,27 @@ export default function EditNoteScreen() {
       });
       router.back();
     } catch (err) {
-      Alert.alert(t('common.error'), getErrorMessage(err));
+      toast.showError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!activePetId || !recordId || !noteId) return;
     setDeleteVisible(false);
-    try {
-      await deleteNote(activePetId, recordId, noteId);
-      router.replace({ pathname: '/health', params: { deletedNote: 'true' } } as never);
-    } catch (err) {
-      Alert.alert(t('common.error'), getErrorMessage(err));
-    }
+    toast.showUndo({
+      message: t('health.deleted'),
+      onUndo: () => {},
+      onCommit: async () => {
+        try {
+          await deleteNote(activePetId, recordId, noteId);
+          router.replace('/health' as never);
+        } catch (err) {
+          toast.showError(getErrorMessage(err));
+        }
+      },
+    });
   };
 
   if (loading) {
@@ -274,7 +311,7 @@ export default function EditNoteScreen() {
             onPickImage={pickImage}
             reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
             onReminderPress={() => setReminderSheetVisible(true)}
-            onRemoveReminder={() => setReminderDraft(null)}
+            onRemoveReminder={handleRemoveReminder}
             placeholder={t('health.note_body_placeholder')}
           />
 
