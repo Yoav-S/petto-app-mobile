@@ -23,8 +23,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
-import InlineCalendarPicker from '@/components/vaccines/InlineCalendarPicker';
 import VaccinePhotoSourceSheet from '@/components/vaccines/VaccinePhotoSourceSheet';
+import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { createVaccination } from '@/services/vaccines';
@@ -38,7 +38,7 @@ import {
   todayIsoDate,
 } from '@/utils/calendar';
 
-type ExpandedDatePicker = 'date' | 'next' | null;
+type DateSheet = 'date' | 'next' | null;
 
 const DESIGN_WIDTH = 375;
 const DESIGN_HEIGHT = 812;
@@ -88,7 +88,7 @@ export default function AddVaccineScreen() {
       savePadH: 16 * sx,
     };
   }, [sx, sy, photoUri]);
-  const [expandedPicker, setExpandedPicker] = useState<ExpandedDatePicker>(null);
+  const [dateSheet, setDateSheet] = useState<DateSheet>(null);
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -113,6 +113,7 @@ export default function AddVaccineScreen() {
 
   const handleVaccinatedDateChange = (iso: string) => {
     setDate(iso);
+    setDateSheet(null);
     if (isIsoDateBefore(nextDate, iso)) {
       setNextDate(addYearsToIsoDate(iso, 1));
     }
@@ -124,6 +125,7 @@ export default function AddVaccineScreen() {
       return;
     }
     setNextDate(iso);
+    setDateSheet(null);
   };
 
   const pickImage = async (source: 'camera' | 'library') => {
@@ -186,10 +188,6 @@ export default function AddVaccineScreen() {
     }
   };
 
-  const togglePicker = (target: ExpandedDatePicker) => {
-    setExpandedPicker((prev) => (prev === target ? null : target));
-  };
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <VaccineScreenHeader title={t('vaccines.add_title')} icon="close" />
@@ -245,47 +243,30 @@ export default function AddVaccineScreen() {
                 borderRadius: layout.cardRadius,
                 paddingHorizontal: layout.cardPadH,
                 paddingVertical: layout.cardPadV,
-                minHeight: expandedPicker ? undefined : layout.datesHeight,
+                minHeight: layout.datesHeight,
                 gap: layout.innerGap,
               },
             ]}
           >
             <TouchableOpacity
               style={styles.dateRow}
-              onPress={() => togglePicker('date')}
+              onPress={() => setDateSheet('date')}
               activeOpacity={0.6}
             >
               <Text style={styles.dateRowLabel}>{t('vaccines.vaccinated_on')}</Text>
               <Text style={styles.dateRowValue}>{formatDisplayDate(date)}</Text>
             </TouchableOpacity>
 
-            {expandedPicker === 'date' ? (
-              <InlineCalendarPicker
-                value={parseIsoDate(date)}
-                onChange={handleVaccinatedDateChange}
-                allowFuture
-              />
-            ) : null}
-
             <View style={styles.divider} />
 
             <TouchableOpacity
               style={styles.dateRow}
-              onPress={() => togglePicker('next')}
+              onPress={() => setDateSheet('next')}
               activeOpacity={0.6}
             >
               <Text style={styles.dateRowLabel}>{t('vaccines.valid_until')}</Text>
               <Text style={styles.dateRowValue}>{formatDisplayDate(nextDate)}</Text>
             </TouchableOpacity>
-
-            {expandedPicker === 'next' ? (
-              <InlineCalendarPicker
-                value={parseIsoDate(nextDate)}
-                onChange={handleValidUntilChange}
-                minDate={date}
-                allowFuture
-              />
-            ) : null}
           </View>
 
           {/* Proof photo */}
@@ -395,6 +376,27 @@ export default function AddVaccineScreen() {
         onClose={() => setPhotoSheetVisible(false)}
         onTakePhoto={() => pickImage('camera')}
         onChooseLibrary={() => pickImage('library')}
+      />
+
+      <BirthDatePickerSheet
+        visible={dateSheet === 'date'}
+        initialDate={parseIsoDate(date)}
+        onClose={() => setDateSheet(null)}
+        onConfirm={handleVaccinatedDateChange}
+        allowFuture
+        title={t('vaccines.vaccinated_on')}
+        confirmLabel={t('pickers.done')}
+      />
+
+      <BirthDatePickerSheet
+        visible={dateSheet === 'next'}
+        initialDate={parseIsoDate(nextDate)}
+        onClose={() => setDateSheet(null)}
+        onConfirm={handleValidUntilChange}
+        allowFuture
+        minDate={date}
+        title={t('vaccines.valid_until')}
+        confirmLabel={t('pickers.done')}
       />
 
       <Modal visible={viewerVisible} transparent animationType="fade" onRequestClose={() => setViewerVisible(false)}>
