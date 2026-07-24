@@ -6,8 +6,8 @@ import {
   Pressable,
   useWindowDimensions,
   Alert,
-  Modal,
 } from 'react-native';
+import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -237,9 +237,7 @@ export default function PetPhotoOnboardingScreen() {
         </Pressable>
       </View>
 
-      <Modal visible={sheetVisible} transparent animationType="slide" onRequestClose={closeSheet}>
-        <View style={styles.sheetBackdrop}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={closeSheet} accessibilityLabel={t('petOnboarding.photo_close_a11y')} />
+      <BottomSheetModal visible={sheetVisible} onClose={closeSheet}>
           <View
             style={[
               styles.sheet,
@@ -338,8 +336,7 @@ export default function PetPhotoOnboardingScreen() {
               </Pressable>
             </View>
           </View>
-        </View>
-      </Modal>
+      </BottomSheetModal>
     </SafeAreaView>
   );
 }

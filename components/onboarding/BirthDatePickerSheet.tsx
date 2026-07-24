@@ -4,8 +4,8 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Modal,
 } from 'react-native';
+import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@/i18n';
@@ -57,9 +57,7 @@ export default function BirthDatePickerSheet({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+    <BottomSheetModal visible={visible} onClose={onClose}>
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.header}>
             <View style={styles.headerSpacer} />
@@ -97,8 +95,7 @@ export default function BirthDatePickerSheet({
             </Text>
           </Pressable>
         </View>
-      </View>
-    </Modal>
+    </BottomSheetModal>
   );
 }
 

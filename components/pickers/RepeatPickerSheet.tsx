@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
@@ -24,9 +25,7 @@ export default function RepeatPickerSheet({ visible, value, onClose, onSelect }:
   const insets = useSafeAreaInsets();
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+    <BottomSheetModal visible={visible} onClose={onClose}>
         <View style={[styles.sheet, { paddingBottom: insets.bottom + Spacing.lg }]}>
           <View style={styles.header}>
             <View style={styles.headerSpacer} />
@@ -55,8 +54,7 @@ export default function RepeatPickerSheet({ visible, value, onClose, onSelect }:
             })}
           </View>
         </View>
-      </View>
-    </Modal>
+    </BottomSheetModal>
   );
 }
 

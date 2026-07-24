@@ -4,10 +4,9 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Modal,
-  Pressable,
   useWindowDimensions,
 } from 'react-native';
+import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
@@ -238,9 +237,7 @@ export default function ReminderPickerSheet({
 
   return (
     <>
-      <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-        <View style={styles.overlay}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      <BottomSheetModal visible={visible} onClose={onClose}>
           <View
             style={[
               styles.sheet,
@@ -443,8 +440,7 @@ export default function ReminderPickerSheet({
               </View>
             </View>
           </View>
-        </View>
-      </Modal>
+      </BottomSheetModal>
 
       <BirthDatePickerSheet
         visible={subSheet === 'date'}

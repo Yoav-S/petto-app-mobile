@@ -3,11 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
-  Pressable,
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
@@ -40,9 +39,7 @@ export default function PetSwitcherSheet({
   const insets = useSafeAreaInsets();
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel={t('common.cancel')} />
+    <BottomSheetModal visible={visible} onClose={onClose}>
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.header}>
             <Text style={styles.title}>{t('home.switch_title')}</Text>
@@ -83,8 +80,7 @@ export default function PetSwitcherSheet({
             <AddPetRow onPress={onAddPet} />
           </View>
         </View>
-      </View>
-    </Modal>
+    </BottomSheetModal>
   );
 }
 

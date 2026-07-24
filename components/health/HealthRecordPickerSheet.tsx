@@ -3,11 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
-  Pressable,
   FlatList,
   TouchableOpacity,
 } from 'react-native';
+import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
@@ -34,9 +33,7 @@ export default function HealthRecordPickerSheet({
   const insets = useSafeAreaInsets();
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+    <BottomSheetModal visible={visible} onClose={onClose}>
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.header}>
             <View style={styles.headerSpacer} />
@@ -80,8 +77,7 @@ export default function HealthRecordPickerSheet({
             />
           )}
         </View>
-      </View>
-    </Modal>
+    </BottomSheetModal>
   );
 }
 

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -15,10 +16,7 @@ export default function EditPhotoSheet({ visible, onClose, onTake, onChoose }: E
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} onPress={onClose} activeOpacity={1} />
-        
+    <BottomSheetModal visible={visible} onClose={onClose}>
         <View style={styles.sheet}>
           <View style={styles.dragHandle} />
           
@@ -44,8 +42,7 @@ export default function EditPhotoSheet({ visible, onClose, onTake, onChoose }: E
             <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </Modal>
+    </BottomSheetModal>
   );
 }
 
