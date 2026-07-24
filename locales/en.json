@@ -42,6 +42,7 @@
   "common": {
     "today": "Today",
     "yesterday": "Yesterday",
+    "tomorrow": "Tomorrow",
     "loading": "Loading...",
     "error": "Something went wrong",
     "retry": "Retry",

@@ -42,6 +42,7 @@
   "common": {
     "today": "היום",
     "yesterday": "אתמול",
+    "tomorrow": "מחר",
     "loading": "טוען...",
     "error": "משהו השתבש",
     "retry": "נסה שוב",

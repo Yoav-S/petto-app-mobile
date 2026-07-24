@@ -54,20 +54,22 @@ function reminderSubtitle(item: Reminder): string {
   return '';
 }
 
-function reminderTimeOrDate(item: Reminder, tab: TabName): string {
-  if (tab === 'Today') return item.time;
-  if (tab === 'Recent') {
-    const status = t(`status.${item.status}`);
-    return `${status === `status.${item.status}` ? item.status : status}\n${formatDisplayDate(item.date)}`;
-  }
-  return `${formatDisplayDate(item.date)}\n${item.time}`;
-}
-
-function reminderDateLabel(date: string): string {
+function reminderRelativeDate(date: string): string {
   const today = todayIsoDate();
   if (date === today) return t('common.today');
   if (date === addDaysToIsoDate(today, -1)) return t('common.yesterday');
+  if (date === addDaysToIsoDate(today, 1)) return t('common.tomorrow');
   return formatDisplayDate(date);
+}
+
+function reminderTimeOrDate(item: Reminder, tab: TabName): string {
+  if (tab === 'Today') return item.time;
+  // Recent / Upcoming: time on top, relative date under (Yesterday / Tomorrow / date).
+  return `${item.time}\n${reminderRelativeDate(item.date)}`;
+}
+
+function reminderDateLabel(date: string): string {
+  return reminderRelativeDate(date);
 }
 
 function sortPromptQueue(items: Reminder[], focusId?: string | null): Reminder[] {
@@ -334,7 +336,6 @@ export default function RemindersScreen() {
               title={item.title}
               subtitle={reminderSubtitle(item)}
               timeOrDate={reminderTimeOrDate(item, activeTab)}
-              categoryAccent={colors.category.reminders}
               onPress={
                 activeTab === 'Recent' ? undefined : () => handleReminderPress(item)
               }

@@ -7,40 +7,36 @@ interface ReminderListItemProps {
   title: string;
   subtitle: string;
   timeOrDate: string;
-  categoryAccent?: string; // Optional color for the left border highlight
   onPress?: () => void;
 }
 
-export default function ReminderListItem({ 
-  title, 
-  subtitle, 
-  timeOrDate, 
-  categoryAccent,
-  onPress 
+export default function ReminderListItem({
+  title,
+  subtitle,
+  timeOrDate,
+  onPress,
 }: ReminderListItemProps) {
   const styles = useThemedStyles(makeStyles);
+  const lines = timeOrDate.split('\n').filter(Boolean);
+
   return (
-    <TouchableOpacity 
-      style={styles.card} 
+    <TouchableOpacity
+      style={styles.card}
       onPress={onPress}
       activeOpacity={0.7}
       disabled={!onPress}
     >
-      {categoryAccent && (
-        <View style={[styles.leftBorder, { backgroundColor: categoryAccent }]} />
-      )}
-      
       <View style={styles.contentContainer}>
         <View style={styles.leftContent}>
           <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
         <View style={styles.rightContent}>
-          {timeOrDate.split('\n').map((line, index) => (
-            <Text key={index} style={[
-              styles.timeOrDate, 
-              index === 0 && timeOrDate.includes('\n') ? styles.primaryTime : null
-            ]}>
+          {lines.map((line, index) => (
+            <Text
+              key={`${line}-${index}`}
+              style={[styles.timeOrDate, index === 0 && lines.length > 1 ? styles.primaryTime : null]}
+            >
               {line}
             </Text>
           ))}
@@ -50,59 +46,56 @@ export default function ReminderListItem({
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  card: {
-    backgroundColor: c.surface,
-    borderRadius: Radius.lg,
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    flexDirection: 'row',
-    overflow: 'hidden',
-    minHeight: 72,
-  },
-  leftBorder: {
-    width: 4,
-    height: '100%',
-  },
-  contentContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: Spacing.lg,
-  },
-  leftContent: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingRight: Spacing.md,
-  },
-  title: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: c.primaryText,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: c.secondaryText,
-  },
-  rightContent: {
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-  },
-  timeOrDate: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: c.secondaryText,
-    textAlign: 'right',
-  },
-  primaryTime: {
-    color: c.primaryText,
-    marginBottom: 2,
-  },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: c.surface,
+      borderRadius: Radius.lg,
+      marginHorizontal: Spacing.lg,
+      marginBottom: Spacing.md,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+      flexDirection: 'row',
+      overflow: 'hidden',
+      minHeight: 72,
+    },
+    contentContainer: {
+      flex: 1,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      padding: Spacing.lg,
+    },
+    leftContent: {
+      flex: 1,
+      justifyContent: 'center',
+      paddingRight: Spacing.md,
+    },
+    title: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 16,
+      color: c.primaryText,
+      marginBottom: 4,
+    },
+    subtitle: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 14,
+      color: c.secondaryText,
+    },
+    rightContent: {
+      justifyContent: 'center',
+      alignItems: 'flex-end',
+    },
+    timeOrDate: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 14,
+      color: c.secondaryText,
+      textAlign: 'right',
+    },
+    primaryTime: {
+      color: c.primaryText,
+      marginBottom: 2,
+    },
+  });

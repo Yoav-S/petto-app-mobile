@@ -42,6 +42,7 @@
   "common": {
     "today": "Astăzi",
     "yesterday": "Ieri",
+    "tomorrow": "Mâine",
     "loading": "Se încarcă...",
     "error": "Ceva n-a mers bine",
     "retry": "Reîncearcă",
