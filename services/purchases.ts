@@ -48,6 +48,17 @@ export function isPurchasesConfigured(): boolean {
   return false;
 }
 
+function isBenignRevenueCatMessage(message: string): boolean {
+  const m = message.toLowerCase();
+  return (
+    m.includes('offerings') ||
+    m.includes('test store') ||
+    m.includes('configurationerror') ||
+    m.includes('empty') ||
+    m.includes('no test store products')
+  );
+}
+
 /** Configure once per process. Safe to call repeatedly. */
 export async function configurePurchases(): Promise<boolean> {
   if (configured) return true;
@@ -59,9 +70,22 @@ export async function configurePurchases(): Promise<boolean> {
   }
 
   try {
-    if (__DEV__) {
-      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-    }
+    // Keep SDK quiet in the UI — RevenueCat's default ERROR logs trigger Expo LogBox.
+    await Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.WARN : LOG_LEVEL.ERROR);
+    Purchases.setLogHandler((level, message) => {
+      if (isBenignRevenueCatMessage(message)) {
+        if (__DEV__) console.log(`${LOG} ${message}`);
+        return;
+      }
+      if (level === LOG_LEVEL.ERROR) {
+        console.warn(`${LOG} ${message}`);
+        return;
+      }
+      if (level === LOG_LEVEL.WARN && __DEV__) {
+        console.warn(`${LOG} ${message}`);
+      }
+    });
+
     const apiKey = Platform.OS === 'ios' ? iosKey() : androidKey();
     Purchases.configure({ apiKey });
     configured = true;
@@ -124,7 +148,13 @@ export async function logSubscriptionReadiness(firebaseUid: string): Promise<voi
       console.warn(`${LOG} NOT READY — fix RevenueCat offering: default → Monthly → ${PREMIUM_PRODUCT_ID}`);
     }
   } catch (error) {
-    console.warn(`${LOG} readiness check failed:`, error);
+    // Empty Test Store offerings are a dashboard config issue — not a user-facing error.
+    if (__DEV__) {
+      console.log(
+        `${LOG} readiness check skipped (configure Test Store products in RevenueCat):`,
+        error instanceof Error ? error.message : error,
+      );
+    }
   }
 }
 
@@ -203,7 +233,11 @@ export async function getMonthlyPackage(): Promise<PurchasesPackage | null> {
       null
     );
   } catch (error) {
-    console.warn(`${LOG} getOfferings failed:`, error);
+    if (__DEV__) {
+      console.log(
+        `${LOG} getOfferings unavailable — add Test Store products to your RevenueCat offering.`,
+      );
+    }
     return null;
   }
 }
