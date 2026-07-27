@@ -24,6 +24,11 @@
       "empty": "Nicio înregistrare încă"
     }
   },
+  "pets": {
+    "add_title": "Adaugă animal",
+    "name_placeholder": "Nume",
+    "add_photo": "Adaugă foto"
+  },
   "fab": {
     "add": "Adaugă",
     "vaccines": "Vaccinuri",
@@ -254,7 +259,14 @@
     "repeat_every_week": "În fiecare săptămână",
     "repeat_every_2_weeks": "La fiecare 2 săptămâni",
     "repeat_every_month": "În fiecare lună",
-    "repeat_every_year": "În fiecare an"
+    "repeat_every_year": "În fiecare an",
+    "category_title": "Categorie",
+    "category_placeholder": "Selectează categoria",
+    "category_general": "General",
+    "category_medication": "Medicație",
+    "category_vaccination": "Vaccinare",
+    "category_appointment": "Programare",
+    "category_observation": "Observație"
   },
   "health": {
     "title": "Sănătate",
@@ -381,6 +393,7 @@
     "photo_sheet_title": "Adaugă o fotografie",
     "photo_take": "Fă o poză",
     "photo_choose_library": "Alege din bibliotecă",
+    "photo_remove": "Șterge fotografia",
     "photo_cancel": "Anulează",
     "photo_close_a11y": "Închide",
     "photo_camera_permission_title": "Acces la cameră necesar",

@@ -6,6 +6,7 @@ export interface CreatePetInput {
   type: string;
   birth_date?: string | null;
   photo_url?: string | null;
+  sex?: string | null;
 }
 
 /** Partial update — only the provided keys are sent. `null` clears a field. */

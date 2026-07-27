@@ -24,6 +24,11 @@
       "empty": "Записей пока нет"
     }
   },
+  "pets": {
+    "add_title": "Добавить питомца",
+    "name_placeholder": "Имя",
+    "add_photo": "Добавить фото"
+  },
   "fab": {
     "add": "Добавить",
     "vaccines": "Прививки",
@@ -254,7 +259,14 @@
     "repeat_every_week": "Каждую неделю",
     "repeat_every_2_weeks": "Каждые 2 недели",
     "repeat_every_month": "Каждый месяц",
-    "repeat_every_year": "Каждый год"
+    "repeat_every_year": "Каждый год",
+    "category_title": "Категория",
+    "category_placeholder": "Выберите категорию",
+    "category_general": "Общее",
+    "category_medication": "Лекарство",
+    "category_vaccination": "Вакцинация",
+    "category_appointment": "Приём",
+    "category_observation": "Наблюдение"
   },
   "health": {
     "title": "Здоровье",
@@ -381,6 +393,7 @@
     "photo_sheet_title": "Добавить фото",
     "photo_take": "Сделать фото",
     "photo_choose_library": "Выбрать из галереи",
+    "photo_remove": "Удалить фото",
     "photo_cancel": "Отмена",
     "photo_close_a11y": "Закрыть",
     "photo_camera_permission_title": "Нужен доступ к камере",

@@ -24,6 +24,7 @@ import {
   isBeforeMinReminderDate,
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
+import { categoryLabel } from '@/components/pickers/CategoryPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import {
@@ -35,6 +36,10 @@ import {
 } from '@/services/reminders';
 import { getErrorMessage } from '@/services/errors';
 import type { Reminder } from '@/types/api';
+import {
+  resolveReminderCategory,
+  type ReminderCategory,
+} from '@/utils/reminderCategory';
 
 type AutosaveState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -56,6 +61,8 @@ export default function EditReminderScreen() {
   const [notFound, setNotFound] = useState(false);
 
   const [title, setTitle] = useState('');
+  const [category, setCategory] = useState<ReminderCategory>('general');
+  const [categoryManual, setCategoryManual] = useState(false);
   const [date, setDate] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [repeat, setRepeat] = useState<RepeatOption>('off');
@@ -79,6 +86,7 @@ export default function EditReminderScreen() {
       cardPadH: 16 * sx,
       cardPadV: 14 * sy,
       nameHeight: 48 * sy,
+      categoryHeight: 52 * sy,
       scheduleHeight: 120 * sy,
       noteHeight: 78 * sy,
       innerGap: 8 * sy,
@@ -137,6 +145,8 @@ export default function EditReminderScreen() {
       }
 
       setTitle(reminder.title);
+      setCategory(resolveReminderCategory(reminder.title));
+      setCategoryManual(false);
       setDate(reminder.date);
       setTime(reminder.time);
       setRepeat((reminder.repeat as RepeatOption) ?? 'off');
@@ -180,6 +190,26 @@ export default function EditReminderScreen() {
     toast.showError(t('reminders.past_datetime'));
     return true;
   }, [toast]);
+
+  const handleTitleChange = (value: string) => {
+    setTitle(value);
+    if (!categoryManual) {
+      setCategory(resolveReminderCategory(value));
+      return;
+    }
+    if (!value.trim()) {
+      setCategoryManual(false);
+      setCategory('general');
+    }
+  };
+
+  const handleCategorySelect = (value: ReminderCategory) => {
+    setCategory(value);
+    setCategoryManual(true);
+    if (!title.trim()) {
+      setTitle(categoryLabel(value));
+    }
+  };
 
   const persist = useCallback(async () => {
     if (!activePetId || !id || !hydratedRef.current) return;
@@ -305,7 +335,9 @@ export default function EditReminderScreen() {
       <ReminderFormBody
         layout={layout}
         title={title}
-        onTitleChange={setTitle}
+        onTitleChange={handleTitleChange}
+        category={category}
+        onCategorySelect={handleCategorySelect}
         date={date}
         time={time}
         repeat={repeat}

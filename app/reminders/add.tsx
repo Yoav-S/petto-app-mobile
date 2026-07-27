@@ -14,11 +14,16 @@ import {
   isBeforeMinReminderDate,
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
+import { categoryLabel } from '@/components/pickers/CategoryPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { createReminder, listReminders, type RepeatOption } from '@/services/reminders';
 import { getErrorMessage } from '@/services/errors';
 import type { Reminder } from '@/types/api';
+import {
+  resolveReminderCategory,
+  type ReminderCategory,
+} from '@/utils/reminderCategory';
 
 export default function AddReminderScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -30,6 +35,8 @@ export default function AddReminderScreen() {
   const sy = height / DESIGN_HEIGHT;
 
   const [title, setTitle] = useState('');
+  const [category, setCategory] = useState<ReminderCategory>('general');
+  const [categoryManual, setCategoryManual] = useState(false);
   const [date, setDate] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [repeat, setRepeat] = useState<RepeatOption>('off');
@@ -48,6 +55,7 @@ export default function AddReminderScreen() {
       cardPadH: 16 * sx,
       cardPadV: 14 * sy,
       nameHeight: 48 * sy,
+      categoryHeight: 52 * sy,
       scheduleHeight: 120 * sy,
       noteHeight: 78 * sy,
       innerGap: 8 * sy,
@@ -93,6 +101,26 @@ export default function AddReminderScreen() {
   }, [toast]);
 
   const canSave = title.trim().length > 0 && !!date && !!time && !submitting;
+
+  const handleTitleChange = (value: string) => {
+    setTitle(value);
+    if (!categoryManual) {
+      setCategory(resolveReminderCategory(value));
+      return;
+    }
+    if (!value.trim()) {
+      setCategoryManual(false);
+      setCategory('general');
+    }
+  };
+
+  const handleCategorySelect = (value: ReminderCategory) => {
+    setCategory(value);
+    setCategoryManual(true);
+    if (!title.trim()) {
+      setTitle(categoryLabel(value));
+    }
+  };
 
   const handleSave = async () => {
     if (!canSave || !activePetId || !date || !time) return;
@@ -147,7 +175,9 @@ export default function AddReminderScreen() {
       <ReminderFormBody
         layout={layout}
         title={title}
-        onTitleChange={setTitle}
+        onTitleChange={handleTitleChange}
+        category={category}
+        onCategorySelect={handleCategorySelect}
         date={date}
         time={time}
         repeat={repeat}

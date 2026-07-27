@@ -14,7 +14,7 @@ export const CARD_SHADOW = {
   elevation: 3,
 };
 
-export type ReminderSheet = 'date' | 'time' | 'repeat' | null;
+export type ReminderSheet = 'category' | 'date' | 'time' | 'repeat' | null;
 
 export function normalizeTime(time: string): string {
   const [h, m] = time.split(':').map(Number);

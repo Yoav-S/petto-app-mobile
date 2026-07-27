@@ -24,6 +24,11 @@
       "empty": "אין רשומות עדיין"
     }
   },
+  "pets": {
+    "add_title": "הוספת חיה",
+    "name_placeholder": "שם",
+    "add_photo": "הוסף תמונה"
+  },
   "fab": {
     "add": "הוסף",
     "vaccines": "חיסון",
@@ -254,7 +259,14 @@
     "repeat_every_week": "כל שבוע",
     "repeat_every_2_weeks": "כל שבועיים",
     "repeat_every_month": "כל חודש",
-    "repeat_every_year": "כל שנה"
+    "repeat_every_year": "כל שנה",
+    "category_title": "קטגוריה",
+    "category_placeholder": "בחרו קטגוריה",
+    "category_general": "כללי",
+    "category_medication": "תרופה",
+    "category_vaccination": "חיסון",
+    "category_appointment": "תור",
+    "category_observation": "מעקב"
   },
   "health": {
     "title": "בריאות",
@@ -381,6 +393,7 @@
     "photo_sheet_title": "הוסף תמונה",
     "photo_take": "צלם תמונה",
     "photo_choose_library": "בחר מהגלריה",
+    "photo_remove": "הסר תמונה",
     "photo_cancel": "ביטול",
     "photo_close_a11y": "סגור",
     "photo_camera_permission_title": "נדרשת גישה למצלמה",

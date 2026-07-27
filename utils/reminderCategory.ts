@@ -7,7 +7,15 @@ export type ReminderCategory =
   | 'appointment'
   | 'observation';
 
-const CATEGORY_ICONS: Record<ReminderCategory, ImageSourcePropType> = {
+export const REMINDER_CATEGORIES: ReminderCategory[] = [
+  'general',
+  'medication',
+  'vaccination',
+  'appointment',
+  'observation',
+];
+
+export const CATEGORY_ICONS: Record<ReminderCategory, ImageSourcePropType> = {
   general: require('@/assets/images/reminders/general.png'),
   medication: require('@/assets/images/reminders/medication.png'),
   vaccination: require('@/assets/images/reminders/vaccination.png'),
@@ -224,4 +232,8 @@ export function resolveReminderCategory(title: string | null | undefined): Remin
 
 export function reminderCategoryIcon(title: string | null | undefined): ImageSourcePropType {
   return CATEGORY_ICONS[resolveReminderCategory(title)];
+}
+
+export function reminderCategoryIconFor(category: ReminderCategory): ImageSourcePropType {
+  return CATEGORY_ICONS[category];
 }

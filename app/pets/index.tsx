@@ -58,7 +58,7 @@ export default function PetsListScreen() {
 
   const handleAddPet = async () => {
     if (!(await guardAddPet(router, pets.length))) return;
-    router.push('/(onboarding)/name' as never);
+    router.push('/pets/add' as never);
   };
 
   return (

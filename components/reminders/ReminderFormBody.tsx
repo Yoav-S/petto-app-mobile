@@ -10,6 +10,7 @@ import {
   Platform,
   Keyboard,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
@@ -17,6 +18,9 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import ReminderCalendarPickerSheet from '@/components/reminders/ReminderCalendarPickerSheet';
 import TimePickerSheet from '@/components/pickers/TimePickerSheet';
 import RepeatPickerSheet from '@/components/pickers/RepeatPickerSheet';
+import CategoryPickerSheet, {
+  categoryLabel,
+} from '@/components/pickers/CategoryPickerSheet';
 import { t } from '@/i18n';
 import type { RepeatOption } from '@/services/reminders';
 import {
@@ -26,6 +30,10 @@ import {
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
 import { formatDisplayDate } from '@/utils/calendar';
+import {
+  reminderCategoryIconFor,
+  type ReminderCategory,
+} from '@/utils/reminderCategory';
 
 interface ReminderFormLayout {
   formTop: number;
@@ -35,6 +43,7 @@ interface ReminderFormLayout {
   cardPadH: number;
   cardPadV: number;
   nameHeight: number;
+  categoryHeight: number;
   scheduleHeight: number;
   noteHeight: number;
   innerGap: number;
@@ -46,6 +55,8 @@ interface ReminderFormBodyProps {
   layout: ReminderFormLayout;
   title: string;
   onTitleChange: (value: string) => void;
+  category: ReminderCategory;
+  onCategorySelect: (value: ReminderCategory) => void;
   date: string | null;
   time: string | null;
   repeat: RepeatOption;
@@ -67,6 +78,8 @@ export default function ReminderFormBody({
   layout,
   title,
   onTitleChange,
+  category,
+  onCategorySelect,
   date,
   time,
   repeat,
@@ -130,6 +143,33 @@ export default function ReminderFormBody({
               returnKeyType="next"
             />
           </View>
+
+          <TouchableOpacity
+            style={[
+              styles.card,
+              styles.categoryRow,
+              CARD_SHADOW,
+              {
+                width: layout.cardWidth,
+                height: layout.categoryHeight,
+                borderRadius: layout.cardRadius,
+                paddingHorizontal: layout.cardPadH,
+                gap: 10,
+              },
+            ]}
+            onPress={() => onSheetChange('category')}
+            activeOpacity={0.6}
+          >
+            <Image
+              source={reminderCategoryIconFor(category)}
+              style={styles.categoryIcon}
+              resizeMode="contain"
+            />
+            <Text style={styles.categoryLabel} numberOfLines={1}>
+              {categoryLabel(category)}
+            </Text>
+            <Ionicons name="chevron-down" size={18} color={colors.secondaryText} />
+          </TouchableOpacity>
 
           <View
             style={[
@@ -247,6 +287,15 @@ export default function ReminderFormBody({
           onSheetChange(null);
         }}
       />
+      <CategoryPickerSheet
+        visible={sheet === 'category'}
+        value={category}
+        onClose={() => onSheetChange(null)}
+        onSelect={(value) => {
+          onCategorySelect(value);
+          onSheetChange(null);
+        }}
+      />
     </>
   );
 }
@@ -330,6 +379,21 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.primaryText,
     padding: 0,
     margin: 0,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+  },
+  categoryIcon: {
+    width: 24,
+    height: 24,
+  },
+  categoryLabel: {
+    flex: 1,
+    fontFamily: 'Rubik-Regular',
+    fontSize: 16,
+    color: c.primaryText,
   },
   scheduleRow: {
     flexDirection: 'row',

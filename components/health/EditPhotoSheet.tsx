@@ -4,15 +4,24 @@ import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { t } from '@/i18n';
 
 interface EditPhotoSheetProps {
   visible: boolean;
   onClose: () => void;
   onTake: () => void;
   onChoose: () => void;
+  /** When set, shows a remove action (e.g. clear a newly picked photo). */
+  onRemove?: () => void;
 }
 
-export default function EditPhotoSheet({ visible, onClose, onTake, onChoose }: EditPhotoSheetProps) {
+export default function EditPhotoSheet({
+  visible,
+  onClose,
+  onTake,
+  onChoose,
+  onRemove,
+}: EditPhotoSheetProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
   return (
@@ -22,7 +31,7 @@ export default function EditPhotoSheet({ visible, onClose, onTake, onChoose }: E
           
           <View style={styles.header}>
             <View style={styles.headerSpacer} />
-            <Text style={styles.title}>Edit photo</Text>
+            <Text style={styles.title}>{t('petOnboarding.photo_sheet_title')}</Text>
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
               <Ionicons name="close" size={20} color={colors.primaryText} />
             </TouchableOpacity>
@@ -30,16 +39,26 @@ export default function EditPhotoSheet({ visible, onClose, onTake, onChoose }: E
           
           <View style={styles.menuContainer}>
             <TouchableOpacity style={styles.menuItem} onPress={onTake}>
-              <Text style={styles.menuItemText}>Take photo</Text>
+              <Text style={styles.menuItemText}>{t('petOnboarding.photo_take')}</Text>
             </TouchableOpacity>
             <View style={styles.divider} />
             <TouchableOpacity style={styles.menuItem} onPress={onChoose}>
-              <Text style={styles.menuItemText}>Choose from library</Text>
+              <Text style={styles.menuItemText}>{t('petOnboarding.photo_choose_library')}</Text>
             </TouchableOpacity>
+            {onRemove ? (
+              <>
+                <View style={styles.divider} />
+                <TouchableOpacity style={styles.menuItem} onPress={onRemove}>
+                  <Text style={[styles.menuItemText, styles.removeText]}>
+                    {t('petOnboarding.photo_remove')}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : null}
           </View>
 
           <TouchableOpacity style={styles.cancelButton} onPress={onClose} activeOpacity={0.8}>
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={styles.cancelText}>{t('petOnboarding.photo_cancel')}</Text>
           </TouchableOpacity>
         </View>
     </BottomSheetModal>
@@ -106,6 +125,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
     color: c.primaryText,
+  },
+  removeText: {
+    color: c.error,
   },
   divider: {
     height: 1,

@@ -240,7 +240,7 @@ export default function HomeScreen() {
   const handleAddPet = async () => {
     if (!(await guardAddPet(router, pets.length))) return;
     setSwitchVisible(false);
-    router.push('/(onboarding)/name' as never);
+    router.push('/pets/add' as never);
   };
 
   const handleViewAllPets = () => {

@@ -24,6 +24,11 @@
       "empty": "No records yet"
     }
   },
+  "pets": {
+    "add_title": "Add pet",
+    "name_placeholder": "Name",
+    "add_photo": "Add photo"
+  },
   "fab": {
     "add": "Add",
     "vaccines": "Vaccines",
@@ -254,7 +259,14 @@
     "repeat_every_week": "Every week",
     "repeat_every_2_weeks": "Every 2 weeks",
     "repeat_every_month": "Every month",
-    "repeat_every_year": "Every year"
+    "repeat_every_year": "Every year",
+    "category_title": "Category",
+    "category_placeholder": "Select category",
+    "category_general": "General",
+    "category_medication": "Medication",
+    "category_vaccination": "Vaccination",
+    "category_appointment": "Appointment",
+    "category_observation": "Observation"
   },
   "health": {
     "title": "Health",
@@ -381,6 +393,7 @@
     "photo_sheet_title": "Add a photo",
     "photo_take": "Take photo",
     "photo_choose_library": "Choose from library",
+    "photo_remove": "Remove photo",
     "photo_cancel": "Cancel",
     "photo_close_a11y": "Close",
     "photo_camera_permission_title": "Camera access needed",
