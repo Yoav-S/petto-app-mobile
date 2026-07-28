@@ -78,9 +78,9 @@ const SHEET = {
 } as const;
 
 const TIME_CHIPS = [
-  { id: 'morning', labelKey: 'health.reminder_chip_morning', time: '09:00' },
-  { id: 'afternoon', labelKey: 'health.reminder_chip_afternoon', time: '13:00' },
-  { id: 'evening', labelKey: 'health.reminder_chip_evening', time: '20:00' },
+  { id: 'morning', labelKey: 'topics.reminder_chip_morning', time: '09:00' },
+  { id: 'afternoon', labelKey: 'topics.reminder_chip_afternoon', time: '13:00' },
+  { id: 'evening', labelKey: 'topics.reminder_chip_evening', time: '20:00' },
 ] as const;
 
 type SubSheet = 'date' | 'time' | 'repeat' | null;

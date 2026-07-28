@@ -249,7 +249,7 @@ export default function HealthScreen() {
         tabs={[...TABS]}
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab as TabName)}
-        getLabel={(tab) => t(`health.tab_${tab.toLowerCase()}`)}
+        getLabel={(tab) => t(`topics.tab_${tab.toLowerCase()}`)}
         style={{ marginTop: 20 * headerGapSy }}
       />
 
