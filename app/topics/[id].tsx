@@ -72,7 +72,7 @@ export default function HealthDetailsScreen() {
       (async () => {
         if (!activePetId || !recordId) {
           if (!cancelled) {
-            setError(t('health.not_found_subtitle'));
+            setError(t('topics.not_found_subtitle'));
             setLoading(false);
           }
           return;
@@ -100,10 +100,10 @@ export default function HealthDetailsScreen() {
 
   const handleResolve = () => {
     if (!activePetId || !recordId) return;
-    Alert.alert(t('health.resolve_confirm_title'), t('health.resolve_confirm_body'), [
+    Alert.alert(t('topics.resolve_confirm_title'), t('topics.resolve_confirm_body'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
-        text: t('health.mark_resolved'),
+        text: t('topics.mark_resolved'),
         onPress: async () => {
           try {
             await resolveRecord(activePetId, recordId);
@@ -119,7 +119,7 @@ export default function HealthDetailsScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        <ScreenHeader title={t('health.title')} />
+        <ScreenHeader title={t('topics.title')} />
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primaryText} />
         </View>
@@ -130,11 +130,11 @@ export default function HealthDetailsScreen() {
   if (error || !record) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        <ScreenHeader title={t('health.title')} />
+        <ScreenHeader title={t('topics.title')} />
         <View style={styles.centered}>
           <EmptyState
-            title={t('health.not_found_title')}
-            subtitle={error ?? t('health.not_found_subtitle')}
+            title={t('topics.not_found_title')}
+            subtitle={error ?? t('topics.not_found_subtitle')}
             actionTitle={t('reminders.back')}
             onAction={() => router.back()}
           />
@@ -151,7 +151,7 @@ export default function HealthDetailsScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {(record.notes ?? []).length === 0 ? (
-          <Text style={styles.emptyNotes}>{t('health.no_notes_yet')}</Text>
+          <Text style={styles.emptyNotes}>{t('topics.no_notes_yet')}</Text>
         ) : (
           (record.notes ?? []).map((note) => (
             <View key={note.id} style={styles.noteCard}>
@@ -162,7 +162,7 @@ export default function HealthDetailsScreen() {
                 activeOpacity={0.7}
                 onPress={() =>
                   router.push({
-                    pathname: '/health/edit-note',
+                    pathname: '/topics/edit-note',
                     params: { recordId: record.id, noteId: note.id },
                   } as never)
                 }
@@ -180,13 +180,13 @@ export default function HealthDetailsScreen() {
               <HealthNoteIconRow
                 onPhotoPress={() =>
                   router.push({
-                    pathname: '/health/edit-note',
+                    pathname: '/topics/edit-note',
                     params: { recordId: record.id, noteId: note.id, open: 'photo' },
                   } as never)
                 }
                 onReminderPress={() =>
                   router.push({
-                    pathname: '/health/edit-note',
+                    pathname: '/topics/edit-note',
                     params: { recordId: record.id, noteId: note.id, open: 'reminder' },
                   } as never)
                 }
@@ -224,7 +224,7 @@ export default function HealthDetailsScreen() {
             activeOpacity={0.7}
           >
             <Text style={styles.resolveText} numberOfLines={1}>
-              {t('health.mark_resolved')}
+              {t('topics.mark_resolved')}
             </Text>
           </TouchableOpacity>
         ) : null}
@@ -241,10 +241,10 @@ export default function HealthDetailsScreen() {
           ]}
           activeOpacity={0.85}
           onPress={() =>
-            router.push({ pathname: '/health/add-note', params: { recordId: record.id } } as never)
+            router.push({ pathname: '/topics/add-note', params: { recordId: record.id } } as never)
           }
         >
-          <Text style={styles.addText}>{t('health.add_note')}</Text>
+          <Text style={styles.addText}>{t('topics.add_note')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

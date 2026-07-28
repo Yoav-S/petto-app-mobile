@@ -37,7 +37,7 @@ export default function HealthRecordPickerSheet({
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.header}>
             <View style={styles.headerSpacer} />
-            <Text style={styles.title}>{t('health.pick_record_title')}</Text>
+            <Text style={styles.title}>{t('topics.pick_record_title')}</Text>
             <TouchableOpacity style={styles.closeButton} onPress={onClose} hitSlop={8}>
               <Ionicons name="close" size={22} color={colors.primaryText} />
             </TouchableOpacity>
@@ -45,8 +45,8 @@ export default function HealthRecordPickerSheet({
 
           {records.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>{t('health.pick_record_empty_title')}</Text>
-              <Text style={styles.emptySubtitle}>{t('health.pick_record_empty_subtitle')}</Text>
+              <Text style={styles.emptyTitle}>{t('topics.pick_record_empty_title')}</Text>
+              <Text style={styles.emptySubtitle}>{t('topics.pick_record_empty_subtitle')}</Text>
             </View>
           ) : (
             <FlatList

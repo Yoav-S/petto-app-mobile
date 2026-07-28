@@ -73,7 +73,7 @@ export default function AddHealthScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <VaccineScreenHeader title={t('health.add_health')} icon="close" />
+      <VaccineScreenHeader title={t('topics.add_health')} icon="close" />
 
       <HealthKeyboardAvoidingView>
         <ScrollView
@@ -91,13 +91,13 @@ export default function AddHealthScreen() {
           <HealthRecordFormFields
             name={name}
             onNameChange={setName}
-            namePlaceholder={t('health.health_name_placeholder')}
+            namePlaceholder={t('topics.health_name_placeholder')}
             nameFocused={nameFocused}
             onNameFocus={() => setNameFocused(true)}
             onNameBlur={() => setNameFocused(false)}
             description={description}
             onDescriptionChange={setDescription}
-            descriptionLabel={t('health.field_description')}
+            descriptionLabel={t('topics.field_description')}
             descriptionFocused={descriptionFocused}
             onDescriptionFocus={() => setDescriptionFocused(true)}
             onDescriptionBlur={() => setDescriptionFocused(false)}

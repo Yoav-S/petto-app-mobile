@@ -21,15 +21,15 @@ export default function HealthReminderLine({
   const styles = useThemedStyles(makeStyles);
   const value = formatHealthReminderValue(date, time, {
     today: t('common.today'),
-    tomorrow: t('health.reminder_tomorrow'),
-    sentSuccessfully: t('health.reminder_sent_successfully'),
+    tomorrow: t('topics.reminder_tomorrow'),
+    sentSuccessfully: t('topics.reminder_sent_successfully'),
   }, currentLocale);
 
   if (!value) return null;
 
   return (
     <Text style={[styles.row, style]} numberOfLines={numberOfLines} ellipsizeMode="tail">
-      <Text style={styles.label}>{t('health.reminder_label')} </Text>
+      <Text style={styles.label}>{t('topics.reminder_label')} </Text>
       <Text style={styles.value}>{value}</Text>
     </Text>
   );

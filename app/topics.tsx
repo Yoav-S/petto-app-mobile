@@ -96,7 +96,7 @@ export default function HealthScreen() {
 
   React.useEffect(() => {
     if (deletedNote) {
-      toast.show({ message: t('health.deleted'), aboveFab: true });
+      toast.show({ message: t('topics.deleted'), aboveFab: true });
     }
   }, [deletedNote, toast]);
 
@@ -173,7 +173,7 @@ export default function HealthScreen() {
     }));
 
     toast.showUndo({
-      message: t('health.record_deleted'),
+      message: t('topics.record_deleted'),
       aboveFab: true,
       onUndo: () => {
         setListsByTab((prev) => {
@@ -200,16 +200,16 @@ export default function HealthScreen() {
   };
 
   const addRecordAction = {
-    actionTitle: t('health.add_first'),
-    onAction: () => router.push('/health/add' as never),
+    actionTitle: t('topics.add_first'),
+    onAction: () => router.push('/topics/add' as never),
   };
 
   const renderEmptyState = () => {
     if (!hasAnyRecords) {
       return (
         <EmptyState
-          title={t('health.empty_all_title')}
-          subtitle={t('health.empty_all_subtitle')}
+          title={t('topics.empty_all_title')}
+          subtitle={t('topics.empty_all_subtitle')}
           {...addRecordAction}
         />
       );
@@ -218,8 +218,8 @@ export default function HealthScreen() {
     if (activeTab === 'Active') {
       return (
         <EmptyState
-          title={t('health.empty_active_only_title')}
-          subtitle={t('health.empty_active_only_subtitle')}
+          title={t('topics.empty_active_only_title')}
+          subtitle={t('topics.empty_active_only_subtitle')}
         />
       );
     }
@@ -227,23 +227,23 @@ export default function HealthScreen() {
     if (tabPresence.active) {
       return (
         <EmptyState
-          title={t('health.empty_resolved_with_active_title')}
-          subtitle={t('health.empty_resolved_with_active_subtitle')}
+          title={t('topics.empty_resolved_with_active_title')}
+          subtitle={t('topics.empty_resolved_with_active_subtitle')}
         />
       );
     }
 
     return (
       <EmptyState
-        title={t('health.empty_resolved_title')}
-        subtitle={t('health.empty_resolved_subtitle')}
+        title={t('topics.empty_resolved_title')}
+        subtitle={t('topics.empty_resolved_subtitle')}
       />
     );
   };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
-      <ScreenHeader title={t('health.title')} />
+      <ScreenHeader title={t('topics.title')} />
 
       <SegmentedControl
         tabs={[...TABS]}
@@ -286,13 +286,13 @@ export default function HealthScreen() {
                 createdAt={item.created_at}
                 hasReminder={Boolean(item.linked_reminder_date || item.linked_reminder_time)}
                 fadeIntensity={getItemFadeIntensity(index)}
-                onPress={() => router.push(`/health/${item.id}` as never)}
+                onPress={() => router.push(`/topics/${item.id}` as never)}
                 onLongPress={() => handleDeleteRecord(item.id)}
                 onReminderPress={
                   item.latest_note_id
                     ? () =>
                         router.push({
-                          pathname: '/health/edit-note',
+                          pathname: '/topics/edit-note',
                           params: {
                             recordId: item.id,
                             noteId: item.latest_note_id!,
@@ -315,13 +315,13 @@ export default function HealthScreen() {
         items={[
           {
             key: 'add-health',
-            label: t('health.add_health'),
+            label: t('topics.add_health'),
             icon: HOME_CATEGORY_ICONS.health,
-            onPress: () => router.push('/health/add' as never),
+            onPress: () => router.push('/topics/add' as never),
           },
           {
             key: 'add-note',
-            label: t('health.add_note'),
+            label: t('topics.add_note'),
             icon: HOME_CATEGORY_ICONS.health,
             onPress: () => setRecordPickerVisible(true),
           },
@@ -336,7 +336,7 @@ export default function HealthScreen() {
         onSelect={(record) => {
           setRecordPickerVisible(false);
           router.push({
-            pathname: '/health/add-note',
+            pathname: '/topics/add-note',
             params: { recordId: record.id },
           } as never);
         }}
@@ -344,8 +344,8 @@ export default function HealthScreen() {
 
       <ConfirmModal
         visible={deleteTargetId != null}
-        title={t('health.delete_record_confirm_title')}
-        message={t('health.delete_record_confirm_body')}
+        title={t('topics.delete_record_confirm_title')}
+        message={t('topics.delete_record_confirm_body')}
         confirmText={t('common.delete')}
         onConfirm={confirmDeleteRecord}
         onCancel={() => setDeleteTargetId(null)}

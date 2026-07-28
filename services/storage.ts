@@ -79,7 +79,7 @@ export function uploadPetPhoto(localUri: string): Promise<string> {
   return uploadImage(localUri, 'pets');
 }
 
-/** Thin wrapper: upload a health-note image under users/{uid}/health/. */
+/** Thin wrapper: upload a topic-note image under users/{uid}/health/. */
 export function uploadHealthNotePhoto(localUri: string): Promise<string> {
   return uploadImage(localUri, 'health');
 }

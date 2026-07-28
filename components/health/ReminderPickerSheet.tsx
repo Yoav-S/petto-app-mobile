@@ -261,7 +261,7 @@ export default function ReminderPickerSheet({
             >
               <View style={{ width: layout.closeSize }} />
               <Text style={styles.title} numberOfLines={1}>
-                {t('health.set_reminder')}
+                {t('topics.set_reminder')}
               </Text>
               <TouchableOpacity
                 style={[

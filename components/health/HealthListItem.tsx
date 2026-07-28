@@ -91,8 +91,8 @@ export default function HealthListItem({
 
   const createdLabel = formatHealthCreatedLabel(createdAt, {
     today: t('common.today'),
-    yesterday: t('health.created_yesterday'),
-    createdPrefix: t('health.created_prefix'),
+    yesterday: t('topics.created_yesterday'),
+    createdPrefix: t('topics.created_prefix'),
   });
 
   return (

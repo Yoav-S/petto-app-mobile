@@ -24,7 +24,7 @@ export default function HealthNoteIconRow({
         onPress={onPhotoPress}
         hitSlop={8}
         activeOpacity={0.7}
-        accessibilityLabel={t('health.add_photo')}
+        accessibilityLabel={t('topics.add_photo')}
       >
         <Ionicons name="image-outline" size={iconSize} color={colors.secondaryText} />
       </TouchableOpacity>
@@ -32,7 +32,7 @@ export default function HealthNoteIconRow({
         onPress={onReminderPress}
         hitSlop={8}
         activeOpacity={0.7}
-        accessibilityLabel={t('health.add_reminder')}
+        accessibilityLabel={t('topics.add_reminder')}
       >
         <Ionicons name="notifications-outline" size={iconSize} color={colors.secondaryText} />
       </TouchableOpacity>

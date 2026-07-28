@@ -246,12 +246,12 @@ export default function EditNoteScreen() {
     if (!activePetId || !recordId || !noteId) return;
     setDeleteVisible(false);
     toast.showUndo({
-      message: t('health.deleted'),
+      message: t('topics.deleted'),
       onUndo: () => {},
       onCommit: async () => {
         try {
           await deleteNote(activePetId, recordId, noteId);
-          router.replace('/health' as never);
+          router.replace('/topics' as never);
         } catch (err) {
           toast.showError(getErrorMessage(err));
         }
@@ -262,7 +262,7 @@ export default function EditNoteScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        <ScreenHeader title={t('health.edit_note')} />
+        <ScreenHeader title={t('topics.edit_note')} />
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primaryText} />
         </View>
@@ -273,11 +273,11 @@ export default function EditNoteScreen() {
   if (notFound) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        <ScreenHeader title={t('health.edit_note')} />
+        <ScreenHeader title={t('topics.edit_note')} />
         <View style={styles.centered}>
           <EmptyState
-            title={t('health.not_found_title')}
-            subtitle={t('health.not_found_subtitle')}
+            title={t('topics.not_found_title')}
+            subtitle={t('topics.not_found_subtitle')}
             actionTitle={t('reminders.back')}
             onAction={() => router.back()}
           />
@@ -288,7 +288,7 @@ export default function EditNoteScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <ScreenHeader title={t('health.edit_note')} />
+      <ScreenHeader title={t('topics.edit_note')} />
 
       <HealthKeyboardAvoidingView>
         <ScrollView
@@ -312,7 +312,7 @@ export default function EditNoteScreen() {
             reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
             onReminderPress={() => setReminderSheetVisible(true)}
             onRemoveReminder={handleRemoveReminder}
-            placeholder={t('health.note_body_placeholder')}
+            placeholder={t('topics.note_body_placeholder')}
           />
 
           <TouchableOpacity
@@ -320,7 +320,7 @@ export default function EditNoteScreen() {
             onPress={() => setDeleteVisible(true)}
             activeOpacity={0.7}
           >
-            <Text style={styles.deleteText}>{t('health.delete_note')}</Text>
+            <Text style={styles.deleteText}>{t('topics.delete_note')}</Text>
           </TouchableOpacity>
         </ScrollView>
 
@@ -344,8 +344,8 @@ export default function EditNoteScreen() {
 
       <ConfirmModal
         visible={deleteVisible}
-        title={t('health.delete_note_confirm_title')}
-        message={t('health.delete_note_confirm_body')}
+        title={t('topics.delete_note_confirm_title')}
+        message={t('topics.delete_note_confirm_body')}
         confirmText={t('common.delete')}
         onConfirm={handleDelete}
         onCancel={() => setDeleteVisible(false)}

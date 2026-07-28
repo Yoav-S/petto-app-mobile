@@ -28,7 +28,7 @@ export default function FABMenu({
     },
     {
       key: 'health',
-      label: t('fab.health'),
+      label: t('fab.topics'),
       icon: HOME_CATEGORY_ICONS.health,
       onPress: onHealthPress,
     },

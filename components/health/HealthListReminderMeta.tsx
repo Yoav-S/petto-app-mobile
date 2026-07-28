@@ -29,10 +29,10 @@ export default function HealthListReminderMeta({
   const value = hasReminder
     ? formatHealthReminderValue(date, time, {
         today: t('common.today'),
-        tomorrow: t('health.reminder_tomorrow'),
-        sentSuccessfully: t('health.reminder_sent_successfully'),
+        tomorrow: t('topics.reminder_tomorrow'),
+        sentSuccessfully: t('topics.reminder_sent_successfully'),
       }, currentLocale)
-    : t('health.no_reminder_for_note');
+    : t('topics.no_reminder_for_note');
 
   const box = ICON_BOX * scale;
   const iconSize = ICON_SIZE * scale;

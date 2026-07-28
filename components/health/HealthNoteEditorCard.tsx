@@ -94,7 +94,7 @@ export default function HealthNoteEditorCard({
           value={noteText}
           onChangeText={onChangeNoteText}
           multiline
-          placeholder={placeholder ?? t('health.note_placeholder')}
+          placeholder={placeholder ?? t('topics.note_placeholder')}
           placeholderTextColor={colors.secondaryText}
           textAlignVertical="top"
         />
@@ -106,7 +106,7 @@ export default function HealthNoteEditorCard({
               activeOpacity={0.8}
               onPress={onReminderPress}
             >
-              <Text style={styles.reminderLabel}>{t('health.reminder_label')}</Text>
+              <Text style={styles.reminderLabel}>{t('topics.reminder_label')}</Text>
               <Text style={styles.reminderValue} numberOfLines={1}>
                 {reminderValue}
               </Text>
@@ -116,7 +116,7 @@ export default function HealthNoteEditorCard({
                 onPress={onRemoveReminder}
                 hitSlop={8}
                 accessibilityRole="button"
-                accessibilityLabel={t('health.remove_reminder')}
+                accessibilityLabel={t('topics.remove_reminder')}
               >
                 <Ionicons name="close-circle" size={16} color={colors.secondaryText} />
               </TouchableOpacity>
@@ -137,7 +137,7 @@ export default function HealthNoteEditorCard({
             onPress={onReminderPress}
             hitSlop={8}
             activeOpacity={0.7}
-            accessibilityLabel={t('health.add_reminder')}
+            accessibilityLabel={t('topics.add_reminder')}
           >
             <Ionicons name="notifications-outline" size={24} color={colors.secondaryText} />
           </TouchableOpacity>

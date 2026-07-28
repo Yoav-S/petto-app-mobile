@@ -317,7 +317,7 @@ export default function HomeScreen() {
                   <HealthCard
                     latestRecord={latestRecord}
                     loading={loading}
-                    onPress={() => router.push('/health' as never)}
+                    onPress={() => router.push('/topics' as never)}
                   />
                 </View>
               </View>
@@ -331,7 +331,7 @@ export default function HomeScreen() {
           open={fabOpen}
           onOpenChange={setFabOpen}
           onVaccinePress={() => router.push('/vaccines' as never)}
-          onHealthPress={() => router.push('/health/add' as never)}
+          onHealthPress={() => router.push('/topics/add' as never)}
           onReminderPress={() => router.push('/reminders' as never)}
         />
       ) : null}

@@ -63,7 +63,7 @@ export default function HealthCard({ latestRecord, loading, onPress }: HealthCar
           <CategoryIcon />
           <View style={homeCardTypography.healthContent}>
             <View style={homeCardTypography.healthTitleRow}>
-              <Text style={homeCardTypography.title}>{t('home.healthCard.title')}</Text>
+              <Text style={homeCardTypography.title}>{t('home.topicsCard.title')}</Text>
             </View>
 
             <View style={homeCardTypography.healthBodyBlock}>
@@ -87,7 +87,7 @@ export default function HealthCard({ latestRecord, loading, onPress }: HealthCar
                 </>
               ) : (
                 <Text style={homeCardTypography.note} numberOfLines={1} ellipsizeMode="tail">
-                  {t('home.healthCard.empty')}
+                  {t('home.topicsCard.empty')}
                 </Text>
               )}
             </View>

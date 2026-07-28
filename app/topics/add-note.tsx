@@ -60,7 +60,7 @@ export default function AddNoteScreen() {
 
   useEffect(() => {
     if (!recordId) {
-      router.replace('/health/add' as never);
+      router.replace('/topics/add' as never);
       return;
     }
     if (!activePetId) {
@@ -137,7 +137,7 @@ export default function AddNoteScreen() {
   if (!recordId || loadingRecord) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        <ScreenHeader title={t('health.add_note')} />
+        <ScreenHeader title={t('topics.add_note')} />
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primaryText} />
         </View>
@@ -147,7 +147,7 @@ export default function AddNoteScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <ScreenHeader title={t('health.add_note')} />
+      <ScreenHeader title={t('topics.add_note')} />
 
       <HealthKeyboardAvoidingView>
         <ScrollView
@@ -171,7 +171,7 @@ export default function AddNoteScreen() {
             reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
             onReminderPress={() => setReminderSheetVisible(true)}
             onRemoveReminder={handleRemoveReminder}
-            placeholder={t('health.note_body_placeholder')}
+            placeholder={t('topics.note_body_placeholder')}
           />
         </ScrollView>
 
