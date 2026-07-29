@@ -11,13 +11,15 @@ interface ScreenHeaderProps {
   /** Back chevron (default) or close X. */
   icon?: 'back' | 'close';
   onBack?: () => void;
+  /** Optional trailing control (e.g. ⋮ menu). Replaces the layout spacer. */
+  right?: React.ReactNode;
 }
 
 /**
  * App-wide title row. Owns top safe-area + Figma gap so every screen matches
  * Add Health (header row at top: 56). Parent must NOT pad the top safe area.
  */
-export default function ScreenHeader({ title, icon = 'back', onBack }: ScreenHeaderProps) {
+export default function ScreenHeader({ title, icon = 'back', onBack, right }: ScreenHeaderProps) {
   const router = useRouter();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -59,7 +61,7 @@ export default function ScreenHeader({ title, icon = 'back', onBack }: ScreenHea
           {title}
         </Text>
 
-        <View style={{ width: buttonSize }} />
+        {right ?? <View style={{ width: buttonSize }} />}
       </View>
     </View>
   );

@@ -7,9 +7,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  ActionSheetIOS,
+  Platform,
   useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -25,10 +28,13 @@ import { getErrorMessage } from '@/services/errors';
 import HealthReminderLine from '@/components/health/HealthReminderLine';
 import HealthNoteIconRow from '@/components/health/HealthNoteIconRow';
 import { normalizeRouteParam } from '@/utils/routeParams';
+import { useHeaderLayout } from '@/utils/headerLayout';
 import type { MedicalRecordDetail } from '@/types/api';
 
 const DESIGN_WIDTH = 375;
 const DESIGN_HEIGHT = 812;
+const DESIGN_FOOTER_BAR_HEIGHT = 104;
+const DESIGN_FOOTER_SAFE_EXTRA = 50;
 
 export default function HealthDetailsScreen() {
   const colors = useColors();
@@ -40,23 +46,24 @@ export default function HealthDetailsScreen() {
   const { activePetId } = useActivePet();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const headerLayout = useHeaderLayout();
   const sx = width / DESIGN_WIDTH;
   const sy = height / DESIGN_HEIGHT;
 
   const footerLayout = useMemo(
     () => ({
       padH: 20 * sx,
-      padBottom: Math.max(insets.bottom, 10 * sy),
-      gap: 8 * sx,
-      rowHeight: 48 * sy,
-      addWidth: 220 * sx,
-      resolveWidth: 107 * sx,
-      buttonHeight: 48 * sy,
+      padTop: 12 * sy,
+      padBottomClosed: (DESIGN_FOOTER_BAR_HEIGHT + DESIGN_FOOTER_SAFE_EXTRA - 12 - 48) * sy,
+      heightClosed: (DESIGN_FOOTER_BAR_HEIGHT + DESIGN_FOOTER_SAFE_EXTRA) * sy,
+      buttonWidth: 335 * sx,
+      buttonHeight: 48 * sx,
       buttonRadius: 12 * sx,
-      buttonPadV: 12 * sy,
-      buttonPadH: 16 * sx,
+      footerRadius: 24 * sx,
+      menuSize: 40 * headerLayout.sx,
+      menuRadius: 12 * headerLayout.sx,
     }),
-    [sx, sy, insets.bottom],
+    [sx, sy, headerLayout.sx],
   );
 
   const [record, setRecord] = useState<MedicalRecordDetail | null>(null);
@@ -99,7 +106,7 @@ export default function HealthDetailsScreen() {
     }, [activePetId, recordId]),
   );
 
-  const handleResolve = () => {
+  const confirmResolve = useCallback(() => {
     if (!activePetId || !recordId) return;
     Alert.alert(t('topics.resolve_confirm_title'), t('topics.resolve_confirm_body'), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -115,7 +122,27 @@ export default function HealthDetailsScreen() {
         },
       },
     ]);
-  };
+  }, [activePetId, recordId, router, toast]);
+
+  const openOverflowMenu = useCallback(() => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: [t('common.cancel'), t('topics.mark_resolved')],
+          cancelButtonIndex: 0,
+        },
+        (index) => {
+          if (index === 1) confirmResolve();
+        },
+      );
+      return;
+    }
+
+    Alert.alert(recordRef.current?.title ?? t('topics.title'), undefined, [
+      { text: t('topics.mark_resolved'), onPress: confirmResolve },
+      { text: t('common.cancel'), style: 'cancel' },
+    ]);
+  }, [confirmResolve]);
 
   if (loading) {
     return (
@@ -145,12 +172,36 @@ export default function HealthDetailsScreen() {
   }
 
   const isActive = record.status === 'active';
+  const menuButton = isActive ? (
+    <TouchableOpacity
+      style={[
+        styles.menuButton,
+        {
+          width: footerLayout.menuSize,
+          height: footerLayout.menuSize,
+          borderRadius: footerLayout.menuRadius,
+        },
+      ]}
+      onPress={openOverflowMenu}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      accessibilityRole="button"
+      accessibilityLabel={t('topics.mark_resolved')}
+    >
+      <Ionicons name="ellipsis-vertical" size={20} color={colors.primaryText} />
+    </TouchableOpacity>
+  ) : undefined;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <ScreenHeader title={record.title} />
+      <ScreenHeader title={record.title} right={menuButton} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: footerLayout.heightClosed + 16 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {(record.notes ?? []).length === 0 ? (
           <Text style={styles.emptyNotes}>{t('topics.no_notes_yet')}</Text>
         ) : (
@@ -212,43 +263,22 @@ export default function HealthDetailsScreen() {
         style={[
           styles.footer,
           {
+            height: footerLayout.heightClosed,
+            paddingTop: footerLayout.padTop,
             paddingHorizontal: footerLayout.padH,
-            paddingBottom: footerLayout.padBottom,
-            gap: footerLayout.gap,
-            minHeight: footerLayout.rowHeight,
-            justifyContent: isActive ? 'flex-start' : 'flex-end',
+            paddingBottom: Math.max(footerLayout.padBottomClosed, insets.bottom),
+            borderTopLeftRadius: footerLayout.footerRadius,
+            borderTopRightRadius: footerLayout.footerRadius,
           },
         ]}
       >
-        {isActive ? (
-          <TouchableOpacity
-            style={[
-              styles.resolveButton,
-              {
-                width: footerLayout.resolveWidth,
-                height: footerLayout.buttonHeight,
-                borderRadius: footerLayout.buttonRadius,
-                paddingVertical: footerLayout.buttonPadV,
-                paddingHorizontal: footerLayout.buttonPadH,
-              },
-            ]}
-            onPress={handleResolve}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.resolveText} numberOfLines={1}>
-              {t('topics.mark_resolved')}
-            </Text>
-          </TouchableOpacity>
-        ) : null}
         <TouchableOpacity
           style={[
             styles.addButton,
             {
-              width: footerLayout.addWidth,
+              width: footerLayout.buttonWidth,
               height: footerLayout.buttonHeight,
               borderRadius: footerLayout.buttonRadius,
-              paddingVertical: footerLayout.buttonPadV,
-              paddingHorizontal: footerLayout.buttonPadH,
             },
           ]}
           activeOpacity={0.85}
@@ -274,7 +304,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
-    paddingBottom: 80,
   },
   emptyNotes: {
     fontFamily: 'Rubik-Regular',
@@ -315,25 +344,26 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   reminderRow: {
     marginTop: Spacing.sm,
   },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: Spacing.sm,
-    width: '100%',
-  },
-  resolveButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: c.border,
+  menuButton: {
     backgroundColor: c.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  resolveText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 14,
-    lineHeight: 18,
-    color: c.primaryText,
-    textAlign: 'center',
+  footer: {
+    width: '100%',
+    backgroundColor: c.surface,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    shadowColor: '#2D2D2A',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 20,
+    elevation: 8,
   },
   addButton: {
     backgroundColor: c.brand,
@@ -342,8 +372,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   addText: {
     fontFamily: 'Rubik-Medium',
-    fontSize: 14,
-    lineHeight: 18,
+    fontSize: 16,
+    lineHeight: 24,
     color: c.surface,
     textAlign: 'center',
   },

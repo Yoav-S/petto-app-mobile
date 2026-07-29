@@ -8,8 +8,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { type ThemeColors } from '@/constants/theme';
-import { useThemedStyles } from '@/context/ThemeContext';
+import { useColors, useTheme } from '@/context/ThemeContext';
 import { t, isRTL } from '@/i18n';
 
 const DESIGN_WIDTH = 375;
@@ -19,12 +18,20 @@ const DESIGN_BTN_W = 100;
 const DESIGN_BTN_H = 40;
 const DESIGN_GAP_ABOVE_KEYBOARD = 8;
 
+/** Exact Figma chip (light). Dark mode keeps the same structure with theme neutrals. */
+const LIGHT_CHIP = {
+  bg: '#F6F7F9',
+  border: '#E5E7EB',
+  text: '#1F2937',
+} as const;
+
 /**
  * Global Done chip that sits just above the soft keyboard and dismisses it.
  * Mount once at the app root — no per-screen wiring required.
  */
 export default function GlobalKeyboardDoneButton() {
-  const styles = useThemedStyles(makeStyles);
+  const colors = useColors();
+  const { isDark } = useTheme();
   const { width } = useWindowDimensions();
   const sx = width / DESIGN_WIDTH;
 
@@ -65,6 +72,10 @@ export default function GlobalKeyboardDoneButton() {
 
   if (keyboardHeight <= 0) return null;
 
+  const bg = isDark ? colors.surface : LIGHT_CHIP.bg;
+  const border = isDark ? colors.border : LIGHT_CHIP.border;
+  const text = isDark ? colors.primaryText : LIGHT_CHIP.text;
+
   return (
     <View
       pointerEvents="box-none"
@@ -86,6 +97,8 @@ export default function GlobalKeyboardDoneButton() {
             paddingVertical: layout.padV,
             paddingHorizontal: layout.padH,
             alignSelf: isRTL ? 'flex-start' : 'flex-end',
+            backgroundColor: bg,
+            borderColor: border,
           },
         ]}
         onPress={() => Keyboard.dismiss()}
@@ -96,7 +109,11 @@ export default function GlobalKeyboardDoneButton() {
         <Text
           style={[
             styles.label,
-            { fontSize: layout.fontSize, lineHeight: layout.lineHeight },
+            {
+              fontSize: layout.fontSize,
+              lineHeight: layout.lineHeight,
+              color: text,
+            },
           ]}
         >
           {t('pickers.done')}
@@ -106,31 +123,27 @@ export default function GlobalKeyboardDoneButton() {
   );
 }
 
-const makeStyles = (c: ThemeColors) =>
-  StyleSheet.create({
-    host: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      zIndex: 2500,
-      elevation: 2500,
-    },
-    button: {
-      backgroundColor: c.panel,
-      borderWidth: 1,
-      borderColor: c.border,
-      alignItems: 'center',
-      justifyContent: 'center',
-      shadowColor: '#2D2D2A',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.04,
-      shadowRadius: 20,
-      elevation: 4,
-    },
-    label: {
-      fontFamily: 'Rubik-Medium',
-      fontWeight: '500',
-      color: c.primaryText,
-      textAlign: 'center',
-    },
-  });
+const styles = StyleSheet.create({
+  host: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 2500,
+    elevation: 2500,
+  },
+  button: {
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#2D2D2A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 20,
+    elevation: 4,
+  },
+  label: {
+    fontFamily: 'Rubik-Medium',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+});
