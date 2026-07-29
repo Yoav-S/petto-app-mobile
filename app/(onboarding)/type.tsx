@@ -179,7 +179,7 @@ export default function PetTypeOnboardingScreen() {
           styles.footer,
           {
             paddingHorizontal: PET_TYPE_STEP.continuePaddingH * sx,
-            paddingBottom: Math.max(insets.bottom, 10 * sy),
+            paddingBottom: Math.max(insets.bottom, 10 * sy) + 8 * sy,
             paddingTop: 12 * sy,
             borderTopLeftRadius: 24 * sx,
             borderTopRightRadius: 24 * sx,

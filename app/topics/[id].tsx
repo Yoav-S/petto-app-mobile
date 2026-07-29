@@ -39,6 +39,7 @@ const DESIGN_FOOTER_RADIUS = 24;
 const DESIGN_SAVE_BUTTON_WIDTH = 335;
 const DESIGN_SAVE_BUTTON_HEIGHT = 48;
 const DESIGN_FOOTER_MIN_BOTTOM = 10;
+const DESIGN_FOOTER_SAFE_GAP = 8;
 
 export default function HealthDetailsScreen() {
   const colors = useColors();
@@ -58,7 +59,8 @@ export default function HealthDetailsScreen() {
     () => ({
       padH: DESIGN_FOOTER_PAD_H * sx,
       padTop: DESIGN_FOOTER_PAD_TOP * sy,
-      padBottom: Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM * sy),
+      padBottom:
+        Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM * sy) + DESIGN_FOOTER_SAFE_GAP * sy,
       buttonWidth: DESIGN_SAVE_BUTTON_WIDTH * sx,
       buttonHeight: DESIGN_SAVE_BUTTON_HEIGHT * sx,
       buttonRadius: 12 * sx,
@@ -68,6 +70,7 @@ export default function HealthDetailsScreen() {
       scrollPadBottom:
         (DESIGN_FOOTER_PAD_TOP + DESIGN_SAVE_BUTTON_HEIGHT) * sy +
         Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM * sy) +
+        DESIGN_FOOTER_SAFE_GAP * sy +
         16,
     }),
     [sx, sy, insets.bottom, headerLayout.sx],

@@ -334,7 +334,7 @@ export default function EditProfileScreen() {
             </View>
           </ScrollView>
 
-          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 10) + 8 }]}>
             <Pressable
               style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
               onPress={handleSave}

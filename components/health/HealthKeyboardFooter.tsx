@@ -24,6 +24,8 @@ const DESIGN_FOOTER_RADIUS = 24;
 const DESIGN_SAVE_BUTTON_WIDTH = 335;
 const DESIGN_SAVE_BUTTON_HEIGHT = 48;
 const DESIGN_FOOTER_MIN_BOTTOM = 10;
+/** Extra lift above the home-indicator so the CTA doesn't kiss the safe zone. */
+const DESIGN_FOOTER_SAFE_GAP = 8;
 
 /** Compact Done (edit note) — 100×40, lifted above the home indicator. */
 const DESIGN_DONE_BUTTON_WIDTH = 100;
@@ -85,7 +87,7 @@ export function HealthKeyboardAvoidingView({
 
 /** ScrollView bottom padding so fields clear the full-width save footer bar. */
 export function healthKeyboardScrollPadding(scaleY = 1, safeBottom = 0): number {
-  const bottom = Math.max(safeBottom, DESIGN_FOOTER_MIN_BOTTOM * scaleY);
+  const bottom = Math.max(safeBottom, DESIGN_FOOTER_MIN_BOTTOM * scaleY) + DESIGN_FOOTER_SAFE_GAP * scaleY;
   return (DESIGN_FOOTER_PAD_TOP + DESIGN_SAVE_BUTTON_HEIGHT) * scaleY + bottom + 16;
 }
 
@@ -123,7 +125,8 @@ export default function HealthKeyboardFooter({
       footerPadH: DESIGN_FOOTER_PAD_H * sx,
       footerPadTop: DESIGN_FOOTER_PAD_TOP * sy,
       footerRadius: DESIGN_FOOTER_RADIUS * sx,
-      footerPadBottomClosed: Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM * sy),
+      footerPadBottomClosed:
+        Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM * sy) + DESIGN_FOOTER_SAFE_GAP * sy,
       doneButtonWidth: DESIGN_DONE_BUTTON_WIDTH * sx,
       doneButtonHeight: DESIGN_DONE_BUTTON_HEIGHT * sy,
       donePadTop: DESIGN_FOOTER_PAD_TOP * sy,

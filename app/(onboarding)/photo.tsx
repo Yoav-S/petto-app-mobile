@@ -214,7 +214,7 @@ export default function PetPhotoOnboardingScreen() {
           styles.footer,
           {
             paddingHorizontal: PET_PHOTO_STEP.continuePaddingH * sx,
-            paddingBottom: Math.max(insets.bottom, 10 * sy),
+            paddingBottom: Math.max(insets.bottom, 10 * sy) + 8 * sy,
             paddingTop: 12 * sy,
             borderTopLeftRadius: 24 * sx,
             borderTopRightRadius: 24 * sx,
