@@ -12,7 +12,9 @@ import { ToastProvider } from '@/context/ToastContext';
 import { PetStoreProvider } from '@/store/petStore';
 import { PetOnboardingDraftProvider } from '@/store/petOnboardingDraft';
 import { useReminderNotificationRouting } from '@/hooks/useReminderNotificationRouting';
-import GlobalKeyboardDoneButton from '@/components/ui/GlobalKeyboardDoneButton';
+import GlobalKeyboardDoneButton, {
+  KeyboardDoneClaimProvider,
+} from '@/components/ui/GlobalKeyboardDoneButton';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -80,11 +82,13 @@ function ThemedApp() {
   return (
     <NavThemeProvider value={navTheme}>
       <ToastProvider>
-        {/* Re-key on locale so every `t()` call re-evaluates when the language changes. */}
-        <View key={locale} style={{ flex: 1, backgroundColor: colors.background }}>
-          <RootLayoutNav />
-          <GlobalKeyboardDoneButton />
-        </View>
+        <KeyboardDoneClaimProvider>
+          {/* Re-key on locale so every `t()` call re-evaluates when the language changes. */}
+          <View key={locale} style={{ flex: 1, backgroundColor: colors.background }}>
+            <RootLayoutNav />
+            <GlobalKeyboardDoneButton />
+          </View>
+        </KeyboardDoneClaimProvider>
       </ToastProvider>
       <StatusBar style={isDark ? 'light' : 'dark'} />
     </NavThemeProvider>

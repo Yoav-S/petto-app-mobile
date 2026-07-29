@@ -13,6 +13,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import {
+  KeyboardDismissDoneChip,
+  useKeyboardDoneClaim,
+} from '@/components/ui/GlobalKeyboardDoneButton';
 
 const DESIGN_WIDTH = 375;
 const DESIGN_HEIGHT = 812;
@@ -65,13 +69,22 @@ function useKeyboardOpen(): boolean {
   return open;
 }
 
-/** Wraps scroll content + footer; lifts the footer only while the keyboard is open. */
+/** Wraps scroll content + footer; lifts the footer only while the keyboard is open.
+ *  When the keyboard is open, renders a Done chip between the footer and the keyboard
+ *  so it is never covered by the sticky Save bar.
+ */
 export function HealthKeyboardAvoidingView({
   children,
   keyboardVerticalOffset = 0,
 }: HealthKeyboardAvoidingViewProps) {
   const styles = useThemedStyles(makeStyles);
   const keyboardOpen = useKeyboardOpen();
+  const { claim, release } = useKeyboardDoneClaim();
+
+  useEffect(() => {
+    claim();
+    return () => release();
+  }, [claim, release]);
 
   return (
     <KeyboardAvoidingView
@@ -81,6 +94,8 @@ export function HealthKeyboardAvoidingView({
       enabled={keyboardOpen}
     >
       {children}
+      {/* Sits under the sticky Save footer and above the keyboard — always visible. */}
+      {keyboardOpen ? <KeyboardDismissDoneChip /> : null}
     </KeyboardAvoidingView>
   );
 }
