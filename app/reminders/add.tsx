@@ -1,12 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Alert, useWindowDimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
-import ReminderFormBody, { ReminderSaveButton } from '@/components/reminders/ReminderFormBody';
+import ReminderFormBody from '@/components/reminders/ReminderFormBody';
+import HealthKeyboardFooter, {
+  healthKeyboardScrollPadding,
+} from '@/components/health/HealthKeyboardFooter';
 import {
   DESIGN_HEIGHT,
   DESIGN_WIDTH,
@@ -30,6 +33,7 @@ export default function AddReminderScreen() {
   const toast = useToast();
   const router = useRouter();
   const { activePetId } = useActivePet();
+  const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const sx = width / DESIGN_WIDTH;
   const sy = height / DESIGN_HEIGHT;
@@ -170,7 +174,7 @@ export default function AddReminderScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <VaccineScreenHeader title={t('reminders.add_title')} icon="close" />
       <ReminderFormBody
         layout={layout}
@@ -192,11 +196,12 @@ export default function AddReminderScreen() {
         onTimeConfirm={handleTimeConfirm}
         onRepeatSelect={setRepeat}
         autoFocus
-        footer={
-          <ReminderSaveButton
-            layout={layout}
-            canSave={canSave}
-            saving={submitting}
+        scrollPaddingBottom={healthKeyboardScrollPadding(sy, insets.bottom)}
+        stickyFooter={
+          <HealthKeyboardFooter
+            label={t('common.save')}
+            disabled={!canSave}
+            loading={submitting}
             onPress={handleSave}
           />
         }

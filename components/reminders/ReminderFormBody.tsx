@@ -6,8 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
   Keyboard,
   ActivityIndicator,
   Image,
@@ -21,6 +19,9 @@ import RepeatPickerSheet from '@/components/pickers/RepeatPickerSheet';
 import CategoryPickerSheet, {
   categoryLabel,
 } from '@/components/pickers/CategoryPickerSheet';
+import {
+  HealthKeyboardAvoidingView,
+} from '@/components/health/HealthKeyboardFooter';
 import { t } from '@/i18n';
 import type { RepeatOption } from '@/services/reminders';
 import {
@@ -71,7 +72,12 @@ interface ReminderFormBodyProps {
   onTimeConfirm: (value: string) => void;
   onRepeatSelect: (value: RepeatOption) => void;
   autoFocus?: boolean;
+  /** Inline content at the end of the scroll (e.g. delete / autosave). */
   footer?: React.ReactNode;
+  /** Sticky bottom save bar (outside the scroll), like add-note. */
+  stickyFooter?: React.ReactNode;
+  /** Extra scroll padding when a sticky footer is present. */
+  scrollPaddingBottom?: number;
 }
 
 export default function ReminderFormBody({
@@ -95,6 +101,8 @@ export default function ReminderFormBody({
   onRepeatSelect,
   autoFocus = false,
   footer,
+  stickyFooter,
+  scrollPaddingBottom = 32,
 }: ReminderFormBodyProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -102,16 +110,13 @@ export default function ReminderFormBody({
 
   return (
     <>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <HealthKeyboardAvoidingView>
         <ScrollView
           contentContainerStyle={[
             styles.content,
             {
               paddingTop: layout.formTop,
-              paddingBottom: 32,
+              paddingBottom: scrollPaddingBottom,
               gap: layout.formGap,
               alignItems: 'center',
             },
@@ -264,7 +269,8 @@ export default function ReminderFormBody({
 
           {footer}
         </ScrollView>
-      </KeyboardAvoidingView>
+        {stickyFooter}
+      </HealthKeyboardAvoidingView>
 
       <ReminderCalendarPickerSheet
         visible={sheet === 'date'}

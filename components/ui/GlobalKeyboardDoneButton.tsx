@@ -8,6 +8,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors, useTheme } from '@/context/ThemeContext';
 import { t, isRTL } from '@/i18n';
 
@@ -28,10 +29,14 @@ const LIGHT_CHIP = {
 /**
  * Global Done chip that sits just above the soft keyboard and dismisses it.
  * Mount once at the app root — no per-screen wiring required.
+ *
+ * Android (edge-to-edge + resize): the window already shrinks above the keyboard,
+ * so we anchor near the bottom. iOS: lift by the reported keyboard height.
  */
 export default function GlobalKeyboardDoneButton() {
   const colors = useColors();
   const { isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const sx = width / DESIGN_WIDTH;
 
@@ -76,13 +81,19 @@ export default function GlobalKeyboardDoneButton() {
   const border = isDark ? colors.border : LIGHT_CHIP.border;
   const text = isDark ? colors.primaryText : LIGHT_CHIP.text;
 
+  // iOS: float above keyboard. Android resize: window already cleared the keyboard.
+  const bottom =
+    Platform.OS === 'ios'
+      ? keyboardHeight + layout.gapAbove
+      : Math.max(layout.gapAbove, insets.bottom > 0 ? 0 : layout.gapAbove);
+
   return (
     <View
       pointerEvents="box-none"
       style={[
         styles.host,
         {
-          bottom: keyboardHeight + layout.gapAbove,
+          bottom,
           paddingHorizontal: layout.trailing,
         },
       ]}

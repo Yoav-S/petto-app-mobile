@@ -6,16 +6,13 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
   Alert,
-  ActivityIndicator,
   Modal,
   Pressable,
   Keyboard,
   useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
@@ -26,6 +23,10 @@ import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import VaccinePhotoSourceSheet from '@/components/vaccines/VaccinePhotoSourceSheet';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
+import HealthKeyboardFooter, {
+  HealthKeyboardAvoidingView,
+  healthKeyboardScrollPadding,
+} from '@/components/health/HealthKeyboardFooter';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { createVaccination } from '@/services/vaccines';
@@ -51,6 +52,7 @@ export default function AddVaccineScreen() {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const { activePetId } = useActivePet();
+  const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const sx = width / DESIGN_WIDTH;
   const sy = height / DESIGN_HEIGHT;
@@ -180,19 +182,16 @@ export default function AddVaccineScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <VaccineScreenHeader title={t('vaccines.add_title')} icon="close" />
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <HealthKeyboardAvoidingView>
         <ScrollView
           contentContainerStyle={[
             styles.content,
             {
               paddingTop: layout.formTop,
-              paddingBottom: Spacing.xl,
+              paddingBottom: healthKeyboardScrollPadding(sy, insets.bottom),
               gap: layout.formGap,
               alignItems: 'center',
             },
@@ -327,33 +326,15 @@ export default function AddVaccineScreen() {
               onSubmitEditing={() => Keyboard.dismiss()}
             />
           </View>
-
-          <TouchableOpacity
-            style={[
-              styles.saveButton,
-              {
-                width: layout.cardWidth,
-                height: layout.saveHeight,
-                borderRadius: layout.cardRadius,
-                paddingVertical: layout.savePadV,
-                paddingHorizontal: layout.savePadH,
-              },
-              !canSave && styles.saveButtonDisabled,
-            ]}
-            onPress={handleSave}
-            disabled={!canSave}
-            activeOpacity={0.85}
-          >
-            {submitting ? (
-              <ActivityIndicator color={colors.surface} />
-            ) : (
-              <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>
-                {t('common.save')}
-              </Text>
-            )}
-          </TouchableOpacity>
         </ScrollView>
-      </KeyboardAvoidingView>
+
+        <HealthKeyboardFooter
+          label={t('common.save')}
+          disabled={!canSave}
+          loading={submitting}
+          onPress={handleSave}
+        />
+      </HealthKeyboardAvoidingView>
 
       <VaccinePhotoSourceSheet
         visible={photoSheetVisible}
@@ -493,22 +474,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 16,
     color: c.primaryText,
     padding: 0,
-  },
-  saveButton: {
-    backgroundColor: c.brand,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveButtonDisabled: {
-    backgroundColor: c.button.disabledBg,
-  },
-  saveText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: c.surface,
-  },
-  saveTextDisabled: {
-    color: c.button.disabledText,
   },
   viewerOverlay: {
     flex: 1,

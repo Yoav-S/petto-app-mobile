@@ -6,15 +6,12 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
   Alert,
-  ActivityIndicator,
   useWindowDimensions,
   Pressable,
   Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,6 +22,10 @@ import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import { ProfilePillField, ProfileSelectField } from '@/components/profile/ProfileFormFields';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import EditPhotoSheet from '@/components/health/EditPhotoSheet';
+import HealthKeyboardFooter, {
+  HealthKeyboardAvoidingView,
+  healthKeyboardScrollPadding,
+} from '@/components/health/HealthKeyboardFooter';
 import { t } from '@/i18n';
 import { createPet } from '@/services/pets';
 import { uploadPetPhoto } from '@/services/storage';
@@ -70,6 +71,7 @@ export default function AddPetScreen() {
   const toast = useToast();
   const router = useRouter();
   const { setActivePetId } = useActivePet();
+  const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const sx = width / DESIGN_WIDTH;
   const sy = height / DESIGN_HEIGHT;
@@ -177,19 +179,16 @@ export default function AddPetScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <VaccineScreenHeader title={t('pets.add_title')} icon="close" />
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <HealthKeyboardAvoidingView>
         <ScrollView
           contentContainerStyle={[
             styles.content,
             {
               paddingTop: layout.formTop,
-              paddingBottom: 24,
+              paddingBottom: healthKeyboardScrollPadding(sy, insets.bottom),
               gap: layout.formGap,
               alignItems: 'center',
             },
@@ -327,30 +326,15 @@ export default function AddPetScreen() {
               ]}
             />
           </View>
-
-          <TouchableOpacity
-            style={[
-              styles.saveButton,
-              {
-                width: layout.cardWidth,
-                height: layout.footerHeight,
-              },
-              !canSave && styles.saveButtonDisabled,
-            ]}
-            onPress={() => void handleSave()}
-            disabled={!canSave}
-            activeOpacity={0.85}
-          >
-            {submitting ? (
-              <ActivityIndicator color={colors.surface} />
-            ) : (
-              <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>
-                {t('home.add_pet')}
-              </Text>
-            )}
-          </TouchableOpacity>
         </ScrollView>
-      </KeyboardAvoidingView>
+
+        <HealthKeyboardFooter
+          label={t('home.add_pet')}
+          disabled={!canSave}
+          loading={submitting}
+          onPress={() => void handleSave()}
+        />
+      </HealthKeyboardAvoidingView>
 
       <BirthDatePickerSheet
         visible={birthSheetVisible}
@@ -476,26 +460,5 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 20,
       color: c.primaryText,
       textAlign: 'center',
-    },
-    saveButton: {
-      backgroundColor: c.brand,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-    },
-    saveButtonDisabled: {
-      backgroundColor: c.button.disabledBg,
-    },
-    saveText: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 16,
-      lineHeight: 24,
-      color: '#F6F7F9',
-      textAlign: 'center',
-    },
-    saveTextDisabled: {
-      color: c.button.disabledText,
     },
   });
