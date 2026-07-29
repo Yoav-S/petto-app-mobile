@@ -7,8 +7,6 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   TouchableOpacity,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -23,6 +21,10 @@ import { useToast } from '@/context/ToastContext';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { apiGet } from '@/services/api';
+import {
+  KeyboardDismissDoneChip,
+  useKeyboardBottomOffset,
+} from '@/components/ui/GlobalKeyboardDoneButton';
 import { updatePet, deletePet } from '@/services/pets';
 import { uploadPetPhoto } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
@@ -49,6 +51,7 @@ function trimOrNull(value: string): string | null {
 export default function EditProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const keyboardOffset = useKeyboardBottomOffset();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
@@ -242,11 +245,7 @@ export default function EditProfileScreen() {
           <Text style={styles.notFoundText}>{t('profile.edit.not_found')}</Text>
         </View>
       ) : (
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={insets.top + 44}
-        >
+        <View style={styles.flex}>
           <ScrollView
             style={styles.flex}
             contentContainerStyle={[styles.content, { paddingBottom: 24 }]}
@@ -348,7 +347,16 @@ export default function EditProfileScreen() {
               )}
             </Pressable>
           </View>
-        </KeyboardAvoidingView>
+
+          {keyboardOffset > 0 ? (
+            <View
+              pointerEvents="box-none"
+              style={{ position: 'absolute', left: 0, right: 0, bottom: keyboardOffset, zIndex: 100 }}
+            >
+              <KeyboardDismissDoneChip />
+            </View>
+          ) : null}
+        </View>
       )}
 
       <BirthDatePickerSheet

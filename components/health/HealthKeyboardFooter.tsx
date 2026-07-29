@@ -48,17 +48,9 @@ interface HealthKeyboardAvoidingViewProps {
   keyboardVerticalOffset?: number;
 }
 
-function useKeyboardOpen(): boolean {
-  const offset = useKeyboardBottomOffset();
-  return offset > 0;
-}
-
 /**
- * Form shell that keeps content + sticky footer above the keyboard, and parks
- * the light Done chip on the keyboard top edge (never underneath it).
- *
- * Uses measured keyboard inset padding instead of KeyboardAvoidingView —
- * Android edge-to-edge + KAV often leaves the chip under the IME.
+ * Form shell: sticky Save/Continue stays pinned to the screen bottom.
+ * When the keyboard is open, only the light Done chip floats on the keyboard edge.
  */
 export function HealthKeyboardAvoidingView({
   children,
@@ -73,9 +65,17 @@ export function HealthKeyboardAvoidingView({
   }, [claim, release]);
 
   return (
-    <View style={[styles.avoiding, offset > 0 ? { paddingBottom: offset } : null]}>
-      <View style={styles.avoiding}>{children}</View>
-      {offset > 0 ? <KeyboardDismissDoneChip /> : null}
+    <View style={styles.avoiding}>
+      {children}
+      {offset > 0 ? (
+        <View
+          pointerEvents="box-none"
+          collapsable={false}
+          style={[styles.keyboardDoneHost, { bottom: offset }]}
+        >
+          <KeyboardDismissDoneChip />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -110,8 +110,6 @@ export default function HealthKeyboardFooter({
   const sx = width / DESIGN_WIDTH;
   const sy = height / DESIGN_HEIGHT;
 
-  const keyboardOpen = useKeyboardOpen();
-
   const layout = useMemo(
     () => ({
       saveButtonWidth: DESIGN_SAVE_BUTTON_WIDTH * sx,
@@ -120,12 +118,12 @@ export default function HealthKeyboardFooter({
       footerPadH: DESIGN_FOOTER_PAD_H * sx,
       footerPadTop: DESIGN_FOOTER_PAD_TOP * sy,
       footerRadius: DESIGN_FOOTER_RADIUS * sx,
-      footerPadBottomClosed:
+      footerPadBottom:
         Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM * sy) + DESIGN_FOOTER_SAFE_GAP * sy,
       doneButtonWidth: DESIGN_DONE_BUTTON_WIDTH * sx,
       doneButtonHeight: DESIGN_DONE_BUTTON_HEIGHT * sy,
       donePadTop: DESIGN_FOOTER_PAD_TOP * sy,
-      doneBottomClosed: Math.max(insets.bottom, 0) + DESIGN_DONE_SAFE_GAP * sy,
+      doneBottom: Math.max(insets.bottom, 0) + DESIGN_DONE_SAFE_GAP * sy,
     }),
     [sx, sy, insets.bottom],
   );
@@ -138,7 +136,7 @@ export default function HealthKeyboardFooter({
           {
             paddingHorizontal: layout.footerPadH,
             paddingTop: layout.donePadTop,
-            paddingBottom: keyboardOpen ? layout.donePadTop : layout.doneBottomClosed,
+            paddingBottom: layout.doneBottom,
           },
         ]}
       >
@@ -166,17 +164,14 @@ export default function HealthKeyboardFooter({
     );
   }
 
-  const footerBottomPad = keyboardOpen ? layout.footerPadTop : layout.footerPadBottomClosed;
-
   return (
     <View
       style={[
         styles.saveFooter,
-        keyboardOpen ? styles.footerOpen : styles.footerClosed,
         {
           paddingTop: layout.footerPadTop,
           paddingHorizontal: layout.footerPadH,
-          paddingBottom: footerBottomPad,
+          paddingBottom: layout.footerPadBottom,
           borderTopLeftRadius: layout.footerRadius,
           borderTopRightRadius: layout.footerRadius,
         },
@@ -210,10 +205,18 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   avoiding: {
     flex: 1,
   },
+  keyboardDoneHost: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    elevation: 100,
+  },
   saveFooter: {
     width: '100%',
     backgroundColor: c.panel,
     alignItems: 'center',
+    justifyContent: 'flex-start',
     shadowColor: '#1E1E1E',
     shadowOffset: { width: 0, height: -1 },
     shadowOpacity: 0.06,
@@ -224,12 +227,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     width: '100%',
     backgroundColor: 'transparent',
     alignItems: 'flex-end',
-  },
-  footerClosed: {
-    justifyContent: 'flex-start',
-  },
-  footerOpen: {
-    justifyContent: 'center',
   },
   saveButton: {
     backgroundColor: c.brand,
