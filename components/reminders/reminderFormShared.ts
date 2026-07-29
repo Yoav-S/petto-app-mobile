@@ -54,9 +54,9 @@ export function isBeforeMinReminderDate(nextDate: string): boolean {
 }
 
 export function needsStatusPrompt(reminder: Reminder): boolean {
-  // After a push fires we keep `notified_at` until Done/Missed. Prompt for
-  // today's items and auto-missed leftovers that were still never answered.
+  // After a push fires we keep `notified_at` until Done/Missed.
   if (!reminder.notified_at) return false;
+  if (reminder.status === 'completed') return false;
   return reminder.status === 'today' || reminder.status === 'missed';
 }
 
