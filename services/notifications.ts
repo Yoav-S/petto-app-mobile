@@ -124,9 +124,14 @@ export async function registerForPushNotifications(): Promise<void> {
   if (!isExpoGo) {
     try {
       token = await resolvePushToken();
+      if (__DEV__) {
+        console.log('[push] token=' + (token ? token.slice(0, 28) + '…' : 'null') + ' tz=' + timezone);
+      }
     } catch (err) {
-      if (__DEV__) console.log('[push] token unavailable:', err);
+      console.warn('[push] token unavailable:', err);
     }
+  } else if (__DEV__) {
+    console.log('[push] Expo Go — skipping remote push token, tz=' + timezone);
   }
 
   try {
@@ -135,8 +140,9 @@ export async function registerForPushNotifications(): Promise<void> {
       platform: Platform.OS,
       timezone,
     });
+    if (__DEV__) console.log('[push] register ok token_saved=' + Boolean(token));
   } catch (err) {
-    if (__DEV__) console.log('[push] register failed:', err);
+    console.warn('[push] register failed:', err);
   }
 }
 
