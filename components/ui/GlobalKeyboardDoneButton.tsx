@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Keyboard,
+  Modal,
   Platform,
   StyleSheet,
   Text,
@@ -8,35 +9,29 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FullWindowOverlay } from 'react-native-screens';
 import { useColors, useTheme } from '@/context/ThemeContext';
 import { t, isRTL } from '@/i18n';
 
 const DESIGN_WIDTH = 375;
-/** Figma: left 255 + width 100 on a 375 frame → 20px from the trailing edge. */
 const DESIGN_TRAILING = 20;
 const DESIGN_BTN_W = 100;
 const DESIGN_BTN_H = 40;
 const DESIGN_GAP_ABOVE_KEYBOARD = 8;
 
-/** Exact Figma chip (light). Dark mode keeps the same structure with theme neutrals. */
 const LIGHT_CHIP = {
-  bg: '#F6F7F9',
+  bg: '#FFFFFF',
   border: '#E5E7EB',
   text: '#1F2937',
 } as const;
 
 /**
- * Global Done chip that sits just above the soft keyboard and dismisses it.
- * Mount once at the app root — no per-screen wiring required.
- *
- * Android (edge-to-edge + resize): the window already shrinks above the keyboard,
- * so we anchor near the bottom. iOS: lift by the reported keyboard height.
+ * Global Done chip above the soft keyboard.
+ * Renders in a layer above the native navigation stack so it stays visible.
  */
 export default function GlobalKeyboardDoneButton() {
   const colors = useColors();
   const { isDark } = useTheme();
-  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const sx = width / DESIGN_WIDTH;
 
@@ -47,13 +42,12 @@ export default function GlobalKeyboardDoneButton() {
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
     const onShow = (e: { endCoordinates?: { height?: number } }) => {
-      setKeyboardHeight(e.endCoordinates?.height ?? 0);
+      setKeyboardHeight(Math.max(0, e.endCoordinates?.height ?? 0));
     };
     const onHide = () => setKeyboardHeight(0);
 
     const showSub = Keyboard.addListener(showEvent, onShow);
     const hideSub = Keyboard.addListener(hideEvent, onHide);
-
     return () => {
       showSub.remove();
       hideSub.remove();
@@ -81,19 +75,13 @@ export default function GlobalKeyboardDoneButton() {
   const border = isDark ? colors.border : LIGHT_CHIP.border;
   const text = isDark ? colors.primaryText : LIGHT_CHIP.text;
 
-  // iOS: float above keyboard. Android resize: window already cleared the keyboard.
-  const bottom =
-    Platform.OS === 'ios'
-      ? keyboardHeight + layout.gapAbove
-      : Math.max(layout.gapAbove, insets.bottom > 0 ? 0 : layout.gapAbove);
-
-  return (
+  const chip = (
     <View
       pointerEvents="box-none"
       style={[
         styles.host,
         {
-          bottom,
+          bottom: keyboardHeight + layout.gapAbove,
           paddingHorizontal: layout.trailing,
         },
       ]}
@@ -132,15 +120,34 @@ export default function GlobalKeyboardDoneButton() {
       </TouchableOpacity>
     </View>
   );
+
+  if (Platform.OS === 'ios') {
+    return (
+      <FullWindowOverlay>
+        <View pointerEvents="box-none" style={styles.overlayRoot}>
+          {chip}
+        </View>
+      </FullWindowOverlay>
+    );
+  }
+
+  return (
+    <Modal visible transparent animationType="none" statusBarTranslucent>
+      <View pointerEvents="box-none" style={styles.overlayRoot}>
+        {chip}
+      </View>
+    </Modal>
+  );
 }
 
 const styles = StyleSheet.create({
+  overlayRoot: {
+    flex: 1,
+  },
   host: {
     position: 'absolute',
     left: 0,
     right: 0,
-    zIndex: 2500,
-    elevation: 2500,
   },
   button: {
     borderWidth: 1,
@@ -148,9 +155,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     shadowColor: '#2D2D2A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 20,
-    elevation: 4,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 10,
   },
   label: {
     fontFamily: 'Rubik-Medium',
