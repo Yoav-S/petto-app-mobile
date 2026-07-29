@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -95,22 +95,6 @@ export default function AddVaccineScreen() {
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-
-  useEffect(() => {
-    const showSub = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => setKeyboardVisible(true),
-    );
-    const hideSub = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => setKeyboardVisible(false),
-    );
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
 
   const canSave = name.trim().length > 0 && !submitting;
 
@@ -342,13 +326,6 @@ export default function AddVaccineScreen() {
               returnKeyType="done"
               onSubmitEditing={() => Keyboard.dismiss()}
             />
-            {keyboardVisible ? (
-              <View style={styles.keyboardDoneRow}>
-                <TouchableOpacity style={styles.keyboardDoneBtn} onPress={() => Keyboard.dismiss()}>
-                  <Text style={styles.keyboardDoneText}>{t('pickers.done')}</Text>
-                </TouchableOpacity>
-              </View>
-            ) : null}
           </View>
 
           <TouchableOpacity
@@ -516,21 +493,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 16,
     color: c.primaryText,
     padding: 0,
-  },
-  keyboardDoneRow: {
-    alignItems: 'flex-end',
-    marginTop: Spacing.md,
-  },
-  keyboardDoneBtn: {
-    backgroundColor: c.brand,
-    paddingHorizontal: 28,
-    paddingVertical: 12,
-    borderRadius: Radius.md,
-  },
-  keyboardDoneText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: c.surface,
   },
   saveButton: {
     backgroundColor: c.brand,

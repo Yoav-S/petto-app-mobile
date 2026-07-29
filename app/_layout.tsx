@@ -12,6 +12,7 @@ import { ToastProvider } from '@/context/ToastContext';
 import { PetStoreProvider } from '@/store/petStore';
 import { PetOnboardingDraftProvider } from '@/store/petOnboardingDraft';
 import { useReminderNotificationRouting } from '@/hooks/useReminderNotificationRouting';
+import GlobalKeyboardDoneButton from '@/components/ui/GlobalKeyboardDoneButton';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -82,6 +83,7 @@ function ThemedApp() {
         {/* Re-key on locale so every `t()` call re-evaluates when the language changes. */}
         <View key={locale} style={{ flex: 1, backgroundColor: colors.background }}>
           <RootLayoutNav />
+          <GlobalKeyboardDoneButton />
         </View>
       </ToastProvider>
       <StatusBar style={isDark ? 'light' : 'dark'} />
