@@ -10,21 +10,25 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 const DESIGN_WIDTH = 375;
 const DESIGN_HEIGHT = 812;
-/** White save bar (button + padding). */
-const DESIGN_FOOTER_BAR_HEIGHT = 104;
-/** Extra space below the button for home indicator / safe area when keyboard is closed. */
-const DESIGN_FOOTER_SAFE_EXTRA = 50;
-/** Total resting footer height on the 812 frame. */
-const DESIGN_FOOTER_REST_HEIGHT = DESIGN_FOOTER_BAR_HEIGHT + DESIGN_FOOTER_SAFE_EXTRA;
-/** Done button on add/edit note screens. */
+
+/** Figma sticky action bar (375×104): pad 12/20 + 48px button; bottom is device safe area. */
+const DESIGN_FOOTER_PAD_TOP = 12;
+const DESIGN_FOOTER_PAD_H = 20;
+const DESIGN_FOOTER_RADIUS = 24;
+const DESIGN_SAVE_BUTTON_WIDTH = 335;
+const DESIGN_SAVE_BUTTON_HEIGHT = 48;
+const DESIGN_FOOTER_MIN_BOTTOM = 10;
+
+/** Compact Done (edit note) — 100×40, lifted above the home indicator. */
 const DESIGN_DONE_BUTTON_WIDTH = 100;
 const DESIGN_DONE_BUTTON_HEIGHT = 40;
-const DESIGN_DONE_BOTTOM_OFFSET = 44;
+const DESIGN_DONE_SAFE_GAP = 25;
 
 interface HealthKeyboardFooterProps {
   label: string;
@@ -79,14 +83,20 @@ export function HealthKeyboardAvoidingView({
   );
 }
 
-/** ScrollView bottom padding so fields clear the save footer bar. */
+/** ScrollView bottom padding so fields clear the full-width save footer bar. */
 export function healthKeyboardScrollPadding(scaleY = 1, safeBottom = 0): number {
-  return DESIGN_FOOTER_REST_HEIGHT * scaleY + Math.max(12, safeBottom) + 16;
+  const bottom = Math.max(safeBottom, DESIGN_FOOTER_MIN_BOTTOM * scaleY);
+  return (DESIGN_FOOTER_PAD_TOP + DESIGN_SAVE_BUTTON_HEIGHT) * scaleY + bottom + 16;
 }
 
-/** ScrollView bottom padding for Done button screens. */
-export function healthDoneScrollPadding(scaleY = 1): number {
-  return (DESIGN_DONE_BOTTOM_OFFSET + DESIGN_DONE_BUTTON_HEIGHT) * scaleY + 16;
+/** ScrollView bottom padding for compact Done button screens. */
+export function healthDoneScrollPadding(scaleY = 1, safeBottom = 0): number {
+  return (
+    DESIGN_DONE_BUTTON_HEIGHT * scaleY +
+    Math.max(safeBottom, 0) +
+    DESIGN_DONE_SAFE_GAP * scaleY +
+    16
+  );
 }
 
 export default function HealthKeyboardFooter({
@@ -98,6 +108,7 @@ export default function HealthKeyboardFooter({
 }: HealthKeyboardFooterProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const sx = width / DESIGN_WIDTH;
   const sy = height / DESIGN_HEIGHT;
@@ -106,20 +117,19 @@ export default function HealthKeyboardFooter({
 
   const layout = useMemo(
     () => ({
-      saveButtonWidth: 335 * sx,
-      saveButtonHeight: 48 * sx,
+      saveButtonWidth: DESIGN_SAVE_BUTTON_WIDTH * sx,
+      saveButtonHeight: DESIGN_SAVE_BUTTON_HEIGHT * sx,
       buttonRadius: 12 * sx,
-      footerPadH: 20 * sx,
-      footerPadTop: 12 * sy,
-      footerRadius: 24 * sx,
-      footerHeightClosed: DESIGN_FOOTER_REST_HEIGHT * sy,
-      footerPadBottomClosed: (DESIGN_FOOTER_REST_HEIGHT - 12 - 48) * sy,
+      footerPadH: DESIGN_FOOTER_PAD_H * sx,
+      footerPadTop: DESIGN_FOOTER_PAD_TOP * sy,
+      footerRadius: DESIGN_FOOTER_RADIUS * sx,
+      footerPadBottomClosed: Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM * sy),
       doneButtonWidth: DESIGN_DONE_BUTTON_WIDTH * sx,
       doneButtonHeight: DESIGN_DONE_BUTTON_HEIGHT * sy,
-      doneBottomOffset: DESIGN_DONE_BOTTOM_OFFSET * sy,
-      donePadTop: 12 * sy,
+      donePadTop: DESIGN_FOOTER_PAD_TOP * sy,
+      doneBottomClosed: Math.max(insets.bottom, 0) + DESIGN_DONE_SAFE_GAP * sy,
     }),
-    [sx, sy],
+    [sx, sy, insets.bottom],
   );
 
   if (!fullWidth) {
@@ -130,7 +140,7 @@ export default function HealthKeyboardFooter({
           {
             paddingHorizontal: layout.footerPadH,
             paddingTop: layout.donePadTop,
-            paddingBottom: keyboardOpen ? layout.donePadTop : layout.doneBottomOffset,
+            paddingBottom: keyboardOpen ? layout.donePadTop : layout.doneBottomClosed,
           },
         ]}
       >
@@ -166,7 +176,6 @@ export default function HealthKeyboardFooter({
         styles.saveFooter,
         keyboardOpen ? styles.footerOpen : styles.footerClosed,
         {
-          height: keyboardOpen ? undefined : layout.footerHeightClosed,
           paddingTop: layout.footerPadTop,
           paddingHorizontal: layout.footerPadH,
           paddingBottom: footerBottomPad,
@@ -205,13 +214,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   saveFooter: {
     width: '100%',
-    backgroundColor: c.surface,
+    backgroundColor: c.panel,
     alignItems: 'center',
-    shadowColor: '#2D2D2A',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 20,
-    elevation: 8,
+    // Figma: 0px -1px 8px #1E1E1E0F
+    shadowColor: '#1E1E1E',
+    shadowOffset: { width: 0, height: -1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 6,
   },
   doneFooter: {
     width: '100%',

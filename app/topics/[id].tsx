@@ -33,8 +33,12 @@ import type { MedicalRecordDetail } from '@/types/api';
 
 const DESIGN_WIDTH = 375;
 const DESIGN_HEIGHT = 812;
-const DESIGN_FOOTER_BAR_HEIGHT = 104;
-const DESIGN_FOOTER_SAFE_EXTRA = 50;
+const DESIGN_FOOTER_PAD_TOP = 12;
+const DESIGN_FOOTER_PAD_H = 20;
+const DESIGN_FOOTER_RADIUS = 24;
+const DESIGN_SAVE_BUTTON_WIDTH = 335;
+const DESIGN_SAVE_BUTTON_HEIGHT = 48;
+const DESIGN_FOOTER_MIN_BOTTOM = 10;
 
 export default function HealthDetailsScreen() {
   const colors = useColors();
@@ -52,18 +56,21 @@ export default function HealthDetailsScreen() {
 
   const footerLayout = useMemo(
     () => ({
-      padH: 20 * sx,
-      padTop: 12 * sy,
-      padBottomClosed: (DESIGN_FOOTER_BAR_HEIGHT + DESIGN_FOOTER_SAFE_EXTRA - 12 - 48) * sy,
-      heightClosed: (DESIGN_FOOTER_BAR_HEIGHT + DESIGN_FOOTER_SAFE_EXTRA) * sy,
-      buttonWidth: 335 * sx,
-      buttonHeight: 48 * sx,
+      padH: DESIGN_FOOTER_PAD_H * sx,
+      padTop: DESIGN_FOOTER_PAD_TOP * sy,
+      padBottom: Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM * sy),
+      buttonWidth: DESIGN_SAVE_BUTTON_WIDTH * sx,
+      buttonHeight: DESIGN_SAVE_BUTTON_HEIGHT * sx,
       buttonRadius: 12 * sx,
-      footerRadius: 24 * sx,
+      footerRadius: DESIGN_FOOTER_RADIUS * sx,
       menuSize: 40 * headerLayout.sx,
       menuRadius: 12 * headerLayout.sx,
+      scrollPadBottom:
+        (DESIGN_FOOTER_PAD_TOP + DESIGN_SAVE_BUTTON_HEIGHT) * sy +
+        Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM * sy) +
+        16,
     }),
-    [sx, sy, headerLayout.sx],
+    [sx, sy, insets.bottom, headerLayout.sx],
   );
 
   const [record, setRecord] = useState<MedicalRecordDetail | null>(null);
@@ -198,7 +205,7 @@ export default function HealthDetailsScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: footerLayout.heightClosed + 16 },
+          { paddingBottom: footerLayout.scrollPadBottom },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -263,10 +270,9 @@ export default function HealthDetailsScreen() {
         style={[
           styles.footer,
           {
-            height: footerLayout.heightClosed,
             paddingTop: footerLayout.padTop,
             paddingHorizontal: footerLayout.padH,
-            paddingBottom: Math.max(footerLayout.padBottomClosed, insets.bottom),
+            paddingBottom: footerLayout.padBottom,
             borderTopLeftRadius: footerLayout.footerRadius,
             borderTopRightRadius: footerLayout.footerRadius,
           },
@@ -356,14 +362,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   footer: {
     width: '100%',
-    backgroundColor: c.surface,
+    backgroundColor: c.panel,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    shadowColor: '#2D2D2A',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 20,
-    elevation: 8,
+    shadowColor: '#1E1E1E',
+    shadowOffset: { width: 0, height: -1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 6,
   },
   addButton: {
     backgroundColor: c.brand,

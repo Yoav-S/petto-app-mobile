@@ -8,7 +8,7 @@ import {
   Keyboard,
   useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Spacing, type ThemeColors } from '@/constants/theme';
@@ -49,6 +49,7 @@ export default function AddNoteScreen() {
   const recordId = normalizeRouteParam(recordIdParam);
   const { activePetId } = useActivePet();
   const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const sy = height / DESIGN_HEIGHT;
 
   const [recordTitle, setRecordTitle] = useState('');
@@ -162,7 +163,7 @@ export default function AddNoteScreen() {
             styles.content,
             {
               paddingTop: Math.max(Spacing.md, 16 * sy),
-              paddingBottom: healthKeyboardScrollPadding(sy),
+              paddingBottom: healthKeyboardScrollPadding(sy, insets.bottom),
             },
           ]}
           keyboardShouldPersistTaps="handled"

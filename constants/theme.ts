@@ -13,9 +13,10 @@ import { Platform } from 'react-native';
  * design later without touching any component.
  */
 export const lightColors = {
-  background: '#F7F5F0',
+  /** App canvas — Figma screen background */
+  background: '#F6F7F9',
   surface: '#FFFFFF',
-  /** Home bottom sheet / panel behind the cards — slightly off from `surface`. */
+  /** Cards / sheets that sit on the canvas (same as background in light). */
   panel: '#F6F7F9',
   /** Peto brand green — primary actions, FAB, focused inputs */
   brand: '#004741',

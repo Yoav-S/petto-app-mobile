@@ -249,8 +249,10 @@ export default function PetBirthOnboardingScreen() {
           styles.footer,
           {
             paddingHorizontal: PET_BIRTH_STEP.continuePaddingH * sx,
-            paddingBottom: Math.max(insets.bottom, 16 * sy),
-            paddingTop: 8 * sy,
+            paddingBottom: Math.max(insets.bottom, 10 * sy),
+            paddingTop: 12 * sy,
+            borderTopLeftRadius: 24 * sx,
+            borderTopRightRadius: 24 * sx,
           },
         ]}
       >
@@ -343,6 +345,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   footer: {
     alignItems: 'center',
+    width: '100%',
+    backgroundColor: c.panel,
+    shadowColor: '#1E1E1E',
+    shadowOffset: { width: 0, height: -1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 6,
   },
   continueBtn: {
     backgroundColor: c.brand,

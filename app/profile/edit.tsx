@@ -334,7 +334,7 @@ export default function EditProfileScreen() {
             </View>
           </ScrollView>
 
-          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
             <Pressable
               style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
               onPress={handleSave}
@@ -470,12 +470,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 20,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    backgroundColor: c.surface,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 8,
+    backgroundColor: c.panel,
+    shadowColor: '#1E1E1E',
+    shadowOffset: { width: 0, height: -1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 6,
   },
   saveBtn: {
     height: 48,
