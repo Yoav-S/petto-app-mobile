@@ -54,10 +54,10 @@ export function isBeforeMinReminderDate(nextDate: string): boolean {
 }
 
 export function needsStatusPrompt(reminder: Reminder): boolean {
-  // After a push fires we keep `notified_at` until Done/Missed.
+  // Only auto-prompt for today's notified fire. Old auto-"missed" leftovers
+  // used to reappear on every login; the dispatcher catch-up clears those.
   if (!reminder.notified_at) return false;
-  if (reminder.status === 'completed') return false;
-  return reminder.status === 'today' || reminder.status === 'missed';
+  return reminder.status === 'today';
 }
 
 /** Compact clock for the action sheet (matches design "8:00"). */
