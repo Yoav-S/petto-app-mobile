@@ -1,5 +1,13 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {
+  Dimensions,
   Keyboard,
   Platform,
   StyleSheet,
@@ -7,6 +15,7 @@ import {
   TouchableOpacity,
   View,
   useWindowDimensions,
+  type KeyboardEvent,
 } from 'react-native';
 import { FullWindowOverlay } from 'react-native-screens';
 import { useColors, useTheme } from '@/context/ThemeContext';
@@ -51,8 +60,40 @@ export function KeyboardDoneClaimProvider({ children }: { children: React.ReactN
   );
 }
 
+/** Distance from the bottom of the app window to the top of the keyboard. */
+export function useKeyboardBottomOffset(): number {
+  const [offset, setOffset] = useState(0);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const onShow = (e: KeyboardEvent) => {
+      const winH = Dimensions.get('window').height;
+      const { height, screenY } = e.endCoordinates;
+      const gap = winH - screenY;
+      // Prefer layout gap when it looks like a real keyboard; else reported height.
+      if (Number.isFinite(gap) && gap > 40 && gap < winH * 0.95) {
+        setOffset(Math.round(gap));
+      } else {
+        setOffset(Math.round(height || 0));
+      }
+    };
+    const onHide = () => setOffset(0);
+
+    const showSub = Keyboard.addListener(showEvent, onShow);
+    const hideSub = Keyboard.addListener(hideEvent, onHide);
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  return offset;
+}
+
 /** White Done chip — dismisses the keyboard. */
-export function KeyboardDismissDoneChip({ compact }: { compact?: boolean }) {
+export function KeyboardDismissDoneChip() {
   const colors = useColors();
   const { isDark } = useTheme();
   const { width } = useWindowDimensions();
@@ -68,7 +109,7 @@ export function KeyboardDismissDoneChip({ compact }: { compact?: boolean }) {
       padH: 14 * sx,
       fontSize: 14 * Math.min(sx, 1.15),
       lineHeight: 18 * Math.min(sx, 1.15),
-      rowPadV: compact ? 6 * sx : 8 * sx,
+      rowPadV: 8 * sx,
     }),
     [sx],
   );
@@ -125,35 +166,16 @@ export function KeyboardDismissDoneChip({ compact }: { compact?: boolean }) {
 
 /**
  * Fallback Done for screens that do NOT use HealthKeyboardAvoidingView.
- * Form screens claim the context and render Done in-layout instead.
+ * Anchored to the keyboard top via measured bottom offset (no Modal).
  */
 export default function GlobalKeyboardDoneButton() {
   const { claimed } = useKeyboardDoneClaim();
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const offset = useKeyboardBottomOffset();
 
-  useEffect(() => {
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const onShow = (e: { endCoordinates?: { height?: number } }) => {
-      setKeyboardHeight(Math.max(0, e.endCoordinates?.height ?? 0));
-    };
-    const onHide = () => setKeyboardHeight(0);
-    const showSub = Keyboard.addListener(showEvent, onShow);
-    const hideSub = Keyboard.addListener(hideEvent, onHide);
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
-
-  if (claimed || keyboardHeight <= 0) return null;
+  if (claimed || offset <= 0) return null;
 
   const chip = (
-    <View
-      pointerEvents="box-none"
-      style={[styles.host, { bottom: keyboardHeight }]}
-      collapsable={false}
-    >
+    <View pointerEvents="box-none" style={[styles.host, { bottom: offset }]} collapsable={false}>
       <KeyboardDismissDoneChip />
     </View>
   );

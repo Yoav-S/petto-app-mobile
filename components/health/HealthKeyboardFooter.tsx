@@ -1,13 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Keyboard,
-  Platform,
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +12,7 @@ import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import {
   KeyboardDismissDoneChip,
+  useKeyboardBottomOffset,
   useKeyboardDoneClaim,
 } from '@/components/ui/GlobalKeyboardDoneButton';
 
@@ -51,34 +49,22 @@ interface HealthKeyboardAvoidingViewProps {
 }
 
 function useKeyboardOpen(): boolean {
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-
-    const showSub = Keyboard.addListener(showEvent, () => setOpen(true));
-    const hideSub = Keyboard.addListener(hideEvent, () => setOpen(false));
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
-
-  return open;
+  const offset = useKeyboardBottomOffset();
+  return offset > 0;
 }
 
-/** Wraps scroll content + footer; lifts the footer only while the keyboard is open.
- *  When the keyboard is open, renders a Done chip between the footer and the keyboard
- *  so it is never covered by the sticky Save bar.
+/**
+ * Form shell that keeps content + sticky footer above the keyboard, and parks
+ * the light Done chip on the keyboard top edge (never underneath it).
+ *
+ * Uses measured keyboard inset padding instead of KeyboardAvoidingView —
+ * Android edge-to-edge + KAV often leaves the chip under the IME.
  */
 export function HealthKeyboardAvoidingView({
   children,
-  keyboardVerticalOffset = 0,
 }: HealthKeyboardAvoidingViewProps) {
   const styles = useThemedStyles(makeStyles);
-  const keyboardOpen = useKeyboardOpen();
+  const offset = useKeyboardBottomOffset();
   const { claim, release } = useKeyboardDoneClaim();
 
   useEffect(() => {
@@ -87,16 +73,10 @@ export function HealthKeyboardAvoidingView({
   }, [claim, release]);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.avoiding}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={keyboardVerticalOffset}
-      enabled={keyboardOpen}
-    >
-      {children}
-      {/* Sits under the sticky Save footer and above the keyboard — always visible. */}
-      {keyboardOpen ? <KeyboardDismissDoneChip /> : null}
-    </KeyboardAvoidingView>
+    <View style={[styles.avoiding, offset > 0 ? { paddingBottom: offset } : null]}>
+      <View style={styles.avoiding}>{children}</View>
+      {offset > 0 ? <KeyboardDismissDoneChip /> : null}
+    </View>
   );
 }
 
@@ -234,7 +214,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     width: '100%',
     backgroundColor: c.panel,
     alignItems: 'center',
-    // Figma: 0px -1px 8px #1E1E1E0F
     shadowColor: '#1E1E1E',
     shadowOffset: { width: 0, height: -1 },
     shadowOpacity: 0.06,
