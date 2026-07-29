@@ -17,7 +17,7 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import HealthNoteEditorCard from '@/components/health/HealthNoteEditorCard';
 import HealthKeyboardFooter, {
   HealthKeyboardAvoidingView,
-  healthDoneScrollPadding,
+  healthKeyboardScrollPadding,
 } from '@/components/health/HealthKeyboardFooter';
 import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
 import { t } from '@/i18n';
@@ -156,7 +156,7 @@ export default function AddNoteScreen() {
             styles.content,
             {
               paddingTop: Math.max(Spacing.md, 16 * sy),
-              paddingBottom: healthDoneScrollPadding(sy),
+              paddingBottom: healthKeyboardScrollPadding(sy),
             },
           ]}
           keyboardShouldPersistTaps="handled"
@@ -180,7 +180,7 @@ export default function AddNoteScreen() {
           disabled={!canSave}
           loading={submitting}
           onPress={handleSave}
-          fullWidth={false}
+          fullWidth
         />
       </HealthKeyboardAvoidingView>
 
