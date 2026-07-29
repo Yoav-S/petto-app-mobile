@@ -5,6 +5,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Keyboard,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -54,6 +55,7 @@ export default function AddNoteScreen() {
   const [loadingRecord, setLoadingRecord] = useState(true);
   const [note, setNote] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoMime, setPhotoMime] = useState<string | null>(null);
   const [reminderDraft, setReminderDraft] = useState<HealthReminderDraft | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [reminderSheetVisible, setReminderSheetVisible] = useState(false);
@@ -95,9 +97,13 @@ export default function AddNoteScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 0.85,
+      // Avoid uploading HEIC as "jpg" — blank remote images on Android/web.
+      preferredAssetRepresentationMode:
+        ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
     });
     if (!result.canceled && result.assets[0]?.uri) {
       setPhotoUri(result.assets[0].uri);
+      setPhotoMime(result.assets[0].mimeType ?? null);
     }
   };
 
@@ -108,7 +114,7 @@ export default function AddNoteScreen() {
 
       let photoUrl: string | undefined;
       if (photoUri) {
-        photoUrl = await uploadHealthNotePhoto(photoUri);
+        photoUrl = await uploadHealthNotePhoto(photoUri, photoMime);
       }
 
       let linkedReminderId: string | undefined;
@@ -169,7 +175,10 @@ export default function AddNoteScreen() {
             photoUri={photoUri}
             onPickImage={pickImage}
             reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
-            onReminderPress={() => setReminderSheetVisible(true)}
+            onReminderPress={() => {
+              Keyboard.dismiss();
+              setReminderSheetVisible(true);
+            }}
             onRemoveReminder={handleRemoveReminder}
             placeholder={t('topics.note_body_placeholder')}
           />

@@ -7,6 +7,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Keyboard,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -70,6 +71,7 @@ export default function EditNoteScreen() {
 
   const [noteText, setNoteText] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoMime, setPhotoMime] = useState<string | null>(null);
   const [photoChanged, setPhotoChanged] = useState(false);
 
   const [recordTitle, setRecordTitle] = useState('');
@@ -108,6 +110,7 @@ export default function EditNoteScreen() {
             setRecordTitle(detail.title ?? '');
             setNoteText(note.text);
             setPhotoUri(note.photo_url ?? null);
+            setPhotoMime(null);
             setPhotoChanged(false);
             setLinkedReminderId(note.linked_reminder_id ?? null);
           }
@@ -159,9 +162,15 @@ export default function EditNoteScreen() {
       Alert.alert(t('petOnboarding.photo_permission_title'), t('petOnboarding.photo_permission_body'));
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      preferredAssetRepresentationMode:
+        ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
+    });
     if (!result.canceled && result.assets[0]?.uri) {
       setPhotoUri(result.assets[0].uri);
+      setPhotoMime(result.assets[0].mimeType ?? null);
       setPhotoChanged(true);
     }
   }, []);
@@ -172,6 +181,7 @@ export default function EditNoteScreen() {
     if (open === 'photo') {
       void pickImage();
     } else if (open === 'reminder') {
+      Keyboard.dismiss();
       setReminderSheetVisible(true);
     }
   }, [loading, notFound, open, pickImage]);
@@ -211,7 +221,7 @@ export default function EditNoteScreen() {
 
       let photoUrl: string | null | undefined;
       if (photoChanged) {
-        photoUrl = photoUri ? await uploadHealthNotePhoto(photoUri) : null;
+        photoUrl = photoUri ? await uploadHealthNotePhoto(photoUri, photoMime) : null;
       }
 
       let nextLinkedReminderId: string | null = linkedReminderId;
@@ -310,7 +320,10 @@ export default function EditNoteScreen() {
             photoUri={photoUri}
             onPickImage={pickImage}
             reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
-            onReminderPress={() => setReminderSheetVisible(true)}
+            onReminderPress={() => {
+              Keyboard.dismiss();
+              setReminderSheetVisible(true);
+            }}
             onRemoveReminder={handleRemoveReminder}
             placeholder={t('topics.note_body_placeholder')}
           />

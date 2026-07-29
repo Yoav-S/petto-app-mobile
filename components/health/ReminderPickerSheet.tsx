@@ -130,7 +130,10 @@ export default function ReminderPickerSheet({
   const [subSheet, setSubSheet] = useState<SubSheet>(null);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible) {
+      setSubSheet(null);
+      return;
+    }
     const nextDate = initialDate ?? todayIsoDate();
     const preferred = initialTime ?? '13:00';
     const resolved = resolveInitialTime(nextDate, preferred);
@@ -145,6 +148,16 @@ export default function ReminderPickerSheet({
     () => Boolean(date && time) && !isReminderDateTimeInPast(date, time),
     [date, time],
   );
+
+  /** Stable Date for BirthDatePickerSheet — a new object each render resets the calendar. */
+  const parsedDate = useMemo(() => parseIsoDate(date), [date]);
+
+  /**
+   * Never stack two RN Modals (parent reminder + date/time/repeat).
+   * That freezes iOS simulators/devices. Hide the parent while a sub-sheet is open,
+   * matching the exclusive-sheet pattern used by ReminderFormBody.
+   */
+  const parentVisible = visible && subSheet === null;
 
   const layout = useMemo(
     () => ({
@@ -237,7 +250,7 @@ export default function ReminderPickerSheet({
 
   return (
     <>
-      <BottomSheetModal visible={visible} onClose={onClose}>
+      <BottomSheetModal visible={parentVisible} onClose={onClose}>
           <View
             style={[
               styles.sheet,
@@ -443,8 +456,8 @@ export default function ReminderPickerSheet({
       </BottomSheetModal>
 
       <BirthDatePickerSheet
-        visible={subSheet === 'date'}
-        initialDate={parseIsoDate(date)}
+        visible={visible && subSheet === 'date'}
+        initialDate={parsedDate}
         allowFuture
         minDate={todayIsoDate()}
         title={t('reminders.field_date')}
@@ -453,7 +466,7 @@ export default function ReminderPickerSheet({
         onConfirm={handleDateConfirm}
       />
       <TimePickerSheet
-        visible={subSheet === 'time'}
+        visible={visible && subSheet === 'time'}
         value={time}
         onClose={() => setSubSheet(null)}
         onConfirm={(value) => {
@@ -463,7 +476,7 @@ export default function ReminderPickerSheet({
         }}
       />
       <RepeatPickerSheet
-        visible={subSheet === 'repeat'}
+        visible={visible && subSheet === 'repeat'}
         value={repeat}
         onClose={() => setSubSheet(null)}
         onSelect={(value) => {

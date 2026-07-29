@@ -38,6 +38,37 @@ function uriToBlob(uri: string): Promise<Blob> {
   });
 }
 
+/** Prefer a real image/* type; never upload HEIC labeled as JPEG. */
+function resolveImageMeta(localUri: string, mimeHint?: string | null): {
+  ext: string;
+  contentType: string;
+} {
+  const mime = (mimeHint || '').split(';')[0].trim().toLowerCase();
+  if (mime.startsWith('image/')) {
+    if (mime === 'image/jpg' || mime === 'image/jpeg') {
+      return { ext: 'jpg', contentType: 'image/jpeg' };
+    }
+    if (mime === 'image/png') return { ext: 'png', contentType: 'image/png' };
+    if (mime === 'image/webp') return { ext: 'webp', contentType: 'image/webp' };
+    if (mime === 'image/gif') return { ext: 'gif', contentType: 'image/gif' };
+    if (mime === 'image/heic' || mime === 'image/heif') {
+      // Keep container honest so decoders don't treat HEIC bytes as JPEG.
+      return { ext: mime === 'image/heif' ? 'heif' : 'heic', contentType: mime };
+    }
+    const subtype = mime.slice('image/'.length).replace(/[^a-z0-9]+/g, '') || 'jpg';
+    return { ext: subtype === 'jpeg' ? 'jpg' : subtype, contentType: mime };
+  }
+
+  const match = localUri.match(/\.([a-zA-Z0-9]+)(?:\?|$)/);
+  const extRaw = (match?.[1] || 'jpg').toLowerCase();
+  if (extRaw === 'png') return { ext: 'png', contentType: 'image/png' };
+  if (extRaw === 'webp') return { ext: 'webp', contentType: 'image/webp' };
+  if (extRaw === 'gif') return { ext: 'gif', contentType: 'image/gif' };
+  if (extRaw === 'heic') return { ext: 'heic', contentType: 'image/heic' };
+  if (extRaw === 'heif') return { ext: 'heif', contentType: 'image/heif' };
+  return { ext: 'jpg', contentType: 'image/jpeg' };
+}
+
 /**
  * Upload a local image to Firebase Storage and return its public download URL.
  *
@@ -46,19 +77,26 @@ function uriToBlob(uri: string): Promise<Blob> {
  *
  * @param localUri Local device URI from the image picker.
  * @param subfolder Folder under the user's namespace (e.g. 'pets', 'notes').
+ * @param mimeHint Optional MIME from the image picker asset.
  * @returns The https download URL to persist.
  */
-export async function uploadImage(localUri: string, subfolder = 'uploads'): Promise<string> {
+export async function uploadImage(
+  localUri: string,
+  subfolder = 'uploads',
+  mimeHint?: string | null,
+): Promise<string> {
   const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');
 
+  const { ext, contentType } = resolveImageMeta(localUri, mimeHint);
   const blob = await uriToBlob(localUri);
   try {
-    const path = `users/${user.uid}/${subfolder}/${Date.now()}.jpg`;
+    const path = `users/${user.uid}/${subfolder}/${Date.now()}.${ext}`;
     const storageRef = ref(storage, path);
+    const blobType = ((blob as { type?: string }).type || '').trim();
     await withTimeout(
       uploadBytes(storageRef, blob, {
-        contentType: (blob as any).type || 'image/jpeg',
+        contentType: blobType.startsWith('image/') ? blobType : contentType,
       }),
       UPLOAD_TIMEOUT_MS,
       'Image upload timed out.',
@@ -70,16 +108,16 @@ export async function uploadImage(localUri: string, subfolder = 'uploads'): Prom
     );
   } finally {
     // Free native memory held by the RN Blob (no-op on web).
-    (blob as any).close?.();
+    (blob as { close?: () => void }).close?.();
   }
 }
 
 /** Thin wrapper: upload a pet photo under users/{uid}/pets/. */
-export function uploadPetPhoto(localUri: string): Promise<string> {
-  return uploadImage(localUri, 'pets');
+export function uploadPetPhoto(localUri: string, mimeHint?: string | null): Promise<string> {
+  return uploadImage(localUri, 'pets', mimeHint);
 }
 
 /** Thin wrapper: upload a topic-note image under users/{uid}/health/. */
-export function uploadHealthNotePhoto(localUri: string): Promise<string> {
-  return uploadImage(localUri, 'health');
+export function uploadHealthNotePhoto(localUri: string, mimeHint?: string | null): Promise<string> {
+  return uploadImage(localUri, 'health', mimeHint);
 }

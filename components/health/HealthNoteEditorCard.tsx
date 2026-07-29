@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -63,6 +63,10 @@ export default function HealthNoteEditorCard({
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(photoUri) && !imageFailed;
 
+  useEffect(() => {
+    setImageFailed(false);
+  }, [photoUri]);
+
   return (
     <View
       style={[
@@ -77,16 +81,23 @@ export default function HealthNoteEditorCard({
     >
       <View style={[styles.inner, { gap: layout.innerGap }]}>
         {showImage ? (
-          <Image
-            source={{ uri: photoUri! }}
+          <View
             style={{
               width: '100%',
               height: layout.imageHeight,
               borderRadius: layout.imageRadius,
+              overflow: 'hidden',
+              backgroundColor: colors.background,
             }}
-            contentFit="cover"
-            onError={() => setImageFailed(true)}
-          />
+          >
+            <Image
+              source={{ uri: photoUri! }}
+              style={{ width: '100%', height: '100%' }}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              onError={() => setImageFailed(true)}
+            />
+          </View>
         ) : null}
 
         <TextInput

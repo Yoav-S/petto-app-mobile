@@ -62,6 +62,7 @@ export default function HealthDetailsScreen() {
   const [record, setRecord] = useState<MedicalRecordDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [failedPhotoIds, setFailedPhotoIds] = useState<Record<string, true>>({});
   const recordRef = useRef<MedicalRecordDetail | null>(null);
   recordRef.current = record;
 
@@ -155,8 +156,19 @@ export default function HealthDetailsScreen() {
         ) : (
           (record.notes ?? []).map((note) => (
             <View key={note.id} style={styles.noteCard}>
-              {note.photo_url ? (
-                <Image source={{ uri: note.photo_url }} style={styles.noteImage} contentFit="cover" />
+              {note.photo_url && !failedPhotoIds[note.id] ? (
+                <View style={styles.noteImageWrap}>
+                  <Image
+                    source={{ uri: note.photo_url }}
+                    style={styles.noteImage}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    recyclingKey={note.id}
+                    onError={() =>
+                      setFailedPhotoIds((prev) => ({ ...prev, [note.id]: true }))
+                    }
+                  />
+                </View>
               ) : null}
               <TouchableOpacity
                 activeOpacity={0.7}
@@ -282,11 +294,17 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  noteImage: {
+  noteImageWrap: {
     width: '100%',
     height: 180,
     borderRadius: Radius.md,
     marginBottom: Spacing.md,
+    overflow: 'hidden',
+    backgroundColor: c.background,
+  },
+  noteImage: {
+    width: '100%',
+    height: '100%',
   },
   noteText: {
     fontFamily: 'Rubik-Regular',
