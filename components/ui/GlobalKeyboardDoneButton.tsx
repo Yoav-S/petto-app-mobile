@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Keyboard,
-  Modal,
   Platform,
   StyleSheet,
   Text,
@@ -25,49 +24,25 @@ const LIGHT_CHIP = {
   text: '#1F2937',
 } as const;
 
-/**
- * Global Done chip above the soft keyboard.
- * Renders in a layer above the native navigation stack so it stays visible.
- */
-export default function GlobalKeyboardDoneButton() {
+function KeyboardDoneChip({
+  keyboardHeight,
+  layout,
+}: {
+  keyboardHeight: number;
+  layout: {
+    width: number;
+    height: number;
+    trailing: number;
+    radius: number;
+    padV: number;
+    padH: number;
+    gapAbove: number;
+    fontSize: number;
+    lineHeight: number;
+  };
+}) {
   const colors = useColors();
   const { isDark } = useTheme();
-  const { width } = useWindowDimensions();
-  const sx = width / DESIGN_WIDTH;
-
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-
-  useEffect(() => {
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-
-    const onShow = (e: { endCoordinates?: { height?: number } }) => {
-      setKeyboardHeight(Math.max(0, e.endCoordinates?.height ?? 0));
-    };
-    const onHide = () => setKeyboardHeight(0);
-
-    const showSub = Keyboard.addListener(showEvent, onShow);
-    const hideSub = Keyboard.addListener(hideEvent, onHide);
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
-
-  const layout = useMemo(
-    () => ({
-      width: DESIGN_BTN_W * sx,
-      height: DESIGN_BTN_H * sx,
-      trailing: DESIGN_TRAILING * sx,
-      radius: 12 * sx,
-      padV: 8 * sx,
-      padH: 14 * sx,
-      gapAbove: DESIGN_GAP_ABOVE_KEYBOARD * sx,
-      fontSize: 14 * Math.min(sx, 1.15),
-      lineHeight: 18 * Math.min(sx, 1.15),
-    }),
-    [sx],
-  );
 
   if (keyboardHeight <= 0) return null;
 
@@ -75,7 +50,7 @@ export default function GlobalKeyboardDoneButton() {
   const border = isDark ? colors.border : LIGHT_CHIP.border;
   const text = isDark ? colors.primaryText : LIGHT_CHIP.text;
 
-  const chip = (
+  return (
     <View
       pointerEvents="box-none"
       style={[
@@ -120,7 +95,54 @@ export default function GlobalKeyboardDoneButton() {
       </TouchableOpacity>
     </View>
   );
+}
 
+/**
+ * Global Done chip above the soft keyboard.
+ * No Modal — mounting a Modal while the keyboard is open steals focus and
+ * loops show/hide until the UI freezes.
+ */
+export default function GlobalKeyboardDoneButton() {
+  const { width } = useWindowDimensions();
+  const sx = width / DESIGN_WIDTH;
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const onShow = (e: { endCoordinates?: { height?: number } }) => {
+      setKeyboardHeight(Math.max(0, e.endCoordinates?.height ?? 0));
+    };
+    const onHide = () => setKeyboardHeight(0);
+
+    const showSub = Keyboard.addListener(showEvent, onShow);
+    const hideSub = Keyboard.addListener(hideEvent, onHide);
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const layout = useMemo(
+    () => ({
+      width: DESIGN_BTN_W * sx,
+      height: DESIGN_BTN_H * sx,
+      trailing: DESIGN_TRAILING * sx,
+      radius: 12 * sx,
+      padV: 8 * sx,
+      padH: 14 * sx,
+      gapAbove: DESIGN_GAP_ABOVE_KEYBOARD * sx,
+      fontSize: 14 * Math.min(sx, 1.15),
+      lineHeight: 18 * Math.min(sx, 1.15),
+    }),
+    [sx],
+  );
+
+  const chip = <KeyboardDoneChip keyboardHeight={keyboardHeight} layout={layout} />;
+
+  // iOS: stay above the native stack without using Modal.
+  // Overlay stays mounted; only the chip toggles with the keyboard.
   if (Platform.OS === 'ios') {
     return (
       <FullWindowOverlay>
@@ -131,23 +153,19 @@ export default function GlobalKeyboardDoneButton() {
     );
   }
 
-  return (
-    <Modal visible transparent animationType="none" statusBarTranslucent>
-      <View pointerEvents="box-none" style={styles.overlayRoot}>
-        {chip}
-      </View>
-    </Modal>
-  );
+  return chip;
 }
 
 const styles = StyleSheet.create({
   overlayRoot: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
   },
   host: {
     position: 'absolute',
     left: 0,
     right: 0,
+    zIndex: 9999,
+    elevation: 9999,
   },
   button: {
     borderWidth: 1,
@@ -157,7 +175,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 12,
-    elevation: 10,
+    elevation: 12,
   },
   label: {
     fontFamily: 'Rubik-Medium',
