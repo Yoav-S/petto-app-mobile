@@ -49,16 +49,29 @@ export default function NotificationsSettingsScreen() {
 
   const toggle = useCallback(
     async (key: PrefKey, next: boolean) => {
-      setPrefs((prev) => (prev ? { ...prev, [key]: next } : prev));
+      // Turning the master switch ON enables every category too (UI + server).
+      const patch: Partial<NotificationPrefs> =
+        key === 'all' && next
+          ? {
+              all: true,
+              reminders: true,
+              vaccine_updates: true,
+              health_reminders: true,
+              email_updates: true,
+            }
+          : { [key]: next };
+
+      const previous = prefs;
+      setPrefs((prev) => (prev ? { ...prev, ...patch } : prev));
       try {
-        await updateNotificationPrefs({ [key]: next });
+        const saved = await updateNotificationPrefs(patch);
+        setPrefs(saved);
       } catch (err) {
-        // Revert on failure so the UI never lies about the saved state.
-        setPrefs((prev) => (prev ? { ...prev, [key]: !next } : prev));
+        setPrefs(previous);
         toast.showError(getErrorMessage(err));
       }
     },
-    [toast],
+    [prefs, toast],
   );
 
   const renderRow = (key: PrefKey, disabled: boolean) => (
