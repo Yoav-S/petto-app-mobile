@@ -1,12 +1,13 @@
 import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { ThemeProvider, useTheme, useColors } from '@/context/ThemeContext';
+import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { LocaleProvider, useLocale } from '@/context/LocaleContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { PetStoreProvider } from '@/store/petStore';
@@ -15,28 +16,40 @@ import { useReminderNotificationRouting } from '@/hooks/useReminderNotificationR
 import GlobalKeyboardDoneButton, {
   KeyboardDoneClaimProvider,
 } from '@/components/ui/GlobalKeyboardDoneButton';
+import AppSplash from '@/components/ui/AppSplash';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-function AuthBootstrapSpinner() {
-  const colors = useColors();
-  return (
-    <View style={[styles.bootstrap, { backgroundColor: colors.background }]}>
-      <ActivityIndicator size="large" color={colors.brand} />
-    </View>
-  );
-}
+/** Keep native splash until JS mounts, then hand off to AppSplash. */
+void SplashScreen.preventAutoHideAsync().catch(() => {});
+
+/** Avoid a one-frame flash for returning sessions where auth resolves instantly. */
+const MIN_SPLASH_MS = 500;
 
 function RootLayoutNav() {
   const { user, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  /** Keep spinner up until auth is known and the first route decision is applied. */
+  /** Keep splash up until auth is known and the first route decision is applied. */
   const [routeReady, setRouteReady] = useState(false);
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+  const mountedAtRef = useRef(Date.now());
 
   useReminderNotificationRouting(Boolean(user?.emailVerified));
+
+  useEffect(() => {
+    const elapsed = Date.now() - mountedAtRef.current;
+    const remaining = Math.max(0, MIN_SPLASH_MS - elapsed);
+    const timer = setTimeout(() => setMinTimeElapsed(true), remaining);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    // Native white splash → JS Peto splash as soon as this tree paints.
+    void SplashScreen.hideAsync().catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (isLoading) {
@@ -77,7 +90,7 @@ function RootLayoutNav() {
       return;
     }
 
-    // On the correct surface for this session — lift the spinner.
+    // On the correct surface for this session — lift the splash.
     if (!user && inAuthGroup) {
       setRouteReady(true);
       return;
@@ -97,6 +110,8 @@ function RootLayoutNav() {
     }
   }, [user, isLoading, segments, router]);
 
+  const showSplash = isLoading || !routeReady || !minTimeElapsed;
+
   return (
     <View style={styles.root}>
       <Stack screenOptions={{ headerShown: false }}>
@@ -104,7 +119,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
       </Stack>
-      {isLoading || !routeReady ? <AuthBootstrapSpinner /> : null}
+      {showSplash ? <AppSplash /> : null}
     </View>
   );
 }
@@ -152,12 +167,5 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-  },
-  bootstrap: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10000,
-    elevation: 10000,
   },
 });
