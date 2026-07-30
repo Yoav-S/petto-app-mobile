@@ -12,7 +12,7 @@ import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import CalendarPickerCore from '@/components/pickers/CalendarPickerCore';
-import { toIsoDate } from '@/utils/calendar';
+import { isBeforeIsoDate, parseIsoDate, toIsoDate } from '@/utils/calendar';
 
 interface BirthDatePickerSheetProps {
   visible: boolean;
@@ -47,14 +47,24 @@ export default function BirthDatePickerSheet({
 
   useEffect(() => {
     if (!visible) return;
-    setSelected(initialDate);
+    let next = initialDate;
+    if (next && minDate && isBeforeIsoDate(next, minDate)) {
+      next = parseIsoDate(minDate);
+    }
+    setSelected(next);
     setResetKey((k) => k + 1);
-  }, [visible, initialDate]);
+  }, [visible, initialDate, minDate]);
 
   const handleConfirm = () => {
     if (!selected) return;
-    onConfirm(toIsoDate(selected));
+    const iso = toIsoDate(selected);
+    if (minDate && isBeforeIsoDate(selected, minDate)) return;
+    onConfirm(iso);
   };
+
+  const canConfirm = Boolean(
+    selected && !(minDate && isBeforeIsoDate(selected, minDate)),
+  );
 
   return (
     <BottomSheetModal visible={visible} onClose={onClose}>
@@ -87,8 +97,8 @@ export default function BirthDatePickerSheet({
 
           <Pressable
             onPress={handleConfirm}
-            disabled={!selected}
-            style={[styles.confirmBtn, !selected && styles.confirmBtnDisabled]}
+            disabled={!canConfirm}
+            style={[styles.confirmBtn, !canConfirm && styles.confirmBtnDisabled]}
           >
             <Text style={styles.confirmText}>
               {confirmLabel ?? t('onboarding.continue')}
@@ -155,7 +165,7 @@ const makeStyles = (c: ThemeColors) =>
       marginBottom: 8,
     },
     confirmBtnDisabled: {
-      backgroundColor: c.track,
+      backgroundColor: c.button.disabledBg,
     },
     confirmText: {
       fontFamily: 'Rubik-Medium',

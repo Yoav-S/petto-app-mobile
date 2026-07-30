@@ -357,7 +357,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     marginTop: Spacing.sm,
   },
-  buttonDisabled: { opacity: 0.5 },
+  buttonDisabled: { backgroundColor: c.button.disabledBg },
   buttonText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,

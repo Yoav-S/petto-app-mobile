@@ -22,8 +22,6 @@ const bedImage = require('@/assets/images/pet-onboarding-bed.png');
 const dogImage = require('@/assets/images/pet-onboarding-dog.png');
 const catImage = require('@/assets/images/pet-onboarding-cat.png');
 
-const DISABLED_BTN_BG = '#D1D5DB';
-
 export default function PetTypeOnboardingScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -293,7 +291,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingVertical: 12,
   },
   continueBtnDisabled: {
-    backgroundColor: DISABLED_BTN_BG,
+    backgroundColor: c.button.disabledBg,
   },
   continueText: {
     fontFamily: 'Rubik-Medium',

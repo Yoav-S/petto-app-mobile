@@ -12,7 +12,7 @@ import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import CalendarPickerCore from '@/components/pickers/CalendarPickerCore';
 import { t } from '@/i18n';
-import { parseIsoDate, minReminderDateIso, toIsoDate } from '@/utils/calendar';
+import { parseIsoDate, minReminderDateIso, toIsoDate, isIsoDateBefore } from '@/utils/calendar';
 
 interface ReminderCalendarPickerSheetProps {
   visible: boolean;
@@ -35,13 +35,25 @@ export default function ReminderCalendarPickerSheet({
 
   useEffect(() => {
     if (!visible) return;
-    setDraft(parseIsoDate(value));
+    const min = minReminderDateIso();
+    const parsed = parseIsoDate(value);
+    if (parsed && !isIsoDateBefore(toIsoDate(parsed), min)) {
+      setDraft(parsed);
+    } else {
+      setDraft(parseIsoDate(min));
+    }
     setResetKey((k) => k + 1);
   }, [visible, value]);
 
+  const canConfirm = Boolean(
+    draft && !isIsoDateBefore(toIsoDate(draft), minReminderDateIso()),
+  );
+
   const handleConfirm = () => {
     if (!draft) return;
-    onConfirm(toIsoDate(draft));
+    const iso = toIsoDate(draft);
+    if (isIsoDateBefore(iso, minReminderDateIso())) return;
+    onConfirm(iso);
   };
 
   return (
@@ -64,9 +76,9 @@ export default function ReminderCalendarPickerSheet({
           />
 
           <Pressable
-            style={[styles.doneButton, !draft && styles.doneButtonDisabled]}
+            style={[styles.doneButton, !canConfirm && styles.doneButtonDisabled]}
             onPress={handleConfirm}
-            disabled={!draft}
+            disabled={!canConfirm}
           >
             <Text style={styles.doneText}>{t('pickers.done')}</Text>
           </Pressable>
@@ -127,7 +139,7 @@ const makeStyles = (c: ThemeColors) =>
       marginBottom: 8,
     },
     doneButtonDisabled: {
-      backgroundColor: c.track,
+      backgroundColor: c.button.disabledBg,
     },
     doneText: {
       fontFamily: 'Rubik-Medium',

@@ -125,7 +125,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   doneBtnDisabled: {
-    opacity: 0.4,
+    backgroundColor: c.button.disabledBg,
   },
   doneText: {
     fontFamily: 'Rubik-Medium',

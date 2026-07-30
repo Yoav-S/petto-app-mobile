@@ -19,10 +19,12 @@ import type { RepeatOption } from '@/services/reminders';
 import type { HealthReminderDraft } from '@/services/healthReminder';
 import {
   formatDisplayDate,
+  isIsoDateBefore,
   isReminderDateTimeInPast,
+  minReminderDateIso,
   parseIsoDate,
-  todayIsoDate,
 } from '@/utils/calendar';
+import { isBeforeMinReminderDate } from '@/components/reminders/reminderFormShared';
 
 interface ReminderPickerSheetProps {
   visible: boolean;
@@ -96,6 +98,12 @@ function formatTimeDisplay(time: string): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+function resolveInitialDate(preferred?: string | null): string {
+  const min = minReminderDateIso();
+  if (!preferred || isIsoDateBefore(preferred, min)) return min;
+  return preferred;
+}
+
 function resolveInitialTime(isoDate: string, preferred: string): { time: string; chipId: string | null } {
   if (preferred && !isReminderDateTimeInPast(isoDate, preferred)) {
     return { time: preferred, chipId: chipForTime(preferred) };
@@ -123,7 +131,7 @@ export default function ReminderPickerSheet({
   const sx = width / DESIGN_WIDTH;
   const sy = height / DESIGN_HEIGHT;
 
-  const [date, setDate] = useState(todayIsoDate());
+  const [date, setDate] = useState(minReminderDateIso);
   const [time, setTime] = useState('13:00');
   const [repeat, setRepeat] = useState<RepeatOption>('off');
   const [selectedChip, setSelectedChip] = useState<string | null>('afternoon');
@@ -134,7 +142,7 @@ export default function ReminderPickerSheet({
       setSubSheet(null);
       return;
     }
-    const nextDate = initialDate ?? todayIsoDate();
+    const nextDate = resolveInitialDate(initialDate);
     const preferred = initialTime ?? '13:00';
     const resolved = resolveInitialTime(nextDate, preferred);
     setDate(nextDate);
@@ -145,7 +153,10 @@ export default function ReminderPickerSheet({
   }, [visible, initialDate, initialTime, initialRepeat]);
 
   const canSave = useMemo(
-    () => Boolean(date && time) && !isReminderDateTimeInPast(date, time),
+    () =>
+      Boolean(date && time) &&
+      !isBeforeMinReminderDate(date) &&
+      !isReminderDateTimeInPast(date, time),
     [date, time],
   );
 
@@ -207,9 +218,10 @@ export default function ReminderPickerSheet({
   };
 
   const handleDateConfirm = (iso: string) => {
-    setDate(iso);
-    if (isReminderDateTimeInPast(iso, time)) {
-      const resolved = resolveInitialTime(iso, time);
+    const nextDate = resolveInitialDate(iso);
+    setDate(nextDate);
+    if (isReminderDateTimeInPast(nextDate, time)) {
+      const resolved = resolveInitialTime(nextDate, time);
       setTime(resolved.time);
       setSelectedChip(resolved.chipId);
     }
@@ -218,6 +230,7 @@ export default function ReminderPickerSheet({
 
   const handleDone = () => {
     if (!canSave) return;
+    if (isBeforeMinReminderDate(date) || isReminderDateTimeInPast(date, time)) return;
     onConfirm({ date, time, repeat });
     onClose();
   };
@@ -459,7 +472,7 @@ export default function ReminderPickerSheet({
         visible={visible && subSheet === 'date'}
         initialDate={parsedDate}
         allowFuture
-        minDate={todayIsoDate()}
+        minDate={minReminderDateIso()}
         title={t('reminders.field_date')}
         confirmLabel={t('pickers.done')}
         onClose={() => setSubSheet(null)}
@@ -655,7 +668,7 @@ const makeStyles = (c: ThemeColors) =>
       paddingHorizontal: 16,
     },
     doneButtonDisabled: {
-      backgroundColor: c.track,
+      backgroundColor: c.button.disabledBg,
     },
     doneButtonText: {
       fontFamily: 'Rubik-Medium',

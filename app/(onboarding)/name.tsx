@@ -221,7 +221,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.surface,
   },
   doneBtnDisabled: {
-    opacity: 0.4,
+    backgroundColor: c.button.disabledBg,
   },
   card: {
     alignSelf: 'center',

@@ -75,6 +75,7 @@ export default function EditReminderScreen() {
 
   const hydratedRef = useRef(false);
   const snapshotRef = useRef('');
+  const originalDateRef = useRef<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const layout = useMemo(
@@ -151,6 +152,7 @@ export default function EditReminderScreen() {
       setTime(reminder.time);
       setRepeat((reminder.repeat as RepeatOption) ?? 'off');
       setNote(reminder.note ?? '');
+      originalDateRef.current = reminder.date;
       snapshotRef.current = JSON.stringify({
         title: reminder.title.trim(),
         date: reminder.date,
@@ -186,6 +188,8 @@ export default function EditReminderScreen() {
   );
 
   const warnBeforeMinDate = useCallback((nextDate: string) => {
+    // Allow keeping the originally scheduled date (e.g. today's occurrence).
+    if (originalDateRef.current && nextDate === originalDateRef.current) return false;
     if (!isBeforeMinReminderDate(nextDate)) return false;
     toast.showError(t('reminders.past_datetime'));
     return true;

@@ -31,7 +31,8 @@ export const lightColors = {
   button: {
     primaryBg: '#004741',
     primaryText: '#FFFFFF',
-    disabledBg: '#C7C9CC',
+    /** Soft green-gray for disabled full-width CTAs (Figma #8DB0AA). */
+    disabledBg: '#8DB0AA',
     disabledText: '#FFFFFF',
   },
   category: {
@@ -61,8 +62,8 @@ export const darkColors: ThemeColors = {
   button: {
     primaryBg: '#2E9E90',
     primaryText: '#FFFFFF',
-    disabledBg: '#3A3F43',
-    disabledText: '#8A9096',
+    disabledBg: '#5F8A84',
+    disabledText: '#FFFFFF',
   },
   category: {
     vaccines: '#7FA8DC',
