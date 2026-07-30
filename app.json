@@ -52,7 +52,14 @@
           "cameraPermission": "Allow Petto to access your camera to take a pet picture."
         }
       ],
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#004741",
+          "defaultChannel": "default"
+        }
+      ],
       "@react-native-firebase/app",
       [
         "@react-native-firebase/analytics",
