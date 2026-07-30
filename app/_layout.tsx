@@ -1,9 +1,9 @@
-import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -17,6 +17,7 @@ import GlobalKeyboardDoneButton, {
   KeyboardDoneClaimProvider,
 } from '@/components/ui/GlobalKeyboardDoneButton';
 import AppSplash from '@/components/ui/AppSplash';
+import { SPLASH_BACKGROUND } from '@/constants/splash';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -25,45 +26,61 @@ export const unstable_settings = {
 /** Keep native splash until JS mounts, then hand off to AppSplash. */
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
-/** Avoid a one-frame flash for returning sessions where auth resolves instantly. */
+/** Brand splash minimum so cold start doesn't blink. */
 const MIN_SPLASH_MS = 500;
+
+function BootSpinner() {
+  return (
+    <View style={styles.bootSpinner} pointerEvents="auto">
+      <ActivityIndicator size="large" color="#004741" />
+    </View>
+  );
+}
 
 function RootLayoutNav() {
   const { user, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  /** Keep splash up until auth is known and the first route decision is applied. */
-  const [routeReady, setRouteReady] = useState(false);
-  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+  const [minSplashElapsed, setMinSplashElapsed] = useState(false);
   const mountedAtRef = useRef(Date.now());
 
-  useReminderNotificationRouting(Boolean(user?.emailVerified));
+  const group = segments[0] as string | undefined;
+  const authScreen = segments[1] as string | undefined;
+  const inAuthGroup = group === '(auth)';
+  const inOnboardingGroup = group === '(onboarding)';
+  const inTabsGroup = group === '(tabs)';
+  const onVerifyEmail = authScreen === 'verify-email';
+  const onTerms = authScreen === 'terms';
+  const onEmail = authScreen === 'email';
+  /** Welcome / lobby — not mid-auth flows. */
+  const onAuthLobby = inAuthGroup && !onVerifyEmail && !onTerms && !onEmail;
+
+  const emailVerified = Boolean(user?.emailVerified);
+  const loggedOut = !isLoading && !user;
+  const loggedInVerified = !isLoading && Boolean(user) && emailVerified;
+  const loggedInUnverified = !isLoading && Boolean(user) && !emailVerified;
+
+  /** Tabs, onboarding, or any signed-in stack screen (reminders, settings, …). */
+  const onAuthedAppSurface =
+    inTabsGroup ||
+    inOnboardingGroup ||
+    (group != null && group !== '(auth)');
+
+  useReminderNotificationRouting(emailVerified);
 
   useEffect(() => {
     const elapsed = Date.now() - mountedAtRef.current;
     const remaining = Math.max(0, MIN_SPLASH_MS - elapsed);
-    const timer = setTimeout(() => setMinTimeElapsed(true), remaining);
+    const timer = setTimeout(() => setMinSplashElapsed(true), remaining);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    // Native white splash → JS Peto splash as soon as this tree paints.
     void SplashScreen.hideAsync().catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (isLoading) {
-      setRouteReady(false);
-      return;
-    }
-
-    const inAuthGroup = (segments[0] as string) === '(auth)';
-    const authScreen = segments[1] as string | undefined;
-    const onVerifyEmail = authScreen === 'verify-email';
-    const onTerms = authScreen === 'terms';
-    const onEmail = authScreen === 'email';
-    const inOnboardingGroup = (segments[0] as string) === '(onboarding)';
-    const inTabsGroup = (segments[0] as string) === '(tabs)';
+    if (isLoading) return;
 
     if (!user && !inAuthGroup && !inOnboardingGroup) {
       router.replace('/(auth)/' as never);
@@ -80,37 +97,37 @@ function RootLayoutNav() {
       return;
     }
 
-    if (user && user.emailVerified && inAuthGroup && !onVerifyEmail && !onTerms && !onEmail) {
+    if (user && user.emailVerified && onAuthLobby) {
       router.replace('/(tabs)' as never);
-      return;
     }
+  }, [
+    user,
+    isLoading,
+    inAuthGroup,
+    inOnboardingGroup,
+    onVerifyEmail,
+    onTerms,
+    onEmail,
+    onAuthLobby,
+    router,
+  ]);
 
-    if (user && user.emailVerified && inOnboardingGroup) {
-      setRouteReady(true);
-      return;
-    }
+  /**
+   * Brand splash: auth unknown, min time, or still routing a guest onto welcome.
+   * Never reveal tabs/welcome underneath during those moments.
+   */
+  const showBrandSplash =
+    isLoading ||
+    !minSplashElapsed ||
+    (loggedOut && !inAuthGroup) ||
+    (loggedInUnverified && onAuthLobby);
 
-    // On the correct surface for this session — lift the splash.
-    if (!user && inAuthGroup) {
-      setRouteReady(true);
-      return;
-    }
-    if (user && !user.emailVerified && (onVerifyEmail || onTerms || onEmail)) {
-      setRouteReady(true);
-      return;
-    }
-    if (user && user.emailVerified && inTabsGroup) {
-      setRouteReady(true);
-      return;
-    }
-
-    // Fallback: allow UI once auth is known even if segment is an app stack screen.
-    if (user && user.emailVerified) {
-      setRouteReady(true);
-    }
-  }, [user, isLoading, segments, router]);
-
-  const showSplash = isLoading || !routeReady || !minTimeElapsed;
+  /**
+   * After splash, logged-in users still on the auth lobby (or mid-replace)
+   * get a spinner — not a peek at welcome — until home/onboarding is up.
+   */
+  const showRedirectSpinner =
+    !showBrandSplash && loggedInVerified && !onAuthedAppSurface;
 
   return (
     <View style={styles.root}>
@@ -119,7 +136,8 @@ function RootLayoutNav() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
       </Stack>
-      {showSplash ? <AppSplash /> : null}
+      {showBrandSplash ? <AppSplash /> : null}
+      {showRedirectSpinner ? <BootSpinner /> : null}
     </View>
   );
 }
@@ -136,7 +154,6 @@ function ThemedApp() {
     <NavThemeProvider value={navTheme}>
       <ToastProvider>
         <KeyboardDoneClaimProvider>
-          {/* Re-key on locale so every `t()` call re-evaluates when the language changes. */}
           <View key={locale} style={{ flex: 1, backgroundColor: colors.background }}>
             <RootLayoutNav />
             <GlobalKeyboardDoneButton />
@@ -167,5 +184,13 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+  },
+  bootSpinner: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: SPLASH_BACKGROUND,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10000,
+    elevation: 10000,
   },
 });
