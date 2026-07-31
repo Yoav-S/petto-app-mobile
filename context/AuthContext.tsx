@@ -51,6 +51,8 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isSyncing: boolean;
+  /** null until first successful /users/me sync for this session. */
+  hasPets: boolean | null;
   syncError: string | null;
   isGoogleLoading: boolean;
   googleAuthError: string | null;
@@ -58,12 +60,15 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   retryBackendSync: () => Promise<void>;
   clearGoogleAuthError: () => void;
+  /** Call after creating the first pet so cold-start routing can enter the app. */
+  markHasPets: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
   isSyncing: false,
+  hasPets: null,
   syncError: null,
   isGoogleLoading: false,
   googleAuthError: null,
@@ -71,6 +76,7 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   retryBackendSync: async () => {},
   clearGoogleAuthError: () => {},
+  markHasPets: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -79,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [hasPets, setHasPets] = useState<boolean | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
@@ -107,13 +114,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsSyncing(true);
     setSyncError(null);
     try {
-      await syncUserWithBackend();
+      const profile = await syncUserWithBackend();
+      setHasPets(Boolean(profile.has_pets));
       // Identify RevenueCat with Firebase UID (no-op if keys missing).
       void loginPurchases(firebaseUser.uid);
       // Fire-and-forget: register push token + timezone. Never blocks login.
       void registerForPushNotifications();
     } catch (error) {
       console.error('Backend auth handshake failed:', error);
+      setHasPets(null);
       setSyncError(getErrorMessage(error));
     } finally {
       setIsSyncing(false);
@@ -126,6 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (currentUser) {
         await runBackendSync(currentUser);
       } else {
+        setHasPets(null);
         setSyncError(null);
       }
       setIsLoading(false);
@@ -202,6 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await logoutPurchases();
       await firebaseSignOut(auth);
       await clearOnboardingComplete();
+      setHasPets(null);
     } catch (error) {
       console.error('Sign-out Error:', error);
     }
@@ -213,6 +224,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const clearGoogleAuthError = () => setGoogleAuthError(null);
+  const markHasPets = useCallback(() => setHasPets(true), []);
 
   return (
     <AuthContext.Provider
@@ -220,6 +232,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         isLoading,
         isSyncing,
+        hasPets,
         syncError,
         isGoogleLoading,
         googleAuthError,
@@ -227,6 +240,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOut,
         retryBackendSync,
         clearGoogleAuthError,
+        markHasPets,
       }}
     >
       {children}

@@ -19,6 +19,7 @@ import { useActivePet } from '@/store/petStore';
 import { createPet } from '@/services/pets';
 import { uploadPetPhoto } from '@/services/storage';
 import { setOnboardingComplete } from '@/services/onboarding';
+import { useAuth } from '@/context/AuthContext';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
@@ -50,6 +51,7 @@ export default function PetBirthOnboardingScreen() {
 
   const { draft, setBirthDate } = usePetOnboardingDraft();
   const { setActivePetId } = useActivePet();
+  const { markHasPets } = useAuth();
 
   const [birthDate, setLocalBirthDate] = useState<string | null>(draft.birthDate);
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -90,6 +92,7 @@ export default function PetBirthOnboardingScreen() {
         photo_url: photoUrl,
       });
       await setOnboardingComplete();
+      markHasPets();
       setActivePetId(pet.id);
       router.replace('/(tabs)' as never);
     } catch (err: unknown) {

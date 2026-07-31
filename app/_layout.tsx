@@ -11,7 +11,7 @@ import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { LocaleProvider, useLocale } from '@/context/LocaleContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { PetStoreProvider } from '@/store/petStore';
-import { PetOnboardingDraftProvider } from '@/store/petOnboardingDraft';
+import { PetOnboardingDraftProvider, usePetOnboardingDraft } from '@/store/petOnboardingDraft';
 import { useReminderNotificationRouting } from '@/hooks/useReminderNotificationRouting';
 import GlobalKeyboardDoneButton, {
   KeyboardDoneClaimProvider,
@@ -38,11 +38,13 @@ function BootSpinner() {
 }
 
 function RootLayoutNav() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isSyncing, hasPets } = useAuth();
+  const { resetDraft } = usePetOnboardingDraft();
   const segments = useSegments();
   const router = useRouter();
   const [minSplashElapsed, setMinSplashElapsed] = useState(false);
   const mountedAtRef = useRef(Date.now());
+  const hadUserRef = useRef(false);
 
   const group = segments[0] as string | undefined;
   const authScreen = segments[1] as string | undefined;
@@ -59,6 +61,7 @@ function RootLayoutNav() {
   const loggedOut = !isLoading && !user;
   const loggedInVerified = !isLoading && Boolean(user) && emailVerified;
   const loggedInUnverified = !isLoading && Boolean(user) && !emailVerified;
+  const petsKnown = hasPets !== null;
 
   /** Tabs, onboarding, or any signed-in stack screen (reminders, settings, …). */
   const onAuthedAppSurface =
@@ -79,8 +82,20 @@ function RootLayoutNav() {
     void SplashScreen.hideAsync().catch(() => {});
   }, []);
 
+  // Leaving mid-onboarding via logout → wipe draft and land on welcome clean.
   useEffect(() => {
-    if (isLoading) return;
+    if (user) {
+      hadUserRef.current = true;
+      return;
+    }
+    if (!isLoading && hadUserRef.current) {
+      hadUserRef.current = false;
+      resetDraft();
+    }
+  }, [user, isLoading, resetDraft]);
+
+  useEffect(() => {
+    if (isLoading || isSyncing) return;
 
     if (!user && !inAuthGroup && !inOnboardingGroup) {
       router.replace('/(auth)/' as never);
@@ -97,12 +112,24 @@ function RootLayoutNav() {
       return;
     }
 
-    if (user && user.emailVerified && onAuthLobby) {
+    if (!user || !user.emailVerified || !petsKnown) return;
+
+    // No first pet yet → must finish onboarding (never skip to home on cold start).
+    if (hasPets === false && !inOnboardingGroup) {
+      router.replace('/(onboarding)/name' as never);
+      return;
+    }
+
+    // Has pets → app home (not welcome lobby / not stuck in onboarding).
+    if (hasPets === true && (onAuthLobby || inOnboardingGroup)) {
       router.replace('/(tabs)' as never);
     }
   }, [
     user,
     isLoading,
+    isSyncing,
+    hasPets,
+    petsKnown,
     inAuthGroup,
     inOnboardingGroup,
     onVerifyEmail,
@@ -127,7 +154,9 @@ function RootLayoutNav() {
    * get a spinner — not a peek at welcome — until home/onboarding is up.
    */
   const showRedirectSpinner =
-    !showBrandSplash && loggedInVerified && !onAuthedAppSurface;
+    !showBrandSplash &&
+    loggedInVerified &&
+    (!petsKnown || isSyncing || !onAuthedAppSurface);
 
   return (
     <View style={styles.root}>

@@ -1,6 +1,7 @@
 import { signInWithCustomToken, signOut } from 'firebase/auth';
 import auth from './firebaseAuth';
 import { ApiError, apiPost, apiPostPublic, apiDelete } from './api';
+import { clearOnboardingComplete } from '@/services/onboarding';
 import { t } from '@/i18n';
 import type { UserProfile } from '@/types/api';
 
@@ -73,19 +74,24 @@ export async function deleteAccount(): Promise<void> {
   await apiDelete('/users/me');
 }
 
+async function clearIncompleteAuthSession(): Promise<void> {
+  await signOut(auth);
+  await clearOnboardingComplete();
+}
+
 /** Upsert Firebase user in MongoDB — updates last_login_at. Called after every login/session restore. */
 export async function syncUserWithBackend(): Promise<UserProfile> {
   try {
     const profile = await apiPost<UserProfile>('/users/me', {});
     if (profile.auth_provider === 'email' && !profile.email_verified) {
-      await signOut(auth);
+      await clearIncompleteAuthSession();
       throw new Error(t('errors.email_not_verified'));
     }
     return profile;
   } catch (error) {
     // Stuck Firebase session (e.g. unfinished OTP) — clear it so a cold start lands on welcome.
     if (error instanceof ApiError && error.code === 'email_not_verified') {
-      await signOut(auth);
+      await clearIncompleteAuthSession();
     }
     throw error;
   }
