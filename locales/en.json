@@ -364,8 +364,8 @@
     "load_failed": "Could not load data. Pull to refresh or tap Retry."
   },
   "onboarding": {
-    "title": "Your Pet's\nDigital Passport",
-    "subtitle": "Keep vaccinations, reminders, and topics in one place.",
+    "title": "A home for your pet",
+    "subtitle": "Everything about your pet, beautifully organized in one place.",
     "continue": "Continue",
     "legal_prefix": "By continuing, you agree to our",
     "legal_and": "and",
