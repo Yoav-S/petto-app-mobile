@@ -8,6 +8,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
+import { useColors } from '@/context/ThemeContext';
 
 /** Figma frame base width for the collage */
 const DESIGN_WIDTH = 360;
@@ -112,6 +113,7 @@ function MarqueeColumn({
  */
 export function WelcomePhotoMarquee() {
   const { width, height } = useWindowDimensions();
+  const colors = useColors();
   const scale = width / DESIGN_WIDTH;
 
   const columns = useMemo(
@@ -139,7 +141,7 @@ export function WelcomePhotoMarquee() {
   );
 
   return (
-    <View style={[styles.root, { width, height }]} pointerEvents="none">
+    <View style={[styles.root, { width, height, backgroundColor: colors.background }]} pointerEvents="none">
       <View style={[styles.grid, { width: DESIGN_WIDTH * scale, height: height + 200 * scale }]}>
         {columns.map((col) => (
           <MarqueeColumn
@@ -153,16 +155,20 @@ export function WelcomePhotoMarquee() {
         ))}
       </View>
       {/* Soft veil so the white card stays readable */}
-      <View style={styles.veil} />
+      <View style={[styles.veil, { backgroundColor: isSoftVeil(colors.background) }]} />
     </View>
   );
+}
+
+function isSoftVeil(background: string): string {
+  // Light canvas gets a soft white veil; dark canvas gets a soft dark veil.
+  return background.toLowerCase() === '#f6f7f9' ? 'rgba(255,255,255,0.18)' : 'rgba(17,19,21,0.35)';
 }
 
 const styles = StyleSheet.create({
   root: {
     ...StyleSheet.absoluteFillObject,
     overflow: 'hidden',
-    backgroundColor: '#F3EDE8',
   },
   grid: {
     position: 'absolute',
@@ -175,6 +181,5 @@ const styles = StyleSheet.create({
   },
   veil: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.18)',
   },
 });

@@ -218,7 +218,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   doneText: {
     fontFamily: 'Rubik-Medium',
-    color: c.surface,
+    color: c.button.primaryText,
   },
   doneBtnDisabled: {
     backgroundColor: c.button.disabledBg,
@@ -235,13 +235,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   title: {
     fontFamily: 'Rubik-Regular',
     fontWeight: '400',
-    color: '#1F2937',
+    color: c.primaryText,
     textAlign: 'center',
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
     fontWeight: '400',
-    color: '#6B7280',
+    color: c.secondaryText,
     textAlign: 'center',
   },
   input: {

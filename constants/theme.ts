@@ -1,79 +1,100 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Peto theme — light/dark twins from the product palette.
+ * Every purpose has a matching pair so `useColors()` can swap schemes.
  */
 
 import { Platform } from 'react-native';
 
 /**
- * The app has two palettes with identical shape (see `ThemeColors`). Every
- * "purpose" (background, text, brand, category tints, …) has a light and a dark
- * value so a single `colors` object can be swapped at runtime by the theme
- * provider. The dark values below are a first pass ("temp") and can be tuned by
- * design later without touching any component.
+ * Palette (light / dark):
+ *   Background              #F6F7F9 / #111315
+ *   Surface                 #FFFFFF / #1A1D20
+ *   Primary Text            #1F2937 / #F5F6F7
+ *   Secondary Text          #6B7280 / #C2C6CB
+ *   Divider / Border        #E5E7EB / #373C42
+ *   Primary Button / FAB    #004741 / #3FA89A
+ *   Disabled Button         #8DB0AA / #739A94
+ *   Vaccinations            #EFF4FD / #24364D
+ *   Health                  #F6E7E8 / #4B3135
+ *   Reminders               #EDF8F2 / #233A2F
+ *   Disabled                #D1D5DB / #5B6168
+ *   Successfully            #84CC9D / #58C78A
+ *   Error / Delete          #EF4444 / #E46A6A
+ *   Brand Dark              #004741 / #004741
+ *   Brand Light             #F6F7F9 / #3FA89A
  */
 export const lightColors = {
-  /** App canvas — Figma screen background */
+  /** App canvas */
   background: '#F6F7F9',
+  /** Cards / sheets / elevated surfaces */
   surface: '#FFFFFF',
-  /** Cards / sheets that sit on the canvas (same as background in light). */
+  /** Secondary canvas areas (lists, panels) */
   panel: '#F6F7F9',
-  /** Peto brand green — primary actions, FAB, focused inputs */
+  /** Primary actions, FAB, focused inputs (Primary Button twin) */
   brand: '#004741',
+  /** Deep brand green — same in both schemes */
+  brandDark: '#004741',
+  /** Soft brand / accent twin of Brand Light */
+  brandLight: '#F6F7F9',
   primaryText: '#1F2937',
   secondaryText: '#6B7280',
   border: '#E5E7EB',
-  error: '#C96A6A',
-  /** Neutral track for off-state switches / inactive controls */
-  track: '#E5E7EB',
-  /** Dimmed overlay behind modals */
+  error: '#EF4444',
+  success: '#84CC9D',
+  /** Neutral disabled controls (not the green disabled CTA) */
+  disabled: '#D1D5DB',
+  /** Switch / track off state */
+  track: '#D1D5DB',
   overlay: 'rgba(0, 0, 0, 0.4)',
   button: {
     primaryBg: '#004741',
     primaryText: '#FFFFFF',
-    /** Soft green-gray for disabled full-width CTAs (Figma #8DB0AA). */
     disabledBg: '#8DB0AA',
     disabledText: '#FFFFFF',
   },
   category: {
+    /** Icon accents (readable on the tinted chip backgrounds) */
     vaccines: '#4A6FA5',
-    vaccinesBg: '#EBF0F8',
-    medical: '#8499B1',
-    medicalBg: '#F0F3F7',
-    notes: '#E9A16D',
-    notesBg: '#FDF3EA',
-    reminders: '#426A5A',
-    remindersBg: '#EAF2EE',
+    vaccinesBg: '#EFF4FD',
+    medical: '#C45B5B',
+    medicalBg: '#F6E7E8',
+    notes: '#C45B5B',
+    notesBg: '#F6E7E8',
+    reminders: '#3D7A5F',
+    remindersBg: '#EDF8F2',
   },
 };
 
 export const darkColors: ThemeColors = {
   background: '#111315',
-  surface: '#1C1F22',
-  // A hair darker than `surface` so the cards still lift off the panel.
-  panel: '#16181B',
-  brand: '#2E9E90',
-  primaryText: '#F2F4F5',
-  secondaryText: '#9BA1A6',
-  border: '#2C3033',
-  error: '#E5847F',
-  track: '#3A3F43',
+  surface: '#1A1D20',
+  panel: '#111315',
+  brand: '#3FA89A',
+  brandDark: '#004741',
+  brandLight: '#3FA89A',
+  primaryText: '#F5F6F7',
+  secondaryText: '#C2C6CB',
+  border: '#373C42',
+  error: '#E46A6A',
+  success: '#58C78A',
+  disabled: '#5B6168',
+  track: '#5B6168',
   overlay: 'rgba(0, 0, 0, 0.6)',
   button: {
-    primaryBg: '#2E9E90',
+    primaryBg: '#3FA89A',
     primaryText: '#FFFFFF',
-    disabledBg: '#5F8A84',
+    disabledBg: '#739A94',
     disabledText: '#FFFFFF',
   },
   category: {
     vaccines: '#7FA8DC',
-    vaccinesBg: '#1A2230',
-    medical: '#9FB2C6',
-    medicalBg: '#1E252C',
-    notes: '#E8AE7A',
-    notesBg: '#2A2015',
+    vaccinesBg: '#24364D',
+    medical: '#E46A6A',
+    medicalBg: '#4B3135',
+    notes: '#E46A6A',
+    notesBg: '#4B3135',
     reminders: '#6DB39A',
-    remindersBg: '#16241F',
+    remindersBg: '#233A2F',
   },
 };
 
@@ -82,9 +103,7 @@ export type ThemeColors = typeof lightColors;
 
 /**
  * Backwards-compatible default export: points at the light palette.
- * Screens that have not yet migrated to `useColors()` keep working (they simply
- * render with light values). New/updated code should read colors via the theme
- * hook so they react to the user's selection.
+ * Prefer `useColors()` so UI reacts to the user's theme choice.
  */
 export const Colors = lightColors;
 
@@ -127,13 +146,9 @@ export const LineHeight = {
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {

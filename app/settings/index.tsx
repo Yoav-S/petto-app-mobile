@@ -74,7 +74,7 @@ export default function SettingsScreen() {
           activeOpacity={0.7}
           accessibilityRole="button"
         >
-          <Ionicons name="log-out-outline" size={24} color="#EF4444" />
+          <Ionicons name="log-out-outline" size={24} color={colors.error} />
           <Text style={styles.signOutText}>{t('common.sign_out')}</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -147,6 +147,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     lineHeight: 20,
-    color: '#EF4444',
+    color: c.error,
   },
 });

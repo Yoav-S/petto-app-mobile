@@ -18,19 +18,13 @@ import {
   type KeyboardEvent,
 } from 'react-native';
 import { FullWindowOverlay } from 'react-native-screens';
-import { useColors, useTheme } from '@/context/ThemeContext';
+import { useColors } from '@/context/ThemeContext';
 import { t, isRTL } from '@/i18n';
 
 const DESIGN_WIDTH = 375;
 const DESIGN_TRAILING = 20;
 const DESIGN_BTN_W = 100;
 const DESIGN_BTN_H = 40;
-
-const LIGHT_CHIP = {
-  bg: '#FFFFFF',
-  border: '#E5E7EB',
-  text: '#1F2937',
-} as const;
 
 type ClaimCtx = {
   claimed: boolean;
@@ -95,7 +89,6 @@ export function useKeyboardBottomOffset(): number {
 /** White Done chip — dismisses the keyboard. */
 export function KeyboardDismissDoneChip() {
   const colors = useColors();
-  const { isDark } = useTheme();
   const { width } = useWindowDimensions();
   const sx = width / DESIGN_WIDTH;
 
@@ -114,9 +107,9 @@ export function KeyboardDismissDoneChip() {
     [sx],
   );
 
-  const bg = isDark ? colors.surface : LIGHT_CHIP.bg;
-  const border = isDark ? colors.border : LIGHT_CHIP.border;
-  const text = isDark ? colors.primaryText : LIGHT_CHIP.text;
+  const bg = colors.surface;
+  const border = colors.border;
+  const text = colors.primaryText;
 
   return (
     <View

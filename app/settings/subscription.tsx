@@ -272,7 +272,7 @@ const makeStyles = (c: ThemeColors) =>
       paddingHorizontal: 12,
       paddingVertical: 4,
       borderRadius: 8,
-      backgroundColor: '#1F2937',
+      backgroundColor: c.brandDark,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -280,7 +280,7 @@ const makeStyles = (c: ThemeColors) =>
       fontFamily: 'Rubik-Medium',
       fontSize: 12,
       lineHeight: 16,
-      color: '#FFFFFF',
+      color: c.button.primaryText,
       textAlign: 'center',
     },
     freeCard: {

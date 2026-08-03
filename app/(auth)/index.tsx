@@ -13,7 +13,7 @@ import { WelcomePhotoMarquee } from '@/components/auth/WelcomePhotoMarquee';
 import { setTermsAccepted } from '@/services/onboarding';
 import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
-import { useThemedStyles } from '@/context/ThemeContext';
+import { useThemedStyles, useTheme } from '@/context/ThemeContext';
 
 /** Figma welcome frame (360-wide collage + floating card). */
 const DESIGN_WIDTH = 360;
@@ -29,6 +29,7 @@ const CARD = {
 
 export default function OnboardingWelcomeScreen() {
   const router = useRouter();
+  const { isDark } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -48,7 +49,7 @@ export default function OnboardingWelcomeScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <WelcomePhotoMarquee />
 
       <View
@@ -142,16 +143,16 @@ export default function OnboardingWelcomeScreen() {
   );
 }
 
-const makeStyles = (_c: ThemeColors) =>
+const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     root: {
       flex: 1,
-      backgroundColor: '#F3EDE8',
+      backgroundColor: c.background,
     },
     card: {
       position: 'absolute',
       zIndex: 2,
-      backgroundColor: '#FFFFFF',
+      backgroundColor: c.surface,
       alignItems: 'center',
       shadowColor: '#D1A796',
       shadowOffset: { width: 0, height: -3 },
@@ -166,21 +167,21 @@ const makeStyles = (_c: ThemeColors) =>
     brand: {
       fontFamily: 'Rubik-Regular',
       fontWeight: '400',
-      color: '#004741',
+      color: c.brandDark,
       textAlign: 'center',
       letterSpacing: 0,
     },
     title: {
       fontFamily: 'Rubik-Regular',
       fontWeight: '400',
-      color: '#1F2937',
+      color: c.primaryText,
       textAlign: 'center',
       letterSpacing: 0,
     },
     subtitle: {
       fontFamily: 'Rubik-Regular',
       fontWeight: '400',
-      color: '#6B7280',
+      color: c.secondaryText,
       textAlign: 'center',
       letterSpacing: 0,
       maxWidth: 233,
@@ -191,25 +192,25 @@ const makeStyles = (_c: ThemeColors) =>
     },
     button: {
       width: '100%',
-      backgroundColor: '#004741',
+      backgroundColor: c.button.primaryBg,
       alignItems: 'center',
       justifyContent: 'center',
     },
     buttonText: {
       fontFamily: 'Rubik-Medium',
       fontWeight: '500',
-      color: '#FFFFFF',
+      color: c.button.primaryText,
     },
     legal: {
       fontFamily: 'Rubik-Regular',
       fontWeight: '400',
-      color: '#6B7280',
+      color: c.secondaryText,
       textAlign: 'center',
       letterSpacing: 0,
     },
     legalLink: {
       fontFamily: 'Rubik-Medium',
       fontWeight: '500',
-      color: '#6B7280',
+      color: c.secondaryText,
     },
   });

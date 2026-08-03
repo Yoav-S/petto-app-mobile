@@ -331,7 +331,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   cellText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 20,
-    color: '#D1D5DB',
+    color: c.disabled,
   },
   cellTextActive: {
     color: c.primaryText,
@@ -375,6 +375,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   doneText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: c.surface,
+    color: c.button.primaryText,
   },
 });

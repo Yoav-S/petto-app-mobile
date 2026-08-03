@@ -218,6 +218,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   buttonText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: c.surface,
+    color: c.button.primaryText,
   },
 });

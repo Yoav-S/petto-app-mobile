@@ -371,13 +371,13 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: 'transparent',
     },
     photoInnerEmpty: {
-      backgroundColor: '#F6F7F9',
+      backgroundColor: c.background,
       alignItems: 'center',
       justifyContent: 'center',
       padding: 16,
     },
     photoFilled: {
-      backgroundColor: '#F6F7F9',
+      backgroundColor: c.background,
     },
     photoEmptyContent: {
       width: 68,
@@ -402,7 +402,7 @@ const makeStyles = (c: ThemeColors) =>
       height: 14,
       borderRadius: 3,
       padding: 2,
-      backgroundColor: '#FFFFFF',
+      backgroundColor: c.surface,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -410,10 +410,7 @@ const makeStyles = (c: ThemeColors) =>
       fontFamily: 'Rubik-Regular',
       fontSize: 14,
       lineHeight: 20,
-      color: '#6B7280',
-      textAlign: 'center',
-    },
-    nameCard: {
+      color: c.secondaryText,
       height: 48,
       borderRadius: 12,
       backgroundColor: c.surface,

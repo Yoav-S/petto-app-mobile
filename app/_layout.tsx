@@ -30,9 +30,10 @@ void SplashScreen.preventAutoHideAsync().catch(() => {});
 const MIN_SPLASH_MS = 500;
 
 function BootSpinner() {
+  const { colors } = useTheme();
   return (
     <View style={styles.bootSpinner} pointerEvents="auto">
-      <ActivityIndicator size="large" color="#004741" />
+      <ActivityIndicator size="large" color={colors.brand} />
     </View>
   );
 }

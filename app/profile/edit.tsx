@@ -498,6 +498,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   saveText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    color: c.surface,
+    color: c.button.primaryText,
   },
 });

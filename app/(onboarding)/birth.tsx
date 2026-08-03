@@ -325,13 +325,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   title: {
     fontFamily: 'Rubik-Regular',
     fontWeight: '400',
-    color: '#1F2937',
+    color: c.primaryText,
     textAlign: 'center',
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
     fontWeight: '400',
-    color: '#6B7280',
+    color: c.secondaryText,
     textAlign: 'center',
   },
   selectBtn: {
@@ -366,7 +366,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   continueText: {
     fontFamily: 'Rubik-Medium',
     fontWeight: '500',
-    color: c.surface,
+    color: c.button.primaryText,
     textAlign: 'center',
   },
 });

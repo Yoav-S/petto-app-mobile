@@ -129,7 +129,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   doneText: {
     fontFamily: 'Rubik-Medium',
-    color: c.surface,
+    color: c.button.primaryText,
   },
   scrollContent: {
     flexGrow: 1,

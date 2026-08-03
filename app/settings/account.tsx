@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
-import { useThemedStyles } from '@/context/ThemeContext';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import { t } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
@@ -11,11 +11,10 @@ import { getErrorMessage } from '@/services/errors';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 
-const DANGER = '#EF4444';
-
 export default function AccountSettingsScreen() {
   const { user, signOut } = useAuth();
   const styles = useThemedStyles(makeStyles);
+  const colors = useColors();
   const toast = useToast();
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -58,7 +57,7 @@ export default function AccountSettingsScreen() {
             accessibilityRole="button"
           >
             {deleting ? (
-              <ActivityIndicator color={DANGER} />
+              <ActivityIndicator color={colors.error} />
             ) : (
               <Text style={[styles.deleteText, !canDelete && styles.deleteTextDisabled]}>
                 {t('settings.delete_account')}
@@ -127,7 +126,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     lineHeight: 20,
-    color: DANGER,
+    color: c.error,
   },
   deleteTextDisabled: {
     opacity: 0.5,

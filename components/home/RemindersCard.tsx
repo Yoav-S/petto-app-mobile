@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
-import { HOME_CATEGORY_ICON_BG, HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
+import { homeCategoryIconBg, HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { t, currentLocale } from '@/i18n';
 
 interface RemindersCardProps {
@@ -20,8 +20,9 @@ interface RemindersCardProps {
 
 function CategoryIcon() {
   const styles = useThemedStyles(makeStyles);
+  const colors = useColors();
   return (
-    <View style={[styles.iconContainer, { backgroundColor: HOME_CATEGORY_ICON_BG.reminders }]}>
+    <View style={[styles.iconContainer, { backgroundColor: homeCategoryIconBg(colors).reminders }]}>
       <Image source={HOME_CATEGORY_ICONS.reminders} style={styles.iconImage} resizeMode="contain" />
     </View>
   );

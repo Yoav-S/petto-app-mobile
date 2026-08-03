@@ -15,9 +15,6 @@ import { t } from '@/i18n';
 const DESIGN_WIDTH = 375;
 const DESIGN_HEIGHT = 812;
 
-const DELETE_BG = '#FEE2E2';
-const DELETE_TEXT = '#EF4444';
-
 interface ConfirmModalProps {
   visible: boolean;
   title: string;
@@ -192,7 +189,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   confirmButton: {
-    backgroundColor: DELETE_BG,
+    backgroundColor: c.category.medicalBg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -207,7 +204,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 18,
-    color: DELETE_TEXT,
+    color: c.error,
     textAlign: 'center',
   },
 });
