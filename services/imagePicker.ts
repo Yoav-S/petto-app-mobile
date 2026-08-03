@@ -6,9 +6,13 @@
  */
 import { InteractionManager, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import {
+  BOTTOM_SHEET_CLOSE_MS,
+  BOTTOM_SHEET_IOS_GAP_MS,
+} from '@/components/ui/BottomSheetModal';
 
-/** Match BottomSheetModal close animation + a little slack on iOS. */
-const SHEET_CLOSE_MS = Platform.OS === 'ios' ? 380 : 80;
+const SHEET_CLOSE_MS =
+  BOTTOM_SHEET_CLOSE_MS + BOTTOM_SHEET_IOS_GAP_MS + (Platform.OS === 'ios' ? 40 : 0);
 
 let inFlight = false;
 

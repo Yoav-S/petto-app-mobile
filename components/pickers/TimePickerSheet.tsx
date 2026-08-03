@@ -192,6 +192,7 @@ export default function TimePickerSheet({ visible, value, onClose, onConfirm }: 
   const handleConfirm = () => {
     const hour12 = HOURS_12[hourIndex] ?? 8;
     onConfirm(toTime24(hour12, minuteIndex, periodIndex === 1));
+    onClose();
   };
 
   return (

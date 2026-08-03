@@ -60,6 +60,7 @@ export default function BirthDatePickerSheet({
     const iso = toIsoDate(selected);
     if (minDate && isBeforeIsoDate(selected, minDate)) return;
     onConfirm(iso);
+    onClose();
   };
 
   const canConfirm = Boolean(

@@ -54,6 +54,7 @@ export default function ReminderCalendarPickerSheet({
     const iso = toIsoDate(draft);
     if (isIsoDateBefore(iso, minReminderDateIso())) return;
     onConfirm(iso);
+    onClose();
   };
 
   return (
