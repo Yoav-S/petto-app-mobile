@@ -15,8 +15,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { pickImageFromLibrary } from '@/services/imagePicker';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
@@ -113,16 +113,15 @@ export default function VaccineDetailsScreen() {
   };
 
   const pickImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
+    const picked = await pickImageFromLibrary();
+    if (picked === 'denied') {
       Alert.alert(t('petOnboarding.photo_permission_title'), t('petOnboarding.photo_permission_body'));
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
-    if (result.canceled || !result.assets[0]?.uri) return;
+    if (!picked?.uri) return;
     try {
       setUploading(true);
-      const url = await uploadImage(result.assets[0].uri, 'vaccines');
+      const url = await uploadImage(picked.uri, 'vaccines');
       await save({ photo_url: url });
     } catch (err) {
       toast.showError(getErrorMessage(err));

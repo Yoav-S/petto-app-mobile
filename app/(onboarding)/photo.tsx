@@ -12,8 +12,8 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
+import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
 import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
@@ -46,42 +46,28 @@ export default function PetPhotoOnboardingScreen() {
 
   const applyPickedImage = (uri: string) => {
     setLocalPhotoUri(uri);
-    closeSheet();
   };
 
   const pickImage = async (source: 'camera' | 'library') => {
-    const pickerOptions: ImagePicker.ImagePickerOptions = {
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.85,
-    };
-
-    if (source === 'camera') {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert(
-          t('petOnboarding.photo_camera_permission_title'),
-          t('petOnboarding.photo_camera_permission_body'),
-        );
-        return;
-      }
-      const result = await ImagePicker.launchCameraAsync(pickerOptions);
-      if (!result.canceled && result.assets[0]?.uri) {
-        applyPickedImage(result.assets[0].uri);
-      }
+    // Close sheet before presenting system picker — iOS double-opens otherwise.
+    closeSheet();
+    const options = { allowsEditing: true, aspect: [1, 1] as [number, number] };
+    const picked =
+      source === 'camera'
+        ? await pickImageFromCamera(options)
+        : await pickImageFromLibrary(options);
+    if (picked === 'denied') {
+      Alert.alert(
+        source === 'camera'
+          ? t('petOnboarding.photo_camera_permission_title')
+          : t('petOnboarding.photo_permission_title'),
+        source === 'camera'
+          ? t('petOnboarding.photo_camera_permission_body')
+          : t('petOnboarding.photo_permission_body'),
+      );
       return;
     }
-
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(t('petOnboarding.photo_permission_title'), t('petOnboarding.photo_permission_body'));
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync(pickerOptions);
-    if (!result.canceled && result.assets[0]?.uri) {
-      applyPickedImage(result.assets[0].uri);
-    }
+    if (picked?.uri) applyPickedImage(picked.uri);
   };
 
   const handleOpenSheet = () => {

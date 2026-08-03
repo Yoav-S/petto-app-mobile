@@ -9,8 +9,8 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { pickImageFromLibrary } from '@/services/imagePicker';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
@@ -90,21 +90,14 @@ export default function AddNoteScreen() {
   const canSave = note.trim().length > 0 && !submitting && !loadingRecord;
 
   const pickImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
+    const picked = await pickImageFromLibrary();
+    if (picked === 'denied') {
       Alert.alert(t('petOnboarding.photo_permission_title'), t('petOnboarding.photo_permission_body'));
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.85,
-      // Avoid uploading HEIC as "jpg" — blank remote images on Android/web.
-      preferredAssetRepresentationMode:
-        ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
-    });
-    if (!result.canceled && result.assets[0]?.uri) {
-      setPhotoUri(result.assets[0].uri);
-      setPhotoMime(result.assets[0].mimeType ?? null);
+    if (picked?.uri) {
+      setPhotoUri(picked.uri);
+      setPhotoMime(picked.mimeType);
     }
   };
 

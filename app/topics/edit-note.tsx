@@ -11,8 +11,8 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { pickImageFromLibrary } from '@/services/imagePicker';
 import { useFocusEffect } from '@react-navigation/native';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -158,20 +158,14 @@ export default function EditNoteScreen() {
   );
 
   const pickImage = useCallback(async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
+    const picked = await pickImageFromLibrary();
+    if (picked === 'denied') {
       Alert.alert(t('petOnboarding.photo_permission_title'), t('petOnboarding.photo_permission_body'));
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.85,
-      preferredAssetRepresentationMode:
-        ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
-    });
-    if (!result.canceled && result.assets[0]?.uri) {
-      setPhotoUri(result.assets[0].uri);
-      setPhotoMime(result.assets[0].mimeType ?? null);
+    if (picked?.uri) {
+      setPhotoUri(picked.uri);
+      setPhotoMime(picked.mimeType);
       setPhotoChanged(true);
     }
   }, []);

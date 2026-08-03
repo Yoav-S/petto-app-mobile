@@ -14,8 +14,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { type ThemeColors } from '@/constants/theme';
+import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import { t } from '@/i18n';
@@ -125,36 +125,24 @@ export default function EditProfileScreen() {
 
   const pickImage = async (source: 'camera' | 'library') => {
     setPhotoSheetVisible(false);
-    const options: ImagePicker.ImagePickerOptions = {
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.85,
-    };
-    if (source === 'camera') {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert(
-          t('petOnboarding.photo_camera_permission_title'),
-          t('petOnboarding.photo_camera_permission_body'),
-        );
-        return;
-      }
-      const result = await ImagePicker.launchCameraAsync(options);
-      if (!result.canceled && result.assets[0]?.uri) {
-        setPhotoUri(result.assets[0].uri);
-        setPhotoChanged(true);
-      }
+    const options = { allowsEditing: true, aspect: [1, 1] as [number, number] };
+    const picked =
+      source === 'camera'
+        ? await pickImageFromCamera(options)
+        : await pickImageFromLibrary(options);
+    if (picked === 'denied') {
+      Alert.alert(
+        source === 'camera'
+          ? t('petOnboarding.photo_camera_permission_title')
+          : t('petOnboarding.photo_permission_title'),
+        source === 'camera'
+          ? t('petOnboarding.photo_camera_permission_body')
+          : t('petOnboarding.photo_permission_body'),
+      );
       return;
     }
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(t('petOnboarding.photo_permission_title'), t('petOnboarding.photo_permission_body'));
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync(options);
-    if (!result.canceled && result.assets[0]?.uri) {
-      setPhotoUri(result.assets[0].uri);
+    if (picked?.uri) {
+      setPhotoUri(picked.uri);
       setPhotoChanged(true);
     }
   };

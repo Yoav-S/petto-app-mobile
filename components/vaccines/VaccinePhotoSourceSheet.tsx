@@ -38,11 +38,23 @@ export default function VaccinePhotoSourceSheet({
           </View>
 
           <View style={styles.options}>
-            <Pressable style={styles.optionRow} onPress={onTakePhoto}>
+            <Pressable
+              style={styles.optionRow}
+              onPress={() => {
+                onClose();
+                onTakePhoto();
+              }}
+            >
               <Text style={styles.optionText}>{t('petOnboarding.photo_take')}</Text>
             </Pressable>
             <View style={styles.divider} />
-            <Pressable style={styles.optionRow} onPress={onChooseLibrary}>
+            <Pressable
+              style={styles.optionRow}
+              onPress={() => {
+                onClose();
+                onChooseLibrary();
+              }}
+            >
               <Text style={styles.optionText}>{t('petOnboarding.photo_choose_library')}</Text>
             </Pressable>
           </View>

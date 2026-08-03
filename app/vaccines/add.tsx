@@ -14,8 +14,8 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
+import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -119,36 +119,20 @@ export default function AddVaccineScreen() {
 
   const pickImage = async (source: 'camera' | 'library') => {
     setPhotoSheetVisible(false);
-    const options: ImagePicker.ImagePickerOptions = {
-      mediaTypes: ['images'],
-      quality: 0.85,
-    };
-
-    if (source === 'camera') {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert(
-          t('petOnboarding.photo_camera_permission_title'),
-          t('petOnboarding.photo_camera_permission_body'),
-        );
-        return;
-      }
-      const result = await ImagePicker.launchCameraAsync(options);
-      if (!result.canceled && result.assets[0]?.uri) {
-        setPhotoUri(result.assets[0].uri);
-      }
+    const picked =
+      source === 'camera' ? await pickImageFromCamera() : await pickImageFromLibrary();
+    if (picked === 'denied') {
+      Alert.alert(
+        source === 'camera'
+          ? t('petOnboarding.photo_camera_permission_title')
+          : t('petOnboarding.photo_permission_title'),
+        source === 'camera'
+          ? t('petOnboarding.photo_camera_permission_body')
+          : t('petOnboarding.photo_permission_body'),
+      );
       return;
     }
-
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(t('petOnboarding.photo_permission_title'), t('petOnboarding.photo_permission_body'));
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync(options);
-    if (!result.canceled && result.assets[0]?.uri) {
-      setPhotoUri(result.assets[0].uri);
-    }
+    if (picked?.uri) setPhotoUri(picked.uri);
   };
 
   const handleSave = async () => {

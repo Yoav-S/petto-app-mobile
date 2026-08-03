@@ -38,11 +38,23 @@ export default function EditPhotoSheet({
           </View>
           
           <View style={styles.menuContainer}>
-            <TouchableOpacity style={styles.menuItem} onPress={onTake}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                onClose();
+                onTake();
+              }}
+            >
               <Text style={styles.menuItemText}>{t('petOnboarding.photo_take')}</Text>
             </TouchableOpacity>
             <View style={styles.divider} />
-            <TouchableOpacity style={styles.menuItem} onPress={onChoose}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                onClose();
+                onChoose();
+              }}
+            >
               <Text style={styles.menuItemText}>{t('petOnboarding.photo_choose_library')}</Text>
             </TouchableOpacity>
             {onRemove ? (
