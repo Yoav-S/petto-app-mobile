@@ -5,7 +5,7 @@
  * development build (IAP does not work in Expo Go).
  * Test Store keys (test_…) are fine until App Store / Play products are live.
  */
-import { NativeModules, Platform } from 'react-native';
+import { LogBox, NativeModules, Platform } from 'react-native';
 import Constants from 'expo-constants';
 import Purchases, {
   LOG_LEVEL,
@@ -19,6 +19,17 @@ export const PREMIUM_ENTITLEMENT = 'petto_premium';
 export const PREMIUM_PRODUCT_ID = 'sub_premium';
 
 const LOG = '[Subscription]';
+
+// Test Store keys log ConfigurationError — Expo turns that into a red crash screen.
+LogBox.ignoreLogs([
+  'RevenueCat',
+  'Test Store',
+  'test_',
+  'Offerings',
+  'PurchasesError',
+  'ConfigurationError',
+  '[Subscription]',
+]);
 
 let configured = false;
 
@@ -48,17 +59,6 @@ export function isPurchasesConfigured(): boolean {
   return false;
 }
 
-function isBenignRevenueCatMessage(message: string): boolean {
-  const m = message.toLowerCase();
-  return (
-    m.includes('offerings') ||
-    m.includes('test store') ||
-    m.includes('configurationerror') ||
-    m.includes('empty') ||
-    m.includes('no test store products')
-  );
-}
-
 /** Configure once per process. Safe to call repeatedly. */
 export async function configurePurchases(): Promise<boolean> {
   if (configured) return true;
@@ -70,20 +70,10 @@ export async function configurePurchases(): Promise<boolean> {
   }
 
   try {
-    // Keep SDK quiet in the UI — RevenueCat's default ERROR logs trigger Expo LogBox.
-    await Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.WARN : LOG_LEVEL.ERROR);
-    Purchases.setLogHandler((level, message) => {
-      if (isBenignRevenueCatMessage(message)) {
-        if (__DEV__) console.log(`${LOG} ${message}`);
-        return;
-      }
-      if (level === LOG_LEVEL.ERROR) {
-        console.warn(`${LOG} ${message}`);
-        return;
-      }
-      if (level === LOG_LEVEL.WARN && __DEV__) {
-        console.warn(`${LOG} ${message}`);
-      }
+    // Never console.warn/error from RC — Expo LogBox treats those as red screens.
+    await Purchases.setLogLevel(LOG_LEVEL.ERROR);
+    Purchases.setLogHandler((_level, message) => {
+      console.log(`${LOG} ${message}`);
     });
 
     const apiKey = Platform.OS === 'ios' ? iosKey() : androidKey();
@@ -94,7 +84,10 @@ export async function configurePurchases(): Promise<boolean> {
     );
     return true;
   } catch (error) {
-    console.warn(`${LOG} configure failed (need a native/dev build, not Expo Go):`, error);
+    console.log(
+      `${LOG} configure failed (need a native/dev build, not Expo Go):`,
+      error instanceof Error ? error.message : error,
+    );
     return false;
   }
 }
@@ -145,16 +138,14 @@ export async function logSubscriptionReadiness(firebaseUid: string): Promise<voi
         `${LOG} offerings empty in Expo Go (Browser Mode) — expected. Test purchases on a dev build.`,
       );
     } else {
-      console.warn(`${LOG} NOT READY — fix RevenueCat offering: default → Monthly → ${PREMIUM_PRODUCT_ID}`);
+      console.log(`${LOG} NOT READY — fix RevenueCat offering: default → Monthly → ${PREMIUM_PRODUCT_ID}`);
     }
   } catch (error) {
     // Empty Test Store offerings are a dashboard config issue — not a user-facing error.
-    if (__DEV__) {
-      console.log(
-        `${LOG} readiness check skipped (configure Test Store products in RevenueCat):`,
-        error instanceof Error ? error.message : error,
-      );
-    }
+    console.log(
+      `${LOG} readiness check skipped (configure Test Store products in RevenueCat):`,
+      error instanceof Error ? error.message : error,
+    );
   }
 }
 
@@ -167,7 +158,7 @@ export async function loginPurchases(firebaseUid: string): Promise<void> {
     await syncFirebaseAnalyticsInstanceId();
     await logSubscriptionReadiness(firebaseUid);
   } catch (error) {
-    console.warn(`${LOG} logIn failed:`, error);
+    console.log(`${LOG} logIn failed:`, error instanceof Error ? error.message : error);
   }
 }
 
@@ -197,7 +188,7 @@ async function syncFirebaseAnalyticsInstanceId(): Promise<void> {
 
     const instanceId = await analyticsFactory().getAppInstanceId();
     if (!instanceId) {
-      console.warn(`${LOG} Firebase Analytics appInstanceId is null`);
+      console.log(`${LOG} Firebase Analytics appInstanceId is null`);
       return;
     }
     await Purchases.setFirebaseAppInstanceID(instanceId);
@@ -216,7 +207,7 @@ export async function logoutPurchases(): Promise<void> {
     await Purchases.logOut();
     console.log(`${LOG} logged out`);
   } catch (error) {
-    console.warn(`${LOG} logOut failed:`, error);
+    console.log(`${LOG} logOut failed:`, error instanceof Error ? error.message : error);
   }
 }
 
