@@ -6,6 +6,7 @@ import {
   Pressable,
   useWindowDimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +19,8 @@ import { useThemedStyles, useTheme } from '@/context/ThemeContext';
 /** Figma welcome frame (360×812). */
 const DESIGN_WIDTH = 360;
 const DESIGN_HEIGHT = 812;
+/** Wordmark asset intrinsic size (peto-wordmark.png). */
+const LOGO = { w: 146, h: 52 } as const;
 const CARD = {
   width: 335,
   top: 434,
@@ -45,6 +48,8 @@ export default function OnboardingWelcomeScreen() {
       CARD.top * sy,
       height - 320 * sy - Math.max(insets.bottom, 16),
     );
+    const logoH = 48 * sx;
+    const logoW = logoH * (LOGO.w / LOGO.h);
     return {
       sidePad,
       cardWidth,
@@ -53,8 +58,8 @@ export default function OnboardingWelcomeScreen() {
       paddingV: CARD.paddingV * sy,
       paddingH: CARD.paddingH * sx,
       gap: CARD.gap * sy,
-      brandSize: 48 * sx,
-      brandLine: 52 * sy,
+      logoW,
+      logoH,
       titleSize: 24 * sx,
       titleLine: 28 * sy,
       subtitleSize: 14 * sx,
@@ -111,17 +116,12 @@ export default function OnboardingWelcomeScreen() {
           ]}
         >
           <View style={[styles.copyBlock, { gap: layout.copyGap }]}>
-            <Text
-              style={[
-                styles.brand,
-                {
-                  fontSize: layout.brandSize,
-                  lineHeight: layout.brandLine,
-                },
-              ]}
-            >
-              Peto
-            </Text>
+            <Image
+              source={require('@/assets/images/peto-wordmark.png')}
+              style={{ width: layout.logoW, height: layout.logoH }}
+              contentFit="contain"
+              accessibilityLabel="Peto"
+            />
             <View style={{ gap: layout.textGap, alignItems: 'center', width: '100%' }}>
               <Text
                 style={[
@@ -223,13 +223,6 @@ const makeStyles = (c: ThemeColors) =>
     copyBlock: {
       alignItems: 'center',
       width: '100%',
-    },
-    brand: {
-      fontFamily: 'Rubik-Regular',
-      fontWeight: '400',
-      color: c.brandDark,
-      textAlign: 'center',
-      letterSpacing: 0,
     },
     title: {
       fontFamily: 'Rubik-Regular',
