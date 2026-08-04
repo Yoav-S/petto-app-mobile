@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,12 +15,14 @@ import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles, useTheme } from '@/context/ThemeContext';
 
-/** Figma welcome frame (360-wide collage + floating card). */
+/** Figma welcome frame (360×812). */
 const DESIGN_WIDTH = 360;
+const DESIGN_HEIGHT = 812;
 const CARD = {
   width: 335,
   top: 434,
-  left: 20,
+  /** Equal side inset in the design (was left:20 / right:5 — looked shifted right). */
+  sidePad: 12.5,
   radius: 38,
   paddingV: 38,
   paddingH: 20,
@@ -34,7 +36,41 @@ export default function OnboardingWelcomeScreen() {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const sx = width / DESIGN_WIDTH;
-  const sy = height / 812;
+  const sy = height / DESIGN_HEIGHT;
+
+  const layout = useMemo(() => {
+    const sidePad = Math.max(CARD.sidePad * sx, insets.left, insets.right, 16);
+    const cardWidth = Math.min(CARD.width * sx, width - sidePad * 2);
+    const cardTop = Math.min(
+      CARD.top * sy,
+      height - 320 * sy - Math.max(insets.bottom, 16),
+    );
+    return {
+      sidePad,
+      cardWidth,
+      cardTop,
+      radius: CARD.radius * sx,
+      paddingV: CARD.paddingV * sy,
+      paddingH: CARD.paddingH * sx,
+      gap: CARD.gap * sy,
+      brandSize: 48 * sx,
+      brandLine: 52 * sy,
+      titleSize: 24 * sx,
+      titleLine: 28 * sy,
+      subtitleSize: 14 * sx,
+      subtitleLine: 20 * sy,
+      subtitleMaxW: Math.min(233 * sx, cardWidth - CARD.paddingH * sx * 2),
+      buttonH: 48 * sy,
+      buttonRadius: 12 * sx,
+      buttonFont: 16 * sx,
+      buttonLine: 24 * sy,
+      legalFont: 10 * sx,
+      legalLine: 16 * sy,
+      copyGap: 16 * sy,
+      actionsGap: 16 * sy,
+      textGap: 8 * sy,
+    };
+  }, [width, height, sx, sy, insets.left, insets.right, insets.bottom]);
 
   const openTerms = () => {
     router.push('/(auth)/terms' as never);
@@ -45,98 +81,117 @@ export default function OnboardingWelcomeScreen() {
     router.push('/(auth)/email' as never);
   };
 
-  const cardTop = Math.min(CARD.top * sy, height - 360 * sy - insets.bottom);
-
   return (
     <View style={styles.root}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <WelcomePhotoMarquee />
 
+      {/* Full-width dock centers the card on every device / notch / RTL. */}
       <View
         style={[
-          styles.card,
+          styles.cardDock,
           {
-            top: cardTop,
-            left: CARD.left * sx,
-            width: CARD.width * sx,
-            borderRadius: CARD.radius * sx,
-            paddingTop: CARD.paddingV * sy,
-            paddingBottom: CARD.paddingV * sy,
-            paddingHorizontal: CARD.paddingH * sx,
-            gap: CARD.gap * sy,
+            top: layout.cardTop,
+            paddingHorizontal: layout.sidePad,
+            paddingBottom: Math.max(insets.bottom, 8),
           },
         ]}
       >
-        <View style={[styles.copyBlock, { gap: 16 * sy }]}>
-          <Text
-            style={[
-              styles.brand,
-              {
-                fontSize: 48 * sx,
-                lineHeight: 52 * sy,
-              },
-            ]}
-          >
-            Peto
-          </Text>
-          <View style={{ gap: 8 * sy, alignItems: 'center' }}>
+        <View
+          style={[
+            styles.card,
+            {
+              width: layout.cardWidth,
+              borderRadius: layout.radius,
+              paddingTop: layout.paddingV,
+              paddingBottom: layout.paddingV,
+              paddingHorizontal: layout.paddingH,
+              gap: layout.gap,
+            },
+          ]}
+        >
+          <View style={[styles.copyBlock, { gap: layout.copyGap }]}>
             <Text
               style={[
-                styles.title,
+                styles.brand,
                 {
-                  fontSize: 24 * sx,
-                  lineHeight: 28 * sy,
+                  fontSize: layout.brandSize,
+                  lineHeight: layout.brandLine,
                 },
               ]}
             >
-              {t('onboarding.title')}
+              Peto
             </Text>
-            <Text
-              style={[
-                styles.subtitle,
-                {
-                  fontSize: 14 * sx,
-                  lineHeight: 20 * sy,
-                },
-              ]}
-            >
-              {t('onboarding.subtitle')}
-            </Text>
+            <View style={{ gap: layout.textGap, alignItems: 'center', width: '100%' }}>
+              <Text
+                style={[
+                  styles.title,
+                  {
+                    fontSize: layout.titleSize,
+                    lineHeight: layout.titleLine,
+                  },
+                ]}
+              >
+                {t('onboarding.title')}
+              </Text>
+              <Text
+                style={[
+                  styles.subtitle,
+                  {
+                    fontSize: layout.subtitleSize,
+                    lineHeight: layout.subtitleLine,
+                    maxWidth: layout.subtitleMaxW,
+                  },
+                ]}
+              >
+                {t('onboarding.subtitle')}
+              </Text>
+            </View>
           </View>
-        </View>
 
-        <View style={[styles.actions, { gap: 16 * sy }]}>
-          <Pressable
-            style={[
-              styles.button,
-              {
-                height: 48 * sy,
-                borderRadius: 12 * sx,
-              },
-            ]}
-            onPress={handleContinue}
-            accessibilityRole="button"
-          >
-            <Text style={[styles.buttonText, { fontSize: 16 * sx, lineHeight: 24 * sy }]}>
-              {t('onboarding.continue')}
-            </Text>
-          </Pressable>
+          <View style={[styles.actions, { gap: layout.actionsGap }]}>
+            <Pressable
+              style={[
+                styles.button,
+                {
+                  height: layout.buttonH,
+                  borderRadius: layout.buttonRadius,
+                },
+              ]}
+              onPress={handleContinue}
+              accessibilityRole="button"
+            >
+              <Text
+                style={[
+                  styles.buttonText,
+                  { fontSize: layout.buttonFont, lineHeight: layout.buttonLine },
+                ]}
+              >
+                {t('onboarding.continue')}
+              </Text>
+            </Pressable>
 
-          <Pressable
-            onPress={openTerms}
-            hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel={t('onboarding.terms_link_a11y')}
-          >
-            <Text style={[styles.legal, { fontSize: 10 * sx, lineHeight: 16 * sy }]}>
-              {t('onboarding.legal_prefix')}{' '}
-              <Text style={styles.legalLink}>{t('onboarding.terms')}</Text>
-              {' '}
-              {t('onboarding.legal_and')}{' '}
-              <Text style={styles.legalLink}>{t('onboarding.privacy')}</Text>
-              .
-            </Text>
-          </Pressable>
+            <Pressable
+              onPress={openTerms}
+              hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('onboarding.terms_link_a11y')}
+            >
+              <Text
+                style={[
+                  styles.legal,
+                  { fontSize: layout.legalFont, lineHeight: layout.legalLine },
+                ]}
+              >
+                {t('onboarding.legal_prefix')}{' '}
+                <Text style={styles.legalLink}>{t('onboarding.terms')}</Text>
+                {' '}
+                {t('onboarding.legal_and')}{' '}
+                <Text style={styles.legalLink}>{t('onboarding.privacy')}</Text>
+                .
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     </View>
@@ -149,9 +204,14 @@ const makeStyles = (c: ThemeColors) =>
       flex: 1,
       backgroundColor: c.background,
     },
-    card: {
+    cardDock: {
       position: 'absolute',
+      left: 0,
+      right: 0,
       zIndex: 2,
+      alignItems: 'center',
+    },
+    card: {
       backgroundColor: c.surface,
       alignItems: 'center',
       shadowColor: '#D1A796',
@@ -177,6 +237,7 @@ const makeStyles = (c: ThemeColors) =>
       color: c.primaryText,
       textAlign: 'center',
       letterSpacing: 0,
+      width: '100%',
     },
     subtitle: {
       fontFamily: 'Rubik-Regular',
@@ -184,7 +245,6 @@ const makeStyles = (c: ThemeColors) =>
       color: c.secondaryText,
       textAlign: 'center',
       letterSpacing: 0,
-      maxWidth: 233,
     },
     actions: {
       width: '100%',

@@ -28,6 +28,9 @@ LogBox.ignoreLogs([
   'Offerings',
   'PurchasesError',
   'ConfigurationError',
+  'InvalidSubscriberAttributes',
+  'subscriber attributes',
+  'firebaseAppInstanceId',
   '[Subscription]',
 ]);
 
@@ -155,7 +158,10 @@ export async function loginPurchases(firebaseUid: string): Promise<void> {
   try {
     await Purchases.logIn(firebaseUid);
     console.log(`${LOG} logged in appUserId=${firebaseUid}`);
-    await syncFirebaseAnalyticsInstanceId();
+    // GA attribute sync races on Test Store and can red-box; only needed in release.
+    if (!__DEV__) {
+      await syncFirebaseAnalyticsInstanceId();
+    }
     await logSubscriptionReadiness(firebaseUid);
   } catch (error) {
     console.log(`${LOG} logIn failed:`, error instanceof Error ? error.message : error);
