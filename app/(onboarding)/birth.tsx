@@ -11,8 +11,8 @@ import {
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
+import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
 import { useActivePet } from '@/store/petStore';
@@ -128,21 +128,13 @@ export default function PetBirthOnboardingScreen() {
           },
         ]}
       >
-        <Pressable
-          onPress={handleBack}
-          hitSlop={12}
-          style={[styles.backBtn, { width: 40 * sx, height: 40 * sy }]}
-          accessibilityRole="button"
-          accessibilityLabel={t('petOnboarding.back')}
-        >
-          <Ionicons name="chevron-back" size={24 * sx} color={colors.primaryText} />
-        </Pressable>
+        <OnboardingBackButton onPress={handleBack} />
 
         <View style={styles.headerCenter}>
           <OnboardingProgressDots currentStep={4} />
         </View>
 
-        <View style={[styles.backBtn, { width: 40 * sx }]} />
+        <View style={{ width: 32 }} />
       </View>
 
       <View style={styles.flex}>
@@ -277,7 +269,7 @@ export default function PetBirthOnboardingScreen() {
             <ActivityIndicator color={colors.surface} />
           ) : (
             <Text style={[styles.continueText, { fontSize: 16 * sx, lineHeight: 24 * sy }]}>
-              {t('onboarding.continue')}
+              {t('petOnboarding.finish')}
             </Text>
           )}
         </Pressable>
@@ -305,10 +297,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  backBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   headerCenter: {
     flex: 1,
     alignItems: 'center',
@@ -326,25 +314,27 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontWeight: '400',
     color: c.primaryText,
-    textAlign: 'center',
+    textAlign: 'left',
+    alignSelf: 'stretch',
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
     fontWeight: '400',
     color: c.secondaryText,
-    textAlign: 'center',
+    textAlign: 'left',
+    alignSelf: 'stretch',
   },
   selectBtn: {
     borderWidth: 1,
     borderColor: c.border,
     backgroundColor: c.surface,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
   },
   selectBtnText: {
     fontFamily: 'Rubik-Regular',
     fontWeight: '400',
-    textAlign: 'center',
+    textAlign: 'left',
   },
   footer: {
     alignItems: 'center',

@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
+import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
 import { t } from '@/i18n';
@@ -94,21 +95,13 @@ export default function PetPhotoOnboardingScreen() {
           },
         ]}
       >
-        <Pressable
-          onPress={handleBack}
-          hitSlop={12}
-          style={[styles.backBtn, { width: 40 * sx, height: 40 * sy }]}
-          accessibilityRole="button"
-          accessibilityLabel={t('petOnboarding.back')}
-        >
-          <Ionicons name="chevron-back" size={24 * sx} color={colors.primaryText} />
-        </Pressable>
+        <OnboardingBackButton onPress={handleBack} />
 
         <View style={styles.headerCenter}>
           <OnboardingProgressDots currentStep={3} />
         </View>
 
-        <View style={[styles.backBtn, { width: 40 * sx }]} />
+        <View style={{ width: 32 }} />
       </View>
 
       <View style={styles.flex}>
@@ -341,10 +334,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  backBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   headerCenter: {
     flex: 1,
     alignItems: 'center',
@@ -360,19 +349,21 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   copyBlock: {
     alignSelf: 'center',
-    alignItems: 'center',
+    alignItems: 'stretch',
   },
   title: {
     fontFamily: 'Rubik-Regular',
     fontWeight: '400',
     color: c.primaryText,
-    textAlign: 'center',
+    textAlign: 'left',
+    alignSelf: 'stretch',
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
     fontWeight: '400',
     color: c.secondaryText,
-    textAlign: 'center',
+    textAlign: 'left',
+    alignSelf: 'stretch',
   },
   footer: {
     alignItems: 'center',

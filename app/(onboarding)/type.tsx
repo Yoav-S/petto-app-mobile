@@ -9,8 +9,8 @@ import {
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
+import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
 import { usePetOnboardingDraft, type PetType } from '@/store/petOnboardingDraft';
 import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
@@ -19,8 +19,8 @@ import { PET_TYPE_STEP } from '@/constants/petOnboarding';
 import { getPetOnboardingScale, scaleOffset } from '@/utils/petOnboardingScale';
 
 const bedImage = require('@/assets/images/onboarding/type-bed.png');
-const dogImage = require('@/assets/images/pet-onboarding-dog.png');
-const catImage = require('@/assets/images/pet-onboarding-cat.png');
+const dogImage = require('@/assets/images/onboarding/type-dog.png');
+const catImage = require('@/assets/images/onboarding/type-cat.png');
 
 export default function PetTypeOnboardingScreen() {
   const colors = useColors();
@@ -40,6 +40,7 @@ export default function PetTypeOnboardingScreen() {
 
   const canContinue = selected !== null;
   const tileWidth = (PET_TYPE_STEP.pickerWidth * sx - PET_TYPE_STEP.pickerGap * sx) / 2;
+  const iconSize = 106 * sx;
 
   const handleSelect = (type: PetType) => {
     setSelected(type);
@@ -66,21 +67,13 @@ export default function PetTypeOnboardingScreen() {
           },
         ]}
       >
-        <Pressable
-          onPress={handleBack}
-          hitSlop={12}
-          style={[styles.backBtn, { width: 40 * sx, height: 40 * sy }]}
-          accessibilityRole="button"
-          accessibilityLabel={t('petOnboarding.back')}
-        >
-          <Ionicons name="chevron-back" size={24 * sx} color={colors.primaryText} />
-        </Pressable>
+        <OnboardingBackButton onPress={handleBack} />
 
         <View style={styles.headerCenter}>
           <OnboardingProgressDots currentStep={2} />
         </View>
 
-        <View style={[styles.backBtn, { width: 40 * sx }]} />
+        <View style={{ width: 32 }} />
       </View>
 
       <View style={styles.flex}>
@@ -128,7 +121,6 @@ export default function PetTypeOnboardingScreen() {
               styles.pickerRow,
               {
                 width: PET_TYPE_STEP.pickerWidth * sx,
-                height: PET_TYPE_STEP.pickerHeight * sy,
                 gap: PET_TYPE_STEP.pickerGap * sx,
               },
             ]}
@@ -146,10 +138,11 @@ export default function PetTypeOnboardingScreen() {
                     styles.petTile,
                     {
                       width: tileWidth,
-                      height: PET_TYPE_STEP.pickerHeight * sy,
                       borderRadius: 12 * sx,
                       borderWidth: isSelected ? 2 : 1,
                       borderColor: isSelected ? colors.brand : colors.border,
+                      paddingVertical: 12 * sy,
+                      gap: 8 * sy,
                     },
                   ]}
                   accessibilityRole="button"
@@ -158,13 +151,22 @@ export default function PetTypeOnboardingScreen() {
                 >
                   <Image
                     source={image}
-                    style={{
-                      width: tileWidth - 16 * sx,
-                      height: PET_TYPE_STEP.pickerHeight * sy - 32 * sy,
-                    }}
+                    style={{ width: iconSize, height: iconSize }}
                     contentFit="contain"
                   />
-                  <Text style={[styles.petLabel, { fontSize: 14 * sx }]}>{label}</Text>
+                  <Text
+                    style={[
+                      styles.petLabel,
+                      {
+                        width: 106 * sx,
+                        height: 20 * sy,
+                        fontSize: 16 * sx,
+                        lineHeight: 20 * sy,
+                      },
+                    ]}
+                  >
+                    {label}
+                  </Text>
                 </Pressable>
               );
             })}
@@ -184,119 +186,98 @@ export default function PetTypeOnboardingScreen() {
           },
         ]}
       >
-        {canContinue ? (
-          <Pressable
-            onPress={handleContinue}
-            style={[
-              styles.continueBtn,
-              {
-                width: PET_TYPE_STEP.continueBtnWidth * sx,
-                height: PET_TYPE_STEP.continueBtnHeight * sy,
-                borderRadius: PET_TYPE_STEP.continueBtnRadius * sx,
-              },
-            ]}
-            accessibilityRole="button"
-          >
-            <Text style={[styles.continueText, { fontSize: 16 * sx, lineHeight: 24 * sx }]}>
-              {t('onboarding.continue')}
-            </Text>
-          </Pressable>
-        ) : (
-          <View
-            style={[
-              styles.continueBtn,
-              styles.continueBtnDisabled,
-              {
-                width: PET_TYPE_STEP.continueBtnWidth * sx,
-                height: PET_TYPE_STEP.continueBtnHeight * sy,
-                borderRadius: PET_TYPE_STEP.continueBtnRadius * sx,
-              },
-            ]}
-            pointerEvents="none"
-            accessibilityRole="button"
-            accessibilityState={{ disabled: true }}
-          >
-            <Text style={[styles.continueText, { fontSize: 16 * sx, lineHeight: 24 * sx }]}>
-              {t('onboarding.continue')}
-            </Text>
-          </View>
-        )}
+        <Pressable
+          onPress={handleContinue}
+          disabled={!canContinue}
+          style={[
+            styles.continueBtn,
+            {
+              width: PET_TYPE_STEP.continueBtnWidth * sx,
+              height: PET_TYPE_STEP.continueBtnHeight * sy,
+              borderRadius: PET_TYPE_STEP.continueBtnRadius * sx,
+            },
+            !canContinue && styles.continueBtnDisabled,
+          ]}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !canContinue }}
+        >
+          <Text style={[styles.continueText, { fontSize: 16 * sx, lineHeight: 24 * sx }]}>
+            {t('onboarding.continue')}
+          </Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: c.background,
-  },
-  flex: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  card: {
-    alignSelf: 'center',
-    backgroundColor: c.surface,
-    alignItems: 'center',
-  },
-  title: {
-    fontFamily: 'Rubik-Regular',
-    fontWeight: '400',
-    color: c.primaryText,
-    textAlign: 'center',
-    alignSelf: 'center',
-  },
-  pickerRow: {
-    flexDirection: 'row',
-    alignSelf: 'center',
-  },
-  petTile: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: c.surface,
-    paddingVertical: 8,
-  },
-  petLabel: {
-    fontFamily: 'Rubik-Regular',
-    color: c.primaryText,
-    marginTop: 4,
-  },
-  footer: {
-    alignItems: 'center',
-    width: '100%',
-    backgroundColor: c.panel,
-    shadowColor: '#1E1E1E',
-    shadowOffset: { width: 0, height: -1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  continueBtn: {
-    backgroundColor: c.brand,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  continueBtnDisabled: {
-    backgroundColor: c.button.disabledBg,
-  },
-  continueText: {
-    fontFamily: 'Rubik-Medium',
-    fontWeight: '500',
-    color: c.button.primaryText,
-    textAlign: 'center',
-  },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    flex: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    headerCenter: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    card: {
+      alignSelf: 'center',
+      backgroundColor: c.surface,
+      alignItems: 'center',
+    },
+    title: {
+      fontFamily: 'Rubik-Regular',
+      fontWeight: '400',
+      color: c.primaryText,
+      textAlign: 'left',
+      alignSelf: 'stretch',
+    },
+    pickerRow: {
+      flexDirection: 'row',
+      alignSelf: 'center',
+    },
+    petTile: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.surface,
+    },
+    petLabel: {
+      fontFamily: 'Rubik-Medium',
+      fontWeight: '500',
+      color: '#1F2937',
+      textAlign: 'center',
+    },
+    footer: {
+      alignItems: 'center',
+      width: '100%',
+      backgroundColor: c.panel,
+      shadowColor: '#1E1E1E',
+      shadowOffset: { width: 0, height: -1 },
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    continueBtn: {
+      backgroundColor: c.brand,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    continueBtnDisabled: {
+      backgroundColor: c.button.disabledBg,
+    },
+    continueText: {
+      fontFamily: 'Rubik-Medium',
+      fontWeight: '500',
+      color: c.button.primaryText,
+      textAlign: 'center',
+    },
+  });

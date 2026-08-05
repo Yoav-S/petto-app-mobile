@@ -331,6 +331,7 @@
   },
   "petOnboarding": {
     "done": "סיום",
+    "finish": "סיום",
     "back": "חזרה",
     "name_title": "מה שם חיית המחמד?",
     "name_subtitle": "זה עוזר להתאים אישית את הפרופיל שלה",

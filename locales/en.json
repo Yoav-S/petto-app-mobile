@@ -388,6 +388,7 @@
   },
   "petOnboarding": {
     "done": "Done",
+    "finish": "Finish",
     "back": "Back",
     "name_title": "What's your pet's name?",
     "name_subtitle": "This helps personalize your pet's profile",
