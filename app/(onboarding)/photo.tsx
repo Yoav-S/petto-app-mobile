@@ -21,7 +21,7 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_PHOTO_STEP, PET_PHOTO_SHEET } from '@/constants/petOnboarding';
 import { getPetOnboardingScale, scaleOffset } from '@/utils/petOnboardingScale';
 
-const addPhotoImage = require('@/assets/images/pet-onboarding-add-photo.png');
+const addPhotoImage = require('@/assets/images/onboarding/photo-add.png');
 
 export default function PetPhotoOnboardingScreen() {
   const colors = useColors();

@@ -23,7 +23,7 @@ import {
 } from '@/constants/petOnboarding';
 import { getPetOnboardingScale, scaleOffset } from '@/utils/petOnboardingScale';
 
-const collarImage = require('@/assets/images/pet-onboarding-collar.png');
+const collarImage = require('@/assets/images/onboarding/name-collar.png');
 
 const PET_NAME_REGEX = /^[\p{L}]+$/u;
 

@@ -18,7 +18,7 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_TYPE_STEP } from '@/constants/petOnboarding';
 import { getPetOnboardingScale, scaleOffset } from '@/utils/petOnboardingScale';
 
-const bedImage = require('@/assets/images/pet-onboarding-bed.png');
+const bedImage = require('@/assets/images/onboarding/type-bed.png');
 const dogImage = require('@/assets/images/pet-onboarding-dog.png');
 const catImage = require('@/assets/images/pet-onboarding-cat.png');
 

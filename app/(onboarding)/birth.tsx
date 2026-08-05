@@ -28,7 +28,7 @@ import { PET_BIRTH_STEP } from '@/constants/petOnboarding';
 import { getPetOnboardingScale, scaleOffset } from '@/utils/petOnboardingScale';
 import { parseIsoDate } from '@/utils/calendar';
 
-const calendarImage = require('@/assets/images/pet-onboarding-calendar.png');
+const calendarImage = require('@/assets/images/onboarding/birth-calendar.png');
 
 function formatDisplayDate(iso: string): string {
   const date = parseIsoDate(iso);
