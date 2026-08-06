@@ -4,16 +4,13 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
-  ScrollView,
   Alert,
   useWindowDimensions,
   Pressable,
-  Image,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -24,7 +21,6 @@ import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import EditPhotoSheet from '@/components/health/EditPhotoSheet';
 import HealthKeyboardFooter, {
   HealthKeyboardAvoidingView,
-  healthKeyboardScrollPadding,
 } from '@/components/health/HealthKeyboardFooter';
 import { t } from '@/i18n';
 import { createPet } from '@/services/pets';
@@ -45,25 +41,9 @@ const CARD_SHADOW = {
   elevation: 3,
 };
 
-const PHOTO_SHADOW = {
-  shadowColor: '#2D2D2A',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.08,
-  shadowRadius: 20,
-  elevation: 4,
-};
-
-const PLUS_SHADOW = {
-  shadowColor: '#2D2D2A',
-  shadowOffset: { width: 0, height: 2.19 },
-  shadowOpacity: 0.08,
-  shadowRadius: 10.94,
-  elevation: 2,
-};
-
-const dogImage = require('@/assets/images/pet-onboarding-dog.png');
-const catImage = require('@/assets/images/pet-onboarding-cat.png');
-const addPhotoImage = require('@/assets/images/pet-onboarding-add-photo.png');
+const dogImage = require('@/assets/images/onboarding/type-dog.png');
+const catImage = require('@/assets/images/onboarding/type-cat.png');
+const addPhotoImage = require('@/assets/images/onboarding/photo-add.png');
 
 export default function AddPetScreen() {
   const colors = useColors();
@@ -71,7 +51,6 @@ export default function AddPetScreen() {
   const toast = useToast();
   const router = useRouter();
   const { setActivePetId } = useActivePet();
-  const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const sx = width / DESIGN_WIDTH;
   const sy = height / DESIGN_HEIGHT;
@@ -90,15 +69,15 @@ export default function AddPetScreen() {
       formTop: 16 * sy,
       formGap: 22 * sy,
       cardWidth: 335 * sx,
-      photoOuter: 128 * sx,
+      photoSize: 128 * sx,
       photoInner: 116 * sx,
       photoInset: 6 * sx,
       photoRadius: 22 * sx,
+      inputHeight: 52 * sy,
       typeRowWidth: 304 * sx,
       typeTileWidth: 144 * sx,
       typeTileHeight: 110 * sy,
       typeGap: 16 * sx,
-      footerHeight: 48 * sy,
     }),
     [sx, sy],
   );
@@ -170,89 +149,64 @@ export default function AddPetScreen() {
       <VaccineScreenHeader title={t('pets.add_title')} icon="close" />
 
       <HealthKeyboardAvoidingView>
-        <ScrollView
-          contentContainerStyle={[
+        <View
+          style={[
             styles.content,
             {
               paddingTop: layout.formTop,
-              paddingBottom: healthKeyboardScrollPadding(sy, insets.bottom),
+              paddingBottom: 12 * sy,
               gap: layout.formGap,
-              alignItems: 'center',
             },
           ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
         >
           <Pressable
             onPress={() => setPhotoSheetVisible(true)}
-            style={[
-              styles.photoOuter,
-              PHOTO_SHADOW,
-              {
-                width: layout.photoOuter,
-                height: layout.photoOuter,
-              },
-            ]}
+            style={{
+              width: layout.photoSize,
+              height: layout.photoSize,
+              alignSelf: 'center',
+            }}
             accessibilityRole="button"
             accessibilityLabel={t('pets.add_photo')}
           >
             {photoUri ? (
               <Image
                 source={{ uri: photoUri }}
-                style={[
-                  styles.photoFilled,
-                  {
-                    width: layout.photoInner,
-                    height: layout.photoInner,
-                    borderRadius: layout.photoRadius,
-                    marginTop: layout.photoInset,
-                    marginLeft: layout.photoInset,
-                  },
-                ]}
+                style={{
+                  width: layout.photoInner,
+                  height: layout.photoInner,
+                  borderRadius: layout.photoRadius,
+                  marginTop: layout.photoInset,
+                  marginLeft: layout.photoInset,
+                }}
+                contentFit="cover"
               />
             ) : (
-              <View
-                style={[
-                  styles.photoInnerEmpty,
-                  {
-                    width: layout.photoInner,
-                    height: layout.photoInner,
-                    borderRadius: layout.photoRadius,
-                    marginTop: layout.photoInset,
-                    marginLeft: layout.photoInset,
-                  },
-                ]}
-              >
-                <View style={styles.photoEmptyContent}>
-                  <View style={styles.photoIconWrap}>
-                    <Image source={addPhotoImage} style={styles.photoIcon} resizeMode="contain" />
-                    <View style={[styles.plusBadge, PLUS_SHADOW]}>
-                      <Ionicons name="add" size={10} color={colors.primaryText} />
-                    </View>
-                  </View>
-                  <Text style={styles.photoLabel}>{t('pets.add_photo')}</Text>
-                </View>
-              </View>
+              <Image
+                source={addPhotoImage}
+                style={{ width: layout.photoSize, height: layout.photoSize }}
+                contentFit="contain"
+              />
             )}
           </Pressable>
 
-          <View
+          <TextInput
             style={[
-              styles.nameCard,
+              styles.nameInput,
               CARD_SHADOW,
-              { width: layout.cardWidth },
+              {
+                width: layout.cardWidth,
+                height: layout.inputHeight,
+                borderRadius: 12 * sx,
+              },
             ]}
-          >
-            <TextInput
-              style={styles.nameInput}
-              value={name}
-              onChangeText={setName}
-              placeholder={t('pets.name_placeholder')}
-              placeholderTextColor={colors.secondaryText}
-              autoCapitalize="words"
-              returnKeyType="done"
-            />
-          </View>
+            value={name}
+            onChangeText={setName}
+            placeholder={t('pets.name_placeholder')}
+            placeholderTextColor={colors.secondaryText}
+            autoCapitalize="words"
+            returnKeyType="done"
+          />
 
           <View
             style={[
@@ -286,7 +240,7 @@ export default function AddPetScreen() {
                   accessibilityLabel={label}
                 >
                   <View style={styles.typeInner}>
-                    <Image source={image} style={styles.typeImage} resizeMode="contain" />
+                    <Image source={image} style={styles.typeImage} contentFit="contain" />
                     <Text style={styles.typeLabel}>{label}</Text>
                   </View>
                 </Pressable>
@@ -313,7 +267,7 @@ export default function AddPetScreen() {
               ]}
             />
           </View>
-        </ScrollView>
+        </View>
 
         <HealthKeyboardFooter
           label={t('home.add_pet')}
@@ -350,67 +304,20 @@ const makeStyles = (c: ThemeColors) =>
       flex: 1,
       backgroundColor: c.background,
     },
-    flex: { flex: 1 },
     content: {
+      flex: 1,
       paddingHorizontal: 20,
-    },
-    photoOuter: {
-      backgroundColor: 'transparent',
-    },
-    photoInnerEmpty: {
-      backgroundColor: c.background,
       alignItems: 'center',
-      justifyContent: 'center',
-      padding: 16,
-    },
-    photoFilled: {
-      backgroundColor: c.background,
-    },
-    photoEmptyContent: {
-      width: 68,
-      alignItems: 'center',
-      gap: 6,
-    },
-    photoIconWrap: {
-      width: 50,
-      height: 50,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    photoIcon: {
-      width: 50,
-      height: 50,
-    },
-    plusBadge: {
-      position: 'absolute',
-      right: -2,
-      bottom: -2,
-      width: 14,
-      height: 14,
-      borderRadius: 3,
-      padding: 2,
-      backgroundColor: c.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    photoLabel: {
-      fontFamily: 'Rubik-Regular',
-      fontSize: 14,
-      lineHeight: 20,
-      color: c.secondaryText,
-      height: 48,
-      borderRadius: 12,
-      backgroundColor: c.surface,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-      justifyContent: 'center',
     },
     nameInput: {
       fontFamily: 'Rubik-Regular',
       fontSize: 16,
+      lineHeight: 20,
       color: c.primaryText,
-      padding: 0,
-      margin: 0,
+      backgroundColor: c.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      gap: 10,
     },
     typeRow: {
       flexDirection: 'row',
@@ -439,8 +346,8 @@ const makeStyles = (c: ThemeColors) =>
     typeLabel: {
       width: 106,
       height: 20,
-      fontFamily: 'Rubik-Regular',
-      fontSize: 14,
+      fontFamily: 'Rubik-Medium',
+      fontSize: 16,
       lineHeight: 20,
       color: c.primaryText,
       textAlign: 'center',

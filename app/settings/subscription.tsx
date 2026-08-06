@@ -14,6 +14,7 @@ import { type ThemeColors } from '@/constants/theme';
 import { t } from '@/i18n';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
+import PremiumSuccessModal from '@/components/settings/PremiumSuccessModal';
 import {
   getMyProfile,
   isPremiumPlan,
@@ -56,6 +57,7 @@ export default function SubscriptionSettingsScreen() {
   const [busy, setBusy] = useState(false);
   const [plan, setPlan] = useState<PlanId>('free');
   const [priceLabel, setPriceLabel] = useState(t('settings.plan_premium_price'));
+  const [successVisible, setSuccessVisible] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -117,7 +119,7 @@ export default function SubscriptionSettingsScreen() {
       if (result.status !== 'success') return;
       // Webhook may lag — optimistically show premium if entitlement is active.
       if (result.premium) setPlan('premium');
-      Alert.alert(t('settings.subscription'), t('settings.purchase_success'));
+      setSuccessVisible(true);
       // Soft refresh after a short delay for webhook.
       setTimeout(() => {
         void refresh();
@@ -142,7 +144,7 @@ export default function SubscriptionSettingsScreen() {
       if (result.status !== 'success') return;
       if (result.premium) {
         setPlan('premium');
-        Alert.alert(t('settings.subscription'), t('settings.restore_success'));
+        setSuccessVisible(true);
         setTimeout(() => {
           void refresh();
         }, 1500);
@@ -156,6 +158,10 @@ export default function SubscriptionSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+      <PremiumSuccessModal
+        visible={successVisible}
+        onClose={() => setSuccessVisible(false)}
+      />
       <SettingsHeader title={t('settings.subscription')} />
 
       {loading ? (
