@@ -1,6 +1,11 @@
 import { initializeApp, getApps } from 'firebase/app';
-// @ts-ignore
-import { initializeAuth, getReactNativePersistence, getAuth } from 'firebase/auth';
+import {
+  initializeAuth,
+  getAuth,
+  type Auth,
+  type Persistence,
+} from 'firebase/auth';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
@@ -14,8 +19,36 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-const auth = getApps().length === 1
-  ? initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) })
-  : getAuth(app);
+function getNativePersistence(): Persistence | null {
+  if (Platform.OS === 'web') return null;
+  try {
+    // Present on the React Native Auth build; missing on web/node builds.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const authMod = require('firebase/auth') as {
+      getReactNativePersistence?: (storage: typeof AsyncStorage) => Persistence;
+    };
+    if (typeof authMod.getReactNativePersistence === 'function') {
+      return authMod.getReactNativePersistence(AsyncStorage);
+    }
+  } catch {
+    // fall through
+  }
+  return null;
+}
+
+function createAuth(): Auth {
+  const persistence = getNativePersistence();
+  if (persistence) {
+    try {
+      return initializeAuth(app, { persistence });
+    } catch {
+      // Auth already initialized (fast refresh / second import).
+      return getAuth(app);
+    }
+  }
+  return getAuth(app);
+}
+
+const auth = createAuth();
 
 export default auth;
