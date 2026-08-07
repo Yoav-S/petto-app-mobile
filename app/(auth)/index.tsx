@@ -19,8 +19,8 @@ import { useThemedStyles, useTheme } from '@/context/ThemeContext';
 /** Figma welcome frame (360×812). */
 const DESIGN_WIDTH = 360;
 const DESIGN_HEIGHT = 812;
-/** Wordmark asset intrinsic size (peto-wordmark.png). */
-const LOGO = { w: 146, h: 52 } as const;
+/** Wordmark asset intrinsic size (ragly-wordmark.png). */
+const LOGO = { w: 152, h: 56 } as const;
 const CARD = {
   width: 335,
   top: 434,
@@ -117,7 +117,7 @@ export default function OnboardingWelcomeScreen() {
         >
           <View style={[styles.copyBlock, { gap: layout.copyGap }]}>
             <Image
-              source={require('@/assets/images/peto-wordmark.png')}
+              source={require('@/assets/images/ragly-wordmark.png')}
               style={{ width: layout.logoW, height: layout.logoH }}
               contentFit="contain"
               accessibilityLabel="Ragly"
