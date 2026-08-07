@@ -7,7 +7,7 @@ import { t } from '@/i18n';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 
 /** Users write here; Cloudflare forwards to pettoservices@gmail.com. */
-const SUPPORT_EMAIL = 'support@peto.casa';
+const SUPPORT_EMAIL = 'support@ragly.cloud';
 
 function buildSupportMailto(): string {
   const subject = encodeURIComponent(t('settings.support_email_subject'));

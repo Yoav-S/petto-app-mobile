@@ -1,5 +1,5 @@
 /**
- * Peto theme — light/dark twins from the product palette.
+ * Ragly theme — light/dark twins from the product palette.
  * Every purpose has a matching pair so `useColors()` can swap schemes.
  */
 

@@ -120,7 +120,7 @@ export default function OnboardingWelcomeScreen() {
               source={require('@/assets/images/peto-wordmark.png')}
               style={{ width: layout.logoW, height: layout.logoH }}
               contentFit="contain"
-              accessibilityLabel="Peto"
+              accessibilityLabel="Ragly"
             />
             <View style={{ gap: layout.textGap, alignItems: 'center', width: '100%' }}>
               <Text

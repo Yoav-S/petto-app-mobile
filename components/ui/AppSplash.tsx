@@ -8,7 +8,7 @@ import {
 } from '@/constants/splash';
 
 /**
- * Brand splash: white canvas + Peto wordmark at the Figma position.
+ * Brand splash: white canvas + Ragly wordmark at the Figma position.
  * Shown over the root stack while auth / first route settle.
  */
 export default function AppSplash() {
@@ -34,7 +34,7 @@ export default function AppSplash() {
         numberOfLines={1}
         allowFontScaling={false}
       >
-        Peto
+        Ragly
       </Text>
     </View>
   );

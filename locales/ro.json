@@ -1,4 +1,4 @@
-{
+﻿{
   "home": {
     "switch": "Schimbă",
     "switch_title": "Schimbă animalul",
@@ -128,13 +128,13 @@
     "support_title": "Asistență",
     "contact_support": "Contactează asistența",
     "support_tap_hint": "Atinge pentru a deschide aplicația de e-mail",
-    "support_email_subject": "Asistență Petto",
-    "support_email_body": "Bună, echipa de asistență Petto,\n\n",
+    "support_email_subject": "Asistență Ragly",
+    "support_email_body": "Bună, echipa de asistență Ragly,\n\n",
     "support_email_fallback": "Nu s-a putut deschide aplicația de e-mail. Trimite un mesaj la:",
     "last_updated": "Ultima actualizare",
     "current_plan": "Planul curent",
     "plan_free": "Gratuit",
-    "plan_premium": "Petto Premium",
+    "plan_premium": "Ragly Premium",
     "plan_free_pets": "1 profil de animal",
     "plan_free_reminders": "Până la 10 memento-uri active",
     "plan_premium_price": "$2.99/lună",
@@ -147,26 +147,26 @@
     "manage_subscription_body": "Pentru a anula sau schimba planul, gestionează-l în App Store sau Google Play.",
     "purchase_unavailable": "Achizițiile nu sunt încă disponibile. Finalizează configurarea App Store / Play / RevenueCat, apoi folosește un development build (nu Expo Go).",
     "purchase_cancelled": "Achiziție anulată.",
-    "purchase_success": "Ești pe Petto Premium!",
+    "purchase_success": "Ești pe Ragly Premium!",
     "purchase_success_title": "Totul e gata!",
     "purchase_success_body": "Planul premium este activ. Iată ce ai deblocat:",
     "purchase_success_cta": "Continuă",
     "restore_none": "Nu s-au găsit achiziții anterioare pentru acest cont.",
     "restore_success": "Achizițiile au fost restaurate.",
     "limit_pet_title": "Treci la Premium pentru mai multe animale",
-    "limit_pet_body": "Planul gratuit include 1 profil de animal. Treci la Petto Premium pentru animale nelimitate.",
+    "limit_pet_body": "Planul gratuit include 1 profil de animal. Treci la Ragly Premium pentru animale nelimitate.",
     "limit_reminder_title": "Treci la Premium pentru mai multe memento-uri",
-    "limit_reminder_body": "Planul gratuit include până la 10 memento-uri active. Treci la Petto Premium pentru memento-uri nelimitate.",
+    "limit_reminder_body": "Planul gratuit include până la 10 memento-uri active. Treci la Ragly Premium pentru memento-uri nelimitate.",
     "upgrade": "Upgrade",
     "notif_topic_reminders": "Memento-uri pe subiecte"
   },
   "legal": {
-    "privacy_intro": "Petto („noi”, „al nostru”) îți respectă confidențialitatea și se angajează să îți protejeze informațiile personale. Această Politică de confidențialitate explică modul în care colectăm, folosim și protejăm informațiile atunci când folosești aplicația mobilă Petto.",
+    "privacy_intro": "Ragly („noi”, „al nostru”) îți respectă confidențialitatea și se angajează să îți protejeze informațiile personale. Această Politică de confidențialitate explică modul în care colectăm, folosim și protejăm informațiile atunci când folosești aplicația mobilă Ragly.",
     "privacy_section1_title": "Informațiile pe care le colectăm",
-    "privacy_section1_body": "Când folosești Petto, este posibil să colectăm următoarele informații:\nInformații despre cont\nAdresă de e-mail\nInformații de autentificare\nInformații despre animal\nNumele animalelor\nRasă, vârstă, greutate, sex și alte detalii de profil\nÎnregistrări de vaccinare\nInformații și note de sănătate\nDate despre memento-uri\nFotografii și documente încărcate\nInformații de utilizare\nActivitate și interacțiuni în aplicație\nInformații despre dispozitiv\nRapoarte de eroare și diagnosticare\nPreferințe de notificare",
-    "terms_intro": "Bine ai venit la Petto. Acești Termeni și condiții („Termeni”) reglementează utilizarea aplicației mobile Petto și a serviciilor conexe („Serviciul”).\nFolosind Petto, ești de acord cu acești Termeni.",
+    "privacy_section1_body": "Când folosești Ragly, este posibil să colectăm următoarele informații:\nInformații despre cont\nAdresă de e-mail\nInformații de autentificare\nInformații despre animal\nNumele animalelor\nRasă, vârstă, greutate, sex și alte detalii de profil\nÎnregistrări de vaccinare\nInformații și note de sănătate\nDate despre memento-uri\nFotografii și documente încărcate\nInformații de utilizare\nActivitate și interacțiuni în aplicație\nInformații despre dispozitiv\nRapoarte de eroare și diagnosticare\nPreferințe de notificare",
+    "terms_intro": "Bine ai venit la Ragly. Acești Termeni și condiții („Termeni”) reglementează utilizarea aplicației mobile Ragly și a serviciilor conexe („Serviciul”).\nFolosind Ragly, ești de acord cu acești Termeni.",
     "terms_section1_title": "Utilizarea serviciului",
-    "terms_section1_body": "Poți folosi Petto doar în scopuri personale legale legate de îngrijirea animalelor tale.\nEști de acord să nu:\nFolosești abuziv Serviciul sau să îi interferi cu funcționarea normală\nÎncerci să accesezi conturi sau date care nu îți aparțin\nCopiezi, modifici sau faci inginerie inversă a oricărei părți din aplicație\nFolosești Serviciul într-un mod care încalcă legile aplicabile sau drepturile terților\nPutem actualiza, suspenda sau modifica funcțiile Serviciului în orice moment.\nContinuarea utilizării Petto după modificări înseamnă că accepți Termenii actualizați.",
+    "terms_section1_body": "Poți folosi Ragly doar în scopuri personale legale legate de îngrijirea animalelor tale.\nEști de acord să nu:\nFolosești abuziv Serviciul sau să îi interferi cu funcționarea normală\nÎncerci să accesezi conturi sau date care nu îți aparțin\nCopiezi, modifici sau faci inginerie inversă a oricărei părți din aplicație\nFolosești Serviciul într-un mod care încalcă legile aplicabile sau drepturile terților\nPutem actualiza, suspenda sau modifica funcțiile Serviciului în orice moment.\nContinuarea utilizării Ragly după modificări înseamnă că accepți Termenii actualizați.",
     "terms_section2_title": "Conturi",
     "terms_section2_body": "Pentru a folosi anumite funcții, este posibil să fie nevoie să creezi un cont.\nEști responsabil pentru:\nMenținerea securității contului tău\nPăstrarea confidențialității datelor tale de autentificare\nToate activitățile care au loc în contul tău\nEști de acord să furnizezi informații corecte la crearea și gestionarea contului tău."
   },
@@ -299,8 +299,8 @@
     "duplicate_reminder_datetime": "Ai deja un memento la această dată și oră.",
     "reminder_datetime_in_past": "Alege mâine sau o dată ulterioară.",
     "cannot_delete_last_pet": "Ai nevoie de cel puțin un animal. Adaugă alt animal înainte de a-l elimina pe acesta.",
-    "premium_required_pet": "Planul gratuit include 1 animal. Treci la Petto Premium pentru a adăuga mai multe.",
-    "premium_required_reminder": "Planul gratuit include până la 10 memento-uri active. Treci la Petto Premium pentru memento-uri nelimitate.",
+    "premium_required_pet": "Planul gratuit include 1 animal. Treci la Ragly Premium pentru a adăuga mai multe.",
+    "premium_required_reminder": "Planul gratuit include până la 10 memento-uri active. Treci la Ragly Premium pentru memento-uri nelimitate.",
     "vaccination_date_in_future": "Data vaccinării nu poate fi în viitor.",
     "vaccination_valid_until_before_date": "Valabil până nu poate fi înainte de data vaccinării.",
     "network_timeout": "Cererea a expirat. Verifică conexiunea și încearcă din nou.",
@@ -320,7 +320,7 @@
     "terms_screen_title": "Termeni și confidențialitate",
     "terms_agree": "Sunt de acord cu Termenii și Politica de confidențialitate",
     "terms_link_a11y": "Deschide Termenii și Politica de confidențialitate",
-    "terms_body": "Bine ai venit la Petto. Acesta este un text temporar pentru Termenii și Condițiile și Politica noastră de confidențialitate.\n\nFolosind Petto, ești de acord să stochezi informațiile de sănătate ale animalului pe care alegi să le adaugi, inclusiv vaccinări, memento-uri și înregistrări medicale.\n\nProcesăm adresa ta de e-mail pentru autentificarea fără parolă și putem trimite coduri de verificare. Nu vindem datele tale personale.\n\nPoți solicita ștergerea contului și a datelor tale contactând asistența. Conținutul din această aplicație este pentru înregistrările personale de îngrijire a animalului și nu înlocuiește sfatul unui medic veterinar.\n\nAcești termeni pot fi actualizați înainte de lansare. Utilizarea în continuare după actualizări înseamnă că accepți termenii revizuiți."
+    "terms_body": "Bine ai venit la Ragly. Acesta este un text temporar pentru Termenii și Condițiile și Politica noastră de confidențialitate.\n\nFolosind Ragly, ești de acord să stochezi informațiile de sănătate ale animalului pe care alegi să le adaugi, inclusiv vaccinări, memento-uri și înregistrări medicale.\n\nProcesăm adresa ta de e-mail pentru autentificarea fără parolă și putem trimite coduri de verificare. Nu vindem datele tale personale.\n\nPoți solicita ștergerea contului și a datelor tale contactând asistența. Conținutul din această aplicație este pentru înregistrările personale de îngrijire a animalului și nu înlocuiește sfatul unui medic veterinar.\n\nAcești termeni pot fi actualizați înainte de lansare. Utilizarea în continuare după actualizări înseamnă că accepți termenii revizuiți."
   },
   "auth": {
     "code_resent": "A fost trimis un cod nou. Codurile anterioare nu mai funcționează.",
@@ -332,7 +332,7 @@
     "or": "SAU",
     "google_continue": "Continuă cu Google"
   },
-  "petOnboarding": {
+  "Raglynboarding": {
     "done": "Gata",
     "back": "Înapoi",
     "name_title": "Cum se numește animalul tău?",

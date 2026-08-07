@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Peto",
+    "name": "Ragly",
     "slug": "petto",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -54,8 +54,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Petto to access your photos to add a pet picture.",
-          "cameraPermission": "Allow Petto to access your camera to take a pet picture."
+          "photosPermission": "Allow Ragly to access your photos to add a pet picture.",
+          "cameraPermission": "Allow Ragly to access your camera to take a pet picture."
         }
       ],
       [
