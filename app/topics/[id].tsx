@@ -6,9 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
-  ActionSheetIOS,
-  Platform,
   useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -21,6 +18,8 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
+import ConfirmModal from '@/components/ui/ConfirmModal';
+import TopicActionsSheet from '@/components/topics/TopicActionsSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { getRecord, resolveRecord } from '@/services/health';
@@ -80,6 +79,9 @@ export default function HealthDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [failedPhotoIds, setFailedPhotoIds] = useState<Record<string, true>>({});
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [resolveVisible, setResolveVisible] = useState(false);
+  const [resolving, setResolving] = useState(false);
   const recordRef = useRef<MedicalRecordDetail | null>(null);
   recordRef.current = record;
 
@@ -116,43 +118,18 @@ export default function HealthDetailsScreen() {
     }, [activePetId, recordId]),
   );
 
-  const confirmResolve = useCallback(() => {
-    if (!activePetId || !recordId) return;
-    Alert.alert(t('topics.resolve_confirm_title'), t('topics.resolve_confirm_body'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('topics.mark_resolved'),
-        onPress: async () => {
-          try {
-            await resolveRecord(activePetId, recordId);
-            router.back();
-          } catch (err) {
-            toast.showError(getErrorMessage(err));
-          }
-        },
-      },
-    ]);
-  }, [activePetId, recordId, router, toast]);
-
-  const openOverflowMenu = useCallback(() => {
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: [t('common.cancel'), t('topics.mark_resolved')],
-          cancelButtonIndex: 0,
-        },
-        (index) => {
-          if (index === 1) confirmResolve();
-        },
-      );
-      return;
+  const handleResolve = useCallback(async () => {
+    if (!activePetId || !recordId || resolving) return;
+    setResolving(true);
+    try {
+      await resolveRecord(activePetId, recordId);
+      setResolveVisible(false);
+      router.back();
+    } catch (err) {
+      toast.showError(getErrorMessage(err));
+      setResolving(false);
     }
-
-    Alert.alert(recordRef.current?.title ?? t('topics.title'), undefined, [
-      { text: t('topics.mark_resolved'), onPress: confirmResolve },
-      { text: t('common.cancel'), style: 'cancel' },
-    ]);
-  }, [confirmResolve]);
+  }, [activePetId, recordId, resolving, router, toast]);
 
   if (loading) {
     return (
@@ -192,7 +169,7 @@ export default function HealthDetailsScreen() {
           borderRadius: footerLayout.menuRadius,
         },
       ]}
-      onPress={openOverflowMenu}
+      onPress={() => setMenuVisible(true)}
       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       accessibilityRole="button"
       accessibilityLabel={t('topics.mark_resolved')}
@@ -298,6 +275,27 @@ export default function HealthDetailsScreen() {
           <Text style={styles.addText}>{t('topics.add_note')}</Text>
         </TouchableOpacity>
       </View>
+
+      <TopicActionsSheet
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        onMarkResolved={() => setResolveVisible(true)}
+      />
+
+      <ConfirmModal
+        visible={resolveVisible}
+        title={t('topics.resolve_confirm_title')}
+        message={t('topics.resolve_confirm_body')}
+        confirmText={t('topics.mark_resolved')}
+        cancelText={t('common.cancel')}
+        variant="primary"
+        onCancel={() => {
+          if (!resolving) setResolveVisible(false);
+        }}
+        onConfirm={() => {
+          void handleResolve();
+        }}
+      />
     </SafeAreaView>
   );
 }

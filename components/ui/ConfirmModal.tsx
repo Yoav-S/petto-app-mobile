@@ -23,6 +23,8 @@ interface ConfirmModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   cancelText?: string;
+  /** `danger` = delete-style (default). `primary` = brand confirm. */
+  variant?: 'danger' | 'primary';
 }
 
 export default function ConfirmModal({
@@ -33,6 +35,7 @@ export default function ConfirmModal({
   onConfirm,
   onCancel,
   cancelText,
+  variant = 'danger',
 }: ConfirmModalProps) {
   const { width, height } = useWindowDimensions();
   const styles = useThemedStyles(makeStyles);
@@ -124,7 +127,7 @@ export default function ConfirmModal({
 
                 <TouchableOpacity
                   style={[
-                    styles.confirmButton,
+                    variant === 'primary' ? styles.confirmButtonPrimary : styles.confirmButton,
                     {
                       width: layout.buttonWidth,
                       height: layout.buttonHeight,
@@ -136,7 +139,13 @@ export default function ConfirmModal({
                   onPress={onConfirm}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.confirmText}>{confirmText}</Text>
+                  <Text
+                    style={
+                      variant === 'primary' ? styles.confirmTextPrimary : styles.confirmText
+                    }
+                  >
+                    {confirmText}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -193,6 +202,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  confirmButtonPrimary: {
+    backgroundColor: c.button.primaryBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   cancelText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
@@ -205,6 +219,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 14,
     lineHeight: 18,
     color: c.error,
+    textAlign: 'center',
+  },
+  confirmTextPrimary: {
+    fontFamily: 'Rubik-Medium',
+    fontSize: 14,
+    lineHeight: 18,
+    color: c.button.primaryText,
     textAlign: 'center',
   },
 });
