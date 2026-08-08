@@ -3,7 +3,8 @@
  *
  * Requires EXPO_PUBLIC_REVENUECAT_IOS_KEY / ANDROID_KEY and a native
  * development build (IAP does not work in Expo Go).
- * Test Store keys (test_…) are fine until App Store / Play products are live.
+ * Test Store keys (test_…) are for development only.
+ * Preview/production must use goog_ / appl_ keys (Expo env already maps this).
  */
 import { LogBox, NativeModules, Platform } from 'react-native';
 import Constants from 'expo-constants';
@@ -67,7 +68,7 @@ export async function configurePurchases(): Promise<boolean> {
   if (configured) return true;
   if (!isPurchasesConfigured()) {
     console.log(
-      `${LOG} keys missing — set EXPO_PUBLIC_REVENUECAT_IOS_KEY / ANDROID_KEY in client/.env`,
+      `${LOG} keys missing — set EXPO_PUBLIC_REVENUECAT_IOS_KEY / ANDROID_KEY in Expo env`,
     );
     return false;
   }
@@ -144,7 +145,6 @@ export async function logSubscriptionReadiness(firebaseUid: string): Promise<voi
       console.log(`${LOG} NOT READY — fix RevenueCat offering: default → Monthly → ${PREMIUM_PRODUCT_ID}`);
     }
   } catch (error) {
-    // Empty Test Store offerings are a dashboard config issue — not a user-facing error.
     console.log(
       `${LOG} readiness check skipped (configure Test Store products in RevenueCat):`,
       error instanceof Error ? error.message : error,
