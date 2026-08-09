@@ -29,6 +29,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
+        "android.permission.RECORD_AUDIO",
         "android.permission.RECORD_AUDIO"
       ]
     },
@@ -96,6 +97,12 @@
       "eas": {
         "projectId": "9c7876a9-22b9-458c-8225-5c5505467037"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9c7876a9-22b9-458c-8225-5c5505467037"
     }
   }
 }
