@@ -5,7 +5,7 @@ import auth from '@/services/firebaseAuth';
 import { syncUserWithBackend } from '@/services/auth';
 import { loginPurchases, logoutPurchases } from '@/services/purchases';
 import { registerForPushNotifications } from '@/services/notifications';
-import { clearOnboardingComplete } from '@/services/onboarding';
+import { clearOnboardingComplete, getOnboardingComplete } from '@/services/onboarding';
 import { getErrorMessage } from '@/services/errors';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
@@ -115,7 +115,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSyncError(null);
     try {
       const profile = await syncUserWithBackend();
-      setHasPets(Boolean(profile.has_pets));
+      const pets = Boolean(profile.has_pets);
+
+      // Pets were removed after onboarding (e.g. last pet wiped in DB).
+      // Clear the Firebase session so the user lands on welcome, not mid-onboarding.
+      if (!pets && (await getOnboardingComplete())) {
+        await logoutPurchases();
+        await clearOnboardingComplete();
+        setHasPets(null);
+        await firebaseSignOut(auth);
+        return;
+      }
+
+      setHasPets(pets);
       // Identify RevenueCat with Firebase UID (no-op if keys missing).
       void loginPurchases(firebaseUser.uid);
       // Fire-and-forget: register push token + timezone. Never blocks login.

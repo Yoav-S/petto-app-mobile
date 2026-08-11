@@ -17,8 +17,10 @@ import { ApiError } from '@/services/api';
 import { getErrorMessage } from '@/services/errors';
 import { sendOtp, setPendingEmail } from '@/services/auth';
 import { t } from '@/i18n';
+import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -67,9 +69,8 @@ export default function EmailAuthScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
-            <Text style={styles.backText}>{t('petOnboarding.back')}</Text>
-          </Pressable>
+          <OnboardingBackButton onPress={() => router.back()} style={styles.backBtn} />
+
 
           <Text style={styles.title}>{t('auth.email_title')}</Text>
           <Text style={styles.subtitle}>{t('auth.email_subtitle')}</Text>
@@ -155,11 +156,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   backBtn: {
     alignSelf: 'flex-start',
     marginBottom: Spacing.lg,
-  },
-  backText: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: c.secondaryText,
   },
   title: {
     fontFamily: 'Rubik-Regular',

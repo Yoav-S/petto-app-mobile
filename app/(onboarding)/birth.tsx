@@ -8,12 +8,12 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
 import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
+import { OnboardingCalendar } from '@/components/brand/onboarding';
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
 import { useActivePet } from '@/store/petStore';
 import { createPet } from '@/services/pets';
@@ -27,8 +27,6 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_BIRTH_STEP } from '@/constants/petOnboarding';
 import { getPetOnboardingScale, scaleOffset } from '@/utils/petOnboardingScale';
 import { parseIsoDate } from '@/utils/calendar';
-
-const calendarImage = require('@/assets/images/onboarding/birth-calendar.png');
 
 function formatDisplayDate(iso: string): string {
   const date = parseIsoDate(iso);
@@ -161,17 +159,18 @@ export default function PetBirthOnboardingScreen() {
               alignSelf: 'center',
             }}
           >
-            <Image
-              source={calendarImage}
+            <View
               style={{
                 position: 'absolute',
                 top: PET_BIRTH_STEP.heroImageTop * sy,
                 left: PET_BIRTH_STEP.heroImageLeft * sx,
-                width: PET_BIRTH_STEP.heroImageWidth * sx,
-                height: PET_BIRTH_STEP.heroImageHeight * sy,
               }}
-              contentFit="contain"
-            />
+            >
+              <OnboardingCalendar
+                width={PET_BIRTH_STEP.heroImageWidth * sx}
+                height={PET_BIRTH_STEP.heroImageHeight * sy}
+              />
+            </View>
           </View>
 
           <View

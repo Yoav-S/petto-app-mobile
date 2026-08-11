@@ -6,25 +6,23 @@ import {
   Pressable,
   useWindowDimensions,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WelcomePhotoMarquee } from '@/components/auth/WelcomePhotoMarquee';
+import RaglyWordmark, { RAGLY_WORDMARK } from '@/components/brand/RaglyWordmark';
 import { setTermsAccepted } from '@/services/onboarding';
 import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
-import { useThemedStyles, useTheme } from '@/context/ThemeContext';
+import { useColors, useThemedStyles, useTheme } from '@/context/ThemeContext';
 
 /** Figma welcome frame (360×812). */
 const DESIGN_WIDTH = 360;
 const DESIGN_HEIGHT = 812;
-/** Wordmark asset intrinsic size (ragly-wordmark.png). */
-const LOGO = { w: 152, h: 56 } as const;
+const LOGO = RAGLY_WORDMARK;
 const CARD = {
   width: 335,
-  top: 434,
-  /** Equal side inset in the design (was left:20 / right:5 — looked shifted right). */
+  /** Equal side inset so the card doesn’t kiss the screen edges. */
   sidePad: 12.5,
   radius: 38,
   paddingV: 38,
@@ -35,6 +33,7 @@ const CARD = {
 export default function OnboardingWelcomeScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
+  const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -42,37 +41,39 @@ export default function OnboardingWelcomeScreen() {
   const sy = height / DESIGN_HEIGHT;
 
   const layout = useMemo(() => {
+    // Keep side breathing room on notched / narrow phones.
     const sidePad = Math.max(CARD.sidePad * sx, insets.left, insets.right, 16);
+    const bottomPad = Math.max(insets.bottom, 16);
     const cardWidth = Math.min(CARD.width * sx, width - sidePad * 2);
-    const cardTop = Math.min(
-      CARD.top * sy,
-      height - 320 * sy - Math.max(insets.bottom, 16),
-    );
-    const logoH = 48 * sx;
-    const logoW = logoH * (LOGO.w / LOGO.h);
+    const paddingH = Math.max(CARD.paddingH * sx, 16);
+    // Full content width so subtitle stays ~2 lines (old 233px cap forced 3 on iPhone).
+    const copyWidth = Math.max(cardWidth - paddingH * 2, 0);
+    const compact = height < 740;
+    const logoH = (compact ? 40 : 48) * sx;
+    const logoW = logoH * (LOGO.width / LOGO.height);
     return {
       sidePad,
+      bottomPad,
       cardWidth,
-      cardTop,
       radius: CARD.radius * sx,
-      paddingV: CARD.paddingV * sy,
-      paddingH: CARD.paddingH * sx,
-      gap: CARD.gap * sy,
+      paddingV: (compact ? 28 : CARD.paddingV) * sy,
+      paddingH,
+      gap: (compact ? 24 : CARD.gap) * sy,
       logoW,
       logoH,
+      copyWidth,
       titleSize: 24 * sx,
-      titleLine: 28 * sy,
+      titleLine: 28 * sx,
       subtitleSize: 14 * sx,
-      subtitleLine: 20 * sy,
-      subtitleMaxW: Math.min(233 * sx, cardWidth - CARD.paddingH * sx * 2),
-      buttonH: 48 * sy,
+      subtitleLine: 20 * sx,
+      buttonH: Math.max(48 * sy, 48),
       buttonRadius: 12 * sx,
       buttonFont: 16 * sx,
-      buttonLine: 24 * sy,
-      legalFont: 10 * sx,
-      legalLine: 16 * sy,
-      copyGap: 16 * sy,
-      actionsGap: 16 * sy,
+      buttonLine: 24 * sx,
+      legalFont: Math.max(10 * sx, 10),
+      legalLine: Math.max(14 * sx, 14),
+      copyGap: (compact ? 12 : 16) * sy,
+      actionsGap: (compact ? 12 : 16) * sy,
       textGap: 8 * sy,
     };
   }, [width, height, sx, sy, insets.left, insets.right, insets.bottom]);
@@ -91,14 +92,13 @@ export default function OnboardingWelcomeScreen() {
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <WelcomePhotoMarquee />
 
-      {/* Full-width dock centers the card on every device / notch / RTL. */}
+      {/* Bottom-docked so the card floats above the home indicator on every phone. */}
       <View
         style={[
           styles.cardDock,
           {
-            top: layout.cardTop,
             paddingHorizontal: layout.sidePad,
-            paddingBottom: Math.max(insets.bottom, 8),
+            paddingBottom: layout.bottomPad,
           },
         ]}
       >
@@ -115,12 +115,11 @@ export default function OnboardingWelcomeScreen() {
             },
           ]}
         >
-          <View style={[styles.copyBlock, { gap: layout.copyGap }]}>
-            <Image
-              source={require('@/assets/images/ragly-wordmark.png')}
-              style={{ width: layout.logoW, height: layout.logoH }}
-              contentFit="contain"
-              accessibilityLabel="Ragly"
+          <View style={[styles.copyBlock, { gap: layout.copyGap, width: layout.copyWidth }]}>
+            <RaglyWordmark
+              width={layout.logoW}
+              height={layout.logoH}
+              color={colors.brandDark}
             />
             <View style={{ gap: layout.textGap, alignItems: 'center', width: '100%' }}>
               <Text
@@ -140,7 +139,7 @@ export default function OnboardingWelcomeScreen() {
                   {
                     fontSize: layout.subtitleSize,
                     lineHeight: layout.subtitleLine,
-                    maxWidth: layout.subtitleMaxW,
+                    width: '100%',
                   },
                 ]}
               >
@@ -149,7 +148,7 @@ export default function OnboardingWelcomeScreen() {
             </View>
           </View>
 
-          <View style={[styles.actions, { gap: layout.actionsGap }]}>
+          <View style={[styles.actions, { gap: layout.actionsGap, width: layout.copyWidth }]}>
             <Pressable
               style={[
                 styles.button,
@@ -176,12 +175,16 @@ export default function OnboardingWelcomeScreen() {
               hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
               accessibilityRole="button"
               accessibilityLabel={t('onboarding.terms_link_a11y')}
+              style={styles.legalPress}
             >
               <Text
                 style={[
                   styles.legal,
                   { fontSize: layout.legalFont, lineHeight: layout.legalLine },
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.82}
               >
                 {t('onboarding.legal_prefix')}{' '}
                 <Text style={styles.legalLink}>{t('onboarding.terms')}</Text>
@@ -208,12 +211,14 @@ const makeStyles = (c: ThemeColors) =>
       position: 'absolute',
       left: 0,
       right: 0,
+      bottom: 0,
       zIndex: 2,
       alignItems: 'center',
     },
     card: {
       backgroundColor: c.surface,
       alignItems: 'center',
+      overflow: 'hidden',
       shadowColor: '#D1A796',
       shadowOffset: { width: 0, height: -3 },
       shadowOpacity: 0.1,
@@ -222,7 +227,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     copyBlock: {
       alignItems: 'center',
-      width: '100%',
     },
     title: {
       fontFamily: 'Rubik-Regular',
@@ -240,7 +244,6 @@ const makeStyles = (c: ThemeColors) =>
       letterSpacing: 0,
     },
     actions: {
-      width: '100%',
       alignItems: 'center',
     },
     button: {
@@ -254,12 +257,17 @@ const makeStyles = (c: ThemeColors) =>
       fontWeight: '500',
       color: c.button.primaryText,
     },
+    legalPress: {
+      width: '100%',
+      alignItems: 'center',
+    },
     legal: {
       fontFamily: 'Rubik-Regular',
       fontWeight: '400',
       color: c.secondaryText,
       textAlign: 'center',
       letterSpacing: 0,
+      width: '100%',
     },
     legalLink: {
       fontFamily: 'Rubik-Medium',

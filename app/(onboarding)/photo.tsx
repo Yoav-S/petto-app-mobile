@@ -14,15 +14,14 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
 import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
+import { OnboardingPhotoAdd } from '@/components/brand/onboarding';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
 import { t } from '@/i18n';
-import { type ThemeColors } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_PHOTO_STEP, PET_PHOTO_SHEET } from '@/constants/petOnboarding';
 import { getPetOnboardingScale, scaleOffset } from '@/utils/petOnboardingScale';
-
-const addPhotoImage = require('@/assets/images/onboarding/photo-add.png');
 
 export default function PetPhotoOnboardingScreen() {
   const colors = useColors();
@@ -177,11 +176,7 @@ export default function PetPhotoOnboardingScreen() {
                   />
                 </View>
               ) : (
-                <Image
-                  source={addPhotoImage}
-                  style={{ width: outerSize, height: outerSize }}
-                  contentFit="contain"
-                />
+                <OnboardingPhotoAdd width={outerSize} height={outerSize} />
               )}
             </Pressable>
           </View>
@@ -234,13 +229,13 @@ export default function PetPhotoOnboardingScreen() {
               style={[
                 styles.sheetTitleRow,
                 {
-                  width: PET_PHOTO_SHEET.titleRowWidth * sx,
                   height: PET_PHOTO_SHEET.titleRowHeight * sy,
-                  marginTop: PET_PHOTO_SHEET.titleRowTop * sy,
-                  marginLeft: PET_PHOTO_SHEET.titleRowLeft * sx,
+                  marginTop: Spacing.md,
+                  paddingHorizontal: Spacing.lg,
                 },
               ]}
             >
+              <View style={styles.sheetTitleSpacer} />
               <Text
                 style={[
                   styles.sheetTitle,
@@ -252,7 +247,13 @@ export default function PetPhotoOnboardingScreen() {
               <Pressable
                 onPress={closeSheet}
                 hitSlop={12}
-                style={{ width: PET_PHOTO_SHEET.closeSize * sx, height: PET_PHOTO_SHEET.closeSize * sx }}
+                style={[
+                  styles.sheetCloseBtn,
+                  {
+                    width: PET_PHOTO_SHEET.closeSize * sx,
+                    height: PET_PHOTO_SHEET.closeSize * sx,
+                  },
+                ]}
                 accessibilityRole="button"
                 accessibilityLabel={t('petOnboarding.photo_close_a11y')}
               >
@@ -260,40 +261,41 @@ export default function PetPhotoOnboardingScreen() {
               </Pressable>
             </View>
 
-            <View
-              style={[
-                styles.sheetOptions,
-                {
-                  width: PET_PHOTO_SHEET.optionsWidth * sx,
-                  minHeight: PET_PHOTO_SHEET.optionsHeight * sy,
-                  borderRadius: PET_PHOTO_SHEET.optionsRadius * sx,
-                  padding: PET_PHOTO_SHEET.optionsPadding * sx,
-                  gap: PET_PHOTO_SHEET.optionsGap * sy,
-                  marginTop: 16 * sy,
-                },
-              ]}
-            >
-              <Pressable onPress={() => pickImage('camera')} style={styles.sheetOptionRow}>
-                <Text
-                  style={[
-                    styles.sheetOptionText,
-                    { fontSize: PET_PHOTO_SHEET.optionFontSize * sx, lineHeight: PET_PHOTO_SHEET.optionLineHeight * sy },
-                  ]}
-                >
-                  {t('petOnboarding.photo_take')}
-                </Text>
-              </Pressable>
-              <View style={[styles.sheetDivider, { marginHorizontal: PET_PHOTO_SHEET.optionsPadding * sx }]} />
-              <Pressable onPress={() => pickImage('library')} style={styles.sheetOptionRow}>
-                <Text
-                  style={[
-                    styles.sheetOptionText,
-                    { fontSize: PET_PHOTO_SHEET.optionFontSize * sx, lineHeight: PET_PHOTO_SHEET.optionLineHeight * sy },
-                  ]}
-                >
-                  {t('petOnboarding.photo_choose_library')}
-                </Text>
-              </Pressable>
+            <View style={styles.sheetBody}>
+              <View
+                style={[
+                  styles.sheetOptions,
+                  {
+                    width: PET_PHOTO_SHEET.optionsWidth * sx,
+                    minHeight: PET_PHOTO_SHEET.optionsHeight * sy,
+                    borderRadius: PET_PHOTO_SHEET.optionsRadius * sx,
+                    padding: PET_PHOTO_SHEET.optionsPadding * sx,
+                    gap: PET_PHOTO_SHEET.optionsGap * sy,
+                  },
+                ]}
+              >
+                <Pressable onPress={() => pickImage('camera')} style={styles.sheetOptionRow}>
+                  <Text
+                    style={[
+                      styles.sheetOptionText,
+                      { fontSize: PET_PHOTO_SHEET.optionFontSize * sx, lineHeight: PET_PHOTO_SHEET.optionLineHeight * sy },
+                    ]}
+                  >
+                    {t('petOnboarding.photo_take')}
+                  </Text>
+                </Pressable>
+                <View style={[styles.sheetDivider, { marginHorizontal: PET_PHOTO_SHEET.optionsPadding * sx }]} />
+                <Pressable onPress={() => pickImage('library')} style={styles.sheetOptionRow}>
+                  <Text
+                    style={[
+                      styles.sheetOptionText,
+                      { fontSize: PET_PHOTO_SHEET.optionFontSize * sx, lineHeight: PET_PHOTO_SHEET.optionLineHeight * sy },
+                    ]}
+                  >
+                    {t('petOnboarding.photo_choose_library')}
+                  </Text>
+                </Pressable>
+              </View>
             </View>
 
             <View
@@ -395,20 +397,34 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   sheet: {
     width: '100%',
-    backgroundColor: PET_PHOTO_SHEET.background,
+    backgroundColor: c.panel,
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   sheetTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    alignSelf: 'flex-start',
+    alignSelf: 'stretch',
+  },
+  sheetTitleSpacer: {
+    width: 24,
   },
   sheetTitle: {
+    flex: 1,
     fontFamily: 'Rubik-Regular',
     fontWeight: '400',
     color: c.primaryText,
+    textAlign: 'center',
+  },
+  sheetCloseBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetBody: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sheetOptions: {
     backgroundColor: c.surface,

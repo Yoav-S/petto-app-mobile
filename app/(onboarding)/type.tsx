@@ -6,21 +6,17 @@ import {
   Pressable,
   useWindowDimensions,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
 import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
+import { OnboardingBed, OnboardingCat, OnboardingDog } from '@/components/brand/onboarding';
 import { usePetOnboardingDraft, type PetType } from '@/store/petOnboardingDraft';
 import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_TYPE_STEP } from '@/constants/petOnboarding';
 import { getPetOnboardingScale, scaleOffset } from '@/utils/petOnboardingScale';
-
-const bedImage = require('@/assets/images/onboarding/type-bed.png');
-const dogImage = require('@/assets/images/onboarding/type-dog.png');
-const catImage = require('@/assets/images/onboarding/type-cat.png');
 
 export default function PetTypeOnboardingScreen() {
   const colors = useColors();
@@ -93,15 +89,12 @@ export default function PetTypeOnboardingScreen() {
             },
           ]}
         >
-          <Image
-            source={bedImage}
-            style={{
-              width: PET_TYPE_STEP.bedWidth * sx,
-              height: PET_TYPE_STEP.bedHeight * sy - scaleOffset(20, sy),
-              alignSelf: 'center',
-            }}
-            contentFit="contain"
-          />
+          <View style={{ alignSelf: 'center' }}>
+            <OnboardingBed
+              width={PET_TYPE_STEP.bedWidth * sx}
+              height={PET_TYPE_STEP.bedHeight * sy - scaleOffset(20, sy)}
+            />
+          </View>
 
           <Text
             style={[
@@ -127,7 +120,7 @@ export default function PetTypeOnboardingScreen() {
           >
             {(['dog', 'cat'] as const).map((type) => {
               const isSelected = selected === type;
-              const image = type === 'dog' ? dogImage : catImage;
+              const PetIcon = type === 'dog' ? OnboardingDog : OnboardingCat;
               const label = type === 'dog' ? t('petOnboarding.dog') : t('petOnboarding.cat');
 
               return (
@@ -149,11 +142,7 @@ export default function PetTypeOnboardingScreen() {
                   accessibilityState={{ selected: isSelected }}
                   accessibilityLabel={label}
                 >
-                  <Image
-                    source={image}
-                    style={{ width: iconSize, height: iconSize }}
-                    contentFit="contain"
-                  />
+                  <PetIcon width={iconSize} height={iconSize} />
                   <Text
                     style={[
                       styles.petLabel,

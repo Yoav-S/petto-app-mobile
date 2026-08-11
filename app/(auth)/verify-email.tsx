@@ -24,6 +24,7 @@ import {
   resendOtp,
   consumeVerifyScreenMessage,
 } from '@/services/auth';
+import { getOnboardingComplete } from '@/services/onboarding';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
@@ -86,12 +87,15 @@ export default function VerifyEmailScreen() {
     setError('');
     setInfo('');
     try {
+      const wasOnboarded = await getOnboardingComplete();
       const profile = await verifyOtpAndSignIn(email, otp);
       verifiedRef.current = true;
-      // Server is the source of truth: an existing account that already has a
-      // pet goes straight into the app; a new account starts pet onboarding.
+      // Server is the source of truth: pets → home; first-time no pets → onboarding;
+      // pets wiped after a past onboarding → welcome (session reset in AuthContext).
       if (profile.has_pets) {
         router.replace('/(tabs)' as any);
+      } else if (wasOnboarded) {
+        router.replace('/(auth)/' as never);
       } else {
         router.replace('/(onboarding)/name' as never);
       }

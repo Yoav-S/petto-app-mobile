@@ -1,10 +1,11 @@
 import React from 'react';
 import { Pressable, StyleSheet, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useColors } from '@/context/ThemeContext';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 
-/** Figma onboarding back control — 32×32 white chip, 24 chevron. */
+/** Onboarding back control — 32×32 surface chip, themed for light/dark. */
 export default function OnboardingBackButton({
   onPress,
   style,
@@ -13,6 +14,7 @@ export default function OnboardingBackButton({
   style?: ViewStyle;
 }) {
   const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       onPress={onPress}
@@ -26,19 +28,20 @@ export default function OnboardingBackButton({
   );
 }
 
-const styles = StyleSheet.create({
-  btn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    padding: 4,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#2D2D2A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    elevation: 3,
-  },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    btn: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      padding: 4,
+      backgroundColor: c.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#2D2D2A',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 20,
+      elevation: 3,
+    },
+  });

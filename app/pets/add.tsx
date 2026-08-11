@@ -19,6 +19,11 @@ import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import { ProfilePillField, ProfileSelectField } from '@/components/profile/ProfileFormFields';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import EditPhotoSheet from '@/components/health/EditPhotoSheet';
+import {
+  OnboardingCat,
+  OnboardingDog,
+  OnboardingPhotoAdd,
+} from '@/components/brand/onboarding';
 import HealthKeyboardFooter, {
   HealthKeyboardAvoidingView,
 } from '@/components/health/HealthKeyboardFooter';
@@ -40,10 +45,6 @@ const CARD_SHADOW = {
   shadowRadius: 20,
   elevation: 3,
 };
-
-const dogImage = require('@/assets/images/onboarding/type-dog.png');
-const catImage = require('@/assets/images/onboarding/type-cat.png');
-const addPhotoImage = require('@/assets/images/onboarding/photo-add.png');
 
 export default function AddPetScreen() {
   const colors = useColors();
@@ -182,11 +183,7 @@ export default function AddPetScreen() {
                 contentFit="cover"
               />
             ) : (
-              <Image
-                source={addPhotoImage}
-                style={{ width: layout.photoSize, height: layout.photoSize }}
-                contentFit="contain"
-              />
+              <OnboardingPhotoAdd width={layout.photoSize} height={layout.photoSize} />
             )}
           </Pressable>
 
@@ -220,7 +217,7 @@ export default function AddPetScreen() {
           >
             {(['dog', 'cat'] as const).map((type) => {
               const selected = petType === type;
-              const image = type === 'dog' ? dogImage : catImage;
+              const PetIcon = type === 'dog' ? OnboardingDog : OnboardingCat;
               const label = type === 'dog' ? t('petOnboarding.dog') : t('petOnboarding.cat');
               return (
                 <Pressable
@@ -240,7 +237,7 @@ export default function AddPetScreen() {
                   accessibilityLabel={label}
                 >
                   <View style={styles.typeInner}>
-                    <Image source={image} style={styles.typeImage} contentFit="contain" />
+                    <PetIcon width={56} height={56} />
                     <Text style={styles.typeLabel}>{label}</Text>
                   </View>
                 </Pressable>
@@ -338,10 +335,6 @@ const makeStyles = (c: ThemeColors) =>
       height: 84,
       alignItems: 'center',
       gap: 8,
-    },
-    typeImage: {
-      width: 56,
-      height: 56,
     },
     typeLabel: {
       width: 106,

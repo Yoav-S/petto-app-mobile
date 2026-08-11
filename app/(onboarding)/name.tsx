@@ -6,22 +6,19 @@ import {
   StyleSheet,
   Pressable,
   useWindowDimensions,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
+import { OnboardingCollar } from '@/components/brand/onboarding';
+import { HealthKeyboardAvoidingView } from '@/components/health/HealthKeyboardFooter';
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
 import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_NAME_STEP } from '@/constants/petOnboarding';
 import { getPetOnboardingScale, scaleOffset } from '@/utils/petOnboardingScale';
-
-const collarImage = require('@/assets/images/onboarding/name-collar.png');
 
 const PET_NAME_REGEX = /^[\p{L}]+$/u;
 
@@ -72,10 +69,8 @@ export default function PetNameOnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      {/* Sticky Continue at screen bottom; Done chip floats on keyboard (same as other forms). */}
+      <HealthKeyboardAvoidingView>
         <View
           style={[
             styles.header,
@@ -109,15 +104,12 @@ export default function PetNameOnboardingScreen() {
               },
             ]}
           >
-            <Image
-              source={collarImage}
-              style={{
-                width: collarSize,
-                height: collarSize - scaleOffset(40, sx),
-                alignSelf: 'center',
-              }}
-              contentFit="contain"
-            />
+            <View style={{ alignSelf: 'center' }}>
+              <OnboardingCollar
+                width={collarSize}
+                height={collarSize - scaleOffset(40, sx)}
+              />
+            </View>
 
             <View
               style={[
@@ -211,7 +203,7 @@ export default function PetNameOnboardingScreen() {
             </Text>
           </Pressable>
         </View>
-      </KeyboardAvoidingView>
+      </HealthKeyboardAvoidingView>
     </SafeAreaView>
   );
 }
