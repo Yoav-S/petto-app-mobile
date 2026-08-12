@@ -119,7 +119,7 @@ export default function OnboardingWelcomeScreen() {
             <RaglyWordmark
               width={layout.logoW}
               height={layout.logoH}
-              color={colors.brandDark}
+              color={isDark ? '#F6F7F9' : colors.brandDark}
             />
             <View style={{ gap: layout.textGap, alignItems: 'center', width: '100%' }}>
               <Text

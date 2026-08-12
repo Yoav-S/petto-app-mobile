@@ -18,8 +18,8 @@ const TILE_RADIUS = 8.37;
 /** Vertical step between tile tops in the Figma file (~tile + gap) */
 const TILE_STEP = 211.41;
 const COL_LEFTS = [0, 122.66, 245.32] as const;
-/** One full column loop — slower than the previous 42s / 6-tile pace. */
-const LOOP_MS = 78000;
+/** One full column loop — slower scroll for 8-tile columns. */
+const LOOP_MS = 110000;
 
 /** Left column — top → bottom (8 tiles). */
 const LEFT_IMAGES: ImageSourcePropType[] = [
