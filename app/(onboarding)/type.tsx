@@ -115,6 +115,7 @@ export default function PetTypeOnboardingScreen() {
               {
                 width: PET_TYPE_STEP.pickerWidth * sx,
                 gap: PET_TYPE_STEP.pickerGap * sx,
+                marginTop: 20 * sy,
               },
             ]}
           >

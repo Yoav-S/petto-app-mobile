@@ -18,27 +18,43 @@ const TILE_RADIUS = 8.37;
 /** Vertical step between tile tops in the Figma file (~tile + gap) */
 const TILE_STEP = 211.41;
 const COL_LEFTS = [0, 122.66, 245.32] as const;
-const LOOP_MS = 42000;
+/** One full column loop — slower than the previous 42s / 6-tile pace. */
+const LOOP_MS = 78000;
 
-const WELCOME_IMAGES: ImageSourcePropType[] = [
-  require('@/assets/images/welcome/welcome-01.png'),
-  require('@/assets/images/welcome/welcome-02.png'),
-  require('@/assets/images/welcome/welcome-03.png'),
-  require('@/assets/images/welcome/welcome-04.png'),
-  require('@/assets/images/welcome/welcome-05.png'),
-  require('@/assets/images/welcome/welcome-06.png'),
-  require('@/assets/images/welcome/welcome-07.png'),
-  require('@/assets/images/welcome/welcome-08.png'),
-  require('@/assets/images/welcome/welcome-09.png'),
-  require('@/assets/images/welcome/welcome-10.png'),
-  require('@/assets/images/welcome/welcome-11.png'),
-  require('@/assets/images/welcome/welcome-12.png'),
-  require('@/assets/images/welcome/welcome-13.png'),
-  require('@/assets/images/welcome/welcome-14.png'),
-  require('@/assets/images/welcome/welcome-15.png'),
-  require('@/assets/images/welcome/welcome-16.png'),
-  require('@/assets/images/welcome/welcome-17.png'),
-  require('@/assets/images/welcome/welcome-18.png'),
+/** Left column — top → bottom (8 tiles). */
+const LEFT_IMAGES: ImageSourcePropType[] = [
+  require('@/assets/images/welcome/welcome-left-01.png'),
+  require('@/assets/images/welcome/welcome-left-02.png'),
+  require('@/assets/images/welcome/welcome-left-03.png'),
+  require('@/assets/images/welcome/welcome-left-04.png'),
+  require('@/assets/images/welcome/welcome-left-05.png'),
+  require('@/assets/images/welcome/welcome-left-06.png'),
+  require('@/assets/images/welcome/welcome-left-07.png'),
+  require('@/assets/images/welcome/welcome-left-08.png'),
+];
+
+/** Middle column — top → bottom (8 tiles). */
+const MIDDLE_IMAGES: ImageSourcePropType[] = [
+  require('@/assets/images/welcome/welcome-mid-01.png'),
+  require('@/assets/images/welcome/welcome-mid-02.png'),
+  require('@/assets/images/welcome/welcome-mid-03.png'),
+  require('@/assets/images/welcome/welcome-mid-04.png'),
+  require('@/assets/images/welcome/welcome-mid-05.png'),
+  require('@/assets/images/welcome/welcome-mid-06.png'),
+  require('@/assets/images/welcome/welcome-mid-07.png'),
+  require('@/assets/images/welcome/welcome-mid-08.png'),
+];
+
+/** Right column — top → bottom (8 tiles). */
+const RIGHT_IMAGES: ImageSourcePropType[] = [
+  require('@/assets/images/welcome/welcome-right-01.png'),
+  require('@/assets/images/welcome/welcome-right-02.png'),
+  require('@/assets/images/welcome/welcome-right-03.png'),
+  require('@/assets/images/welcome/welcome-right-04.png'),
+  require('@/assets/images/welcome/welcome-right-05.png'),
+  require('@/assets/images/welcome/welcome-right-06.png'),
+  require('@/assets/images/welcome/welcome-right-07.png'),
+  require('@/assets/images/welcome/welcome-right-08.png'),
 ];
 
 /** Stagger offsets matching Figma column starts (left / middle / right). */
@@ -119,19 +135,19 @@ export function WelcomePhotoMarquee() {
   const columns = useMemo(
     () => [
       {
-        images: WELCOME_IMAGES.slice(0, 6),
+        images: LEFT_IMAGES,
         left: COL_LEFTS[0],
         topOffset: COL_TOP_OFFSETS[0],
         direction: 'down' as const,
       },
       {
-        images: WELCOME_IMAGES.slice(6, 12),
+        images: MIDDLE_IMAGES,
         left: COL_LEFTS[1],
         topOffset: COL_TOP_OFFSETS[1],
         direction: 'up' as const,
       },
       {
-        images: WELCOME_IMAGES.slice(12, 18),
+        images: RIGHT_IMAGES,
         left: COL_LEFTS[2],
         topOffset: COL_TOP_OFFSETS[2],
         direction: 'down' as const,

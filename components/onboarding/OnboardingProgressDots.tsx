@@ -66,13 +66,3 @@ const styles = StyleSheet.create({
     gap: 10,
   },
 });
-
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-});
