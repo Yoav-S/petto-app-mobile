@@ -16,7 +16,7 @@ import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_TYPE_STEP } from '@/constants/petOnboarding';
-import { getPetOnboardingScale, scaleOffset } from '@/utils/petOnboardingScale';
+import { getPetOnboardingScale } from '@/utils/petOnboardingScale';
 
 export default function PetTypeOnboardingScreen() {
   const colors = useColors();
@@ -24,7 +24,7 @@ export default function PetTypeOnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const { sx, sy, cardPaddingTop } = getPetOnboardingScale(
+  const { sx, sy } = getPetOnboardingScale(
     width,
     height,
     insets.top,
@@ -78,15 +78,15 @@ export default function PetTypeOnboardingScreen() {
           style={[
             styles.card,
             {
-              marginTop: (PET_TYPE_STEP.cardTop - PET_TYPE_STEP.progressTop - 40) * sy,
+              marginTop: (PET_TYPE_STEP.cardTop - PET_TYPE_STEP.progressTop) * sy,
               marginHorizontal: PET_TYPE_STEP.cardLeft * sx,
               width: PET_TYPE_STEP.cardWidth * sx,
-              minHeight: PET_TYPE_STEP.cardHeight * sy - scaleOffset(45, sy),
+              minHeight: PET_TYPE_STEP.cardHeight * sy,
               borderRadius: PET_TYPE_STEP.cardRadius * sx,
               paddingHorizontal: PET_TYPE_STEP.cardPaddingH * sx,
-              paddingTop: cardPaddingTop,
+              paddingTop: PET_TYPE_STEP.cardPaddingTop * sy,
               paddingBottom: PET_TYPE_STEP.cardPaddingBottom * sy,
-              gap: PET_TYPE_STEP.cardGap * sx - scaleOffset(25, sx),
+              gap: PET_TYPE_STEP.cardGap * sx,
             },
           ]}
         >
@@ -116,7 +116,6 @@ export default function PetTypeOnboardingScreen() {
               {
                 width: PET_TYPE_STEP.pickerWidth * sx,
                 gap: PET_TYPE_STEP.pickerGap * sx,
-                marginTop: 20 * sy,
               },
             ]}
           >

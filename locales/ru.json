@@ -333,6 +333,7 @@
     "google_continue": "Продолжить с Google"
   },
   "petOnboarding": {
+    "skip": "Пропустить",
     "done": "Готово",
     "finish": "Готово",
     "back": "Назад",

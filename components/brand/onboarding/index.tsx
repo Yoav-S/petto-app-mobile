@@ -18,6 +18,7 @@ const DOG_DAY = require('@/assets/images/onboarding/dog-day.png') as ImageSource
 const DOG_DARK = require('@/assets/images/onboarding/dog-dark.png') as ImageSource;
 const CAT_DAY = require('@/assets/images/onboarding/cat-day.png') as ImageSource;
 const CAT_DARK = require('@/assets/images/onboarding/cat-dark.png') as ImageSource;
+const NO_PET_DEFAULT = require('@/assets/images/onboarding/no-pet-images-default.png') as ImageSource;
 
 function Art({ source, width, height }: Props & { source: ImageSource }) {
   return (
@@ -53,6 +54,11 @@ export function OnboardingPhotoEmpty(props: Props) {
 /** Circular crop that sits over the user photo (holding fingers). */
 export function OnboardingPhotoMask(props: Props) {
   return <Art source={MASK_HOLDER} {...props} />;
+}
+
+/** Default dog photo shown in the hero frame when no user photo yet. */
+export function OnboardingDefaultPetPhoto(props: Props) {
+  return <Art source={NO_PET_DEFAULT} {...props} />;
 }
 
 /** Square photo-picker placeholder — in-app add pet. */

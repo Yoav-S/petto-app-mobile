@@ -18,7 +18,7 @@ import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_NAME_STEP } from '@/constants/petOnboarding';
-import { getPetOnboardingScale, scaleOffset } from '@/utils/petOnboardingScale';
+import { getPetOnboardingScale } from '@/utils/petOnboardingScale';
 
 const PET_NAME_REGEX = /^[\p{L}]+$/u;
 
@@ -33,7 +33,7 @@ export default function PetNameOnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const { sx, sy, cardPaddingTop } = getPetOnboardingScale(
+  const { sx, sy } = getPetOnboardingScale(
     width,
     height,
     insets.top,
@@ -93,15 +93,15 @@ export default function PetNameOnboardingScreen() {
             style={[
               styles.card,
               {
-                marginTop: (PET_NAME_STEP.cardTop - PET_NAME_STEP.progressTop - 16) * sy,
+                marginTop: (PET_NAME_STEP.cardTop - PET_NAME_STEP.progressTop) * sy,
                 marginHorizontal: PET_NAME_STEP.cardLeft * sx,
                 width: PET_NAME_STEP.cardWidth * sx,
-                minHeight: PET_NAME_STEP.cardHeight * sy - scaleOffset(45, sy),
+                minHeight: PET_NAME_STEP.cardHeight * sy,
                 borderRadius: cardRadius,
                 paddingHorizontal: PET_NAME_STEP.cardPaddingH * sx,
-                paddingTop: cardPaddingTop,
-                paddingBottom: PET_NAME_STEP.cardPaddingBottom * sx,
-                gap: PET_NAME_STEP.cardGap * sx - scaleOffset(25, sx),
+                paddingTop: PET_NAME_STEP.cardPaddingTop * sy,
+                paddingBottom: PET_NAME_STEP.cardPaddingBottom * sy,
+                gap: PET_NAME_STEP.cardGap * sx,
               },
             ]}
           >
@@ -114,7 +114,7 @@ export default function PetNameOnboardingScreen() {
                 styles.copyBlock,
                 {
                   width: PET_NAME_STEP.copyWidth * sx,
-                  gap: PET_NAME_STEP.copyGap * sx - scaleOffset(15, sx),
+                  gap: PET_NAME_STEP.copyGap * sx,
                 },
               ]}
             >

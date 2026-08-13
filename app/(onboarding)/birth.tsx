@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
 import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
+import OnboardingSkipButton from '@/components/onboarding/OnboardingSkipButton';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import { OnboardingCalendar } from '@/components/brand/onboarding';
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
@@ -25,7 +26,7 @@ import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_BIRTH_STEP } from '@/constants/petOnboarding';
-import { getPetOnboardingScale, scaleOffset } from '@/utils/petOnboardingScale';
+import { getPetOnboardingScale } from '@/utils/petOnboardingScale';
 import { parseIsoDate } from '@/utils/calendar';
 
 function formatDisplayDate(iso: string): string {
@@ -40,7 +41,7 @@ export default function PetBirthOnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const { sx, sy, cardPaddingTop } = getPetOnboardingScale(
+  const { sx, sy } = getPetOnboardingScale(
     width,
     height,
     insets.top,
@@ -68,14 +69,14 @@ export default function PetBirthOnboardingScreen() {
     setSheetVisible(false);
   };
 
-  const handleFinish = async () => {
+  const completeOnboarding = async (date: string | null) => {
     if (!draft.name || !draft.type) {
       Alert.alert(t('petOnboarding.birth_missing_data'));
       return;
     }
 
     setIsSubmitting(true);
-    setBirthDate(birthDate);
+    setBirthDate(date);
 
     try {
       let photoUrl: string | null = null;
@@ -86,7 +87,7 @@ export default function PetBirthOnboardingScreen() {
       const pet = await createPet({
         name: draft.name,
         type: draft.type,
-        birth_date: birthDate,
+        birth_date: date,
         photo_url: photoUrl,
       });
       await setOnboardingComplete();
@@ -111,6 +112,15 @@ export default function PetBirthOnboardingScreen() {
     }
   };
 
+  const handleFinish = () => {
+    void completeOnboarding(birthDate);
+  };
+
+  const handleSkip = () => {
+    if (isSubmitting) return;
+    void completeOnboarding(null);
+  };
+
   const selectLabel = birthDate
     ? formatDisplayDate(birthDate)
     : t('petOnboarding.birth_select');
@@ -132,7 +142,7 @@ export default function PetBirthOnboardingScreen() {
           <OnboardingProgressDots currentStep={4} />
         </View>
 
-        <View style={{ width: 32 }} />
+        <OnboardingSkipButton onPress={handleSkip} scale={sx} />
       </View>
 
       <View style={styles.flex}>
@@ -140,15 +150,15 @@ export default function PetBirthOnboardingScreen() {
           style={[
             styles.card,
             {
-              marginTop: (PET_BIRTH_STEP.cardTop - PET_BIRTH_STEP.progressTop - 40) * sy,
+              marginTop: (PET_BIRTH_STEP.cardTop - PET_BIRTH_STEP.progressTop) * sy,
               marginHorizontal: PET_BIRTH_STEP.cardLeft * sx,
               width: PET_BIRTH_STEP.cardWidth * sx,
-              minHeight: PET_BIRTH_STEP.cardHeight * sy - scaleOffset(45, sy),
+              minHeight: PET_BIRTH_STEP.cardHeight * sy,
               borderRadius: PET_BIRTH_STEP.cardRadius * sx,
               paddingHorizontal: PET_BIRTH_STEP.cardPaddingH * sx,
-              paddingTop: cardPaddingTop,
+              paddingTop: PET_BIRTH_STEP.cardPaddingTop * sy,
               paddingBottom: PET_BIRTH_STEP.cardPaddingBottom * sy,
-              gap: PET_BIRTH_STEP.cardGap * sx - scaleOffset(25, sx),
+              gap: PET_BIRTH_STEP.cardGap * sx,
             },
           ]}
         >
@@ -164,7 +174,7 @@ export default function PetBirthOnboardingScreen() {
               styles.copyBlock,
               {
                 width: PET_BIRTH_STEP.copyWidth * sx,
-                gap: PET_BIRTH_STEP.copyGap * sy - scaleOffset(15, sy),
+                gap: PET_BIRTH_STEP.copyGap * sy,
               },
             ]}
           >

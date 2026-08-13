@@ -1,4 +1,4 @@
-﻿/** Figma reference frame 375×812 — pet creation onboarding */
+/** Figma reference frame 375×812 — pet creation onboarding */
 export const PET_ONBOARDING_DESIGN_WIDTH = 375;
 export const PET_ONBOARDING_DESIGN_HEIGHT = 812;
 export const PET_ONBOARDING_STEPS = 4;
@@ -12,18 +12,19 @@ export const PET_ONBOARDING_HERO = {
 
 export const PET_NAME_STEP = {
   progressTop: 56,
-  cardTop: 92,
+  cardTop: 116,
   cardLeft: 20,
   cardWidth: 335,
-  cardHeight: 394,
+  cardHeight: 342,
   cardRadius: 12,
+  cardPaddingTop: 16,
   cardPaddingH: 16,
-  cardPaddingBottom: 32,
+  cardPaddingBottom: 22,
   cardGap: 22,
   heroWidth: 303,
   heroHeight: 168,
   copyWidth: 303,
-  copyGap: 32,
+  copyGap: 12,
   titleSize: 24,
   titleLine: 28,
   subtitleSize: 14,
@@ -31,11 +32,6 @@ export const PET_NAME_STEP = {
   inputWidth: 303,
   inputHeight: 48,
   inputRadius: 12,
-  doneTop: 469,
-  doneLeft: 255,
-  doneWidth: 100,
-  doneHeight: 40,
-  doneRadius: 12,
 } as const;
 
 export const PET_TYPE_STEP = {
@@ -43,8 +39,9 @@ export const PET_TYPE_STEP = {
   cardTop: 116,
   cardLeft: 20,
   cardWidth: 335,
-  cardHeight: 502,
+  cardHeight: 464,
   cardRadius: 12,
+  cardPaddingTop: 16,
   cardPaddingH: 16,
   cardPaddingBottom: 32,
   cardGap: 22,
@@ -69,9 +66,9 @@ export const PET_PHOTO_STEP = {
   cardTop: 116,
   cardLeft: 20,
   cardWidth: 335,
-  cardHeight: 290,
+  cardHeight: 342,
   cardRadius: 12,
-  cardPaddingTop: 20,
+  cardPaddingTop: 16,
   cardPaddingH: 16,
   cardPaddingBottom: 32,
   cardGap: 22,
@@ -97,6 +94,7 @@ export const PET_PHOTO_STEP = {
   maskLeft: 147,
   /** Add-photo chip under the hero */
   addBtnWidth: 126,
+  changeBtnWidth: 151,
   addBtnHeight: 48,
   addBtnRadius: 12,
   addBtnPaddingH: 16,
@@ -105,6 +103,10 @@ export const PET_PHOTO_STEP = {
   addBtnIconSize: 16,
   addBtnFontSize: 14,
   addBtnLineHeight: 18,
+  skipWidth: 29,
+  skipHeight: 18,
+  skipFontSize: 14,
+  skipLineHeight: 18,
   continuePaddingH: 20,
   continueBtnWidth: 335,
   continueBtnHeight: 48,
@@ -140,6 +142,7 @@ export const PET_BIRTH_STEP = {
   cardWidth: 335,
   cardHeight: 394,
   cardRadius: 12,
+  cardPaddingTop: 16,
   cardPaddingH: 16,
   cardPaddingBottom: 32,
   cardGap: 22,

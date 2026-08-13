@@ -390,6 +390,7 @@
     "google_continue": "Continue with Google"
   },
   "petOnboarding": {
+    "skip": "Skip",
     "done": "Done",
     "finish": "Finish",
     "back": "Back",

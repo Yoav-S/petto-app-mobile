@@ -14,9 +14,11 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
 import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
+import OnboardingSkipButton from '@/components/onboarding/OnboardingSkipButton';
 import {
   OnboardingPhotoEmpty,
   OnboardingPhotoMask,
+  OnboardingDefaultPetPhoto,
 } from '@/components/brand/onboarding';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
@@ -24,7 +26,7 @@ import { t } from '@/i18n';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_PHOTO_STEP, PET_PHOTO_SHEET } from '@/constants/petOnboarding';
-import { getPetOnboardingScale, scaleOffset } from '@/utils/petOnboardingScale';
+import { getPetOnboardingScale } from '@/utils/petOnboardingScale';
 
 export default function PetPhotoOnboardingScreen() {
   const colors = useColors();
@@ -41,6 +43,12 @@ export default function PetPhotoOnboardingScreen() {
   const heroW = PET_PHOTO_STEP.heroWidth * sx;
   const heroH = PET_PHOTO_STEP.heroHeight * sx;
   const sheetHeight = PET_PHOTO_SHEET.height * sy;
+  const hasPhoto = Boolean(photoUri);
+  const showDefaultDog = !hasPhoto && draft.type === 'dog';
+  const showFramedPhoto = hasPhoto || showDefaultDog;
+  const actionBtnWidth = (
+    hasPhoto ? PET_PHOTO_STEP.changeBtnWidth : PET_PHOTO_STEP.addBtnWidth
+  ) * sx;
 
   const closeSheet = () => setSheetVisible(false);
 
@@ -70,6 +78,11 @@ export default function PetPhotoOnboardingScreen() {
     if (picked?.uri) applyPickedImage(picked.uri);
   };
 
+  const handleRemovePhoto = () => {
+    closeSheet();
+    setLocalPhotoUri(null);
+  };
+
   const handleOpenSheet = () => {
     setSheetVisible(true);
   };
@@ -78,9 +91,17 @@ export default function PetPhotoOnboardingScreen() {
     router.back();
   };
 
-  const handleContinue = () => {
-    setPhotoUri(photoUri);
+  const goNext = (uri: string | null) => {
+    setPhotoUri(uri);
     router.push('/(onboarding)/birth' as never);
+  };
+
+  const handleContinue = () => {
+    goNext(photoUri);
+  };
+
+  const handleSkip = () => {
+    goNext(null);
   };
 
   return (
@@ -100,7 +121,7 @@ export default function PetPhotoOnboardingScreen() {
           <OnboardingProgressDots currentStep={3} />
         </View>
 
-        <View style={{ width: 32 }} />
+        <OnboardingSkipButton onPress={handleSkip} scale={sx} />
       </View>
 
       <View style={styles.flex}>
@@ -108,10 +129,10 @@ export default function PetPhotoOnboardingScreen() {
           style={[
             styles.card,
             {
-              marginTop: (PET_PHOTO_STEP.cardTop - PET_PHOTO_STEP.progressTop - 40) * sy,
+              marginTop: (PET_PHOTO_STEP.cardTop - PET_PHOTO_STEP.progressTop) * sy,
               marginHorizontal: PET_PHOTO_STEP.cardLeft * sx,
               width: PET_PHOTO_STEP.cardWidth * sx,
-              minHeight: PET_PHOTO_STEP.cardHeight * sy - scaleOffset(20, sy),
+              minHeight: PET_PHOTO_STEP.cardHeight * sy,
               borderRadius: PET_PHOTO_STEP.cardRadius * sx,
               paddingTop: PET_PHOTO_STEP.cardPaddingTop * sy,
               paddingHorizontal: PET_PHOTO_STEP.cardPaddingH * sx,
@@ -129,6 +150,64 @@ export default function PetPhotoOnboardingScreen() {
               },
             ]}
           >
+            {/* Order: svg → title → subtitle → add/change photo btn */}
+            <Pressable
+              onPress={handleOpenSheet}
+              style={{ width: heroW, height: heroH, alignSelf: 'center' }}
+              accessibilityRole="button"
+              accessibilityLabel={t('petOnboarding.photo_add_a11y')}
+            >
+              <OnboardingPhotoEmpty width={heroW} height={heroH} />
+              {showFramedPhoto ? (
+                <>
+                  {hasPhoto ? (
+                    <Image
+                      source={{ uri: photoUri! }}
+                      style={{
+                        position: 'absolute',
+                        width: PET_PHOTO_STEP.userPhotoWidth * sx,
+                        height: PET_PHOTO_STEP.userPhotoHeight * sx,
+                        top: PET_PHOTO_STEP.userPhotoTop * sx,
+                        left: PET_PHOTO_STEP.userPhotoLeft * sx,
+                        zIndex: 1,
+                      }}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <View
+                      style={{
+                        position: 'absolute',
+                        width: PET_PHOTO_STEP.userPhotoWidth * sx,
+                        height: PET_PHOTO_STEP.userPhotoHeight * sx,
+                        top: PET_PHOTO_STEP.userPhotoTop * sx,
+                        left: PET_PHOTO_STEP.userPhotoLeft * sx,
+                        zIndex: 1,
+                      }}
+                    >
+                      <OnboardingDefaultPetPhoto
+                        width={PET_PHOTO_STEP.userPhotoWidth * sx}
+                        height={PET_PHOTO_STEP.userPhotoHeight * sx}
+                      />
+                    </View>
+                  )}
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: PET_PHOTO_STEP.maskTop * sx,
+                      left: PET_PHOTO_STEP.maskLeft * sx,
+                      zIndex: 2,
+                    }}
+                    pointerEvents="none"
+                  >
+                    <OnboardingPhotoMask
+                      width={PET_PHOTO_STEP.maskWidth * sx}
+                      height={PET_PHOTO_STEP.maskHeight * sx}
+                    />
+                  </View>
+                </>
+              ) : null}
+            </Pressable>
+
             <View
               style={[
                 styles.copyBlock,
@@ -159,52 +238,12 @@ export default function PetPhotoOnboardingScreen() {
               </Text>
             </View>
 
-            {/* Hero: big art (z0) → user photo (z1) → mask holder (z2) */}
-            <Pressable
-              onPress={handleOpenSheet}
-              style={{ width: heroW, height: heroH, alignSelf: 'center' }}
-              accessibilityRole="button"
-              accessibilityLabel={t('petOnboarding.photo_add_a11y')}
-            >
-              <OnboardingPhotoEmpty width={heroW} height={heroH} />
-              {photoUri ? (
-                <>
-                  <Image
-                    source={{ uri: photoUri }}
-                    style={{
-                      position: 'absolute',
-                      width: PET_PHOTO_STEP.userPhotoWidth * sx,
-                      height: PET_PHOTO_STEP.userPhotoHeight * sx,
-                      top: PET_PHOTO_STEP.userPhotoTop * sx,
-                      left: PET_PHOTO_STEP.userPhotoLeft * sx,
-                      zIndex: 1,
-                    }}
-                    contentFit="cover"
-                  />
-                  <View
-                    style={{
-                      position: 'absolute',
-                      top: PET_PHOTO_STEP.maskTop * sx,
-                      left: PET_PHOTO_STEP.maskLeft * sx,
-                      zIndex: 2,
-                    }}
-                    pointerEvents="none"
-                  >
-                    <OnboardingPhotoMask
-                      width={PET_PHOTO_STEP.maskWidth * sx}
-                      height={PET_PHOTO_STEP.maskHeight * sx}
-                    />
-                  </View>
-                </>
-              ) : null}
-            </Pressable>
-
             <Pressable
               onPress={handleOpenSheet}
               style={[
                 styles.addPhotoBtn,
                 {
-                  width: PET_PHOTO_STEP.addBtnWidth * sx,
+                  width: actionBtnWidth,
                   height: PET_PHOTO_STEP.addBtnHeight * sx,
                   borderRadius: PET_PHOTO_STEP.addBtnRadius * sx,
                   paddingHorizontal: PET_PHOTO_STEP.addBtnPaddingH * sx,
@@ -213,7 +252,9 @@ export default function PetPhotoOnboardingScreen() {
                 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel={t('petOnboarding.photo_add_a11y')}
+              accessibilityLabel={
+                hasPhoto ? t('profile.edit.change_photo') : t('petOnboarding.photo_add_a11y')
+              }
             >
               <Ionicons
                 name="image-outline"
@@ -229,7 +270,7 @@ export default function PetPhotoOnboardingScreen() {
                   },
                 ]}
               >
-                {t('pets.add_photo')}
+                {hasPhoto ? t('profile.edit.change_photo') : t('pets.add_photo')}
               </Text>
             </Pressable>
           </View>
@@ -271,7 +312,7 @@ export default function PetPhotoOnboardingScreen() {
           style={[
             styles.sheet,
             {
-              height: sheetHeight + insets.bottom,
+              height: sheetHeight + insets.bottom + (hasPhoto ? 48 * sy : 0),
               paddingBottom: insets.bottom,
               borderTopLeftRadius: PET_PHOTO_SHEET.radius * sx,
               borderTopRightRadius: PET_PHOTO_SHEET.radius * sx,
@@ -366,6 +407,29 @@ export default function PetPhotoOnboardingScreen() {
                   {t('petOnboarding.photo_choose_library')}
                 </Text>
               </Pressable>
+              {hasPhoto ? (
+                <>
+                  <View
+                    style={[
+                      styles.sheetDivider,
+                      { marginHorizontal: PET_PHOTO_SHEET.optionsPadding * sx },
+                    ]}
+                  />
+                  <Pressable onPress={handleRemovePhoto} style={styles.sheetOptionRow}>
+                    <Text
+                      style={[
+                        styles.sheetOptionTextDanger,
+                        {
+                          fontSize: PET_PHOTO_SHEET.optionFontSize * sx,
+                          lineHeight: PET_PHOTO_SHEET.optionLineHeight * sy,
+                        },
+                      ]}
+                    >
+                      {t('petOnboarding.photo_remove')}
+                    </Text>
+                  </Pressable>
+                </>
+              ) : null}
             </View>
           </View>
 
@@ -449,7 +513,8 @@ const makeStyles = (c: ThemeColors) =>
       alignSelf: 'center',
       borderWidth: 1,
       borderColor: c.border,
-      backgroundColor: c.surface,
+      // panel (#F6F7F9 / #111315) breaks slightly from card surface
+      backgroundColor: c.panel,
     },
     addPhotoText: {
       fontFamily: 'Rubik-Medium',
@@ -524,6 +589,12 @@ const makeStyles = (c: ThemeColors) =>
       fontFamily: 'Rubik-Regular',
       fontWeight: '400',
       color: c.primaryText,
+      textAlign: 'center',
+    },
+    sheetOptionTextDanger: {
+      fontFamily: 'Rubik-Regular',
+      fontWeight: '400',
+      color: c.error,
       textAlign: 'center',
     },
     sheetDivider: {
