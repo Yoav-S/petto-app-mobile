@@ -61,6 +61,9 @@ interface SpeedDialFabProps {
 /**
  * Shared add FAB: 56×56 square, brand fill. The + icon rotates 45° to × when
  * open — the button itself never rotates. Menu items stack above the button.
+ *
+ * Open layout (Figma): home stays opacity 1 → full-screen veil at opacity 0.2
+ * → FAB + menu on top.
  */
 export default function SpeedDialFab({
   items,
@@ -103,10 +106,9 @@ export default function SpeedDialFab({
     [s, insets.bottom],
   );
 
-  // Fade a fixed 20% black veil — keep alpha in the color so a failed
-  // opacity style can never flash a solid black scrim.
+  // Figma: overlay frame opacity 0.2 over black fill (home stays at 1).
   const scrimStyle = useAnimatedStyle(() => ({
-    opacity: progress.value,
+    opacity: interpolate(progress.value, [0, 1], [0, 0.2]),
   }));
 
   const menuStyle = useAnimatedStyle(() => ({
@@ -122,14 +124,13 @@ export default function SpeedDialFab({
   const toggle = () => setOpen(!open);
 
   const maxMenuWidth = useMemo(() => {
-    // Approximate label width; menu items size to content with min padding.
     return Math.max(...items.map((it) => it.label.length * 8 + 60), 120) * s;
   }, [items, s]);
 
   return (
     <View pointerEvents="box-none" style={styles.layer}>
       <AnimatedPressable
-        style={[styles.scrim, scrimStyle]}
+        style={[styles.scrim, scrimStyle, { elevation: open ? 1000 : 0 }]}
         pointerEvents={open ? 'auto' : 'none'}
         onPress={close}
       />
@@ -199,19 +200,22 @@ export default function SpeedDialFab({
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    /** Full-screen host so the veil sits above PetHeader (zIndex 90). */
+    /** Host only — no elevation (transparent + elevation = shadow with no veil on Android). */
     layer: {
       ...StyleSheet.absoluteFillObject,
       zIndex: 1000,
-      elevation: 1000,
     },
+    /** Figma opacity layer: solid black, animated to 0.2. Elevation applied when open. */
     scrim: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+      backgroundColor: '#000000',
+      zIndex: 1,
     },
     anchor: {
       position: 'absolute',
       alignItems: 'flex-end',
+      zIndex: 2,
+      elevation: 1001,
     },
     menu: {
       alignItems: 'flex-end',

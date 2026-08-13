@@ -324,17 +324,17 @@ export default function HomeScreen() {
             )}
           </PetHeader>
         </View>
-      </View>
 
-      {pet ? (
-        <FABMenu
-          open={fabOpen}
-          onOpenChange={setFabOpen}
-          onVaccinePress={() => router.push('/vaccines' as never)}
-          onHealthPress={() => router.push('/topics/add' as never)}
-          onReminderPress={() => router.push('/reminders' as never)}
-        />
-      ) : null}
+        {pet ? (
+          <FABMenu
+            open={fabOpen}
+            onOpenChange={setFabOpen}
+            onVaccinePress={() => router.push('/vaccines' as never)}
+            onHealthPress={() => router.push('/topics/add' as never)}
+            onReminderPress={() => router.push('/reminders' as never)}
+          />
+        ) : null}
+      </View>
 
       <PetSwitcherSheet
         visible={switchVisible}
