@@ -1,21 +1,22 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import {
   PET_ONBOARDING_DESIGN_WIDTH,
   PET_ONBOARDING_STEPS,
 } from '@/constants/petOnboarding';
-import { useColors } from '@/context/ThemeContext';
 
 interface OnboardingProgressDotsProps {
   currentStep: number;
   totalSteps?: number;
 }
 
+/** Figma: inactive 8x8 @ 30% · active 18x8 radius 5 — both #F6F7F9. */
+const DOT_COLOR = '#F6F7F9';
+
 export default function OnboardingProgressDots({
   currentStep,
   totalSteps = PET_ONBOARDING_STEPS,
 }: OnboardingProgressDotsProps) {
-  const colors = useColors();
   const { width } = useWindowDimensions();
   const sx = width / PET_ONBOARDING_DESIGN_WIDTH;
 
@@ -23,7 +24,6 @@ export default function OnboardingProgressDots({
   const activeWidth = 18 * sx;
   const activeHeight = 8 * sx;
   const activeRadius = 5 * sx;
-  const dotColor = colors.brand;
 
   return (
     <View style={styles.row} accessibilityRole="progressbar">
@@ -40,15 +40,15 @@ export default function OnboardingProgressDots({
                     width: activeWidth,
                     height: activeHeight,
                     borderRadius: activeRadius,
-                    backgroundColor: dotColor,
+                    backgroundColor: DOT_COLOR,
                     opacity: 1,
                   }
                 : {
                     width: inactiveSize,
                     height: inactiveSize,
                     borderRadius: inactiveSize / 2,
-                    backgroundColor: dotColor,
-                    opacity: 0.35,
+                    backgroundColor: DOT_COLOR,
+                    opacity: 0.3,
                   }
             }
           />

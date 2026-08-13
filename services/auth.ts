@@ -2,7 +2,7 @@ import { signInWithCustomToken, signOut } from 'firebase/auth';
 import auth from './firebaseAuth';
 import { ApiError, apiPost, apiPostPublic, apiDelete } from './api';
 import { clearOnboardingComplete } from '@/services/onboarding';
-import { t } from '@/i18n';
+import { currentLocale, t } from '@/i18n';
 import type { UserProfile } from '@/types/api';
 
 interface AuthMessage {
@@ -41,7 +41,10 @@ export function clearPendingEmail(): void {
 
 /** Signup + login step 1 — server sends 6-digit OTP to email. */
 export async function sendOtp(email: string): Promise<AuthMessage> {
-  return apiPostPublic<AuthMessage>('/auth/send-otp', { email });
+  return apiPostPublic<AuthMessage>('/auth/send-otp', {
+    email,
+    locale: currentLocale,
+  });
 }
 
 /** Signup + login step 2 — verify OTP, sign in with Firebase custom token. */
@@ -62,7 +65,10 @@ export async function verifyOtpAndSignIn(email: string, otp: string): Promise<Us
 
 /** Resend OTP (respect server 20s cooldown). */
 export async function resendOtp(email: string): Promise<AuthMessage> {
-  return apiPostPublic<AuthMessage>('/auth/resend-otp', { email });
+  return apiPostPublic<AuthMessage>('/auth/resend-otp', {
+    email,
+    locale: currentLocale,
+  });
 }
 
 /**
