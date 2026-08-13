@@ -93,7 +93,7 @@ export default function PetNameOnboardingScreen() {
             style={[
               styles.card,
               {
-                marginTop: (PET_NAME_STEP.cardTop - PET_NAME_STEP.progressTop - 16) * sy,
+                marginTop: (PET_NAME_STEP.cardTop - PET_NAME_STEP.progressTop - 40) * sy,
                 marginHorizontal: PET_NAME_STEP.cardLeft * sx,
                 width: PET_NAME_STEP.cardWidth * sx,
                 minHeight: PET_NAME_STEP.cardHeight * sy,
