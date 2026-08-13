@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Image,
   type ImageSourcePropType,
+  Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -14,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   interpolate,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -21,8 +24,6 @@ import Animated, {
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { DESIGN_WIDTH } from '@/components/home/PetHeader';
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /** Figma 375×812: left 299 → right 20; top 718 → bottom 38. */
 export const ADD_FAB = {
@@ -53,17 +54,15 @@ interface SpeedDialFabProps {
   items: SpeedDialItem[];
   accessibilityLabel?: string;
   style?: ViewStyle;
-  /** Controlled open state (optional). */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
 /**
- * Shared add FAB: 56×56 square, brand fill. The + icon rotates 45° to × when
- * open — the button itself never rotates. Menu items stack above the button.
- *
- * Open layout (Figma): home stays opacity 1 → full-screen veil at opacity 0.2
- * → FAB + menu on top.
+ * Open stack matches Figma:
+ * 1) home stays opacity 1
+ * 2) full-screen layer: backgroundColor #000000 + opacity 0.2 (not rgba)
+ * 3) menu + FAB
  */
 export default function SpeedDialFab({
   items,
@@ -87,9 +86,18 @@ export default function SpeedDialFab({
     onOpenChange?.(next);
   };
 
+  const [mounted, setMounted] = useState(open);
   const progress = useSharedValue(open ? 1 : 0);
+
   useEffect(() => {
-    progress.value = withTiming(open ? 1 : 0, { duration: ADD_FAB.animMs });
+    if (open) {
+      setMounted(true);
+      progress.value = withTiming(1, { duration: ADD_FAB.animMs });
+      return;
+    }
+    progress.value = withTiming(0, { duration: ADD_FAB.animMs }, (finished) => {
+      if (finished) runOnJS(setMounted)(false);
+    });
   }, [open, progress]);
 
   const layout = useMemo(
@@ -106,9 +114,9 @@ export default function SpeedDialFab({
     [s, insets.bottom],
   );
 
-  // Figma: overlay frame opacity 0.2 over black fill (home stays at 1).
-  const scrimStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0, 0.2]),
+  // Only fades the Figma layer in/out — does NOT bake alpha into the color.
+  const veilHostStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
   }));
 
   const menuStyle = useAnimatedStyle(() => ({
@@ -120,6 +128,10 @@ export default function SpeedDialFab({
     transform: [{ rotate: `${interpolate(progress.value, [0, 1], [0, 45])}deg` }],
   }));
 
+  const closedIconStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: '0deg' }],
+  }));
+
   const close = () => setOpen(false);
   const toggle = () => setOpen(!open);
 
@@ -127,95 +139,129 @@ export default function SpeedDialFab({
     return Math.max(...items.map((it) => it.label.length * 8 + 60), 120) * s;
   }, [items, s]);
 
+  const fabButton = (rotated: boolean) => (
+    <TouchableOpacity
+      style={[
+        styles.btn,
+        {
+          width: layout.size,
+          height: layout.size,
+          borderRadius: layout.radius,
+        },
+      ]}
+      onPress={toggle}
+      activeOpacity={0.9}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ expanded: open }}
+    >
+      <Animated.View style={rotated ? iconStyle : closedIconStyle}>
+        <Ionicons name="add" size={layout.iconSize} color={colors.button.primaryText} />
+      </Animated.View>
+    </TouchableOpacity>
+  );
+
+  const anchorStyle = [
+    styles.anchor,
+    {
+      right: layout.right,
+      bottom: layout.bottom,
+    },
+    style,
+  ];
+
   return (
-    <View pointerEvents="box-none" style={styles.layer}>
-      <AnimatedPressable
-        style={[styles.scrim, scrimStyle, { elevation: open ? 1000 : 0 }]}
-        pointerEvents={open ? 'auto' : 'none'}
-        onPress={close}
-      />
+    <>
+      {!mounted ? (
+        <View pointerEvents="box-none" style={styles.layer}>
+          <View style={anchorStyle} pointerEvents="box-none">
+            {fabButton(false)}
+          </View>
+        </View>
+      ) : null}
 
-      <View
-        style={[
-          styles.anchor,
-          {
-            right: layout.right,
-            bottom: layout.bottom,
-          },
-          style,
-        ]}
-        pointerEvents="box-none"
+      <Modal
+        visible={mounted}
+        transparent
+        animationType="none"
+        statusBarTranslucent
+        presentationStyle={Platform.OS === 'ios' ? 'overFullScreen' : undefined}
+        onRequestClose={close}
       >
-        <Animated.View
-          style={[styles.menu, { gap: layout.menuGap, marginBottom: layout.menuGap }, menuStyle]}
-          pointerEvents={open ? 'box-none' : 'none'}
-        >
-          {items.map((item) => (
-            <TouchableOpacity
-              key={item.key}
-              style={[styles.menuItem, { minHeight: layout.menuItemH, maxWidth: maxMenuWidth }]}
-              onPress={() => {
-                close();
-                item.onPress();
-              }}
-              activeOpacity={0.85}
-            >
-              {item.icon ? (
-                <Image
-                  source={item.icon}
-                  style={{ width: layout.menuIcon, height: layout.menuIcon }}
-                  resizeMode="contain"
-                />
-              ) : null}
-              <Text style={styles.menuLabel} numberOfLines={1}>
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </Animated.View>
-
-        <TouchableOpacity
-          style={[
-            styles.btn,
-            {
-              width: layout.size,
-              height: layout.size,
-              borderRadius: layout.radius,
-            },
-          ]}
-          onPress={toggle}
-          activeOpacity={0.9}
-          accessibilityRole="button"
-          accessibilityLabel={accessibilityLabel}
-          accessibilityState={{ expanded: open }}
-        >
-          <Animated.View style={iconStyle}>
-            <Ionicons name="add" size={layout.iconSize} color={colors.button.primaryText} />
+        <View style={styles.modalRoot} pointerEvents="box-none">
+          <Animated.View
+            style={[styles.veilHost, veilHostStyle]}
+            pointerEvents={open ? 'auto' : 'none'}
+          >
+            {/* Figma: #000000 + opacity 0.2 — separate props, not rgba() */}
+            <Pressable style={styles.figmaOpacityLayer} onPress={close} />
           </Animated.View>
-        </TouchableOpacity>
-      </View>
-    </View>
+
+          <View style={anchorStyle} pointerEvents="box-none">
+            <Animated.View
+              style={[
+                styles.menu,
+                { gap: layout.menuGap, marginBottom: layout.menuGap },
+                menuStyle,
+              ]}
+              pointerEvents="box-none"
+            >
+              {items.map((item) => (
+                <TouchableOpacity
+                  key={item.key}
+                  style={[
+                    styles.menuItem,
+                    { minHeight: layout.menuItemH, maxWidth: maxMenuWidth },
+                  ]}
+                  onPress={() => {
+                    close();
+                    item.onPress();
+                  }}
+                  activeOpacity={0.85}
+                >
+                  {item.icon ? (
+                    <Image
+                      source={item.icon}
+                      style={{ width: layout.menuIcon, height: layout.menuIcon }}
+                      resizeMode="contain"
+                    />
+                  ) : null}
+                  <Text style={styles.menuLabel} numberOfLines={1}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </Animated.View>
+
+            {fabButton(true)}
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    /** Host only — no elevation (transparent + elevation = shadow with no veil on Android). */
     layer: {
       ...StyleSheet.absoluteFillObject,
       zIndex: 1000,
     },
-    /** Figma opacity layer: solid black, animated to 0.2. Elevation applied when open. */
-    scrim: {
+    modalRoot: {
+      flex: 1,
+    },
+    veilHost: {
+      ...StyleSheet.absoluteFillObject,
+    },
+    /** Exact Figma layer: fill #000000, layer opacity 0.2 */
+    figmaOpacityLayer: {
       ...StyleSheet.absoluteFillObject,
       backgroundColor: '#000000',
-      zIndex: 1,
+      opacity: 0.2,
     },
     anchor: {
       position: 'absolute',
       alignItems: 'flex-end',
-      zIndex: 2,
-      elevation: 1001,
     },
     menu: {
       alignItems: 'flex-end',
