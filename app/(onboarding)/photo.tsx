@@ -44,8 +44,8 @@ export default function PetPhotoOnboardingScreen() {
   const heroH = PET_PHOTO_STEP.heroHeight * sx;
   const sheetHeight = PET_PHOTO_SHEET.height * sy;
   const hasPhoto = Boolean(photoUri);
+  // Dog with no user pick → show bundled default in the polaroid frame.
   const showDefaultDog = !hasPhoto && draft.type === 'dog';
-  const showFramedPhoto = hasPhoto || showDefaultDog;
   const actionBtnWidth = (
     hasPhoto ? PET_PHOTO_STEP.changeBtnWidth : PET_PHOTO_STEP.addBtnWidth
   ) * sx;
@@ -129,7 +129,7 @@ export default function PetPhotoOnboardingScreen() {
           style={[
             styles.card,
             {
-              marginTop: (PET_PHOTO_STEP.cardTop - PET_PHOTO_STEP.progressTop) * sy,
+              marginTop: (PET_PHOTO_STEP.cardTop - PET_PHOTO_STEP.progressTop - 40) * sy,
               marginHorizontal: PET_PHOTO_STEP.cardLeft * sx,
               width: PET_PHOTO_STEP.cardWidth * sx,
               minHeight: PET_PHOTO_STEP.cardHeight * sy,
@@ -153,58 +153,70 @@ export default function PetPhotoOnboardingScreen() {
             {/* Order: svg → title → subtitle → add/change photo btn */}
             <Pressable
               onPress={handleOpenSheet}
-              style={{ width: heroW, height: heroH, alignSelf: 'center' }}
+              style={{
+                width: heroW,
+                height: heroH,
+                alignSelf: 'center',
+                position: 'relative',
+                overflow: 'hidden',
+                borderRadius: 12 * sx,
+              }}
               accessibilityRole="button"
               accessibilityLabel={t('petOnboarding.photo_add_a11y')}
             >
-              <OnboardingPhotoEmpty width={heroW} height={heroH} />
-              {showFramedPhoto ? (
-                <>
-                  {hasPhoto ? (
-                    <Image
-                      source={{ uri: photoUri! }}
-                      style={{
-                        position: 'absolute',
-                        width: PET_PHOTO_STEP.userPhotoWidth * sx,
-                        height: PET_PHOTO_STEP.userPhotoHeight * sx,
-                        top: PET_PHOTO_STEP.userPhotoTop * sx,
-                        left: PET_PHOTO_STEP.userPhotoLeft * sx,
-                        zIndex: 1,
-                      }}
-                      contentFit="cover"
-                    />
-                  ) : (
-                    <View
-                      style={{
-                        position: 'absolute',
-                        width: PET_PHOTO_STEP.userPhotoWidth * sx,
-                        height: PET_PHOTO_STEP.userPhotoHeight * sx,
-                        top: PET_PHOTO_STEP.userPhotoTop * sx,
-                        left: PET_PHOTO_STEP.userPhotoLeft * sx,
-                        zIndex: 1,
-                      }}
-                    >
-                      <OnboardingDefaultPetPhoto
-                        width={PET_PHOTO_STEP.userPhotoWidth * sx}
-                        height={PET_PHOTO_STEP.userPhotoHeight * sx}
-                      />
-                    </View>
-                  )}
-                  <View
-                    style={{
-                      position: 'absolute',
-                      top: PET_PHOTO_STEP.maskTop * sx,
-                      left: PET_PHOTO_STEP.maskLeft * sx,
-                      zIndex: 2,
-                    }}
-                    pointerEvents="none"
-                  >
-                    <OnboardingPhotoMask
-                      width={PET_PHOTO_STEP.maskWidth * sx}
-                      height={PET_PHOTO_STEP.maskHeight * sx}
-                    />
-                  </View>
-                </>
+              <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                <OnboardingPhotoEmpty width={heroW} height={heroH} />
+              </View>
+              {hasPhoto ? (
+                <Image
+                  source={{ uri: photoUri! }}
+                  style={{
+                    position: 'absolute',
+                    width: PET_PHOTO_STEP.userPhotoWidth * sx,
+                    height: PET_PHOTO_STEP.userPhotoHeight * sx,
+                    top: PET_PHOTO_STEP.userPhotoTop * sx,
+                    left: PET_PHOTO_STEP.userPhotoLeft * sx,
+                    zIndex: 2,
+                    elevation: 2,
+                  }}
+                  contentFit="cover"
+                />
+              ) : showDefaultDog ? (
+                <View
+                  style={{
+                    position: 'absolute',
+                    width: PET_PHOTO_STEP.userPhotoWidth * sx,
+                    height: PET_PHOTO_STEP.userPhotoHeight * sx,
+                    top: PET_PHOTO_STEP.userPhotoTop * sx,
+                    left: PET_PHOTO_STEP.userPhotoLeft * sx,
+                    zIndex: 2,
+                    elevation: 2,
+                    overflow: 'hidden',
+                  }}
+                  pointerEvents="none"
+                >
+                  <OnboardingDefaultPetPhoto
+                    width={PET_PHOTO_STEP.userPhotoWidth * sx}
+                    height={PET_PHOTO_STEP.userPhotoHeight * sx}
+                  />
+                </View>
+              ) : null}
+              {(hasPhoto || showDefaultDog) ? (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: PET_PHOTO_STEP.maskTop * sx,
+                    left: PET_PHOTO_STEP.maskLeft * sx,
+                    zIndex: 3,
+                    elevation: 3,
+                  }}
+                  pointerEvents="none"
+                >
+                  <OnboardingPhotoMask
+                    width={PET_PHOTO_STEP.maskWidth * sx}
+                    height={PET_PHOTO_STEP.maskHeight * sx}
+                  />
+                </View>
               ) : null}
             </Pressable>
 

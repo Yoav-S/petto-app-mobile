@@ -150,7 +150,7 @@ export default function PetBirthOnboardingScreen() {
           style={[
             styles.card,
             {
-              marginTop: (PET_BIRTH_STEP.cardTop - PET_BIRTH_STEP.progressTop) * sy,
+              marginTop: (PET_BIRTH_STEP.cardTop - PET_BIRTH_STEP.progressTop - 40) * sy,
               marginHorizontal: PET_BIRTH_STEP.cardLeft * sx,
               width: PET_BIRTH_STEP.cardWidth * sx,
               minHeight: PET_BIRTH_STEP.cardHeight * sy,

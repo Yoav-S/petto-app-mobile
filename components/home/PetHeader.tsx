@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { petPhotoSource } from '@/utils/petPhotoSource';
 
 export const DESIGN_WIDTH = 375;
 export const DESIGN_HEIGHT = 812;
@@ -26,6 +27,7 @@ interface PetHeaderProps {
   pet: {
     id: string;
     name: string;
+    type?: string | null;
     breed?: string | null;
     birth_date?: string | null;
     photo_url?: string | null;
@@ -117,10 +119,10 @@ export default function PetHeader({
         >
           {loading ? (
             <Animated.View style={[styles.coverPlaceholder, { opacity: fadeAnim }]} />
-          ) : pet?.photo_url ? (
+          ) : pet ? (
             <Image
               key={pet.id}
-              source={{ uri: pet.photo_url }}
+              source={petPhotoSource(pet)}
               style={styles.coverImage}
               contentFit="cover"
               accessibilityLabel={pet.name ? `${pet.name} photo` : 'Pet photo'}

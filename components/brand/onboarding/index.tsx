@@ -56,9 +56,19 @@ export function OnboardingPhotoMask(props: Props) {
   return <Art source={MASK_HOLDER} {...props} />;
 }
 
+/** Bundled default dog portrait (no-pet-images-default). */
+export const ONBOARDING_DEFAULT_DOG_PHOTO = NO_PET_DEFAULT;
+
 /** Default dog photo shown in the hero frame when no user photo yet. */
 export function OnboardingDefaultPetPhoto(props: Props) {
-  return <Art source={NO_PET_DEFAULT} {...props} />;
+  return (
+    <Image
+      source={NO_PET_DEFAULT}
+      style={{ width: props.width, height: props.height }}
+      contentFit="cover"
+      accessibilityIgnoresInvertColors
+    />
+  );
 }
 
 /** Square photo-picker placeholder — in-app add pet. */

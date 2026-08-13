@@ -78,7 +78,7 @@ export default function PetTypeOnboardingScreen() {
           style={[
             styles.card,
             {
-              marginTop: (PET_TYPE_STEP.cardTop - PET_TYPE_STEP.progressTop) * sy,
+              marginTop: (PET_TYPE_STEP.cardTop - PET_TYPE_STEP.progressTop - 40) * sy,
               marginHorizontal: PET_TYPE_STEP.cardLeft * sx,
               width: PET_TYPE_STEP.cardWidth * sx,
               minHeight: PET_TYPE_STEP.cardHeight * sy,

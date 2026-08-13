@@ -6,8 +6,7 @@ import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import type { Pet } from '@/types/api';
-
-const PLACEHOLDER = require('@/assets/images/onboarding-cover.png');
+import { petPhotoSource } from '@/utils/petPhotoSource';
 
 export function petTypeLabel(type: string): string {
   const key = `petOnboarding.${type.toLowerCase()}`;
@@ -34,7 +33,7 @@ export function PetSwitcherRow({ pet, selected, onPress }: PetSwitcherRowProps) 
     >
       <View style={styles.left}>
         <Image
-          source={pet.photo_url ? { uri: pet.photo_url } : PLACEHOLDER}
+          source={petPhotoSource(pet)}
           style={styles.avatar}
           contentFit="cover"
         />
