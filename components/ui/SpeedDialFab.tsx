@@ -103,8 +103,10 @@ export default function SpeedDialFab({
     [s, insets.bottom],
   );
 
+  // Fade a fixed 20% black veil — keep alpha in the color so a failed
+  // opacity style can never flash a solid black scrim.
   const scrimStyle = useAnimatedStyle(() => ({
-    opacity: progress.value * 0.2,
+    opacity: progress.value,
   }));
 
   const menuStyle = useAnimatedStyle(() => ({
@@ -199,7 +201,7 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     scrim: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: '#000000',
+      backgroundColor: 'rgba(0, 0, 0, 0.2)',
       zIndex: 90,
     },
     anchor: {
