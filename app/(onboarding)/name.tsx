@@ -65,7 +65,8 @@ export default function PetNameOnboardingScreen() {
   };
 
   const cardRadius = PET_NAME_STEP.cardRadius * sx;
-  const collarSize = PET_NAME_STEP.collarSize * sx;
+  const heroW = PET_NAME_STEP.heroWidth * sx;
+  const heroH = PET_NAME_STEP.heroHeight * sx;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -105,10 +106,7 @@ export default function PetNameOnboardingScreen() {
             ]}
           >
             <View style={{ alignSelf: 'center' }}>
-              <OnboardingCollar
-                width={collarSize}
-                height={collarSize - scaleOffset(40, sx)}
-              />
+              <OnboardingCollar width={heroW} height={heroH} />
             </View>
 
             <View

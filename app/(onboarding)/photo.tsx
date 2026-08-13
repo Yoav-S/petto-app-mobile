@@ -14,7 +14,10 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
 import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
-import { OnboardingPhotoAdd } from '@/components/brand/onboarding';
+import {
+  OnboardingPhotoEmpty,
+  OnboardingPhotoMask,
+} from '@/components/brand/onboarding';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
 import { t } from '@/i18n';
@@ -35,11 +38,8 @@ export default function PetPhotoOnboardingScreen() {
   const [photoUri, setLocalPhotoUri] = useState<string | null>(draft.photoUri);
   const [sheetVisible, setSheetVisible] = useState(false);
 
-  const outerSize = PET_PHOTO_STEP.photoOuterSize * sx;
-  const innerSize = PET_PHOTO_STEP.photoInnerSize * sx;
-  const innerOffset = PET_PHOTO_STEP.photoInnerOffset * sx;
-  const innerRadius = PET_PHOTO_STEP.photoInnerRadius * sx;
-
+  const heroW = PET_PHOTO_STEP.heroWidth * sx;
+  const heroH = PET_PHOTO_STEP.heroHeight * sx;
   const sheetHeight = PET_PHOTO_SHEET.height * sy;
 
   const closeSheet = () => setSheetVisible(false);
@@ -129,7 +129,12 @@ export default function PetPhotoOnboardingScreen() {
               },
             ]}
           >
-            <View style={[styles.copyBlock, { width: PET_PHOTO_STEP.copyWidth * sx, gap: PET_PHOTO_STEP.copyGap * sy }]}>
+            <View
+              style={[
+                styles.copyBlock,
+                { width: PET_PHOTO_STEP.copyWidth * sx, gap: PET_PHOTO_STEP.copyGap * sy },
+              ]}
+            >
               <Text
                 style={[
                   styles.title,
@@ -154,30 +159,78 @@ export default function PetPhotoOnboardingScreen() {
               </Text>
             </View>
 
+            {/* Hero: big art (z0) → user photo (z1) → mask holder (z2) */}
             <Pressable
               onPress={handleOpenSheet}
-              style={{ width: outerSize, height: outerSize, alignSelf: 'center' }}
+              style={{ width: heroW, height: heroH, alignSelf: 'center' }}
               accessibilityRole="button"
               accessibilityLabel={t('petOnboarding.photo_add_a11y')}
             >
+              <OnboardingPhotoEmpty width={heroW} height={heroH} />
               {photoUri ? (
-                <View style={{ width: outerSize, height: outerSize, alignItems: 'center', justifyContent: 'center' }}>
+                <>
                   <Image
                     source={{ uri: photoUri }}
                     style={{
-                      width: innerSize,
-                      height: innerSize,
-                      borderRadius: innerRadius,
                       position: 'absolute',
-                      top: innerOffset,
-                      left: innerOffset,
+                      width: PET_PHOTO_STEP.userPhotoWidth * sx,
+                      height: PET_PHOTO_STEP.userPhotoHeight * sx,
+                      top: PET_PHOTO_STEP.userPhotoTop * sx,
+                      left: PET_PHOTO_STEP.userPhotoLeft * sx,
+                      zIndex: 1,
                     }}
                     contentFit="cover"
                   />
-                </View>
-              ) : (
-                <OnboardingPhotoAdd width={outerSize} height={outerSize} />
-              )}
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: PET_PHOTO_STEP.maskTop * sx,
+                      left: PET_PHOTO_STEP.maskLeft * sx,
+                      zIndex: 2,
+                    }}
+                    pointerEvents="none"
+                  >
+                    <OnboardingPhotoMask
+                      width={PET_PHOTO_STEP.maskWidth * sx}
+                      height={PET_PHOTO_STEP.maskHeight * sx}
+                    />
+                  </View>
+                </>
+              ) : null}
+            </Pressable>
+
+            <Pressable
+              onPress={handleOpenSheet}
+              style={[
+                styles.addPhotoBtn,
+                {
+                  width: PET_PHOTO_STEP.addBtnWidth * sx,
+                  height: PET_PHOTO_STEP.addBtnHeight * sx,
+                  borderRadius: PET_PHOTO_STEP.addBtnRadius * sx,
+                  paddingHorizontal: PET_PHOTO_STEP.addBtnPaddingH * sx,
+                  paddingVertical: PET_PHOTO_STEP.addBtnPaddingV * sx,
+                  gap: PET_PHOTO_STEP.addBtnGap * sx,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={t('petOnboarding.photo_add_a11y')}
+            >
+              <Ionicons
+                name="image-outline"
+                size={PET_PHOTO_STEP.addBtnIconSize * sx}
+                color={colors.primaryText}
+              />
+              <Text
+                style={[
+                  styles.addPhotoText,
+                  {
+                    fontSize: PET_PHOTO_STEP.addBtnFontSize * sx,
+                    lineHeight: PET_PHOTO_STEP.addBtnLineHeight * sx,
+                  },
+                ]}
+              >
+                {t('pets.add_photo')}
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -214,251 +267,283 @@ export default function PetPhotoOnboardingScreen() {
       </View>
 
       <BottomSheetModal visible={sheetVisible} onClose={closeSheet}>
+        <View
+          style={[
+            styles.sheet,
+            {
+              height: sheetHeight + insets.bottom,
+              paddingBottom: insets.bottom,
+              borderTopLeftRadius: PET_PHOTO_SHEET.radius * sx,
+              borderTopRightRadius: PET_PHOTO_SHEET.radius * sx,
+            },
+          ]}
+        >
           <View
             style={[
-              styles.sheet,
+              styles.sheetTitleRow,
               {
-                height: sheetHeight + insets.bottom,
-                paddingBottom: insets.bottom,
-                borderTopLeftRadius: PET_PHOTO_SHEET.radius * sx,
-                borderTopRightRadius: PET_PHOTO_SHEET.radius * sx,
+                height: PET_PHOTO_SHEET.titleRowHeight * sy,
+                marginTop: Spacing.md,
+                paddingHorizontal: Spacing.lg,
               },
             ]}
           >
-            <View
+            <View style={styles.sheetTitleSpacer} />
+            <Text
               style={[
-                styles.sheetTitleRow,
+                styles.sheetTitle,
                 {
-                  height: PET_PHOTO_SHEET.titleRowHeight * sy,
-                  marginTop: Spacing.md,
-                  paddingHorizontal: Spacing.lg,
+                  fontSize: PET_PHOTO_SHEET.optionFontSize * sx,
+                  lineHeight: PET_PHOTO_SHEET.optionLineHeight * sy,
                 },
               ]}
             >
-              <View style={styles.sheetTitleSpacer} />
-              <Text
-                style={[
-                  styles.sheetTitle,
-                  { fontSize: PET_PHOTO_SHEET.optionFontSize * sx, lineHeight: PET_PHOTO_SHEET.optionLineHeight * sy },
-                ]}
-              >
-                {t('petOnboarding.photo_sheet_title')}
-              </Text>
-              <Pressable
-                onPress={closeSheet}
-                hitSlop={12}
-                style={[
-                  styles.sheetCloseBtn,
-                  {
-                    width: PET_PHOTO_SHEET.closeSize * sx,
-                    height: PET_PHOTO_SHEET.closeSize * sx,
-                  },
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={t('petOnboarding.photo_close_a11y')}
-              >
-                <Ionicons name="close" size={PET_PHOTO_SHEET.closeSize * sx} color={colors.primaryText} />
-              </Pressable>
-            </View>
+              {t('petOnboarding.photo_sheet_title')}
+            </Text>
+            <Pressable
+              onPress={closeSheet}
+              hitSlop={12}
+              style={[
+                styles.sheetCloseBtn,
+                {
+                  width: PET_PHOTO_SHEET.closeSize * sx,
+                  height: PET_PHOTO_SHEET.closeSize * sx,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={t('petOnboarding.photo_close_a11y')}
+            >
+              <Ionicons
+                name="close"
+                size={PET_PHOTO_SHEET.closeSize * sx}
+                color={colors.primaryText}
+              />
+            </Pressable>
+          </View>
 
-            <View style={styles.sheetBody}>
-              <View
-                style={[
-                  styles.sheetOptions,
-                  {
-                    width: PET_PHOTO_SHEET.optionsWidth * sx,
-                    minHeight: PET_PHOTO_SHEET.optionsHeight * sy,
-                    borderRadius: PET_PHOTO_SHEET.optionsRadius * sx,
-                    padding: PET_PHOTO_SHEET.optionsPadding * sx,
-                    gap: PET_PHOTO_SHEET.optionsGap * sy,
-                  },
-                ]}
-              >
-                <Pressable onPress={() => pickImage('camera')} style={styles.sheetOptionRow}>
-                  <Text
-                    style={[
-                      styles.sheetOptionText,
-                      { fontSize: PET_PHOTO_SHEET.optionFontSize * sx, lineHeight: PET_PHOTO_SHEET.optionLineHeight * sy },
-                    ]}
-                  >
-                    {t('petOnboarding.photo_take')}
-                  </Text>
-                </Pressable>
-                <View style={[styles.sheetDivider, { marginHorizontal: PET_PHOTO_SHEET.optionsPadding * sx }]} />
-                <Pressable onPress={() => pickImage('library')} style={styles.sheetOptionRow}>
-                  <Text
-                    style={[
-                      styles.sheetOptionText,
-                      { fontSize: PET_PHOTO_SHEET.optionFontSize * sx, lineHeight: PET_PHOTO_SHEET.optionLineHeight * sy },
-                    ]}
-                  >
-                    {t('petOnboarding.photo_choose_library')}
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-
+          <View style={styles.sheetBody}>
             <View
               style={[
-                styles.sheetCancelSection,
+                styles.sheetOptions,
                 {
-                  height: PET_PHOTO_SHEET.cancelSectionHeight * sy,
-                  gap: PET_PHOTO_SHEET.cancelGap * sy,
+                  width: PET_PHOTO_SHEET.optionsWidth * sx,
+                  minHeight: PET_PHOTO_SHEET.optionsHeight * sy,
+                  borderRadius: PET_PHOTO_SHEET.optionsRadius * sx,
+                  padding: PET_PHOTO_SHEET.optionsPadding * sx,
+                  gap: PET_PHOTO_SHEET.optionsGap * sy,
                 },
               ]}
             >
-              <Pressable onPress={closeSheet} style={styles.sheetCancelBtn}>
+              <Pressable onPress={() => pickImage('camera')} style={styles.sheetOptionRow}>
                 <Text
                   style={[
-                    styles.sheetCancelText,
-                    { fontSize: PET_PHOTO_SHEET.cancelFontSize * sx, lineHeight: PET_PHOTO_SHEET.cancelLineHeight * sy },
+                    styles.sheetOptionText,
+                    {
+                      fontSize: PET_PHOTO_SHEET.optionFontSize * sx,
+                      lineHeight: PET_PHOTO_SHEET.optionLineHeight * sy,
+                    },
                   ]}
                 >
-                  {t('petOnboarding.photo_cancel')}
+                  {t('petOnboarding.photo_take')}
+                </Text>
+              </Pressable>
+              <View
+                style={[
+                  styles.sheetDivider,
+                  { marginHorizontal: PET_PHOTO_SHEET.optionsPadding * sx },
+                ]}
+              />
+              <Pressable onPress={() => pickImage('library')} style={styles.sheetOptionRow}>
+                <Text
+                  style={[
+                    styles.sheetOptionText,
+                    {
+                      fontSize: PET_PHOTO_SHEET.optionFontSize * sx,
+                      lineHeight: PET_PHOTO_SHEET.optionLineHeight * sy,
+                    },
+                  ]}
+                >
+                  {t('petOnboarding.photo_choose_library')}
                 </Text>
               </Pressable>
             </View>
           </View>
+
+          <View
+            style={[
+              styles.sheetCancelSection,
+              {
+                height: PET_PHOTO_SHEET.cancelSectionHeight * sy,
+                gap: PET_PHOTO_SHEET.cancelGap * sy,
+              },
+            ]}
+          >
+            <Pressable onPress={closeSheet} style={styles.sheetCancelBtn}>
+              <Text
+                style={[
+                  styles.sheetCancelText,
+                  {
+                    fontSize: PET_PHOTO_SHEET.cancelFontSize * sx,
+                    lineHeight: PET_PHOTO_SHEET.cancelLineHeight * sy,
+                  },
+                ]}
+              >
+                {t('petOnboarding.photo_cancel')}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       </BottomSheetModal>
     </SafeAreaView>
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: c.background,
-  },
-  flex: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  card: {
-    alignSelf: 'center',
-    backgroundColor: c.surface,
-    alignItems: 'center',
-  },
-  inner: {
-    alignSelf: 'center',
-    alignItems: 'center',
-  },
-  copyBlock: {
-    alignSelf: 'center',
-    alignItems: 'stretch',
-  },
-  title: {
-    fontFamily: 'Rubik-Regular',
-    fontWeight: '400',
-    color: c.primaryText,
-    textAlign: 'left',
-    alignSelf: 'stretch',
-  },
-  subtitle: {
-    fontFamily: 'Rubik-Regular',
-    fontWeight: '400',
-    color: c.secondaryText,
-    textAlign: 'left',
-    alignSelf: 'stretch',
-  },
-  footer: {
-    alignItems: 'center',
-    width: '100%',
-    backgroundColor: c.panel,
-    shadowColor: '#1E1E1E',
-    shadowOffset: { width: 0, height: -1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  continueBtn: {
-    backgroundColor: c.brand,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  continueText: {
-    fontFamily: 'Rubik-Medium',
-    fontWeight: '500',
-    color: c.button.primaryText,
-    textAlign: 'center',
-  },
-  sheetBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    width: '100%',
-    backgroundColor: c.panel,
-    alignItems: 'center',
-  },
-  sheetTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    alignSelf: 'stretch',
-  },
-  sheetTitleSpacer: {
-    width: 24,
-  },
-  sheetTitle: {
-    flex: 1,
-    fontFamily: 'Rubik-Regular',
-    fontWeight: '400',
-    color: c.primaryText,
-    textAlign: 'center',
-  },
-  sheetCloseBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sheetBody: {
-    flex: 1,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sheetOptions: {
-    backgroundColor: c.surface,
-    alignSelf: 'center',
-  },
-  sheetOptionRow: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 4,
-  },
-  sheetOptionText: {
-    fontFamily: 'Rubik-Regular',
-    fontWeight: '400',
-    color: c.primaryText,
-    textAlign: 'center',
-  },
-  sheetDivider: {
-    height: 1,
-    backgroundColor: c.border,
-  },
-  sheetCancelSection: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sheetCancelBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-  },
-  sheetCancelText: {
-    fontFamily: 'Rubik-Medium',
-    fontWeight: '500',
-    color: c.primaryText,
-    textAlign: 'center',
-  },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    flex: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    headerCenter: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    card: {
+      alignSelf: 'center',
+      backgroundColor: c.surface,
+      alignItems: 'center',
+    },
+    inner: {
+      alignSelf: 'center',
+      alignItems: 'center',
+    },
+    copyBlock: {
+      alignSelf: 'center',
+      alignItems: 'stretch',
+    },
+    title: {
+      fontFamily: 'Rubik-Regular',
+      fontWeight: '400',
+      color: c.primaryText,
+      textAlign: 'left',
+      alignSelf: 'stretch',
+    },
+    subtitle: {
+      fontFamily: 'Rubik-Regular',
+      fontWeight: '400',
+      color: c.secondaryText,
+      textAlign: 'left',
+      alignSelf: 'stretch',
+    },
+    addPhotoBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      alignSelf: 'center',
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+    },
+    addPhotoText: {
+      fontFamily: 'Rubik-Medium',
+      fontWeight: '500',
+      color: c.primaryText,
+      textAlign: 'center',
+    },
+    footer: {
+      alignItems: 'center',
+      width: '100%',
+      backgroundColor: c.panel,
+      shadowColor: '#1E1E1E',
+      shadowOffset: { width: 0, height: -1 },
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    continueBtn: {
+      backgroundColor: c.brand,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    continueText: {
+      fontFamily: 'Rubik-Medium',
+      fontWeight: '500',
+      color: c.button.primaryText,
+      textAlign: 'center',
+    },
+    sheet: {
+      width: '100%',
+      backgroundColor: c.panel,
+      alignItems: 'center',
+    },
+    sheetTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      alignSelf: 'stretch',
+    },
+    sheetTitleSpacer: {
+      width: 24,
+    },
+    sheetTitle: {
+      flex: 1,
+      fontFamily: 'Rubik-Regular',
+      fontWeight: '400',
+      color: c.primaryText,
+      textAlign: 'center',
+    },
+    sheetCloseBtn: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sheetBody: {
+      flex: 1,
+      width: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sheetOptions: {
+      backgroundColor: c.surface,
+      alignSelf: 'center',
+    },
+    sheetOptionRow: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 4,
+    },
+    sheetOptionText: {
+      fontFamily: 'Rubik-Regular',
+      fontWeight: '400',
+      color: c.primaryText,
+      textAlign: 'center',
+    },
+    sheetDivider: {
+      height: 1,
+      backgroundColor: c.border,
+    },
+    sheetCancelSection: {
+      width: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sheetCancelBtn: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 12,
+    },
+    sheetCancelText: {
+      fontFamily: 'Rubik-Medium',
+      fontWeight: '500',
+      color: c.primaryText,
+      textAlign: 'center',
+    },
+  });

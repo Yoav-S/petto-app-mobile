@@ -152,25 +152,11 @@ export default function PetBirthOnboardingScreen() {
             },
           ]}
         >
-          <View
-            style={{
-              width: PET_BIRTH_STEP.heroSize * sx,
-              height: PET_BIRTH_STEP.heroSize * sy - scaleOffset(40, sx),
-              alignSelf: 'center',
-            }}
-          >
-            <View
-              style={{
-                position: 'absolute',
-                top: PET_BIRTH_STEP.heroImageTop * sy,
-                left: PET_BIRTH_STEP.heroImageLeft * sx,
-              }}
-            >
-              <OnboardingCalendar
-                width={PET_BIRTH_STEP.heroImageWidth * sx}
-                height={PET_BIRTH_STEP.heroImageHeight * sy}
-              />
-            </View>
+          <View style={{ alignSelf: 'center' }}>
+            <OnboardingCalendar
+              width={PET_BIRTH_STEP.heroWidth * sx}
+              height={PET_BIRTH_STEP.heroHeight * sx}
+            />
           </View>
 
           <View

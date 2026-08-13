@@ -36,7 +36,8 @@ export default function PetTypeOnboardingScreen() {
 
   const canContinue = selected !== null;
   const tileWidth = (PET_TYPE_STEP.pickerWidth * sx - PET_TYPE_STEP.pickerGap * sx) / 2;
-  const iconSize = 106 * sx;
+  const iconW = PET_TYPE_STEP.petIconWidth * sx;
+  const iconH = PET_TYPE_STEP.petIconHeight * sx;
 
   const handleSelect = (type: PetType) => {
     setSelected(type);
@@ -92,7 +93,7 @@ export default function PetTypeOnboardingScreen() {
           <View style={{ alignSelf: 'center' }}>
             <OnboardingBed
               width={PET_TYPE_STEP.bedWidth * sx}
-              height={PET_TYPE_STEP.bedHeight * sy - scaleOffset(20, sy)}
+              height={PET_TYPE_STEP.bedHeight * sx}
             />
           </View>
 
@@ -143,7 +144,7 @@ export default function PetTypeOnboardingScreen() {
                   accessibilityState={{ selected: isSelected }}
                   accessibilityLabel={label}
                 >
-                  <PetIcon width={iconSize} height={iconSize} />
+                  <PetIcon width={iconW} height={iconH} />
                   <Text
                     style={[
                       styles.petLabel,
@@ -241,7 +242,7 @@ const makeStyles = (c: ThemeColors) =>
     petLabel: {
       fontFamily: 'Rubik-Medium',
       fontWeight: '500',
-      color: '#1F2937',
+      color: c.primaryText,
       textAlign: 'center',
     },
     footer: {

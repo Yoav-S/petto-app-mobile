@@ -1,7 +1,14 @@
-/** Figma reference frame 375×812 — pet creation onboarding */
+﻿/** Figma reference frame 375×812 — pet creation onboarding */
 export const PET_ONBOARDING_DESIGN_WIDTH = 375;
 export const PET_ONBOARDING_DESIGN_HEIGHT = 812;
 export const PET_ONBOARDING_STEPS = 4;
+
+/** Shared hero art footprint from Figma exports (303×168). */
+export const PET_ONBOARDING_HERO = {
+  width: 303,
+  height: 168,
+  radius: 12,
+} as const;
 
 export const PET_NAME_STEP = {
   progressTop: 56,
@@ -13,7 +20,8 @@ export const PET_NAME_STEP = {
   cardPaddingH: 16,
   cardPaddingBottom: 32,
   cardGap: 22,
-  collarSize: 222,
+  heroWidth: 303,
+  heroHeight: 168,
   copyWidth: 303,
   copyGap: 32,
   titleSize: 24,
@@ -41,13 +49,15 @@ export const PET_TYPE_STEP = {
   cardPaddingBottom: 32,
   cardGap: 22,
   bedWidth: 303,
-  bedHeight: 210,
+  bedHeight: 168,
   copyWidth: 269,
   titleSize: 24,
   titleLine: 28,
   pickerWidth: 303,
   pickerHeight: 160,
   pickerGap: 15,
+  petIconWidth: 106,
+  petIconHeight: 93,
   continuePaddingH: 20,
   continueBtnWidth: 335,
   continueBtnHeight: 48,
@@ -73,10 +83,28 @@ export const PET_PHOTO_STEP = {
   titleLine: 28,
   subtitleSize: 14,
   subtitleLine: 20,
-  photoOuterSize: 156,
-  photoInnerSize: 142,
-  photoInnerOffset: 7,
-  photoInnerRadius: 22,
+  heroWidth: 303,
+  heroHeight: 168,
+  /** User photo sitting on the hero illustration */
+  userPhotoWidth: 67,
+  userPhotoHeight: 68,
+  userPhotoTop: 42,
+  userPhotoLeft: 124,
+  /** Mask holder sitting above the user photo */
+  maskWidth: 21,
+  maskHeight: 21,
+  maskTop: 25,
+  maskLeft: 147,
+  /** Add-photo chip under the hero */
+  addBtnWidth: 126,
+  addBtnHeight: 48,
+  addBtnRadius: 12,
+  addBtnPaddingH: 16,
+  addBtnPaddingV: 12,
+  addBtnGap: 8,
+  addBtnIconSize: 16,
+  addBtnFontSize: 14,
+  addBtnLineHeight: 18,
   continuePaddingH: 20,
   continueBtnWidth: 335,
   continueBtnHeight: 48,
@@ -115,11 +143,8 @@ export const PET_BIRTH_STEP = {
   cardPaddingH: 16,
   cardPaddingBottom: 32,
   cardGap: 22,
-  heroSize: 222,
-  heroImageWidth: 184,
-  heroImageHeight: 142,
-  heroImageTop: 37.04,
-  heroImageLeft: 9.04,
+  heroWidth: 303,
+  heroHeight: 168,
   copyWidth: 303,
   copyGap: 32,
   titleBlockGap: 12,
