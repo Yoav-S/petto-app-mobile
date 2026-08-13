@@ -1,6 +1,6 @@
 import type { ImageSource } from 'expo-image';
 
-const DEFAULT_DOG = require('@/assets/images/onboarding/no-pet-images-default.png') as ImageSource;
+const DEFAULT_DOG = require('@/assets/images/onboarding/no-pet-images-default.jpg') as ImageSource;
 const FALLBACK = require('@/assets/images/onboarding-cover.png') as ImageSource;
 
 type PetPhotoLike = {

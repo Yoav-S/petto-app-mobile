@@ -218,9 +218,11 @@ const makeStyles = (c: ThemeColors) =>
     header: {
       flexDirection: 'row',
       alignItems: 'center',
+      minHeight: 32,
     },
     headerSide: {
       width: 32,
+      height: 32,
     },
     headerCenter: {
       flex: 1,

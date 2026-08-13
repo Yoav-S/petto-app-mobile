@@ -18,7 +18,7 @@ const DOG_DAY = require('@/assets/images/onboarding/dog-day.png') as ImageSource
 const DOG_DARK = require('@/assets/images/onboarding/dog-dark.png') as ImageSource;
 const CAT_DAY = require('@/assets/images/onboarding/cat-day.png') as ImageSource;
 const CAT_DARK = require('@/assets/images/onboarding/cat-dark.png') as ImageSource;
-const NO_PET_DEFAULT = require('@/assets/images/onboarding/no-pet-images-default.png') as ImageSource;
+const NO_PET_DEFAULT = require('@/assets/images/onboarding/no-pet-images-default.jpg') as ImageSource;
 
 function Art({ source, width, height }: Props & { source: ImageSource }) {
   return (
