@@ -127,7 +127,7 @@ export default function SpeedDialFab({
   }, [items, s]);
 
   return (
-    <>
+    <View pointerEvents="box-none" style={styles.layer}>
       <AnimatedPressable
         style={[styles.scrim, scrimStyle]}
         pointerEvents={open ? 'auto' : 'none'}
@@ -193,22 +193,25 @@ export default function SpeedDialFab({
           </Animated.View>
         </TouchableOpacity>
       </View>
-    </>
+    </View>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    /** Full-screen host so the veil sits above PetHeader (zIndex 90). */
+    layer: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 1000,
+      elevation: 1000,
+    },
     scrim: {
       ...StyleSheet.absoluteFillObject,
       backgroundColor: 'rgba(0, 0, 0, 0.2)',
-      zIndex: 90,
     },
     anchor: {
       position: 'absolute',
       alignItems: 'flex-end',
-      zIndex: 100,
-      elevation: 100,
     },
     menu: {
       alignItems: 'flex-end',
