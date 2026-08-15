@@ -68,32 +68,40 @@ export default function RemindersCard({
         </View>
       ) : (
         <View style={styles.contentContainer}>
-          <CategoryIcon />
-          <View style={homeCardTypography.titleSubtitleBlock}>
-            <Text style={homeCardTypography.title}>{t('home.remindersCard.title')}</Text>
-            {nextReminder ? (
-              <Text style={homeCardTypography.subtitle} numberOfLines={1} ellipsizeMode="tail">
-                {nextReminder.title}
-              </Text>
-            ) : (
-              <Text style={homeCardTypography.meta} numberOfLines={1} ellipsizeMode="tail">
-                {t('home.remindersCard.empty')}
-              </Text>
-            )}
-          </View>
-          {nextReminder ? (
-            <Text style={homeCardTypography.meta} numberOfLines={1}>
-              {formatTime(nextReminder.scheduled_at)}
-            </Text>
-          ) : null}
-          {upcomingCount > 0 ? (
-            <View style={[homeCardTypography.footerRow, styles.upcomingRow]}>
-              <Text style={homeCardTypography.meta} numberOfLines={1}>
-                {upcomingCount} {t('home.remindersCard.upcoming')}
-              </Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
+          <View style={styles.topContent}>
+            <View style={styles.iconTitleBlock}>
+              <CategoryIcon />
+              <Text style={homeCardTypography.title}>{t('home.remindersCard.title')}</Text>
             </View>
-          ) : null}
+
+            <View style={styles.reminderDetails}>
+              {nextReminder ? (
+                <>
+                  <Text style={homeCardTypography.subtitle} numberOfLines={1} ellipsizeMode="tail">
+                    {nextReminder.title}
+                  </Text>
+                  <Text style={homeCardTypography.meta} numberOfLines={1}>
+                    {formatTime(nextReminder.scheduled_at)}
+                  </Text>
+                </>
+              ) : (
+                <Text style={homeCardTypography.meta} numberOfLines={1} ellipsizeMode="tail">
+                  {t('home.remindersCard.empty')}
+                </Text>
+              )}
+            </View>
+          </View>
+
+          <View style={homeCardTypography.footerRow}>
+            {upcomingCount > 0 ? (
+              <>
+                <Text style={homeCardTypography.meta} numberOfLines={1}>
+                  {upcomingCount} {t('home.remindersCard.upcoming')}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
+              </>
+            ) : null}
+          </View>
         </View>
       )}
     </TouchableOpacity>
@@ -101,10 +109,10 @@ export default function RemindersCard({
 }
 
 const cardShadow = {
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.06,
-  shadowRadius: 10,
+  shadowColor: '#2D2D2A',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.08,
+  shadowRadius: 20,
   elevation: 2,
 };
 
@@ -117,11 +125,34 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     padding: Spacing.lg,
     flex: 1,
     height: 198,
+    minHeight: 198,
+    maxHeight: 198,
+    minWidth: 0,
     ...cardShadow,
   },
   contentContainer: {
-    flex: 1,
-    gap: Spacing.xs,
+    width: '100%',
+    maxWidth: 132,
+    height: 166,
+    justifyContent: 'space-between',
+    overflow: 'hidden',
+  },
+  topContent: {
+    width: '100%',
+    height: 122,
+    gap: 12,
+    overflow: 'hidden',
+  },
+  iconTitleBlock: {
+    width: '100%',
+    height: 64,
+    gap: 8,
+    overflow: 'hidden',
+  },
+  reminderDetails: {
+    width: '100%',
+    height: 46,
+    gap: 6,
     overflow: 'hidden',
   },
   iconContainer: {
@@ -130,14 +161,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing.xs,
   },
   iconImage: {
     width: 24,
     height: 24,
-  },
-  upcomingRow: {
-    marginTop: 'auto',
   },
   skeletonLine: {
     height: 14,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -143,6 +143,7 @@ const makeStyles = (c: ThemeColors) =>
     sheetTitle: {
       flex: 1,
       fontFamily: 'Rubik-Medium',
+      fontWeight: '500',
       fontSize: 20,
       lineHeight: 24,
       color: c.primaryText,
@@ -178,9 +179,11 @@ const makeStyles = (c: ThemeColors) =>
     },
     confirmText: {
       fontFamily: 'Rubik-Medium',
+      fontWeight: '500',
       fontSize: 16,
       lineHeight: 24,
       color: c.button.primaryText,
       textAlign: 'center',
     },
   });
+

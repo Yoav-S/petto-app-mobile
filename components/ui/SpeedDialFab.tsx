@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import {
   Image,
   type ImageSourcePropType,
@@ -24,7 +24,7 @@ import { DESIGN_WIDTH } from '@/components/home/PetHeader';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-/** Figma 375×812: left 299 → right 20. Bottom raised so FAB never sits on the edge. */
+/** Figma 375Ã—812: left 299 â†’ right 20. Bottom raised so FAB never sits on the edge. */
 export const ADD_FAB = {
   size: 56,
   radius: 16,
@@ -37,7 +37,7 @@ export const ADD_FAB = {
   animMs: 200,
 } as const;
 
-/** @deprecated use ADD_FAB.bottom — kept for existing style imports */
+/** @deprecated use ADD_FAB.bottom â€” kept for existing style imports */
 export const ADD_FAB_BOTTOM = ADD_FAB.bottom;
 /** @deprecated use ADD_FAB.right */
 export const ADD_FAB_RIGHT = ADD_FAB.right;
@@ -58,7 +58,7 @@ interface SpeedDialFabProps {
 }
 
 /**
- * Shared add FAB: 56×56 square, brand fill. Uses theme `overlay` (same as sheets).
+ * Shared add FAB: 56Ã—56 square, brand fill. Uses theme `overlay` (same as sheets).
  */
 export default function SpeedDialFab({
   items,
@@ -223,7 +223,9 @@ const makeStyles = (c: ThemeColors) =>
     },
     menuLabel: {
       fontFamily: 'Rubik-Medium',
+      fontWeight: '500',
       fontSize: 14,
+      lineHeight: 20,
       color: c.primaryText,
     },
     btn: {
@@ -237,3 +239,4 @@ const makeStyles = (c: ThemeColors) =>
       elevation: 6,
     },
   });
+

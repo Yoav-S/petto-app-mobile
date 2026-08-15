@@ -64,31 +64,32 @@ export default function VaccinesCard({ latestVaccine, loading, onPress }: Vaccin
         </View>
       ) : (
         <View style={styles.contentContainer}>
-          <CategoryIcon />
-          <View style={homeCardTypography.titleSubtitleBlock}>
+          <View style={styles.iconTitleBlock}>
+            <CategoryIcon />
             <Text style={homeCardTypography.title}>{t('home.vaccinesCard.title')}</Text>
+          </View>
+
+          <View style={styles.vaccineDetails}>
             {latestVaccine ? (
-              <Text style={homeCardTypography.subtitle} numberOfLines={1} ellipsizeMode="tail">
-                {latestVaccine.name}
-              </Text>
+              <>
+                <Text style={homeCardTypography.subtitle} numberOfLines={1} ellipsizeMode="tail">
+                  {latestVaccine.name}
+                </Text>
+                <Text style={homeCardTypography.meta} numberOfLines={1}>
+                  {t('home.vaccinesCard.last')} {formatDate(latestVaccine.date)}
+                </Text>
+                {latestVaccine.next_date ? (
+                  <Text style={homeCardTypography.meta} numberOfLines={1}>
+                    {t('home.vaccinesCard.next')} {formatDate(latestVaccine.next_date)}
+                  </Text>
+                ) : null}
+              </>
             ) : (
               <Text style={homeCardTypography.meta} numberOfLines={1} ellipsizeMode="tail">
                 {t('home.vaccinesCard.empty')}
               </Text>
             )}
           </View>
-          {latestVaccine ? (
-            <>
-              <Text style={homeCardTypography.meta} numberOfLines={1}>
-                {t('home.vaccinesCard.last')} {formatDate(latestVaccine.date)}
-              </Text>
-              {latestVaccine.next_date ? (
-                <Text style={homeCardTypography.meta} numberOfLines={1}>
-                  {t('home.vaccinesCard.next')} {formatDate(latestVaccine.next_date)}
-                </Text>
-              ) : null}
-            </>
-          ) : null}
         </View>
       )}
     </TouchableOpacity>
@@ -96,10 +97,10 @@ export default function VaccinesCard({ latestVaccine, loading, onPress }: Vaccin
 }
 
 const cardShadow = {
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.06,
-  shadowRadius: 10,
+  shadowColor: '#2D2D2A',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.08,
+  shadowRadius: 20,
   elevation: 2,
 };
 
@@ -112,11 +113,28 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     padding: Spacing.lg,
     flex: 1,
     height: 198,
+    minHeight: 198,
+    maxHeight: 198,
+    minWidth: 0,
     ...cardShadow,
   },
   contentContainer: {
-    flex: 1,
-    gap: Spacing.xs,
+    width: '100%',
+    maxWidth: 132,
+    height: 144,
+    gap: 12,
+    overflow: 'hidden',
+  },
+  iconTitleBlock: {
+    width: '100%',
+    height: 64,
+    gap: 8,
+    overflow: 'hidden',
+  },
+  vaccineDetails: {
+    width: '100%',
+    height: 68,
+    gap: 6,
     overflow: 'hidden',
   },
   iconContainer: {
@@ -125,7 +143,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing.xs,
   },
   iconImage: {
     width: 24,

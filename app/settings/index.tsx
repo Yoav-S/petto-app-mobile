@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -120,6 +120,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   rowLabel: {
     fontFamily: 'Rubik-Medium',
+    fontWeight: '500',
     fontSize: 16,
     lineHeight: 20,
     letterSpacing: 0,
@@ -145,8 +146,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   signOutText: {
     fontFamily: 'Rubik-Medium',
+    fontWeight: '500',
     fontSize: 16,
     lineHeight: 20,
     color: c.error,
   },
 });
+

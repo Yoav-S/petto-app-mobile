@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   View,
   Text,
@@ -102,6 +102,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     title: {
       fontFamily: 'Rubik-Medium',
+      fontWeight: '500',
       fontSize: 20,
       lineHeight: 24,
       color: c.primaryText,
@@ -137,3 +138,4 @@ const makeStyles = (c: ThemeColors) =>
       alignSelf: 'center',
     },
   });
+

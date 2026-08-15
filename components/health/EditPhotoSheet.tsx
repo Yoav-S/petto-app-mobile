@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
@@ -116,6 +116,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   title: {
     fontFamily: 'Rubik-Medium',
+    fontWeight: '500',
     fontSize: 20,
     lineHeight: 24,
     color: c.primaryText,
@@ -180,7 +181,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   cancelText: {
     fontFamily: 'Rubik-Medium',
+    fontWeight: '500',
     fontSize: 16,
     color: c.primaryText,
   },
 });
+
