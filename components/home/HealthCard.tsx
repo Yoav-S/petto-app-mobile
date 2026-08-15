@@ -113,7 +113,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderRadius: Radius.lg,
     padding: Spacing.lg,
     width: '100%',
-    minHeight: 120,
+    height: 120,
     ...cardShadow,
   },
   cardRow: {

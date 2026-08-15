@@ -19,7 +19,6 @@ import PetHeader from '@/components/home/PetHeader';
 import VaccinesCard from '@/components/home/VaccinesCard';
 import RemindersCard from '@/components/home/RemindersCard';
 import HealthCard from '@/components/home/HealthCard';
-import HealthReminderLine from '@/components/health/HealthReminderLine';
 import FABMenu from '@/components/home/FABMenu';
 import PetProfilePanel from '@/components/home/PetProfilePanel';
 import PetSwitcherSheet from '@/components/home/PetSwitcherSheet';
@@ -243,11 +242,6 @@ export default function HomeScreen() {
     router.push('/pets/add' as never);
   };
 
-  const handleViewAllPets = () => {
-    setSwitchVisible(false);
-    router.push('/pets' as never);
-  };
-
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <View style={styles.screen}>
@@ -347,7 +341,6 @@ export default function HomeScreen() {
         onAddPet={() => {
           void handleAddPet();
         }}
-        onViewAll={handleViewAllPets}
       />
     </SafeAreaView>
   );

@@ -42,7 +42,7 @@ export function PetSwitcherRow({ pet, selected, onPress }: PetSwitcherRowProps) 
             {pet.name}
           </Text>
           <Text style={styles.type} numberOfLines={1}>
-            {petTypeLabel(pet.type)}
+            {pet.breed?.trim() || petTypeLabel(pet.type)}
           </Text>
         </View>
       </View>

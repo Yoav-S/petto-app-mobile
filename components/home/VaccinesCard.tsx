@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Image } from 'react-native';
-import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
 import { homeCategoryIconBg, HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
@@ -106,14 +106,18 @@ const cardShadow = {
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
     backgroundColor: c.surface,
-    borderRadius: Radius.lg,
+    borderTopRightRadius: 20,
+    borderBottomRightRadius: 20,
+    borderBottomLeftRadius: 20,
     padding: Spacing.lg,
     flex: 1,
-    minHeight: 156,
+    height: 198,
     ...cardShadow,
   },
   contentContainer: {
+    flex: 1,
     gap: Spacing.xs,
+    overflow: 'hidden',
   },
   iconContainer: {
     width: 36,

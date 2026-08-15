@@ -190,7 +190,7 @@ function ThemedApp() {
           </View>
         </KeyboardDoneClaimProvider>
       </ToastProvider>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <StatusBar style="light" />
     </NavThemeProvider>
   );
 }

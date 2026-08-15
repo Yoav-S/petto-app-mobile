@@ -22,7 +22,6 @@ interface PetSwitcherSheetProps {
   onClose: () => void;
   onSelectPet: (petId: string) => void;
   onAddPet: () => void;
-  onViewAll: () => void;
 }
 
 export default function PetSwitcherSheet({
@@ -32,7 +31,6 @@ export default function PetSwitcherSheet({
   onClose,
   onSelectPet,
   onAddPet,
-  onViewAll,
 }: PetSwitcherSheetProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
@@ -42,7 +40,7 @@ export default function PetSwitcherSheet({
     <BottomSheetModal visible={visible} onClose={onClose}>
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.header}>
-            <Text style={styles.title}>{t('home.switch_title')}</Text>
+          <Text style={styles.title}>{t('home.pets_title')}</Text>
             <TouchableOpacity
               style={styles.closeBtn}
               onPress={onClose}
@@ -53,11 +51,6 @@ export default function PetSwitcherSheet({
               <Ionicons name="close" size={20} color={colors.primaryText} />
             </TouchableOpacity>
           </View>
-
-          <TouchableOpacity onPress={onViewAll} style={styles.viewAllBtn} activeOpacity={0.7}>
-            <Text style={styles.viewAllText}>{t('home.view_all_pets')}</Text>
-            <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
-          </TouchableOpacity>
 
           <View style={styles.listBlock}>
             <ScrollView
@@ -109,7 +102,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     title: {
       fontFamily: 'Rubik-Medium',
-      fontSize: 18,
+      fontSize: 20,
       lineHeight: 24,
       color: c.primaryText,
       textAlign: 'center',
@@ -119,22 +112,10 @@ const makeStyles = (c: ThemeColors) =>
       right: 0,
       width: 32,
       height: 32,
+      borderRadius: 10,
+      backgroundColor: c.panel,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    viewAllBtn: {
-      alignSelf: 'center',
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      marginBottom: 16,
-      paddingVertical: 4,
-    },
-    viewAllText: {
-      fontFamily: 'Rubik-Regular',
-      fontSize: 14,
-      lineHeight: 18,
-      color: c.secondaryText,
     },
     listBlock: {
       gap: 16,

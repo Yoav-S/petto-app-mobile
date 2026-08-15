@@ -11,7 +11,7 @@ interface FABMenuProps {
   onReminderPress: () => void;
 }
 
-/** Home speed-dial: Vaccines / Health / Reminders. */
+/** Home speed-dial: Topics / Vaccines / Reminders. */
 export default function FABMenu({
   open,
   onOpenChange,
@@ -21,16 +21,16 @@ export default function FABMenu({
 }: FABMenuProps) {
   const items: SpeedDialItem[] = [
     {
-      key: 'vaccines',
-      label: t('fab.vaccines'),
-      icon: HOME_CATEGORY_ICONS.vaccines,
-      onPress: onVaccinePress,
-    },
-    {
       key: 'health',
       label: t('fab.topics'),
       icon: HOME_CATEGORY_ICONS.health,
       onPress: onHealthPress,
+    },
+    {
+      key: 'vaccines',
+      label: t('fab.vaccines'),
+      icon: HOME_CATEGORY_ICONS.vaccines,
+      onPress: onVaccinePress,
     },
     {
       key: 'reminders',
