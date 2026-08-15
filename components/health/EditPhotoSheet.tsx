@@ -116,7 +116,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   title: {
     fontFamily: 'Rubik-Medium',
-    fontWeight: '500',
     fontSize: 20,
     lineHeight: 24,
     color: c.primaryText,
@@ -181,7 +180,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   cancelText: {
     fontFamily: 'Rubik-Medium',
-    fontWeight: '500',
     fontSize: 16,
     color: c.primaryText,
   },

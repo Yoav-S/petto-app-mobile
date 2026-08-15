@@ -224,7 +224,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     title: {
       fontFamily: 'Rubik-Regular',
-      fontWeight: '400',
       color: c.primaryText,
       textAlign: 'left',
       alignSelf: 'stretch',
@@ -240,7 +239,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     petLabel: {
       fontFamily: 'Rubik-Medium',
-      fontWeight: '500',
       color: c.primaryText,
       textAlign: 'center',
     },
@@ -266,7 +264,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     continueText: {
       fontFamily: 'Rubik-Medium',
-      fontWeight: '500',
       color: c.button.primaryText,
       textAlign: 'center',
     },

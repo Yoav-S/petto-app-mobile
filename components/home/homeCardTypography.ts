@@ -10,7 +10,6 @@ export const HOME_HEALTH_CONTENT_WIDTH = 263;
 export const makeHomeCardTypography = (c: ThemeColors) => StyleSheet.create({
   title: {
     fontFamily: 'Rubik-Medium',
-    fontWeight: '500',
     fontSize: 16,
     lineHeight: 20,
     color: c.primaryText,
@@ -23,7 +22,6 @@ export const makeHomeCardTypography = (c: ThemeColors) => StyleSheet.create({
   },
   meta: {
     fontFamily: 'Rubik-Medium',
-    fontWeight: '500',
     fontSize: 12,
     lineHeight: 16,
     color: c.secondaryText,

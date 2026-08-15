@@ -223,7 +223,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     menuLabel: {
       fontFamily: 'Rubik-Medium',
-      fontWeight: '500',
       fontSize: 14,
       lineHeight: 20,
       color: c.primaryText,

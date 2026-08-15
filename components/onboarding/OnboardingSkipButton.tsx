@@ -47,7 +47,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     text: {
       fontFamily: 'Rubik-Medium',
-      fontWeight: '500',
       color: c.primaryText,
       textAlign: 'center',
     },

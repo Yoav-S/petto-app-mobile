@@ -134,7 +134,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   segmentText: {
     fontFamily: 'Rubik-Medium',
-    fontWeight: '500',
     fontSize: 14,
     lineHeight: 20,
     color: c.tabInactiveText,
@@ -160,7 +159,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   rowValue: {
     fontFamily: 'Rubik-Medium',
-    fontWeight: '500',
     fontSize: 16,
     color: c.primaryText,
   },

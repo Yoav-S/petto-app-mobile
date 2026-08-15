@@ -240,14 +240,12 @@ const makeStyles = (c: ThemeColors) =>
     },
     title: {
       fontFamily: 'Rubik-Regular',
-      fontWeight: '400',
       color: c.primaryText,
       textAlign: 'left',
       alignSelf: 'stretch',
     },
     subtitle: {
       fontFamily: 'Rubik-Regular',
-      fontWeight: '400',
       color: c.secondaryText,
       textAlign: 'left',
       alignSelf: 'stretch',
@@ -284,7 +282,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     continueText: {
       fontFamily: 'Rubik-Medium',
-      fontWeight: '500',
       color: c.button.primaryText,
       textAlign: 'center',
     },

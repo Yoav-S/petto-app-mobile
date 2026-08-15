@@ -110,7 +110,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     name: {
       fontFamily: 'Rubik-Medium',
-      fontWeight: '500',
       fontSize: 16,
       lineHeight: 20,
       color: c.primaryText,
@@ -170,7 +169,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     addLabel: {
       fontFamily: 'Rubik-Medium',
-      fontWeight: '500',
       fontSize: 16,
       lineHeight: 20,
       color: c.primaryText,

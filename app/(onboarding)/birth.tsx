@@ -307,14 +307,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   title: {
     fontFamily: 'Rubik-Regular',
-    fontWeight: '400',
     color: c.primaryText,
     textAlign: 'left',
     alignSelf: 'stretch',
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
-    fontWeight: '400',
     color: c.secondaryText,
     textAlign: 'left',
     alignSelf: 'stretch',
@@ -328,7 +326,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   selectBtnText: {
     fontFamily: 'Rubik-Regular',
-    fontWeight: '400',
     textAlign: 'left',
   },
   footer: {
@@ -350,7 +347,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   continueText: {
     fontFamily: 'Rubik-Medium',
-    fontWeight: '500',
     color: c.button.primaryText,
     textAlign: 'center',
   },

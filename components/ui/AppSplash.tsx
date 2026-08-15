@@ -50,7 +50,6 @@ const styles = StyleSheet.create({
   logo: {
     position: 'absolute',
     fontFamily: 'Rubik-Regular',
-    fontWeight: '400',
     textAlign: 'center',
     letterSpacing: 0,
     includeFontPadding: false,

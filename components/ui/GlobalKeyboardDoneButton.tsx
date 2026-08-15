@@ -213,7 +213,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontFamily: 'Rubik-Medium',
-    fontWeight: '500',
     textAlign: 'center',
   },
 });

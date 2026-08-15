@@ -230,7 +230,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     title: {
       fontFamily: 'Rubik-Regular',
-      fontWeight: '400',
       color: c.primaryText,
       textAlign: 'center',
       letterSpacing: 0,
@@ -238,7 +237,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     subtitle: {
       fontFamily: 'Rubik-Regular',
-      fontWeight: '400',
       color: c.secondaryText,
       textAlign: 'center',
       letterSpacing: 0,
@@ -254,7 +252,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     buttonText: {
       fontFamily: 'Rubik-Medium',
-      fontWeight: '500',
       color: c.button.primaryText,
     },
     legalPress: {
@@ -263,7 +260,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     legal: {
       fontFamily: 'Rubik-Regular',
-      fontWeight: '400',
       color: c.secondaryText,
       textAlign: 'center',
       letterSpacing: 0,
@@ -271,7 +267,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     legalLink: {
       fontFamily: 'Rubik-Medium',
-      fontWeight: '500',
       color: c.secondaryText,
     },
   });
