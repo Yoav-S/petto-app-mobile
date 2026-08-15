@@ -18,10 +18,10 @@ import { petPhotoSource } from '@/utils/petPhotoSource';
 
 export const DESIGN_WIDTH = 375;
 export const DESIGN_HEIGHT = 812;
-/** Slightly taller cover so the white cards panel sits lower; keep ~24px overlap. */
-export const DESIGN_COVER_HEIGHT = 368;
-export const DESIGN_PANEL_TOP = 344;
-export const DESIGN_PANEL_HEIGHT = 468;
+/** Figma 375x812: bottom panel starts at y=328 and is 484px tall. */
+export const DESIGN_COVER_HEIGHT = 352;
+export const DESIGN_PANEL_TOP = 328;
+export const DESIGN_PANEL_HEIGHT = 484;
 export const DESIGN_PANEL_RADIUS = 24;
 
 interface PetHeaderProps {
@@ -292,7 +292,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   panelHeaderClip: {
     backgroundColor: c.panel,
-    paddingTop: Spacing.xl,
+    paddingTop: 16,
     overflow: 'hidden',
   },
   panelBody: {
@@ -302,9 +302,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
   },
   nameSection: {
+    width: 141,
+    height: 72,
+    alignSelf: 'center',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.md,
+    justifyContent: 'flex-start',
+    marginBottom: 12,
     paddingBottom: 0,
   },
   nameRow: {

@@ -383,13 +383,15 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.primaryText,
   },
   cardsGrid: {
-    paddingHorizontal: Spacing.lg,
-    gap: Spacing.md,
+    width: 335,
+    height: 318,
+    alignSelf: 'center',
+    gap: 8,
     overflow: 'visible',
   },
   row: {
     flexDirection: 'row',
-    gap: Spacing.md,
+    gap: 8,
   },
   healthWrap: {
     position: 'relative',

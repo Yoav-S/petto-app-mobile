@@ -11,7 +11,6 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   interpolate,
   useAnimatedStyle,
@@ -24,14 +23,14 @@ import { DESIGN_WIDTH } from '@/components/home/PetHeader';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-/** Figma 375Ã—812: left 299 â†’ right 20. Bottom raised so FAB never sits on the edge. */
+/** Figma 375x812: left 299 -> right 20; top 718 -> bottom 38. */
 export const ADD_FAB = {
   size: 56,
   radius: 16,
   padding: 16,
   iconSize: 24,
   right: 20,
-  bottom: 48,
+  bottom: 38,
   menuGap: 12,
   menuItemH: 40,
   animMs: 200,
@@ -69,7 +68,6 @@ export default function SpeedDialFab({
 }: SpeedDialFabProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const s = width / DESIGN_WIDTH;
 
@@ -93,12 +91,12 @@ export default function SpeedDialFab({
       radius: ADD_FAB.radius * s,
       iconSize: ADD_FAB.iconSize * s,
       right: ADD_FAB.right * s,
-      bottom: ADD_FAB.bottom * s + Math.max(0, insets.bottom - 8),
+      bottom: ADD_FAB.bottom * s,
       menuGap: ADD_FAB.menuGap * s,
       menuItemH: ADD_FAB.menuItemH * s,
       menuIcon: 18 * s,
     }),
-    [s, insets.bottom],
+    [s],
   );
 
   const scrimStyle = useAnimatedStyle(() => ({

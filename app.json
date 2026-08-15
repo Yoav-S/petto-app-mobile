@@ -33,6 +33,11 @@
         "android.permission.RECORD_AUDIO"
       ]
     },
+    "androidNavigationBar": {
+      "backgroundColor": "#00000000",
+      "barStyle": "dark-content",
+      "enforceContrast": false
+    },
     "web": {
       "output": "single",
       "favicon": "./assets/images/favicon.png"
