@@ -38,6 +38,8 @@ export const lightColors = {
   brandLight: '#F6F7F9',
   primaryText: '#1F2937',
   secondaryText: '#6B7280',
+  /** Inactive segmented-control text */
+  tabInactiveText: '#4F4F4F',
   border: '#E5E7EB',
   error: '#EF4444',
   success: '#84CC9D',
@@ -45,6 +47,8 @@ export const lightColors = {
   disabled: '#D1D5DB',
   /** Switch / track off state */
   track: '#D1D5DB',
+  /** Unselected profile controls */
+  inactiveControl: '#F3F4F6',
   overlay: 'rgba(0, 0, 0, 0.4)',
   button: {
     primaryBg: '#004741',
@@ -74,11 +78,13 @@ export const darkColors: ThemeColors = {
   brandLight: '#3FA89A',
   primaryText: '#F5F6F7',
   secondaryText: '#C2C6CB',
+  tabInactiveText: '#C2C6CB',
   border: '#373C42',
   error: '#E46A6A',
   success: '#58C78A',
   disabled: '#5B6168',
   track: '#5B6168',
+  inactiveControl: '#373C42',
   overlay: 'rgba(0, 0, 0, 0.6)',
   button: {
     primaryBg: '#3FA89A',

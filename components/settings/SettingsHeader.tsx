@@ -71,10 +71,11 @@ const makeStyles = (c: ThemeColors) =>
       elevation: 3,
     },
     title: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 18,
-      lineHeight: 24,
+      fontFamily: 'Rubik-Regular',
+      fontSize: 24,
+      lineHeight: 28,
       color: c.primaryText,
+      textAlign: 'center',
     },
     rightSpacer: {
       width: 32,

@@ -86,7 +86,6 @@ export default function PetProfilePanel({ pet }: PetProfilePanelProps) {
         ) : (
           <>
             <ProfileRow label={t('profile.neutered')} value={formatNeutered(pet?.is_neutered)} height={50} />
-            <ProfileRow label={t('profile.serial')} value={pet?.passport_number || EMPTY_VALUE} height={50} />
             <ProfileRow label={t('profile.chip_id')} value={pet?.chip_id || EMPTY_VALUE} height={50} />
           </>
         )}
@@ -136,7 +135,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   segmentText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
-    color: c.secondaryText,
+    lineHeight: 20,
+    color: c.tabInactiveText,
   },
   segmentTextActive: {
     color: c.primaryText,

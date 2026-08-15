@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
-import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useThemedStyles } from '@/context/ThemeContext';
 import { t, currentLocale } from '@/i18n';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 
@@ -26,39 +26,6 @@ function formatUpdated(iso: string): string {
   } catch {
     return date.toISOString().slice(0, 7);
   }
-}
-
-/**
- * Dissolves the bottom of the white card into the outer screen background.
- * Taller overlay so the fade starts earlier while scrolling.
- */
-function BottomFade() {
-  const colors = useColors();
-  const styles = useThemedStyles(makeStyles);
-  // Earlier, smoother ramp into the page background.
-  const stops = [0, 0.12, 0.28, 0.48, 0.7, 0.88, 1];
-
-  return (
-    <View style={styles.fade} pointerEvents="none">
-      {stops.map((stop, index) => {
-        const nextStop = stops[index + 1] ?? 1;
-        return (
-          <View
-            key={stop}
-            style={{
-              position: 'absolute',
-              left: 0,
-              right: 0,
-              top: `${stop * 100}%`,
-              height: `${(nextStop - stop) * 100}%`,
-              backgroundColor: colors.background,
-              opacity: stop,
-            }}
-          />
-        );
-      })}
-    </View>
-  );
 }
 
 function TextBlock({
@@ -120,7 +87,6 @@ export default function LegalScreen({ title, lastUpdatedISO, blocks }: LegalScre
             })}
           </ScrollView>
 
-          <BottomFade />
         </View>
       </View>
     </SafeAreaView>
@@ -183,13 +149,5 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 24,
       letterSpacing: 0,
       color: c.primaryText,
-    },
-    fade: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      bottom: 0,
-      // Start fading earlier while scrolling.
-      height: 160,
     },
   });

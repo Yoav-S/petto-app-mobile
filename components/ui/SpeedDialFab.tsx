@@ -24,14 +24,14 @@ import { DESIGN_WIDTH } from '@/components/home/PetHeader';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-/** Figma 375×812: left 299 → right 20; top 718 → bottom 38. */
+/** Figma 375×812: left 299 → right 20. Bottom raised so FAB never sits on the edge. */
 export const ADD_FAB = {
   size: 56,
   radius: 16,
   padding: 16,
   iconSize: 24,
   right: 20,
-  bottom: 38,
+  bottom: 48,
   menuGap: 12,
   menuItemH: 40,
   animMs: 200,

@@ -4,6 +4,11 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
+import {
+  Rubik_400Regular,
+  Rubik_500Medium,
+  useFonts,
+} from '@expo-google-fonts/rubik';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -175,6 +180,13 @@ function RootLayoutNav() {
 function ThemedApp() {
   const { isDark, colors } = useTheme();
   const { locale } = useLocale();
+  const [fontsLoaded, fontError] = useFonts({
+    'Rubik-Regular': Rubik_400Regular,
+    'Rubik-Medium': Rubik_500Medium,
+  });
+
+  // Keep the native splash visible until the actual Rubik weights are ready.
+  if (!fontsLoaded && !fontError) return null;
 
   const navTheme = isDark
     ? { ...DarkTheme, colors: { ...DarkTheme.colors, background: colors.background } }

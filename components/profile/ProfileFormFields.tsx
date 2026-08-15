@@ -103,12 +103,12 @@ export function ProfileSelectField({
   label,
   valueText,
   onPress,
-  icon = 'calendar-outline',
+  showIcon = true,
 }: {
   label: string;
   valueText: string | null;
   onPress: () => void;
-  icon?: keyof typeof Ionicons.glyphMap;
+  showIcon?: boolean;
 }) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -123,7 +123,9 @@ export function ProfileSelectField({
               {valueText ?? label}
             </Text>
           </View>
-          <Ionicons name={icon} size={20} color={colors.secondaryText} />
+          {showIcon ? (
+            <Ionicons name="calendar-outline" size={20} color={colors.secondaryText} />
+          ) : null}
         </View>
       </CardShell>
     </Pressable>
@@ -242,6 +244,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     marginTop: 10,
   },
   pill: {
+    width: 87,
     height: 36,
     borderRadius: 12,
     paddingVertical: 6,
@@ -258,14 +261,15 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     elevation: 2,
   },
   pillUnselected: {
-    backgroundColor: c.track,
+    backgroundColor: c.inactiveControl,
   },
   pillText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 14,
-    lineHeight: 18,
+    fontFamily: 'Rubik-Regular',
+    fontSize: 16,
+    lineHeight: 24,
   },
   pillTextSelected: {
+    fontFamily: 'Rubik-Medium',
     color: c.button.primaryText,
   },
   pillTextUnselected: {

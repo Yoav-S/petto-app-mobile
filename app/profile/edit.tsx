@@ -70,7 +70,6 @@ export default function EditProfileScreen() {
   const [weight, setWeight] = useState('');
   const [isNeutered, setIsNeutered] = useState<boolean | null>(null);
   const [chipId, setChipId] = useState('');
-  const [passport, setPassport] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoChanged, setPhotoChanged] = useState(false);
   const [petCount, setPetCount] = useState(0);
@@ -107,7 +106,6 @@ export default function EditProfileScreen() {
           setWeight(pet.weight != null ? String(pet.weight) : '');
           setIsNeutered(pet.is_neutered ?? null);
           setChipId(pet.chip_id ?? '');
-          setPassport(pet.passport_number ?? '');
           setPhotoUri(pet.photo_url ?? null);
           setPhotoChanged(false);
           setNotFound(false);
@@ -147,6 +145,12 @@ export default function EditProfileScreen() {
     }
   };
 
+  const removePhoto = () => {
+    setPhotoUri(null);
+    setPhotoChanged(true);
+    setPhotoSheetVisible(false);
+  };
+
   const handleSave = async () => {
     if (!activePetId) return;
     if (!name.trim()) {
@@ -171,7 +175,6 @@ export default function EditProfileScreen() {
         weight: weightValue != null && Number.isFinite(weightValue) ? weightValue : null,
         is_neutered: isNeutered,
         chip_id: trimOrNull(chipId),
-        passport_number: trimOrNull(passport),
         ...(photoChanged ? { photo_url: photoUrl } : {}),
       });
       router.back();
@@ -274,6 +277,7 @@ export default function EditProfileScreen() {
                 label={t('profile.birth_date')}
                 valueText={birthDateLabel}
                 onPress={() => setDateSheetVisible(true)}
+                showIcon={false}
               />
 
               <ProfileTextField label={t('profile.breed')} value={breed} onChangeText={setBreed} />
@@ -301,13 +305,6 @@ export default function EditProfileScreen() {
                 label={t('profile.chip_id')}
                 value={chipId}
                 onChangeText={setChipId}
-                autoCapitalize="characters"
-              />
-
-              <ProfileTextField
-                label={t('profile.passport')}
-                value={passport}
-                onChangeText={setPassport}
                 autoCapitalize="characters"
               />
 
@@ -362,6 +359,8 @@ export default function EditProfileScreen() {
         onClose={() => setPhotoSheetVisible(false)}
         onTake={() => void pickImage('camera')}
         onChoose={() => void pickImage('library')}
+        onRemove={photoUri ? removePhoto : undefined}
+        hasPhoto={Boolean(photoUri)}
       />
 
       <ConfirmModal
@@ -399,8 +398,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 18,
+    fontFamily: 'Rubik-Regular',
+    fontSize: 24,
+    lineHeight: 28,
     color: c.primaryText,
   },
   centered: {

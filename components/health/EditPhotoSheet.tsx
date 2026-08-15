@@ -13,6 +13,7 @@ interface EditPhotoSheetProps {
   onChoose: () => void;
   /** When set, shows a remove action (e.g. clear a newly picked photo). */
   onRemove?: () => void;
+  hasPhoto?: boolean;
 }
 
 export default function EditPhotoSheet({
@@ -21,23 +22,24 @@ export default function EditPhotoSheet({
   onTake,
   onChoose,
   onRemove,
+  hasPhoto = false,
 }: EditPhotoSheetProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
   return (
     <BottomSheetModal visible={visible} onClose={onClose}>
-        <View style={styles.sheet}>
-          <View style={styles.dragHandle} />
-          
+        <View style={[styles.sheet, onRemove ? styles.sheetWithRemove : null]}>
           <View style={styles.header}>
             <View style={styles.headerSpacer} />
-            <Text style={styles.title}>{t('petOnboarding.photo_sheet_title')}</Text>
+            <Text style={styles.title}>
+              {hasPhoto ? t('profile.edit.change_photo') : t('petOnboarding.photo_sheet_title')}
+            </Text>
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
               <Ionicons name="close" size={20} color={colors.primaryText} />
             </TouchableOpacity>
           </View>
           
-          <View style={styles.menuContainer}>
+          <View style={[styles.menuContainer, onRemove ? styles.menuWithRemove : null]}>
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
@@ -87,51 +89,69 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   sheet: {
-    backgroundColor: c.surface,
+    minHeight: 328,
+    backgroundColor: c.panel,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xl * 2, // Extra padding for safe area
-    paddingTop: Spacing.md,
+    paddingTop: 24,
+    paddingBottom: 24,
+    shadowColor: '#1E1E1E',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 12,
   },
-  dragHandle: {
-    width: 36,
-    height: 4,
-    backgroundColor: c.border,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: Spacing.md,
+  sheetWithRemove: {
+    minHeight: 376,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.xl,
+    marginBottom: 20,
   },
   headerSpacer: {
     width: 32,
   },
   title: {
     fontFamily: 'Rubik-Medium',
-    fontSize: 18,
+    fontSize: 20,
+    lineHeight: 24,
     color: c.primaryText,
   },
   closeButton: {
     width: 32,
     height: 32,
-    backgroundColor: c.background,
-    borderRadius: 16,
+    padding: 4,
+    backgroundColor: c.surface,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#2D2D2A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 3,
   },
   menuContainer: {
-    backgroundColor: c.background,
+    minHeight: 136,
+    backgroundColor: c.surface,
     borderRadius: Radius.lg,
-    marginBottom: Spacing.lg,
+    marginBottom: 16,
+    shadowColor: '#1F1F1F',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  menuWithRemove: {
+    minHeight: 184,
   },
   menuItem: {
-    paddingVertical: 16,
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   menuItemText: {
     fontFamily: 'Rubik-Regular',
@@ -147,10 +167,16 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     marginHorizontal: Spacing.lg,
   },
   cancelButton: {
-    backgroundColor: c.background,
+    height: 48,
+    backgroundColor: c.surface,
     borderRadius: Radius.lg,
-    paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#2D2D2A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 3,
   },
   cancelText: {
     fontFamily: 'Rubik-Medium',

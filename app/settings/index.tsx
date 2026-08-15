@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t, currentLocale } from '@/i18n';
@@ -74,7 +74,7 @@ export default function SettingsScreen() {
           activeOpacity={0.7}
           accessibilityRole="button"
         >
-          <Ionicons name="log-out-outline" size={24} color={colors.error} />
+          <Feather name="log-out" size={24} color={colors.error} />
           <Text style={styles.signOutText}>{t('common.sign_out')}</Text>
         </TouchableOpacity>
       </ScrollView>

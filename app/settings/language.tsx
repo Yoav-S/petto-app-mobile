@@ -13,7 +13,6 @@ const OPTIONS: { code: AppLocale; label: string }[] = [
   { code: 'en', label: 'English' },
   { code: 'ro', label: 'Română' },
   { code: 'ru', label: 'Русский' },
-  { code: 'he', label: 'עברית' },
 ];
 
 export default function LanguageSettingsScreen() {

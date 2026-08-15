@@ -151,8 +151,16 @@ const makeStyles = (c: ThemeColors) =>
     closeButton: {
       width: 32,
       height: 32,
+      padding: 4,
+      borderRadius: 10,
+      backgroundColor: c.surface,
       alignItems: 'center',
       justifyContent: 'center',
+      shadowColor: '#2D2D2A',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 20,
+      elevation: 3,
     },
     body: {
       width: '100%',

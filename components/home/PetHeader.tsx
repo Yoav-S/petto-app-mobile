@@ -1,7 +1,7 @@
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import React, { useEffect, useRef } from 'react';
 import {
@@ -18,9 +18,10 @@ import { petPhotoSource } from '@/utils/petPhotoSource';
 
 export const DESIGN_WIDTH = 375;
 export const DESIGN_HEIGHT = 812;
-export const DESIGN_COVER_HEIGHT = 340;
-export const DESIGN_PANEL_TOP = 316;
-export const DESIGN_PANEL_HEIGHT = 496;
+/** Slightly taller cover so the white cards panel sits lower; keep ~24px overlap. */
+export const DESIGN_COVER_HEIGHT = 368;
+export const DESIGN_PANEL_TOP = 344;
+export const DESIGN_PANEL_HEIGHT = 468;
 export const DESIGN_PANEL_RADIUS = 24;
 
 interface PetHeaderProps {
@@ -118,7 +119,9 @@ export default function PetHeader({
           }
         >
           {loading ? (
-            <Animated.View style={[styles.coverPlaceholder, { opacity: fadeAnim }]} />
+            <Animated.View
+              style={[styles.coverPlaceholder, styles.coverSkeleton, { opacity: fadeAnim }]}
+            />
           ) : pet ? (
             <Image
               key={pet.id}
@@ -143,7 +146,7 @@ export default function PetHeader({
               accessibilityRole="button"
               accessibilityLabel={t('profile.return_home')}
             >
-              <Ionicons name="arrow-back" size={20} color={colors.primaryText} />
+              <MaterialIcons name="chevron-left" size={28} color={colors.primaryText} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -153,7 +156,7 @@ export default function PetHeader({
               accessibilityRole="button"
               accessibilityLabel={t('profile.edit_profile')}
             >
-              <Ionicons name="pencil" size={18} color={colors.primaryText} />
+              <MaterialCommunityIcons name="pencil" size={20} color={colors.primaryText} />
             </TouchableOpacity>
           </View>
         ) : (
@@ -191,7 +194,9 @@ export default function PetHeader({
                 onPress={canSwitch ? onSwitchPress : undefined}
                 activeOpacity={canSwitch ? 0.7 : 1}
               >
-                <Text style={styles.name}>{pet?.name ?? t('home.noPet')}</Text>
+                <Text style={[styles.name, profileActive && styles.profileName]}>
+                  {pet?.name ?? t('home.noPet')}
+                </Text>
                 {canSwitch ? (
                   <Ionicons name="chevron-down" size={24} color={colors.primaryText} />
                 ) : null}
@@ -236,6 +241,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#E8E2D8',
+  },
+  coverSkeleton: {
+    backgroundColor: c.border,
   },
   settingsButton: {
     position: 'absolute',
@@ -309,6 +317,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 28,
     color: c.primaryText,
+  },
+  profileName: {
+    fontSize: 36,
+    lineHeight: 44,
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
