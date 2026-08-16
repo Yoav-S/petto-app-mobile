@@ -1,18 +1,29 @@
 import type { ImageSource } from 'expo-image';
 
 const DEFAULT_DOG = require('@/assets/images/onboarding/no-pet-images-default.jpg') as ImageSource;
-const FALLBACK = require('@/assets/images/onboarding-cover.png') as ImageSource;
+const DEFAULT_CAT =
+  require('@/assets/images/onboarding/no-pet-images-default-cat.png') as ImageSource;
 
 type PetPhotoLike = {
   photo_url?: string | null;
   type?: string | null;
 };
 
-/** Resolve display source: real photo → dog default → generic cover. */
+function normalizePetType(type?: string | null): 'dog' | 'cat' | null {
+  const value = type?.trim().toLowerCase();
+  if (value === 'dog' || value === 'cat') return value;
+  return null;
+}
+
+/** Bundled default portrait for a pet type when no photo was uploaded. */
+export function defaultPetPhotoSource(type?: string | null): ImageSource {
+  return normalizePetType(type) === 'cat' ? DEFAULT_CAT : DEFAULT_DOG;
+}
+
+/** Resolve display source: real photo → type default (dog/cat). */
 export function petPhotoSource(pet: PetPhotoLike | null | undefined): ImageSource | { uri: string } {
   if (pet?.photo_url) return { uri: pet.photo_url };
-  if (pet?.type?.toLowerCase() === 'dog') return DEFAULT_DOG;
-  return FALLBACK;
+  return defaultPetPhotoSource(pet?.type);
 }
 
 export function onboardingDefaultDogSource(): ImageSource {

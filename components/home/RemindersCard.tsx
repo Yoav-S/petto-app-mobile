@@ -86,7 +86,7 @@ export default function RemindersCard({
                   </Text>
                 </>
               ) : (
-                <Text style={homeCardTypography.meta} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={homeCardTypography.note} numberOfLines={1} ellipsizeMode="tail">
                   {t('home.remindersCard.empty')}
                 </Text>
               )}

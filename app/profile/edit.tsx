@@ -40,8 +40,7 @@ import {
   ProfileSelectField,
   ProfilePillField,
 } from '@/components/profile/ProfileFormFields';
-
-const PET_PLACEHOLDER = require('@/assets/images/onboarding-cover.png');
+import { defaultPetPhotoSource } from '@/utils/petPhotoSource';
 
 function trimOrNull(value: string): string | null {
   const trimmed = value.trim();
@@ -70,6 +69,7 @@ export default function EditProfileScreen() {
   const [weight, setWeight] = useState('');
   const [isNeutered, setIsNeutered] = useState<boolean | null>(null);
   const [chipId, setChipId] = useState('');
+  const [petType, setPetType] = useState<string | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoChanged, setPhotoChanged] = useState(false);
   const [petCount, setPetCount] = useState(0);
@@ -106,6 +106,7 @@ export default function EditProfileScreen() {
           setWeight(pet.weight != null ? String(pet.weight) : '');
           setIsNeutered(pet.is_neutered ?? null);
           setChipId(pet.chip_id ?? '');
+          setPetType(pet.type ?? null);
           setPhotoUri(pet.photo_url ?? null);
           setPhotoChanged(false);
           setNotFound(false);
@@ -245,7 +246,7 @@ export default function EditProfileScreen() {
           >
             <View style={styles.photoWrap}>
               <Image
-                source={photoUri ? { uri: photoUri } : PET_PLACEHOLDER}
+                source={photoUri ? { uri: photoUri } : defaultPetPhotoSource(petType)}
                 style={styles.photo}
                 contentFit="cover"
               />
