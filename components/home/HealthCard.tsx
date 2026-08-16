@@ -5,7 +5,8 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import HealthReminderLine from '@/components/health/HealthReminderLine';
 import React, { useEffect, useRef } from 'react';
-import { Animated, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
 
 interface HealthCardProps {
   latestRecord: {
@@ -24,7 +25,7 @@ function CategoryIcon() {
   const colors = useColors();
   return (
     <View style={[styles.iconContainer, { backgroundColor: homeCategoryIconBg(colors).health }]}>
-      <Image source={HOME_CATEGORY_ICONS.health} style={styles.iconImage} resizeMode="contain" />
+      <Image source={HOME_CATEGORY_ICONS.health} style={styles.iconImage} contentFit="contain" />
     </View>
   );
 }

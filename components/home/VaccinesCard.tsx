@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { Image } from 'expo-image';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
@@ -30,7 +31,7 @@ function CategoryIcon() {
   const colors = useColors();
   return (
     <View style={[styles.iconContainer, { backgroundColor: homeCategoryIconBg(colors).vaccines }]}>
-      <Image source={HOME_CATEGORY_ICONS.vaccines} style={styles.iconImage} resizeMode="contain" />
+      <Image source={HOME_CATEGORY_ICONS.vaccines} style={styles.iconImage} contentFit="contain" />
     </View>
   );
 }

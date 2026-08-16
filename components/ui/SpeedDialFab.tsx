@@ -1,6 +1,5 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Image,
   type ImageSourcePropType,
   Pressable,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   interpolate,
@@ -94,7 +94,7 @@ export default function SpeedDialFab({
       bottom: ADD_FAB.bottom * s,
       menuGap: ADD_FAB.menuGap * s,
       menuItemH: ADD_FAB.menuItemH * s,
-      menuIcon: 18 * s,
+      menuIcon: 22 * s,
     }),
     [s],
   );
@@ -156,7 +156,7 @@ export default function SpeedDialFab({
                 <Image
                   source={item.icon}
                   style={{ width: layout.menuIcon, height: layout.menuIcon }}
-                  resizeMode="contain"
+                  contentFit="contain"
                 />
               ) : null}
               <Text style={styles.menuLabel} numberOfLines={1}>

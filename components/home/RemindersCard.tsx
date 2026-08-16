@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -23,7 +24,7 @@ function CategoryIcon() {
   const colors = useColors();
   return (
     <View style={[styles.iconContainer, { backgroundColor: homeCategoryIconBg(colors).reminders }]}>
-      <Image source={HOME_CATEGORY_ICONS.reminders} style={styles.iconImage} resizeMode="contain" />
+      <Image source={HOME_CATEGORY_ICONS.reminders} style={styles.iconImage} contentFit="contain" />
     </View>
   );
 }

@@ -147,7 +147,12 @@ export default function PetHeader({
               accessibilityRole="button"
               accessibilityLabel={t('profile.return_home')}
             >
-              <MaterialIcons name="chevron-left" size={28} color={colors.primaryText} />
+              <MaterialIcons
+                name="chevron-left"
+                size={24}
+                color={colors.primaryText}
+                style={styles.backIcon}
+              />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -157,7 +162,7 @@ export default function PetHeader({
               accessibilityRole="button"
               accessibilityLabel={t('profile.edit_profile')}
             >
-              <MaterialCommunityIcons name="pencil" size={20} color={colors.primaryText} />
+              <MaterialCommunityIcons name="pencil-outline" size={18} color={colors.primaryText} />
             </TouchableOpacity>
           </View>
         ) : (
@@ -290,15 +295,20 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    padding: 4,
     backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
     elevation: 3,
+  },
+  backIcon: {
+    // Material chevron glyph is optically left-heavy inside its box.
+    marginLeft: -1,
+    textAlign: 'center',
   },
   panelOuter: {
     flex: 1,
