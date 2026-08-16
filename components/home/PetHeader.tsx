@@ -101,6 +101,7 @@ export default function PetHeader({
   }, [loading, fadeAnim]);
 
   const canSwitch = Boolean(pet);
+  const petAge = calculateAge(pet?.birth_date ?? undefined);
 
   return (
     <View style={styles.wrapper}>
@@ -183,7 +184,7 @@ export default function PetHeader({
           ]}
         >
           {loading ? (
-            <View style={styles.nameSection}>
+            <View style={[styles.nameSection, profileActive && styles.profileNameSection]}>
               <Animated.View style={[styles.nameSkeleton, { opacity: fadeAnim }]} />
               <Animated.View style={[styles.subtitleSkeleton, { opacity: fadeAnim }]} />
             </View>
@@ -194,7 +195,11 @@ export default function PetHeader({
                 onPress={canSwitch ? onSwitchPress : undefined}
                 activeOpacity={canSwitch ? 0.7 : 1}
               >
-                <Text style={[styles.name, profileActive && styles.profileName]}>
+                <Text
+                  style={[styles.name, profileActive && styles.profileName]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {pet?.name ?? t('home.noPet')}
                 </Text>
                 {canSwitch ? (
@@ -202,9 +207,19 @@ export default function PetHeader({
                 ) : null}
               </TouchableOpacity>
               {pet ? (
-                <Text style={styles.subtitle}>
-                  {[pet.breed, calculateAge(pet.birth_date ?? undefined)].filter(Boolean).join(' \u2022 ')}
-                </Text>
+                <View style={styles.subtitleRow}>
+                  {pet.breed ? (
+                    <Text style={styles.breed} numberOfLines={1} ellipsizeMode="tail">
+                      {pet.breed}
+                    </Text>
+                  ) : null}
+                  {pet.breed && petAge ? <Text style={styles.subtitleSeparator}>{'\u2022'}</Text> : null}
+                  {petAge ? (
+                    <Text style={styles.age} numberOfLines={1}>
+                      {petAge}
+                    </Text>
+                  ) : null}
+                </View>
               ) : (
                 <Text style={styles.emptySubtitle}>{t('home.addFirstPet')}</Text>
               )}
@@ -310,13 +325,18 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     marginBottom: 12,
     paddingBottom: 0,
   },
+  profileNameSection: {
+    width: 335,
+  },
   nameRow: {
+    maxWidth: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
     marginBottom: 4,
   },
   name: {
+    flexShrink: 1,
     fontFamily: 'Rubik-Regular',
     fontSize: 28,
     color: c.primaryText,
@@ -325,9 +345,35 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 36,
     lineHeight: 44,
   },
-  subtitle: {
+  subtitleRow: {
+    width: '100%',
+    height: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    overflow: 'hidden',
+  },
+  breed: {
+    flexShrink: 1,
+    minWidth: 0,
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
+    lineHeight: 20,
+    color: c.secondaryText,
+  },
+  subtitleSeparator: {
+    flexShrink: 0,
+    fontFamily: 'Rubik-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: c.secondaryText,
+  },
+  age: {
+    flexShrink: 0,
+    fontFamily: 'Rubik-Regular',
+    fontSize: 14,
+    lineHeight: 20,
     color: c.secondaryText,
   },
   emptySubtitle: {

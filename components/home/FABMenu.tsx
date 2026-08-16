@@ -1,6 +1,6 @@
 import React from 'react';
 import SpeedDialFab, { type SpeedDialItem } from '@/components/ui/SpeedDialFab';
-import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
+import { HOME_CATEGORY_ICONS, TOPICS_FAB_ICON } from '@/components/home/categoryIcons';
 import { t } from '@/i18n';
 
 interface FABMenuProps {
@@ -23,7 +23,7 @@ export default function FABMenu({
     {
       key: 'health',
       label: t('fab.topics'),
-      icon: HOME_CATEGORY_ICONS.health,
+      icon: TOPICS_FAB_ICON,
       onPress: onHealthPress,
     },
     {
