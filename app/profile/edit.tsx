@@ -13,6 +13,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { Pencil } from 'lucide-react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -259,7 +260,7 @@ export default function EditProfileScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={t('profile.edit.change_photo')}
               >
-                <Ionicons name="pencil" size={14} color={colors.primaryText} />
+                <Pencil size={14} color={colors.primaryText} strokeWidth={2} />
               </TouchableOpacity>
             </View>
 

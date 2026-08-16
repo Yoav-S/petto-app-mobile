@@ -1,7 +1,8 @@
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
-import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Pencil } from 'lucide-react-native';
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
@@ -157,11 +158,7 @@ export default function PetHeader({
               onPress={onEditProfile}
               accessibilityLabel={t('profile.edit_profile')}
             >
-              <MaterialCommunityIcons
-                name="pencil-outline"
-                size={18}
-                color={colors.primaryText}
-              />
+              <Pencil size={18} color={colors.primaryText} strokeWidth={2} />
             </HeaderIconButton>
           </View>
         ) : (
