@@ -1,10 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useHeaderLayout } from '@/utils/headerLayout';
+import HeaderIconButton, {
+  HEADER_ICON_BTN,
+} from '@/components/ui/HeaderIconButton';
 
 interface ScreenHeaderProps {
   title: string;
@@ -24,7 +27,6 @@ export default function ScreenHeader({ title, icon = 'back', onBack, right }: Sc
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const layout = useHeaderLayout();
-  const buttonSize = 40 * layout.sx;
 
   return (
     <View style={[styles.wrap, { paddingTop: layout.paddingTop, backgroundColor: colors.background }]}>
@@ -38,30 +40,19 @@ export default function ScreenHeader({ title, icon = 'back', onBack, right }: Sc
           },
         ]}
       >
-        <TouchableOpacity
-          style={[
-            styles.iconButton,
-            {
-              width: buttonSize,
-              height: buttonSize,
-              borderRadius: 12 * layout.sx,
-            },
-          ]}
-          onPress={onBack ?? (() => router.back())}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
+        <HeaderIconButton onPress={onBack ?? (() => router.back())}>
           <Ionicons
             name={icon === 'close' ? 'close' : 'chevron-back'}
-            size={icon === 'close' ? 22 : 24}
+            size={HEADER_ICON_BTN.iconSize}
             color={colors.primaryText}
           />
-        </TouchableOpacity>
+        </HeaderIconButton>
 
         <Text style={styles.title} numberOfLines={1}>
           {title}
         </Text>
 
-        {right ?? <View style={{ width: buttonSize }} />}
+        {right ?? <View style={styles.spacer} />}
       </View>
     </View>
   );
@@ -77,15 +68,9 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: 'center',
       justifyContent: 'space-between',
     },
-    iconButton: {
-      backgroundColor: c.surface,
-      justifyContent: 'center',
-      alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.05,
-      shadowRadius: 4,
-      elevation: 2,
+    spacer: {
+      width: HEADER_ICON_BTN.size,
+      height: HEADER_ICON_BTN.size,
     },
     title: {
       flex: 1,

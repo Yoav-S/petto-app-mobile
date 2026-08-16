@@ -15,6 +15,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { petPhotoSource } from '@/utils/petPhotoSource';
 import PetPhotoImage from '@/components/ui/PetPhotoImage';
+import HeaderIconButton, {
+  HEADER_ICON_BTN,
+} from '@/components/ui/HeaderIconButton';
 
 export const DESIGN_WIDTH = 375;
 export const DESIGN_HEIGHT = 812;
@@ -138,41 +141,41 @@ export default function PetHeader({
 
         {profileActive ? (
           <View style={[styles.actionBar, { top: insets.top + Spacing.xs }]}>
-            <TouchableOpacity
-              style={styles.actionButton}
+            <HeaderIconButton
               onPress={onReturnHome}
-              activeOpacity={0.85}
-              accessibilityRole="button"
               accessibilityLabel={t('profile.return_home')}
             >
               <MaterialIcons
                 name="chevron-left"
-                size={24}
+                size={HEADER_ICON_BTN.iconSize}
                 color={colors.primaryText}
                 style={styles.backIcon}
               />
-            </TouchableOpacity>
+            </HeaderIconButton>
 
-            <TouchableOpacity
-              style={styles.actionButton}
+            <HeaderIconButton
               onPress={onEditProfile}
-              activeOpacity={0.85}
-              accessibilityRole="button"
               accessibilityLabel={t('profile.edit_profile')}
             >
-              <MaterialCommunityIcons name="pencil-outline" size={18} color={colors.primaryText} />
-            </TouchableOpacity>
+              <MaterialCommunityIcons
+                name="pencil-outline"
+                size={18}
+                color={colors.primaryText}
+              />
+            </HeaderIconButton>
           </View>
         ) : (
-          <TouchableOpacity
+          <HeaderIconButton
             style={[styles.settingsButton, { top: insets.top + Spacing.sm }]}
             onPress={onSettingsPress}
-            activeOpacity={0.85}
-            accessibilityRole="button"
             accessibilityLabel={t('home.settings')}
           >
-            <Ionicons name="settings-outline" size={22} color={colors.primaryText} />
-          </TouchableOpacity>
+            <Ionicons
+              name="settings-outline"
+              size={HEADER_ICON_BTN.iconSize}
+              color={colors.primaryText}
+            />
+          </HeaderIconButton>
         )}
       </View>
 
@@ -263,17 +266,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   settingsButton: {
     position: 'absolute',
     right: Spacing.lg,
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: c.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 3,
   },
   actionBar: {
     position: 'absolute',
@@ -285,20 +277,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     zIndex: 90,
-  },
-  actionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: c.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 3,
   },
   backIcon: {
     // Material chevron glyph is optically left-heavy inside its box.

@@ -17,6 +17,7 @@ import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import TopicActionsSheet from '@/components/topics/TopicActionsSheet';
@@ -27,7 +28,6 @@ import { getErrorMessage } from '@/services/errors';
 import HealthReminderLine from '@/components/health/HealthReminderLine';
 import HealthNoteIconRow from '@/components/health/HealthNoteIconRow';
 import { normalizeRouteParam } from '@/utils/routeParams';
-import { useHeaderLayout } from '@/utils/headerLayout';
 import type { MedicalRecordDetail } from '@/types/api';
 
 const DESIGN_WIDTH = 375;
@@ -50,7 +50,6 @@ export default function HealthDetailsScreen() {
   const { activePetId } = useActivePet();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const headerLayout = useHeaderLayout();
   const sx = width / DESIGN_WIDTH;
   const sy = height / DESIGN_HEIGHT;
 
@@ -64,15 +63,13 @@ export default function HealthDetailsScreen() {
       buttonHeight: DESIGN_SAVE_BUTTON_HEIGHT * sx,
       buttonRadius: 12 * sx,
       footerRadius: DESIGN_FOOTER_RADIUS * sx,
-      menuSize: 40 * headerLayout.sx,
-      menuRadius: 12 * headerLayout.sx,
       scrollPadBottom:
         (DESIGN_FOOTER_PAD_TOP + DESIGN_SAVE_BUTTON_HEIGHT) * sy +
         Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM * sy) +
         DESIGN_FOOTER_SAFE_GAP * sy +
         16,
     }),
-    [sx, sy, insets.bottom, headerLayout.sx],
+    [sx, sy, insets.bottom],
   );
 
   const [record, setRecord] = useState<MedicalRecordDetail | null>(null);
@@ -160,22 +157,12 @@ export default function HealthDetailsScreen() {
 
   const isActive = record.status === 'active';
   const menuButton = isActive ? (
-    <TouchableOpacity
-      style={[
-        styles.menuButton,
-        {
-          width: footerLayout.menuSize,
-          height: footerLayout.menuSize,
-          borderRadius: footerLayout.menuRadius,
-        },
-      ]}
+    <HeaderIconButton
       onPress={() => setMenuVisible(true)}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      accessibilityRole="button"
       accessibilityLabel={t('topics.mark_resolved')}
     >
-      <Ionicons name="ellipsis-vertical" size={20} color={colors.primaryText} />
-    </TouchableOpacity>
+      <Ionicons name="ellipsis-vertical" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
+    </HeaderIconButton>
   ) : undefined;
 
   return (
@@ -350,16 +337,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   reminderRow: {
     marginTop: Spacing.sm,
-  },
-  menuButton: {
-    backgroundColor: c.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   footer: {
     width: '100%',

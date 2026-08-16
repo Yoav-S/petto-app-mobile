@@ -39,6 +39,10 @@ import {
   ProfileSelectField,
   ProfilePillField,
 } from '@/components/profile/ProfileFormFields';
+import HeaderIconButton, {
+  HEADER_ICON_BTN,
+  HEADER_ICON_BTN_SHADOW,
+} from '@/components/ui/HeaderIconButton';
 import { defaultPetPhotoSource } from '@/utils/petPhotoSource';
 import PetPhotoImage from '@/components/ui/PetPhotoImage';
 
@@ -214,17 +218,14 @@ export default function EditProfileScreen() {
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <View style={{ paddingTop: headerTopPadding, backgroundColor: colors.background }}>
         <View style={styles.header}>
-          <Pressable
+          <HeaderIconButton
             onPress={() => router.back()}
-            hitSlop={12}
-            style={styles.headerBtn}
-            accessibilityRole="button"
             accessibilityLabel={t('petOnboarding.back')}
           >
-            <Ionicons name="chevron-back" size={24} color={colors.primaryText} />
-          </Pressable>
+            <Ionicons name="chevron-back" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
+          </HeaderIconButton>
           <Text style={styles.headerTitle}>{t('profile.edit.title')}</Text>
-          <View style={styles.headerBtn} />
+          <View style={styles.headerSpacer} />
         </View>
       </View>
 
@@ -393,11 +394,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 6,
   },
-  headerBtn: {
-    width: 40,
-    height: 32,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
+  headerSpacer: {
+    width: HEADER_ICON_BTN.size,
+    height: HEADER_ICON_BTN.size,
   },
   headerTitle: {
     fontFamily: 'Rubik-Regular',
@@ -435,18 +434,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     position: 'absolute',
     top: 92,
     left: 92,
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    padding: 4,
+    width: HEADER_ICON_BTN.size,
+    height: HEADER_ICON_BTN.size,
+    borderRadius: HEADER_ICON_BTN.radius,
+    padding: HEADER_ICON_BTN.padding,
     backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 3,
+    ...HEADER_ICON_BTN_SHADOW,
   },
   fields: {
     gap: 16,

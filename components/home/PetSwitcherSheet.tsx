@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
 } from 'react-native';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
@@ -14,6 +13,7 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import type { Pet } from '@/types/api';
 import { AddPetRow, PetSwitcherRow } from '@/components/home/PetSwitcherRows';
+import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
 
 interface PetSwitcherSheetProps {
   visible: boolean;
@@ -40,16 +40,14 @@ export default function PetSwitcherSheet({
     <BottomSheetModal visible={visible} onClose={onClose}>
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.header}>
-          <Text style={styles.title}>{t('home.pets_title')}</Text>
-            <TouchableOpacity
+            <Text style={styles.title}>{t('home.pets_title')}</Text>
+            <HeaderIconButton
               style={styles.closeBtn}
               onPress={onClose}
-              hitSlop={12}
-              accessibilityRole="button"
               accessibilityLabel={t('common.cancel')}
             >
-              <Ionicons name="close" size={20} color={colors.primaryText} />
-            </TouchableOpacity>
+              <Ionicons name="close" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
+            </HeaderIconButton>
           </View>
 
           <View style={styles.listBlock}>
@@ -110,12 +108,6 @@ const makeStyles = (c: ThemeColors) =>
     closeBtn: {
       position: 'absolute',
       right: 0,
-      width: 32,
-      height: 32,
-      borderRadius: 10,
-      backgroundColor: c.panel,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     listBlock: {
       gap: 16,

@@ -1,11 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import { useHeaderTopPadding } from '@/utils/headerLayout';
+import HeaderIconButton, {
+  HEADER_ICON_BTN,
+} from '@/components/ui/HeaderIconButton';
 
 interface SettingsHeaderProps {
   title: string;
@@ -24,15 +27,12 @@ export default function SettingsHeader({ title }: SettingsHeaderProps) {
   return (
     <View style={[styles.wrap, { paddingTop }]}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
+        <HeaderIconButton
           onPress={() => router.back()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          accessibilityRole="button"
           accessibilityLabel={t('petOnboarding.back')}
         >
-          <Ionicons name="chevron-back" size={20} color={colors.primaryText} />
-        </TouchableOpacity>
+          <Ionicons name="chevron-back" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
+        </HeaderIconButton>
 
         <Text style={styles.title}>{title}</Text>
 
@@ -56,20 +56,6 @@ const makeStyles = (c: ThemeColors) =>
       paddingHorizontal: 20,
       paddingVertical: 6,
     },
-    backButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 10,
-      padding: 4,
-      backgroundColor: c.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
-      shadowColor: '#2D2D2A',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 20,
-      elevation: 3,
-    },
     title: {
       fontFamily: 'Rubik-Regular',
       fontSize: 24,
@@ -78,7 +64,7 @@ const makeStyles = (c: ThemeColors) =>
       textAlign: 'center',
     },
     rightSpacer: {
-      width: 32,
-      height: 32,
+      width: HEADER_ICON_BTN.size,
+      height: HEADER_ICON_BTN.size,
     },
   });
