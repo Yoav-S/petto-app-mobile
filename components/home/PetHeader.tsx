@@ -2,7 +2,6 @@ import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
@@ -15,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { petPhotoSource } from '@/utils/petPhotoSource';
+import PetPhotoImage from '@/components/ui/PetPhotoImage';
 
 export const DESIGN_WIDTH = 375;
 export const DESIGN_HEIGHT = 812;
@@ -120,12 +120,10 @@ export default function PetHeader({
           }
         >
           {loading ? (
-            <Animated.View
-              style={[styles.coverPlaceholder, styles.coverSkeleton, { opacity: fadeAnim }]}
-            />
+            <PetPhotoImage forceLoading style={styles.coverImage} />
           ) : pet ? (
-            <Image
-              key={pet.id}
+            <PetPhotoImage
+              recyclingKey={pet.id}
               source={petPhotoSource(pet)}
               style={styles.coverImage}
               contentFit="cover"
@@ -261,9 +259,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#E8E2D8',
-  },
-  coverSkeleton: {
-    backgroundColor: c.border,
   },
   settingsButton: {
     position: 'absolute',

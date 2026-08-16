@@ -1,12 +1,12 @@
 ﻿import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import type { Pet } from '@/types/api';
 import { petPhotoSource } from '@/utils/petPhotoSource';
+import PetPhotoImage from '@/components/ui/PetPhotoImage';
 
 export function petTypeLabel(type: string): string {
   const key = `petOnboarding.${type.toLowerCase()}`;
@@ -32,7 +32,8 @@ export function PetSwitcherRow({ pet, selected, onPress }: PetSwitcherRowProps) 
       accessibilityState={{ selected }}
     >
       <View style={styles.left}>
-        <Image
+        <PetPhotoImage
+          recyclingKey={pet.id}
           source={petPhotoSource(pet)}
           style={styles.avatar}
           contentFit="cover"

@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -41,6 +40,7 @@ import {
   ProfilePillField,
 } from '@/components/profile/ProfileFormFields';
 import { defaultPetPhotoSource } from '@/utils/petPhotoSource';
+import PetPhotoImage from '@/components/ui/PetPhotoImage';
 
 function trimOrNull(value: string): string | null {
   const trimmed = value.trim();
@@ -245,10 +245,11 @@ export default function EditProfileScreen() {
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.photoWrap}>
-              <Image
+              <PetPhotoImage
                 source={photoUri ? { uri: photoUri } : defaultPetPhotoSource(petType)}
                 style={styles.photo}
                 contentFit="cover"
+                accessibilityLabel={t('profile.edit.change_photo')}
               />
               <TouchableOpacity
                 style={styles.photoEditBtn}
