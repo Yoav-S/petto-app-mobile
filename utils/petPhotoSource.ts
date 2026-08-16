@@ -2,7 +2,7 @@ import type { ImageSource } from 'expo-image';
 
 const DEFAULT_DOG = require('@/assets/images/onboarding/no-pet-images-default.jpg') as ImageSource;
 const DEFAULT_CAT =
-  require('@/assets/images/onboarding/no-pet-images-default-cat.png') as ImageSource;
+  require('@/assets/images/onboarding/no-pet-images-default-cat.jpg') as ImageSource;
 
 type PetPhotoLike = {
   photo_url?: string | null;
