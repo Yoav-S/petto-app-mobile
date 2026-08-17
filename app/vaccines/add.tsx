@@ -40,6 +40,7 @@ import {
   todayIsoDate,
 } from '@/utils/calendar';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { useSettledModalVisible } from '@/components/ui/BottomSheetModal';
 
 type DateSheet = 'date' | 'next' | null;
 
@@ -92,6 +93,25 @@ export default function AddVaccineScreen() {
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const viewerPresented = useSettledModalVisible(viewerVisible);
+
+  const openDateSheet = (target: DateSheet) => {
+    setPhotoSheetVisible(false);
+    setViewerVisible(false);
+    setDateSheet(target);
+  };
+
+  const openPhotoSheet = () => {
+    setDateSheet(null);
+    setViewerVisible(false);
+    setPhotoSheetVisible(true);
+  };
+
+  const openViewer = () => {
+    setPhotoSheetVisible(false);
+    setDateSheet(null);
+    setViewerVisible(true);
+  };
 
   const canSave = name.trim().length > 0 && !submitting;
 
@@ -219,7 +239,7 @@ export default function AddVaccineScreen() {
           >
             <TouchableOpacity
               style={styles.dateRow}
-              onPress={() => setDateSheet('date')}
+              onPress={() => openDateSheet('date')}
               activeOpacity={0.6}
             >
               <Text style={styles.dateRowLabel}>{t('vaccines.vaccinated_on')}</Text>
@@ -230,7 +250,7 @@ export default function AddVaccineScreen() {
 
             <TouchableOpacity
               style={styles.dateRow}
-              onPress={() => setDateSheet('next')}
+              onPress={() => openDateSheet('next')}
               activeOpacity={0.6}
             >
               <Text style={styles.dateRowLabel}>{t('vaccines.valid_until')}</Text>
@@ -256,12 +276,12 @@ export default function AddVaccineScreen() {
             <Text style={styles.sectionLabel}>{t('vaccines.proof_photo')}</Text>
             {photoUri ? (
               <View style={[styles.photoWrap, { height: layout.photoInnerHeight }]}>
-                <TouchableOpacity activeOpacity={0.9} onPress={() => setPhotoSheetVisible(true)}>
+                <TouchableOpacity activeOpacity={0.9} onPress={openPhotoSheet}>
                   <Image source={{ uri: photoUri }} style={styles.photo} contentFit="cover" />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.expandButton}
-                  onPress={() => setViewerVisible(true)}
+                  onPress={openViewer}
                   hitSlop={8}
                 >
                   <Ionicons name="expand-outline" size={18} color={colors.primaryText} />
@@ -270,7 +290,7 @@ export default function AddVaccineScreen() {
             ) : (
               <TouchableOpacity
                 style={[styles.photoPlaceholder, { height: layout.photoInnerHeight }]}
-                onPress={() => setPhotoSheetVisible(true)}
+                onPress={openPhotoSheet}
                 activeOpacity={0.7}
               >
                 <Ionicons name="image-outline" size={24} color={colors.secondaryText} />
@@ -342,17 +362,19 @@ export default function AddVaccineScreen() {
         confirmLabel={t('pickers.done')}
       />
 
-      <Modal visible={viewerVisible} transparent animationType="fade" onRequestClose={() => setViewerVisible(false)}>
-        <View style={styles.viewerOverlay}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setViewerVisible(false)} />
-          <TouchableOpacity style={styles.viewerClose} onPress={() => setViewerVisible(false)} hitSlop={10}>
-            <Ionicons name="close" size={28} color={colors.surface} />
-          </TouchableOpacity>
-          {photoUri ? (
-            <Image source={{ uri: photoUri }} style={styles.viewerImage} contentFit="contain" />
-          ) : null}
-        </View>
-      </Modal>
+      {viewerPresented ? (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setViewerVisible(false)}>
+          <View style={styles.viewerOverlay}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setViewerVisible(false)} />
+            <TouchableOpacity style={styles.viewerClose} onPress={() => setViewerVisible(false)} hitSlop={10}>
+              <Ionicons name="close" size={28} color={colors.surface} />
+            </TouchableOpacity>
+            {photoUri ? (
+              <Image source={{ uri: photoUri }} style={styles.viewerImage} contentFit="contain" />
+            ) : null}
+          </View>
+        </Modal>
+      ) : null}
     </SafeAreaView>
   );
 }

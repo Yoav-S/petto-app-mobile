@@ -4,22 +4,17 @@
  * Opening PHPicker / UIImagePicker while a React Native Modal (our bottom
  * sheets) is still dismissing presents the gallery twice and often crashes.
  */
-import { InteractionManager, Platform } from 'react-native';
+import { InteractionManager } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import {
-  BOTTOM_SHEET_CLOSE_MS,
-  BOTTOM_SHEET_IOS_GAP_MS,
-} from '@/components/ui/BottomSheetModal';
-
-const SHEET_CLOSE_MS =
-  BOTTOM_SHEET_CLOSE_MS + BOTTOM_SHEET_IOS_GAP_MS + (Platform.OS === 'ios' ? 40 : 0);
+import { waitForBottomSheetsToSettle } from '@/components/ui/BottomSheetModal';
 
 let inFlight = false;
 
-function waitForModalsToSettle(): Promise<void> {
-  return new Promise((resolve) => {
+async function waitForModalsToSettle(): Promise<void> {
+  await waitForBottomSheetsToSettle();
+  await new Promise<void>((resolve) => {
     InteractionManager.runAfterInteractions(() => {
-      setTimeout(resolve, SHEET_CLOSE_MS);
+      requestAnimationFrame(() => resolve());
     });
   });
 }

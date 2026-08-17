@@ -85,6 +85,7 @@ export default function AddNoteScreen() {
   const canSave = note.trim().length > 0 && !submitting && !loadingRecord;
 
   const pickImage = async () => {
+    setReminderSheetVisible(false);
     const picked = await pickImageFromLibrary();
     if (picked === 'denied') {
       Alert.alert(t('petOnboarding.photo_permission_title'), t('petOnboarding.photo_permission_body'));

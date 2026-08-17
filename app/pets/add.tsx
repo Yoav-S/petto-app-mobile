@@ -156,7 +156,10 @@ export default function AddPetScreen() {
           ]}
         >
           <Pressable
-            onPress={() => setPhotoSheetVisible(true)}
+            onPress={() => {
+              setBirthSheetVisible(false);
+              setPhotoSheetVisible(true);
+            }}
             style={{
               width: layout.photoSize,
               height: layout.photoSize,
@@ -244,7 +247,10 @@ export default function AddPetScreen() {
             <ProfileSelectField
               label={t('profile.birth_date')}
               valueText={birthDate ? formatDisplayDate(birthDate) : null}
-              onPress={() => setBirthSheetVisible(true)}
+              onPress={() => {
+                setPhotoSheetVisible(false);
+                setBirthSheetVisible(true);
+              }}
             />
           </View>
 

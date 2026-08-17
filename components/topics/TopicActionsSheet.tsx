@@ -2,8 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import BottomSheetModal, {
-  BOTTOM_SHEET_CLOSE_MS,
-  BOTTOM_SHEET_IOS_GAP_MS,
+  waitForBottomSheetsToSettle,
 } from '@/components/ui/BottomSheetModal';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -41,10 +40,8 @@ export default function TopicActionsSheet({
             style={styles.menuItem}
             onPress={() => {
               onClose();
-              // Wait for sheet Modal teardown before presenting ConfirmModal (iOS).
-              setTimeout(() => {
-                onMarkResolved();
-              }, BOTTOM_SHEET_CLOSE_MS + BOTTOM_SHEET_IOS_GAP_MS);
+              // Never present ConfirmModal over a dismissing sheet on iOS.
+              void waitForBottomSheetsToSettle().then(onMarkResolved);
             }}
             accessibilityRole="button"
           >

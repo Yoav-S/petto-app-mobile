@@ -24,6 +24,7 @@ import HealthListItem, {
 } from '@/components/health/HealthListItem';
 import HealthRecordPickerSheet from '@/components/health/HealthRecordPickerSheet';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import { waitForBottomSheetsToSettle } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { listRecords, deleteRecord, enrichRecordsWithLatestNoteReminders } from '@/services/health';
@@ -329,10 +330,12 @@ export default function HealthScreen() {
         onClose={() => setRecordPickerVisible(false)}
         onSelect={(record) => {
           setRecordPickerVisible(false);
-          router.push({
-            pathname: '/topics/add-note',
-            params: { recordId: record.id },
-          } as never);
+          void waitForBottomSheetsToSettle().then(() => {
+            router.push({
+              pathname: '/topics/add-note',
+              params: { recordId: record.id },
+            } as never);
+          });
         }}
       />
 

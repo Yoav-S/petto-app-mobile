@@ -16,30 +16,101 @@ export const BOTTOM_SHEET_CLOSE_MS = 220;
 export const BOTTOM_SHEET_IOS_GAP_MS = Platform.OS === 'ios' ? 120 : 0;
 
 /**
- * Serialize Modal teardown → next Modal present.
- * Opening a sheet while another is still dismissing stacks Modals and freezes iOS
- * (date picker, gallery sheets, reminder sub-sheets, etc.).
+ * A native iOS Modal must fully dismiss before another one presents.
+ * Keep ownership until the close animation has completed, regardless of React
+ * sibling effect order. This covers every BottomSheetModal in the app.
  */
-let closeChain: Promise<void> = Promise.resolve();
+type SheetWaiter = {
+  id: symbol;
+  resolve: () => void;
+};
 
-function enqueueClose(): () => void {
-  let resolved = false;
-  let resolve!: () => void;
-  const promise = new Promise<void>((r) => {
-    resolve = r;
-  });
-  closeChain = closeChain.then(() => promise);
-  return () => {
-    if (resolved) return;
-    resolved = true;
-    resolve();
-  };
+let activeSheetId: symbol | null = null;
+let sheetGapPending = false;
+const sheetWaiters: SheetWaiter[] = [];
+const idleResolvers: (() => void)[] = [];
+
+function resolveIdleWaiters() {
+  if (activeSheetId !== null || sheetGapPending || sheetWaiters.length > 0) return;
+  idleResolvers.splice(0).forEach((resolve) => resolve());
 }
 
-async function waitForCloseChain(): Promise<void> {
-  await closeChain;
+/** Wait until no app bottom-sheet Modal is mounted or dismissing. */
+export function waitForBottomSheetsToSettle(): Promise<void> {
+  if (activeSheetId === null && !sheetGapPending && sheetWaiters.length === 0) {
+    return Promise.resolve();
+  }
+  return new Promise<void>((resolve) => {
+    idleResolvers.push(resolve);
+  });
+}
+
+/**
+ * Present a raw RN Modal only after every bottom sheet has dismissed.
+ * Confirm dialogs, photo viewers, and success overlays must use this on iOS.
+ */
+export function useSettledModalVisible(requested: boolean): boolean {
+  const [presented, setPresented] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!requested) {
+      setPresented(false);
+      return;
+    }
+    void waitForBottomSheetsToSettle().then(() => {
+      if (!cancelled) setPresented(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [requested]);
+
+  return presented;
+}
+
+function acquireSheet(id: symbol): Promise<void> {
+  if ((activeSheetId === null && !sheetGapPending) || activeSheetId === id) {
+    activeSheetId = id;
+    return Promise.resolve();
+  }
+
+  return new Promise<void>((resolve) => {
+    if (!sheetWaiters.some((waiter) => waiter.id === id)) {
+      sheetWaiters.push({ id, resolve });
+    }
+  });
+}
+
+function cancelWaitingSheet(id: symbol) {
+  const index = sheetWaiters.findIndex((waiter) => waiter.id === id);
+  if (index >= 0) {
+    const [waiter] = sheetWaiters.splice(index, 1);
+    waiter.resolve();
+  }
+}
+
+function releaseSheet(id: symbol) {
+  cancelWaitingSheet(id);
+  if (activeSheetId !== id) return;
+  activeSheetId = null;
+
+  const grantNext = () => {
+    sheetGapPending = false;
+    const next = sheetWaiters.shift();
+    if (!next) {
+      resolveIdleWaiters();
+      return;
+    }
+    activeSheetId = next.id;
+    next.resolve();
+  };
+
   if (BOTTOM_SHEET_IOS_GAP_MS > 0) {
-    await new Promise((r) => setTimeout(r, BOTTOM_SHEET_IOS_GAP_MS));
+    sheetGapPending = true;
+    setTimeout(grantNext, BOTTOM_SHEET_IOS_GAP_MS);
+  } else {
+    grantNext();
   }
 }
 
@@ -63,8 +134,8 @@ export default function BottomSheetModal({
   const styles = useThemedStyles(makeStyles);
   const [mounted, setMounted] = useState(false);
   const mountedRef = useRef(false);
+  const sheetIdRef = useRef(Symbol('bottom-sheet'));
   const progress = useSharedValue(0);
-  const finishCloseRef = useRef<(() => void) | null>(null);
 
   const markUnmounted = () => {
     mountedRef.current = false;
@@ -76,8 +147,11 @@ export default function BottomSheetModal({
 
     if (visible) {
       void (async () => {
-        await waitForCloseChain();
-        if (cancelled) return;
+        await acquireSheet(sheetIdRef.current);
+        if (cancelled) {
+          releaseSheet(sheetIdRef.current);
+          return;
+        }
         mountedRef.current = true;
         setMounted(true);
         progress.value = withTiming(1, {
@@ -93,18 +167,13 @@ export default function BottomSheetModal({
 
     // visible === false
     if (!mountedRef.current) {
+      cancelWaitingSheet(sheetIdRef.current);
       return;
     }
 
-    const finishClose = enqueueClose();
-    finishCloseRef.current = finishClose;
-
     const completeClose = () => {
       markUnmounted();
-      finishClose();
-      if (finishCloseRef.current === finishClose) {
-        finishCloseRef.current = null;
-      }
+      releaseSheet(sheetIdRef.current);
     };
 
     progress.value = withTiming(
@@ -122,16 +191,19 @@ export default function BottomSheetModal({
 
     return () => {
       cancelled = true;
-      // Interrupted (next sheet opening / unmount): release the gate immediately.
-      progress.value = 0;
-      markUnmounted();
-      finishClose();
-      if (finishCloseRef.current === finishClose) {
-        finishCloseRef.current = null;
-      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, progress]);
+
+  useEffect(
+    () => () => {
+      cancelWaitingSheet(sheetIdRef.current);
+      if (mountedRef.current) {
+        mountedRef.current = false;
+        releaseSheet(sheetIdRef.current);
+      }
+    },
+    [],
+  );
 
   const overlayStyle = useAnimatedStyle(() => ({
     opacity: progress.value,

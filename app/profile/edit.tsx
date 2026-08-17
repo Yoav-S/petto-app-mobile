@@ -216,6 +216,8 @@ export default function EditProfileScreen() {
       );
       return;
     }
+    setPhotoSheetVisible(false);
+    setDateSheetVisible(false);
     setDeleteVisible(true);
   };
 
@@ -272,7 +274,10 @@ export default function EditProfileScreen() {
               />
               <TouchableOpacity
                 style={styles.photoEditBtn}
-                onPress={() => setPhotoSheetVisible(true)}
+                onPress={() => {
+                  setDateSheetVisible(false);
+                  setPhotoSheetVisible(true);
+                }}
                 activeOpacity={0.85}
                 accessibilityRole="button"
                 accessibilityLabel={t('profile.edit.change_photo')}
@@ -297,7 +302,10 @@ export default function EditProfileScreen() {
               <ProfileSelectField
                 label={t('profile.birth_date')}
                 valueText={birthDateLabel}
-                onPress={() => setDateSheetVisible(true)}
+                onPress={() => {
+                  setPhotoSheetVisible(false);
+                  setDateSheetVisible(true);
+                }}
                 showIcon={false}
               />
 

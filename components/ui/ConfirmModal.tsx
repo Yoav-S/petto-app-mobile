@@ -4,12 +4,14 @@ import {
   Text,
   StyleSheet,
   Modal,
+  Platform,
   TouchableOpacity,
   TouchableWithoutFeedback,
 } from 'react-native';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { useSettledModalVisible } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 
 interface ConfirmModalProps {
@@ -46,9 +48,18 @@ export default function ConfirmModal({
   const styles = useThemedStyles(makeStyles);
   const { contentWidth } = useResponsiveLayout();
   const modalWidth = Math.min(contentWidth + Spacing.lg * 2, MODAL.maxWidth);
+  const presented = useSettledModalVisible(visible);
+
+  if (!presented) return null;
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={onCancel}>
+    <Modal
+      transparent
+      visible
+      animationType="fade"
+      onRequestClose={onCancel}
+      presentationStyle={Platform.OS === 'ios' ? 'overFullScreen' : undefined}
+    >
       <TouchableWithoutFeedback onPress={onCancel}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>

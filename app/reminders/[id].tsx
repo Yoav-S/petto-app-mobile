@@ -356,7 +356,10 @@ export default function EditReminderScreen() {
             <ReminderAutosaveStatus layout={layout} state={autosaveState} />
             <TouchableOpacity
               style={styles.deleteButton}
-              onPress={() => setDeleteVisible(true)}
+              onPress={() => {
+                setSheet(null);
+                setDeleteVisible(true);
+              }}
               activeOpacity={0.7}
             >
               <Text style={styles.deleteText}>{t('reminders.delete')}</Text>

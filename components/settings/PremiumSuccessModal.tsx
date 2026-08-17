@@ -4,12 +4,14 @@ import {
   Text,
   StyleSheet,
   Modal,
+  Platform,
   Pressable,
   TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useSettledModalVisible } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 
 interface PremiumSuccessModalProps {
@@ -25,9 +27,18 @@ const BENEFIT_KEYS = [
 export default function PremiumSuccessModal({ visible, onClose }: PremiumSuccessModalProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
+  const presented = useSettledModalVisible(visible);
+
+  if (!presented) return null;
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+    <Modal
+      transparent
+      visible
+      animationType="fade"
+      onRequestClose={onClose}
+      presentationStyle={Platform.OS === 'ios' ? 'overFullScreen' : undefined}
+    >
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>

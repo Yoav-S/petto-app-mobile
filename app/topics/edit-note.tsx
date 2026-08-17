@@ -153,6 +153,7 @@ export default function EditNoteScreen() {
   );
 
   const pickImage = useCallback(async () => {
+    setReminderSheetVisible(false);
     const picked = await pickImageFromLibrary();
     if (picked === 'denied') {
       Alert.alert(t('petOnboarding.photo_permission_title'), t('petOnboarding.photo_permission_body'));
@@ -320,7 +321,10 @@ export default function EditNoteScreen() {
 
           <TouchableOpacity
             style={styles.deleteButton}
-            onPress={() => setDeleteVisible(true)}
+            onPress={() => {
+              setReminderSheetVisible(false);
+              setDeleteVisible(true);
+            }}
             activeOpacity={0.7}
           >
             <Text style={styles.deleteText}>{t('topics.delete_note')}</Text>

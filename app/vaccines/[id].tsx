@@ -26,6 +26,7 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
+import { useSettledModalVisible } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { getVaccination, updateVaccination, deleteVaccination } from '@/services/vaccines';
@@ -54,6 +55,7 @@ export default function VaccineDetailsScreen() {
   const [uploading, setUploading] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
+  const viewerPresented = useSettledModalVisible(viewerVisible);
 
   const fetchData = useCallback(async () => {
     if (!activePetId || !id) {
@@ -198,12 +200,28 @@ export default function VaccineDetailsScreen() {
 
           {/* Dates */}
           <View style={styles.card}>
-            <TouchableOpacity style={styles.dateRow} onPress={() => setPicker('date')} activeOpacity={0.6}>
+            <TouchableOpacity
+              style={styles.dateRow}
+              onPress={() => {
+                setViewerVisible(false);
+                setDeleteVisible(false);
+                setPicker('date');
+              }}
+              activeOpacity={0.6}
+            >
               <Text style={styles.dateRowLabel}>{t('vaccines.vaccinated_on')}</Text>
               <Text style={styles.dateRowValue}>{formatDisplayDate(vaccine.date)}</Text>
             </TouchableOpacity>
             <View style={styles.divider} />
-            <TouchableOpacity style={styles.dateRow} onPress={() => setPicker('next')} activeOpacity={0.6}>
+            <TouchableOpacity
+              style={styles.dateRow}
+              onPress={() => {
+                setViewerVisible(false);
+                setDeleteVisible(false);
+                setPicker('next');
+              }}
+              activeOpacity={0.6}
+            >
               <Text style={styles.dateRowLabel}>{t('vaccines.valid_until')}</Text>
               <Text style={[styles.dateRowValue, !vaccine.next_date && styles.dateRowPlaceholder]}>
                 {vaccine.next_date ? formatDisplayDate(vaccine.next_date) : t('vaccines.field_next_placeholder')}
@@ -221,7 +239,11 @@ export default function VaccineDetailsScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.expandButton}
-                  onPress={() => setViewerVisible(true)}
+                  onPress={() => {
+                    setPicker(null);
+                    setDeleteVisible(false);
+                    setViewerVisible(true);
+                  }}
                   hitSlop={8}
                 >
                   <Ionicons name="expand-outline" size={18} color={colors.primaryText} />
@@ -260,7 +282,15 @@ export default function VaccineDetailsScreen() {
             />
           </View>
 
-          <TouchableOpacity style={styles.deleteButton} onPress={() => setDeleteVisible(true)} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => {
+              setPicker(null);
+              setViewerVisible(false);
+              setDeleteVisible(true);
+            }}
+            activeOpacity={0.7}
+          >
             <Text style={styles.deleteText}>{t('vaccines.delete')}</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -309,21 +339,23 @@ export default function VaccineDetailsScreen() {
         onCancel={() => setDeleteVisible(false)}
       />
 
-      <Modal visible={viewerVisible} transparent animationType="fade" onRequestClose={() => setViewerVisible(false)}>
-        <View style={styles.viewerOverlay}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setViewerVisible(false)} />
-          <TouchableOpacity
-            style={styles.viewerClose}
-            onPress={() => setViewerVisible(false)}
-            hitSlop={10}
-          >
-            <Ionicons name="close" size={28} color={colors.surface} />
-          </TouchableOpacity>
-          {vaccine.photo_url ? (
-            <Image source={{ uri: vaccine.photo_url }} style={styles.viewerImage} contentFit="contain" />
-          ) : null}
-        </View>
-      </Modal>
+      {viewerPresented ? (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setViewerVisible(false)}>
+          <View style={styles.viewerOverlay}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setViewerVisible(false)} />
+            <TouchableOpacity
+              style={styles.viewerClose}
+              onPress={() => setViewerVisible(false)}
+              hitSlop={10}
+            >
+              <Ionicons name="close" size={28} color={colors.surface} />
+            </TouchableOpacity>
+            {vaccine.photo_url ? (
+              <Image source={{ uri: vaccine.photo_url }} style={styles.viewerImage} contentFit="contain" />
+            ) : null}
+          </View>
+        </Modal>
+      ) : null}
     </SafeAreaView>
   );
 }
