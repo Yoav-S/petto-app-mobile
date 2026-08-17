@@ -152,9 +152,26 @@ export default function EditProfileScreen() {
   };
 
   const removePhoto = () => {
+    setPhotoSheetVisible(false);
+    const previousUri = photoUri;
     setPhotoUri(null);
     setPhotoChanged(true);
-    setPhotoSheetVisible(false);
+
+    // Persist clear immediately for an already-uploaded photo so a back/refresh
+    // does not restore the old Firebase URL.
+    const wasRemote = Boolean(previousUri && /^https?:\/\//i.test(previousUri));
+    if (!wasRemote || !activePetId) return;
+
+    void (async () => {
+      try {
+        await updatePet(activePetId, { photo_url: null });
+        setPhotoChanged(false);
+      } catch (err) {
+        toast.showError(getErrorMessage(err));
+        setPhotoUri(previousUri);
+        setPhotoChanged(false);
+      }
+    })();
   };
 
   const handleSave = async () => {
@@ -181,7 +198,7 @@ export default function EditProfileScreen() {
         weight: weightValue != null && Number.isFinite(weightValue) ? weightValue : null,
         is_neutered: isNeutered,
         chip_id: trimOrNull(chipId),
-        ...(photoChanged ? { photo_url: photoUrl } : {}),
+        ...(photoChanged ? { photo_url: photoUrl ?? null } : {}),
       });
       router.back();
     } catch (err) {

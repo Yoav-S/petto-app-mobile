@@ -32,7 +32,7 @@ function isRemoteUri(source: PhotoSource): boolean {
 }
 
 interface PetPhotoImageProps {
-  source: PhotoSource;
+  source?: PhotoSource;
   style?: StyleProp<ViewStyle>;
   contentFit?: ImageContentFit;
   /** Parent still fetching pet metadata — keep skeleton up. */

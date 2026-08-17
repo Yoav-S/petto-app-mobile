@@ -140,8 +140,9 @@ export default function PetHeader({
           )}
         </Pressable>
 
-        {profileActive ? (
-          <View style={[styles.actionBar, { top: insets.top + Spacing.xs }]}>
+        <View style={[styles.actionBar, { top: insets.top }]}>
+          {profileActive ? (
+            <>
             <HeaderIconButton
               onPress={onReturnHome}
               accessibilityLabel={t('profile.return_home')}
@@ -160,20 +161,23 @@ export default function PetHeader({
             >
               <Pencil size={18} color={colors.primaryText} strokeWidth={2} />
             </HeaderIconButton>
-          </View>
-        ) : (
-          <HeaderIconButton
-            style={[styles.settingsButton, { top: insets.top + Spacing.sm }]}
-            onPress={onSettingsPress}
-            accessibilityLabel={t('home.settings')}
-          >
-            <Ionicons
-              name="settings-outline"
-              size={HEADER_ICON_BTN.iconSize}
-              color={colors.primaryText}
-            />
-          </HeaderIconButton>
-        )}
+            </>
+          ) : (
+            <>
+              <View style={styles.actionSpacer} />
+              <HeaderIconButton
+                onPress={onSettingsPress}
+                accessibilityLabel={t('home.settings')}
+              >
+                <Ionicons
+                  name="settings-outline"
+                  size={HEADER_ICON_BTN.iconSize}
+                  color={colors.primaryText}
+                />
+              </HeaderIconButton>
+            </>
+          )}
+        </View>
       </View>
 
       <View style={[styles.panelOuter, { marginTop: -panelOverlap }]}>
@@ -192,14 +196,14 @@ export default function PetHeader({
               <Animated.View style={[styles.subtitleSkeleton, { opacity: fadeAnim }]} />
             </View>
           ) : (
-            <View style={styles.nameSection}>
+            <View style={[styles.nameSection, profileActive && styles.profileNameSection]}>
               <TouchableOpacity
                 style={styles.nameRow}
                 onPress={canSwitch ? onSwitchPress : undefined}
                 activeOpacity={canSwitch ? 0.7 : 1}
               >
                 <Text
-                  style={[styles.name, profileActive && styles.profileName]}
+                  style={styles.name}
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
@@ -260,10 +264,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#E8E2D8',
   },
-  settingsButton: {
-    position: 'absolute',
-    right: Spacing.lg,
-  },
   actionBar: {
     position: 'absolute',
     left: 0,
@@ -273,7 +273,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
+    paddingVertical: 6,
     zIndex: 90,
+  },
+  actionSpacer: {
+    width: HEADER_ICON_BTN.size,
+    height: HEADER_ICON_BTN.size,
   },
   backIcon: {
     // Material chevron glyph is optically left-heavy inside its box.
@@ -318,12 +323,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   name: {
     flexShrink: 1,
     fontFamily: 'Rubik-Regular',
-    fontSize: 28,
-    color: c.primaryText,
-  },
-  profileName: {
     fontSize: 36,
     lineHeight: 44,
+    color: c.primaryText,
+    textAlign: 'center',
   },
   subtitleRow: {
     width: '100%',

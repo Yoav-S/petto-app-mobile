@@ -229,6 +229,10 @@ export default function HomeScreen() {
 
   const effectiveMode = pet ? panelMode : 'home';
 
+  useEffect(() => {
+    if (effectiveMode === 'profile' && fabOpen) setFabOpen(false);
+  }, [effectiveMode, fabOpen]);
+
   const handleSelectPet = async (petId: string) => {
     setSwitchVisible(false);
     if (petId !== activePetId) {
@@ -319,7 +323,7 @@ export default function HomeScreen() {
           </PetHeader>
         </View>
 
-        {pet ? (
+        {pet && effectiveMode !== 'profile' ? (
           <FABMenu
             open={fabOpen}
             onOpenChange={setFabOpen}

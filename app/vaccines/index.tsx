@@ -189,6 +189,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   centered: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   listContent: {
     paddingTop: Spacing.md,

@@ -390,6 +390,8 @@ const makeStyles = (c: ThemeColors) =>
     },
     centered: {
       flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     listContent: {
       paddingBottom: 120,

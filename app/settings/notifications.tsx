@@ -91,9 +91,13 @@ export default function NotificationsSettingsScreen() {
 
       <View style={styles.content}>
         {loading ? (
-          <ActivityIndicator style={styles.loader} color={colors.brand} />
+          <View style={styles.loader}>
+            <ActivityIndicator color={colors.brand} />
+          </View>
         ) : error ? (
-          <Text style={styles.error}>{error}</Text>
+          <View style={styles.loader}>
+            <Text style={styles.error}>{error}</Text>
+          </View>
         ) : prefs ? (
           <View style={styles.card}>
             <View style={styles.inner}>
@@ -125,14 +129,16 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.background,
   },
   content: {
+    flex: 1,
     paddingHorizontal: 20,
     paddingTop: 22,
   },
   loader: {
-    marginTop: 40,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   error: {
-    marginTop: 40,
     textAlign: 'center',
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
