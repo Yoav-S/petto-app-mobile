@@ -53,10 +53,10 @@ export function clamp(value: number, min: number, max: number): number {
 /**
  * Bounded scale for structural chrome (cover, card heights, FAB).
  * Never apply this to typography, icon glyphs, or control text.
- * At 375×812 → 1. On ~430×932 → ~1.12.
+ * At 375×812 → 1. On ~430×932 → ~1.15 (matches pre-migration cover/FAB).
  */
 export function structuralScale(width: number, height: number): number {
-  return clamp(Math.min(width / DESIGN_WIDTH, height / DESIGN_HEIGHT), 1, 1.12);
+  return clamp(Math.min(width / DESIGN_WIDTH, height / DESIGN_HEIGHT), 1, 1.15);
 }
 
 /** Cover-fit scale so a design-sized layer fills the viewport (object-fit: cover). */

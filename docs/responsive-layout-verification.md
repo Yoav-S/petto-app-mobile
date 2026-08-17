@@ -18,7 +18,7 @@ Test on these logical sizes (Expo dev tools or simulators):
 - Typography, icon glyphs, and control text stay at design tokens (not scaled with width)
 - Cards, lists, and inputs use fluid width (screen − 32px); no 335pt phone cap
 - Welcome collage cover-fills the screen (no side gutters)
-- Home cover / FAB / card heights use bounded structural scale (1.0–1.12)
+- Home cover / FAB / card heights use bounded structural scale (1.0–1.15)
 
 ## Scenarios
 

@@ -9,7 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useColors } from '@/context/ThemeContext';
-import { DESIGN_HEIGHT, DESIGN_WIDTH, coverScale } from '@/constants/layout';
+import { DESIGN_HEIGHT, WELCOME_DESIGN_WIDTH, coverScale } from '@/constants/layout';
 
 const TILE_W = 114.68145751953125;
 const TILE_H = 203.434814453125;
@@ -17,11 +17,15 @@ const TILE_RADIUS = 8.37;
 /** Vertical step between tile tops in the Figma file (~tile + gap) */
 const TILE_STEP = 211.41;
 const COL_LEFTS = [0, 122.66, 245.32] as const;
+/** Actual painted width of the 3 columns (not the 375 frame — that left a right gutter). */
+const COLLAGE_WIDTH = COL_LEFTS[2] + TILE_W;
 /** One full column loop — slower scroll for 8-tile columns. */
 const LOOP_MS = 110000;
 /** Extra design-space height so the loop never shows empty bands. */
 const VERTICAL_BLEED = 200;
 const GRID_TOP = -90;
+/** Tiny overscan so rounding never leaves a 1px hairline. */
+const COVER_OVERSCAN = 1.02;
 
 /** Left column — top → bottom (8 tiles). */
 const LEFT_IMAGES: ImageSourcePropType[] = [
@@ -125,13 +129,16 @@ function MarqueeColumn({
 }
 
 /**
- * Three-column pet collage, cover-scaled from the 375×812 Figma frame
- * so it fills every phone without side gutters.
+ * Three-column pet collage, cover-scaled from the painted collage width (~360)
+ * so it fills every phone without the old right-side white gutter.
  */
 export function WelcomePhotoMarquee() {
   const { width, height } = useWindowDimensions();
   const colors = useColors();
-  const scale = coverScale(width, height);
+  // Scale from the real collage bounds, not the 375 frame (that left ~15pt empty).
+  const scale =
+    coverScale(width, height, COLLAGE_WIDTH || WELCOME_DESIGN_WIDTH, DESIGN_HEIGHT) *
+    COVER_OVERSCAN;
 
   const columns = useMemo(
     () => [
@@ -157,6 +164,7 @@ export function WelcomePhotoMarquee() {
     [],
   );
 
+  const designW = COLLAGE_WIDTH;
   const designH = DESIGN_HEIGHT + VERTICAL_BLEED;
 
   return (
@@ -168,10 +176,10 @@ export function WelcomePhotoMarquee() {
         style={[
           styles.grid,
           {
-            width: DESIGN_WIDTH,
+            width: designW,
             height: designH,
-            // RN scales from the view center — center the design frame, then cover-scale.
-            left: (width - DESIGN_WIDTH) / 2,
+            // RN scales from the view center — center the collage, then cover-scale.
+            left: (width - designW) / 2,
             top: (height - designH) / 2 + GRID_TOP * scale,
             transform: [{ scale }],
           },
