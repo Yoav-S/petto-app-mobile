@@ -391,6 +391,8 @@ const makeStyles = (c: ThemeColors) =>
       justifyContent: 'center',
     },
     listContent: {
+      paddingTop: 16,
+      paddingHorizontal: 16,
       paddingBottom: 120,
       flexGrow: 1,
     },

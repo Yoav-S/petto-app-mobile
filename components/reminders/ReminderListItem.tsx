@@ -51,8 +51,10 @@ const makeStyles = (c: ThemeColors) =>
     card: {
       backgroundColor: c.surface,
       borderRadius: Radius.lg,
-      marginHorizontal: Spacing.lg,
-      marginBottom: Spacing.md,
+      marginBottom: Spacing.lg,
+      width: '100%',
+      maxWidth: 335,
+      alignSelf: 'center',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.05,

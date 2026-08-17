@@ -1,9 +1,9 @@
 import { Spacing, type ThemeColors } from '@/constants/theme';
-import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useColors, useThemedStyles, useTheme } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Pencil } from 'lucide-react-native';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Animated,
   Pressable,
@@ -13,6 +13,11 @@ import {
   View,
 } from 'react-native';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { useImageStatusBarStyle } from '@/hooks/useImageStatusBarStyle';
+import {
+  useStatusBarOverride,
+  type SystemBarContentStyle,
+} from '@/context/SystemBarsContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { petPhotoSource } from '@/utils/petPhotoSource';
 import PetPhotoImage from '@/components/ui/PetPhotoImage';
@@ -77,6 +82,7 @@ export default function PetHeader({
   children,
 }: PetHeaderProps) {
   const colors = useColors();
+  const { isDark } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useResponsiveLayout();
@@ -86,6 +92,10 @@ export default function PetHeader({
   const panelOverlap = DESIGN_COVER_HEIGHT - DESIGN_PANEL_TOP;
   const panelRadius = DESIGN_PANEL_RADIUS;
   const nameBlockWidth = Math.min(screenWidth - 40, 335);
+  const coverSource = useMemo(() => petPhotoSource(pet), [pet]);
+  const themeBarStyle: SystemBarContentStyle = isDark ? 'light' : 'dark';
+  const imageBarStyle = useImageStatusBarStyle(coverSource, themeBarStyle);
+  useStatusBarOverride(loading ? themeBarStyle : pet ? imageBarStyle : 'dark');
 
   useEffect(() => {
     if (loading) {
@@ -125,7 +135,7 @@ export default function PetHeader({
           ) : pet ? (
             <PetPhotoImage
               recyclingKey={pet.id}
-              source={petPhotoSource(pet)}
+              source={coverSource}
               style={styles.coverImage}
               contentFit="cover"
               accessibilityLabel={pet.name ? `${pet.name} photo` : 'Pet photo'}

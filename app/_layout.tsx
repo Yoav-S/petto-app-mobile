@@ -2,8 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import * as NavigationBar from 'expo-navigation-bar';
-import { StatusBar } from 'expo-status-bar';
 import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import {
   Rubik_400Regular,
@@ -24,6 +22,7 @@ import GlobalKeyboardDoneButton, {
 } from '@/components/ui/GlobalKeyboardDoneButton';
 import AppSplash from '@/components/ui/AppSplash';
 import { SPLASH_BACKGROUND } from '@/constants/splash';
+import { SystemBarsProvider } from '@/context/SystemBarsContext';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -186,10 +185,6 @@ function ThemedApp() {
     'Rubik-Medium': Rubik_500Medium,
   });
 
-  useEffect(() => {
-    void NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark').catch(() => {});
-  }, [isDark]);
-
   // Keep the native splash visible until the actual Rubik weights are ready.
   if (!fontsLoaded && !fontError) return null;
 
@@ -199,15 +194,16 @@ function ThemedApp() {
 
   return (
     <NavThemeProvider value={navTheme}>
-      <ToastProvider>
-        <KeyboardDoneClaimProvider>
-          <View key={locale} style={{ flex: 1, backgroundColor: colors.background }}>
-            <RootLayoutNav />
-            <GlobalKeyboardDoneButton />
-          </View>
-        </KeyboardDoneClaimProvider>
-      </ToastProvider>
-      <StatusBar style="light" />
+      <SystemBarsProvider isDark={isDark}>
+        <ToastProvider>
+          <KeyboardDoneClaimProvider>
+            <View key={locale} style={{ flex: 1, backgroundColor: colors.background }}>
+              <RootLayoutNav />
+              <GlobalKeyboardDoneButton />
+            </View>
+          </KeyboardDoneClaimProvider>
+        </ToastProvider>
+      </SystemBarsProvider>
     </NavThemeProvider>
   );
 }

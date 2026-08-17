@@ -48,7 +48,8 @@ export const makeHomeCardTypography = (c: ThemeColors) => StyleSheet.create({
   healthContent: {
     flex: 1,
     minWidth: 0,
-    justifyContent: 'space-between',
+    height: 80,
+    gap: 12,
   },
   healthTitleRow: {
     flexDirection: 'row',
@@ -59,15 +60,15 @@ export const makeHomeCardTypography = (c: ThemeColors) => StyleSheet.create({
   healthDateMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'flex-end',
+    gap: 4,
     flexShrink: 1,
     maxWidth: 120,
   },
   healthBodyBlock: {
-    minHeight: 42,
+    height: 42,
     gap: 6,
     overflow: 'hidden',
-    flex: 1,
   },
   healthSubtitle: {
     fontFamily: 'Rubik-Regular',

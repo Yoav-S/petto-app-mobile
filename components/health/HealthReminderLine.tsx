@@ -10,6 +10,8 @@ interface HealthReminderLineProps {
   time?: string | null;
   style?: TextStyle;
   numberOfLines?: number;
+  showLabel?: boolean;
+  compact?: boolean;
 }
 
 export default function HealthReminderLine({
@@ -17,6 +19,8 @@ export default function HealthReminderLine({
   time,
   style,
   numberOfLines = 1,
+  showLabel = true,
+  compact = false,
 }: HealthReminderLineProps) {
   const styles = useThemedStyles(makeStyles);
   const value = formatHealthReminderValue(date, time, {
@@ -29,8 +33,8 @@ export default function HealthReminderLine({
 
   return (
     <Text style={[styles.row, style]} numberOfLines={numberOfLines} ellipsizeMode="tail">
-      <Text style={styles.label}>{t('topics.reminder_label')} </Text>
-      <Text style={styles.value}>{value}</Text>
+      {showLabel ? <Text style={styles.label}>{t('topics.reminder_label')} </Text> : null}
+      <Text style={[styles.value, compact && styles.compactValue]}>{value}</Text>
     </Text>
   );
 }
@@ -50,5 +54,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: c.primaryText,
+  },
+  compactValue: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: c.secondaryText,
   },
 });

@@ -4,6 +4,7 @@ import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import HealthReminderLine from '@/components/health/HealthReminderLine';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -32,6 +33,7 @@ function CategoryIcon() {
 
 export default function HealthCard({ latestRecord, loading, onPress }: HealthCardProps) {
   const styles = useThemedStyles(makeStyles);
+  const colors = useColors();
   const homeCardTypography = useThemedStyles(makeHomeCardTypography);
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
 
@@ -65,7 +67,25 @@ export default function HealthCard({ latestRecord, loading, onPress }: HealthCar
           <CategoryIcon />
           <View style={homeCardTypography.healthContent}>
             <View style={homeCardTypography.healthTitleRow}>
-              <Text style={homeCardTypography.title}>{t('home.topicsCard.title')}</Text>
+              <Text style={[homeCardTypography.title, styles.healthTitle]} numberOfLines={1}>
+                {t('home.topicsCard.title')}
+              </Text>
+              {latestRecord?.reminder_date || latestRecord?.reminder_time ? (
+                <View style={homeCardTypography.healthDateMeta}>
+                  <Ionicons
+                    name="notifications-outline"
+                    size={14}
+                    color={colors.secondaryText}
+                  />
+                  <HealthReminderLine
+                    date={latestRecord.reminder_date}
+                    time={latestRecord.reminder_time}
+                    style={styles.reminderLine}
+                    showLabel={false}
+                    compact
+                  />
+                </View>
+              ) : null}
             </View>
 
             <View style={homeCardTypography.healthBodyBlock}>
@@ -78,13 +98,6 @@ export default function HealthCard({ latestRecord, loading, onPress }: HealthCar
                     <Text style={homeCardTypography.note} numberOfLines={1} ellipsizeMode="tail">
                       {latestRecord.description}
                     </Text>
-                  ) : null}
-                  {latestRecord.reminder_date || latestRecord.reminder_time ? (
-                    <HealthReminderLine
-                      date={latestRecord.reminder_date}
-                      time={latestRecord.reminder_time}
-                      style={styles.reminderLine}
-                    />
                   ) : null}
                 </>
               ) : (
@@ -114,13 +127,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderRadius: Radius.lg,
     padding: Spacing.lg,
     width: '100%',
-    height: 120,
+    height: 112,
     ...cardShadow,
   },
   cardRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 8,
+    height: 80,
   },
   iconContainer: {
     width: 36,
@@ -150,7 +164,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.border,
     borderRadius: 6,
   },
+  healthTitle: {
+    flexShrink: 1,
+  },
   reminderLine: {
-    marginTop: 4,
+    flexShrink: 1,
   },
 });
