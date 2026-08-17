@@ -64,7 +64,7 @@ export default function AddPetScreen() {
     () => ({
       formTop: 16,
       formGap: 22,
-      cardWidth: Math.min(contentWidth, 335),
+      cardWidth: contentWidth,
       photoSize: 128,
       photoInner: 116,
       photoInset: 6,

@@ -85,7 +85,7 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     row: {
       width: '100%',
-      maxWidth: 335,
+      maxWidth: '100%',
       height: 56,
       flexDirection: 'row',
       alignItems: 'center',
@@ -137,7 +137,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     addRow: {
       width: '100%',
-      maxWidth: 335,
+      maxWidth: '100%',
       height: 60,
       flexDirection: 'row',
       alignItems: 'center',

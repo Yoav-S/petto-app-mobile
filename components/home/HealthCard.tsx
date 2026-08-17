@@ -8,6 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
+import { DESIGN_HOME_HEALTH_CARD_HEIGHT } from '@/constants/layout';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 interface HealthCardProps {
   latestRecord: {
@@ -36,6 +38,9 @@ export default function HealthCard({ latestRecord, loading, onPress }: HealthCar
   const colors = useColors();
   const homeCardTypography = useThemedStyles(makeHomeCardTypography);
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
+  const { structuralScale } = useResponsiveLayout();
+  const cardHeight = Math.round(DESIGN_HOME_HEALTH_CARD_HEIGHT * structuralScale);
+  const rowHeight = Math.round(80 * structuralScale);
 
   useEffect(() => {
     if (loading) {
@@ -52,9 +57,13 @@ export default function HealthCard({ latestRecord, loading, onPress }: HealthCar
   }, [loading, fadeAnim]);
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity
+      style={[styles.card, { height: cardHeight }]}
+      onPress={onPress}
+      activeOpacity={0.85}
+    >
       {loading ? (
-        <View style={styles.cardRow}>
+        <View style={[styles.cardRow, { height: rowHeight }]}>
           <Animated.View style={[styles.skeletonIcon, { opacity: fadeAnim }]} />
           <View style={styles.skeletonContent}>
             <Animated.View style={[styles.skeletonLine, { width: '70%', opacity: fadeAnim }]} />
@@ -63,7 +72,7 @@ export default function HealthCard({ latestRecord, loading, onPress }: HealthCar
           </View>
         </View>
       ) : (
-        <View style={styles.cardRow}>
+        <View style={[styles.cardRow, { height: rowHeight }]}>
           <CategoryIcon />
           <View style={homeCardTypography.healthContent}>
             <View style={homeCardTypography.healthTitleRow}>
@@ -127,14 +136,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderRadius: Radius.lg,
     padding: Spacing.lg,
     width: '100%',
-    height: 112,
     ...cardShadow,
   },
   cardRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 8,
-    height: 80,
   },
   iconContainer: {
     width: 36,

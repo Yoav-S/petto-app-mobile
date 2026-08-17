@@ -85,13 +85,13 @@ export default function PetHeader({
   const { isDark } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useResponsiveLayout();
+  const { width: screenWidth, structuralScale, contentWidth } = useResponsiveLayout();
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
 
-  const coverHeight = DESIGN_COVER_HEIGHT;
-  const panelOverlap = DESIGN_COVER_HEIGHT - DESIGN_PANEL_TOP;
-  const panelRadius = DESIGN_PANEL_RADIUS;
-  const nameBlockWidth = Math.min(screenWidth - 40, 335);
+  const coverHeight = Math.round(DESIGN_COVER_HEIGHT * structuralScale);
+  const panelOverlap = Math.round((DESIGN_COVER_HEIGHT - DESIGN_PANEL_TOP) * structuralScale);
+  const panelRadius = Math.round(DESIGN_PANEL_RADIUS * structuralScale);
+  const nameBlockWidth = Math.min(screenWidth - 40, contentWidth);
   const coverSource = useMemo(() => petPhotoSource(pet), [pet]);
   const themeBarStyle: SystemBarContentStyle = isDark ? 'light' : 'dark';
   const imageBarStyle = useImageStatusBarStyle(coverSource, themeBarStyle);
@@ -310,7 +310,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   nameSection: {
     width: '100%',
-    maxWidth: 335,
+    maxWidth: '100%',
     minHeight: 72,
     alignSelf: 'center',
     alignItems: 'center',

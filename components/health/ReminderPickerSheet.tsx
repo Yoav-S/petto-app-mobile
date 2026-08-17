@@ -173,7 +173,7 @@ export default function ReminderPickerSheet({
       headerHeight: SHEET.headerHeight,
       bodyGap: SHEET.bodyGap,
       footerHeight: SHEET.footerHeight,
-      contentWidth: Math.min(contentWidth, SHEET.contentWidth),
+      contentWidth,
       cardHeight: SHEET.cardHeight,
       cardPadTop: SHEET.cardPadTop,
       cardPadBottom: SHEET.cardPadBottom,

@@ -24,7 +24,7 @@ export function usePetOnboardingLayout() {
     height,
     insets,
     horizontalPadding: pagePadding,
-    contentWidth: Math.min(contentWidth, 335),
+    contentWidth,
     availableHeight,
     heroSize,
     designHeight: PET_ONBOARDING_DESIGN_HEIGHT,

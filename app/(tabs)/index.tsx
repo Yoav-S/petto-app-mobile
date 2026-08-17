@@ -290,7 +290,7 @@ export default function HomeScreen() {
             {effectiveMode === 'profile' ? (
               <PetProfilePanel pet={pet} />
             ) : (
-              <View style={[styles.cardsGrid, { width: contentWidth, maxWidth: 335 }]}>
+              <View style={[styles.cardsGrid, { width: contentWidth }]}>
                 <View style={styles.row}>
                   <VaccinesCard
                     latestVaccine={

@@ -245,6 +245,7 @@ export default function HealthScreen() {
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab as TabName)}
         getLabel={(tab) => t(`topics.tab_${tab.toLowerCase()}`)}
+        width={220}
         style={{ marginTop: 20 }}
       />
 

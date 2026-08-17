@@ -202,7 +202,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderRadius: Radius.md,
     marginBottom: Spacing.md,
     width: '100%',
-    maxWidth: 335,
+    maxWidth: '100%',
     alignSelf: 'center',
     paddingVertical: 14,
     paddingHorizontal: Spacing.lg,

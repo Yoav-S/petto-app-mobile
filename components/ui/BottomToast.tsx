@@ -28,7 +28,7 @@ export interface BottomToastProps {
 }
 
 const TOAST = {
-  maxWidth: 335,
+  maxWidth: '100%',
   minHeight: 48,
   padV: 14,
   padH: 16,
@@ -53,7 +53,7 @@ export default function BottomToast({
   const translateY = useSharedValue(120);
   const opacity = useSharedValue(0);
 
-  const toastWidth = Math.min(contentWidth, TOAST.maxWidth);
+  const toastWidth = contentWidth;
 
   const bottom = useMemo(() => {
     const withFab = ADD_FAB.bottom + ADD_FAB.size + 12 + Math.max(0, insets.bottom);

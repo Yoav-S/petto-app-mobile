@@ -110,7 +110,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   switcher: {
     alignSelf: 'center',
     flexDirection: 'row',
-    width: 220,
+    width: '100%',
+    maxWidth: '100%',
     height: 36,
     borderRadius: 10,
     backgroundColor: c.border,

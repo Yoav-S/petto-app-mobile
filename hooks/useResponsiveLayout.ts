@@ -7,15 +7,20 @@ import {
   LayoutBreakpoint,
   MIN_SUPPORTED_WIDTH,
   PAGE_HORIZONTAL_PADDING,
+  PHONE_CONTENT_MAX_WIDTH,
+  structuralScale as computeStructuralScale,
 } from '@/constants/layout';
+import { fluidContentWidth } from '@/utils/responsive';
 
 export type ResponsiveLayout = {
   width: number;
   height: number;
   insets: ReturnType<typeof useSafeAreaInsets>;
-  /** Fluid content width: screen minus fixed horizontal page padding. */
+  /** Fluid content width: screen minus 16px padding, capped only at tablet widths. */
   contentWidth: number;
   pagePadding: typeof PAGE_HORIZONTAL_PADDING;
+  /** Structural chrome scale (cover, card heights, FAB). Not for type. */
+  structuralScale: number;
   isCompact: boolean;
   isBaseOrLarger: boolean;
   isLarge: boolean;
@@ -24,14 +29,14 @@ export type ResponsiveLayout = {
 
 /**
  * Shared responsive layout values for Ragly.
- * Fixed typography/spacing — fluid containers only. No global scale factor.
+ * Fixed typography/spacing. Fluid containers. Bounded structural scale for chrome.
  */
 export function useResponsiveLayout(): ResponsiveLayout {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
 
   return useMemo(() => {
-    const contentWidth = Math.max(0, width - PAGE_HORIZONTAL_PADDING * 2);
+    const contentWidth = fluidContentWidth(width, PHONE_CONTENT_MAX_WIDTH);
 
     return {
       width,
@@ -39,6 +44,7 @@ export function useResponsiveLayout(): ResponsiveLayout {
       insets,
       contentWidth,
       pagePadding: PAGE_HORIZONTAL_PADDING,
+      structuralScale: computeStructuralScale(width, height),
       isCompact: width <= LayoutBreakpoint.compact,
       isBaseOrLarger: width >= LayoutBreakpoint.base,
       isLarge: width >= LayoutBreakpoint.large,

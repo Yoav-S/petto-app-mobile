@@ -304,7 +304,6 @@ export default function RemindersScreen() {
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab as TabName)}
         getLabel={(tab) => t(`reminders.tab_${tab.toLowerCase()}`)}
-        width={335}
         style={{ marginTop: 20 }}
       />
 

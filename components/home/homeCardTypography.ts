@@ -1,9 +1,9 @@
 import { StyleSheet } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 
-/** Figma reference widths — use as maxWidth caps, not fixed layout widths. */
-export const HOME_CARD_TEXT_MAX_WIDTH = 132;
-export const HOME_HEALTH_CONTENT_MAX_WIDTH = 263;
+/** @deprecated Text blocks are fluid; kept for callers that still import the token. */
+export const HOME_CARD_TEXT_MAX_WIDTH = '100%';
+export const HOME_HEALTH_CONTENT_MAX_WIDTH = '100%';
 
 export const makeHomeCardTypography = (c: ThemeColors) => StyleSheet.create({
   title: {
@@ -26,13 +26,11 @@ export const makeHomeCardTypography = (c: ThemeColors) => StyleSheet.create({
   },
   titleSubtitleBlock: {
     width: '100%',
-    maxWidth: HOME_CARD_TEXT_MAX_WIDTH,
     gap: 6,
     overflow: 'hidden',
   },
   footerRow: {
     width: '100%',
-    maxWidth: HOME_CARD_TEXT_MAX_WIDTH,
     minHeight: 16,
     flexDirection: 'row',
     alignItems: 'center',

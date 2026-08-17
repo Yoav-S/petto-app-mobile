@@ -7,7 +7,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { Radius, type ThemeColors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
@@ -16,7 +16,7 @@ interface SegmentedControlProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   getLabel?: (tab: string) => string;
-  /** Figma design width cap (220 health, 335 reminders). */
+  /** Optional max width. Omit for full content width (lists). Compact tabs pass 220. */
   width?: number;
   style?: StyleProp<ViewStyle>;
 }
@@ -34,14 +34,14 @@ export default function SegmentedControl({
   activeTab,
   onTabChange,
   getLabel,
-  width: designWidthCap = 220,
+  width: designWidthCap,
   style,
 }: SegmentedControlProps) {
   const styles = useThemedStyles(makeStyles);
   const { contentWidth } = useResponsiveLayout();
 
   const segmentWidth = useMemo(
-    () => Math.min(contentWidth, designWidthCap),
+    () => (designWidthCap == null ? contentWidth : Math.min(contentWidth, designWidthCap)),
     [contentWidth, designWidthCap],
   );
 

@@ -35,7 +35,8 @@ export default function PetTypeOnboardingScreen() {
   const [selected, setSelected] = useState<PetType | null>(draft.type);
 
   const canContinue = selected !== null;
-  const tileWidth = (PET_TYPE_STEP.pickerWidth - PET_TYPE_STEP.pickerGap) / 2;
+  const tileWidth =
+    (Math.max(0, contentWidth - PET_TYPE_STEP.cardPaddingH * 2) - PET_TYPE_STEP.pickerGap) / 2;
 
   const handleSelect = (type: PetType) => {
     setSelected(type);
@@ -113,7 +114,6 @@ export default function PetTypeOnboardingScreen() {
               styles.pickerRow,
               {
                 width: '100%',
-                maxWidth: PET_TYPE_STEP.pickerWidth,
                 gap: PET_TYPE_STEP.pickerGap,
               },
             ]}
@@ -170,7 +170,6 @@ export default function PetTypeOnboardingScreen() {
             styles.continueBtn,
             {
               width: contentWidth,
-              maxWidth: PET_TYPE_STEP.continueBtnWidth,
               height: PET_TYPE_STEP.continueBtnHeight,
               borderRadius: PET_TYPE_STEP.continueBtnRadius,
             },

@@ -123,7 +123,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     divider: {
       width: '100%',
-      maxWidth: 335,
+      maxWidth: '100%',
       height: 1,
       backgroundColor: c.border,
       alignSelf: 'center',

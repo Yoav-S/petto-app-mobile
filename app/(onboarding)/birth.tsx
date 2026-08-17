@@ -209,7 +209,6 @@ export default function PetBirthOnboardingScreen() {
                 styles.selectBtn,
                 {
                   width: '100%',
-                  maxWidth: PET_BIRTH_STEP.selectBtnWidth,
                   height: PET_BIRTH_STEP.selectBtnHeight,
                   borderRadius: PET_BIRTH_STEP.selectBtnRadius,
                   paddingHorizontal: Spacing.lg,
@@ -254,7 +253,6 @@ export default function PetBirthOnboardingScreen() {
             styles.continueBtn,
             {
               width: contentWidth,
-              maxWidth: PET_BIRTH_STEP.continueBtnWidth,
               height: PET_BIRTH_STEP.continueBtnHeight,
               borderRadius: PET_BIRTH_STEP.continueBtnRadius,
               opacity: isSubmitting ? 0.6 : 1,

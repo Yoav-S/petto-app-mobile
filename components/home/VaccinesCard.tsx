@@ -1,11 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Image } from 'expo-image';
-import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
 import { homeCategoryIconBg, HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { t } from '@/i18n';
+import { DESIGN_HOME_HALF_CARD_HEIGHT } from '@/constants/layout';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 interface VaccinesCardProps {
   latestVaccine: {
@@ -40,6 +42,8 @@ export default function VaccinesCard({ latestVaccine, loading, onPress }: Vaccin
   const styles = useThemedStyles(makeStyles);
   const homeCardTypography = useThemedStyles(makeHomeCardTypography);
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
+  const { structuralScale } = useResponsiveLayout();
+  const cardHeight = Math.round(DESIGN_HOME_HALF_CARD_HEIGHT * structuralScale);
 
   useEffect(() => {
     if (loading) {
@@ -56,7 +60,11 @@ export default function VaccinesCard({ latestVaccine, loading, onPress }: Vaccin
   }, [loading, fadeAnim]);
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity
+      style={[styles.card, { height: cardHeight, minHeight: cardHeight, maxHeight: cardHeight }]}
+      onPress={onPress}
+      activeOpacity={0.85}
+    >
       {loading ? (
         <View style={styles.contentContainer}>
           <Animated.View style={[styles.skeletonLine, { width: 40, height: 36, opacity: fadeAnim }]} />
@@ -113,9 +121,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderBottomLeftRadius: 20,
     padding: Spacing.lg,
     flex: 1,
-    height: 198,
-    minHeight: 198,
-    maxHeight: 198,
     minWidth: 0,
     ...cardShadow,
   },

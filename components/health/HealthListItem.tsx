@@ -12,7 +12,7 @@ import { t } from '@/i18n';
 import { formatHealthCreatedLabel, truncateHealthDescription } from '@/utils/calendar';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
-export const HEALTH_LIST_CARD_WIDTH = 335;
+export const HEALTH_LIST_CARD_WIDTH = '100%';
 export const HEALTH_LIST_CARD_HEIGHT = 122;
 export const HEALTH_LIST_ITEM_GAP = 10;
 
@@ -72,7 +72,7 @@ export default function HealthListItem({
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
   const { contentWidth } = useResponsiveLayout();
-  const cardWidth = Math.min(contentWidth, HEALTH_LIST_CARD_WIDTH);
+  const cardWidth = contentWidth;
   const cardHeight = HEALTH_LIST_CARD_HEIGHT;
   const padV = 14;
   const padH = 16;

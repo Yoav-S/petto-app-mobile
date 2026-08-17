@@ -9,6 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useColors } from '@/context/ThemeContext';
+import { DESIGN_HEIGHT, DESIGN_WIDTH, coverScale } from '@/constants/layout';
 
 const TILE_W = 114.68145751953125;
 const TILE_H = 203.434814453125;
@@ -18,6 +19,9 @@ const TILE_STEP = 211.41;
 const COL_LEFTS = [0, 122.66, 245.32] as const;
 /** One full column loop — slower scroll for 8-tile columns. */
 const LOOP_MS = 110000;
+/** Extra design-space height so the loop never shows empty bands. */
+const VERTICAL_BLEED = 200;
+const GRID_TOP = -90;
 
 /** Left column — top → bottom (8 tiles). */
 const LEFT_IMAGES: ImageSourcePropType[] = [
@@ -121,11 +125,13 @@ function MarqueeColumn({
 }
 
 /**
- * Three-column pet collage. Left & right scroll top→bottom; middle scrolls bottom→top.
+ * Three-column pet collage, cover-scaled from the 375×812 Figma frame
+ * so it fills every phone without side gutters.
  */
 export function WelcomePhotoMarquee() {
   const { width, height } = useWindowDimensions();
   const colors = useColors();
+  const scale = coverScale(width, height);
 
   const columns = useMemo(
     () => [
@@ -151,9 +157,26 @@ export function WelcomePhotoMarquee() {
     [],
   );
 
+  const designH = DESIGN_HEIGHT + VERTICAL_BLEED;
+
   return (
-    <View style={[styles.root, { width, height, backgroundColor: colors.background }]} pointerEvents="none">
-      <View style={[styles.grid, { width: '100%', height: height + 200 }]}>
+    <View
+      style={[styles.root, { width, height, backgroundColor: colors.background }]}
+      pointerEvents="none"
+    >
+      <View
+        style={[
+          styles.grid,
+          {
+            width: DESIGN_WIDTH,
+            height: designH,
+            // RN scales from the view center — center the design frame, then cover-scale.
+            left: (width - DESIGN_WIDTH) / 2,
+            top: (height - designH) / 2 + GRID_TOP * scale,
+            transform: [{ scale }],
+          },
+        ]}
+      >
         {columns.map((col) => (
           <MarqueeColumn
             key={col.left}
@@ -164,14 +187,12 @@ export function WelcomePhotoMarquee() {
           />
         ))}
       </View>
-      {/* Soft veil so the white card stays readable */}
       <View style={[styles.veil, { backgroundColor: isSoftVeil(colors.background) }]} />
     </View>
   );
 }
 
 function isSoftVeil(background: string): string {
-  // Light canvas gets a soft white veil; dark canvas gets a soft dark veil.
   return background.toLowerCase() === '#f6f7f9' ? 'rgba(255,255,255,0.18)' : 'rgba(17,19,21,0.35)';
 }
 
@@ -182,8 +203,6 @@ const styles = StyleSheet.create({
   },
   grid: {
     position: 'absolute',
-    top: -90,
-    left: 0,
     overflow: 'hidden',
   },
   column: {

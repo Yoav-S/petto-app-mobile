@@ -18,10 +18,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-/** Figma 375×812: fixed FAB metrics — do not scale with screen width. */
+/** Figma 375×812 FAB metrics. Size/offset use bounded structural scale; type stays fixed. */
 export const ADD_FAB = {
   size: 56,
   radius: 16,
@@ -67,6 +68,8 @@ export default function SpeedDialFab({
 }: SpeedDialFabProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const { structuralScale, insets } = useResponsiveLayout();
+  const s = structuralScale;
 
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const controlled = openProp !== undefined;
@@ -114,8 +117,8 @@ export default function SpeedDialFab({
         style={[
           styles.anchor,
           {
-            right: ADD_FAB.right,
-            bottom: ADD_FAB.bottom,
+            right: ADD_FAB.right * s,
+            bottom: Math.max(ADD_FAB.bottom * s, 16 + insets.bottom),
           },
           style,
         ]}
@@ -124,7 +127,7 @@ export default function SpeedDialFab({
         <Animated.View
           style={[
             styles.menu,
-            { gap: ADD_FAB.menuGap, marginBottom: ADD_FAB.menuGap },
+            { gap: ADD_FAB.menuGap * s, marginBottom: ADD_FAB.menuGap * s },
             menuStyle,
           ]}
           pointerEvents={open ? 'box-none' : 'none'}
@@ -132,7 +135,7 @@ export default function SpeedDialFab({
           {items.map((item) => (
             <TouchableOpacity
               key={item.key}
-              style={[styles.menuItem, { minHeight: ADD_FAB.menuItemH, maxWidth: maxMenuWidth }]}
+              style={[styles.menuItem, { minHeight: ADD_FAB.menuItemH * s, maxWidth: maxMenuWidth }]}
               onPress={() => {
                 close();
                 item.onPress();
@@ -157,9 +160,9 @@ export default function SpeedDialFab({
           style={[
             styles.btn,
             {
-              width: ADD_FAB.size,
-              height: ADD_FAB.size,
-              borderRadius: ADD_FAB.radius,
+              width: ADD_FAB.size * s,
+              height: ADD_FAB.size * s,
+              borderRadius: ADD_FAB.radius * s,
             },
           ]}
           onPress={toggle}

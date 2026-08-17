@@ -53,7 +53,7 @@ const makeStyles = (c: ThemeColors) =>
       borderRadius: Radius.lg,
       marginBottom: Spacing.lg,
       width: '100%',
-      maxWidth: 335,
+      maxWidth: '100%',
       alignSelf: 'center',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 1 },

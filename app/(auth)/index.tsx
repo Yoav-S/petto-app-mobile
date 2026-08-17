@@ -18,9 +18,6 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 const LOGO = RAGLY_WORDMARK;
 const CARD = {
-  width: 335,
-  /** Equal side inset so the card doesn’t kiss the screen edges. */
-  sidePad: 12.5,
   radius: 38,
   paddingV: 38,
   paddingH: 20,
@@ -36,12 +33,10 @@ export default function OnboardingWelcomeScreen() {
   const { contentWidth, height } = useResponsiveLayout();
 
   const layout = useMemo(() => {
-    // Keep side breathing room on notched / narrow phones.
-    const sidePad = Math.max(CARD.sidePad, insets.left, insets.right, 16);
+    const sidePad = Math.max(insets.left, insets.right, 16);
     const bottomPad = Math.max(insets.bottom, 16);
-    const cardWidth = Math.min(CARD.width, contentWidth);
-    const paddingH = Math.max(CARD.paddingH, 16);
-    // Full content width so subtitle stays ~2 lines (old 233px cap forced 3 on iPhone).
+    const cardWidth = contentWidth;
+    const paddingH = CARD.paddingH;
     const copyWidth = Math.max(cardWidth - paddingH * 2, 0);
     const compact = height < 740;
     const logoH = compact ? 40 : 48;

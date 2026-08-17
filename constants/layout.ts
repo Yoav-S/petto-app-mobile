@@ -4,11 +4,20 @@ import { Spacing } from '@/constants/theme';
 export const DESIGN_WIDTH = 375;
 export const DESIGN_HEIGHT = 812;
 
+/** Welcome collage was drawn in a 360-wide Figma strip inside the 375 frame. */
+export const WELCOME_DESIGN_WIDTH = 360;
+
 /** Smallest supported logical width — stress-test target. */
 export const MIN_SUPPORTED_WIDTH = 360;
 
 /** Standard horizontal inset for page content and cards. */
 export const PAGE_HORIZONTAL_PADDING = Spacing.lg; // 16
+
+/**
+ * Soft max for phone content. Phones (360–430) use the full fluid width.
+ * Only very wide surfaces (tablets) get a cap.
+ */
+export const PHONE_CONTENT_MAX_WIDTH = 430;
 
 /** Named breakpoints for adaptive layout (width in logical points). */
 export const LayoutBreakpoint = {
@@ -31,6 +40,31 @@ export const DESIGN_COVER_HEIGHT = 352;
 export const DESIGN_PANEL_TOP = 328;
 export const DESIGN_PANEL_HEIGHT = 484;
 export const DESIGN_PANEL_RADIUS = 24;
+export const DESIGN_HOME_HALF_CARD_HEIGHT = 198;
+export const DESIGN_HOME_HEALTH_CARD_HEIGHT = 112;
 
 /** Gap below safe-area inset when inset is taller than the Figma status band. */
 export const HEADER_BELOW_SAFE_AREA = 12;
+
+export function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+/**
+ * Bounded scale for structural chrome (cover, card heights, FAB).
+ * Never apply this to typography, icon glyphs, or control text.
+ * At 375×812 → 1. On ~430×932 → ~1.12.
+ */
+export function structuralScale(width: number, height: number): number {
+  return clamp(Math.min(width / DESIGN_WIDTH, height / DESIGN_HEIGHT), 1, 1.12);
+}
+
+/** Cover-fit scale so a design-sized layer fills the viewport (object-fit: cover). */
+export function coverScale(
+  width: number,
+  height: number,
+  designWidth = DESIGN_WIDTH,
+  designHeight = DESIGN_HEIGHT,
+): number {
+  return Math.max(width / designWidth, height / designHeight);
+}

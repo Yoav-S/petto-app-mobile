@@ -73,7 +73,7 @@ export default function AddVaccineScreen() {
     return {
       formTop: 16,
       formGap: 22,
-      cardWidth: Math.min(contentWidth, 335),
+      cardWidth: contentWidth,
       cardRadius: 12,
       cardPadH: 16,
       cardPadV,

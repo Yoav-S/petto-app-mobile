@@ -145,7 +145,7 @@ export default function PetPhotoOnboardingScreen() {
             style={[
               styles.inner,
               {
-                width: PET_PHOTO_STEP.innerWidth,
+                width: '100%',
                 gap: PET_PHOTO_STEP.innerGap,
               },
             ]}
@@ -305,7 +305,7 @@ export default function PetPhotoOnboardingScreen() {
           style={[
             styles.continueBtn,
             {
-              width: contentWidth, maxWidth: PET_PHOTO_STEP.continueBtnWidth,
+              width: contentWidth,
               height: PET_PHOTO_STEP.continueBtnHeight,
               borderRadius: PET_PHOTO_STEP.continueBtnRadius,
             },

@@ -18,7 +18,7 @@ export function getPetOnboardingLayoutMetrics(
   safeBottom = 0,
 ) {
   const horizontalPadding = PAGE_HORIZONTAL_PADDING;
-  const contentWidth = fluidContentWidth(width, 335, horizontalPadding);
+  const contentWidth = fluidContentWidth(width);
   const availableHeight = height - safeTop - safeBottom;
   const heightRatio = availableHeight / PET_ONBOARDING_DESIGN_HEIGHT;
   const heroSize = Math.min(222, contentWidth * 0.66, availableHeight * 0.28);

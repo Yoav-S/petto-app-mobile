@@ -148,7 +148,6 @@ export default function HealthKeyboardFooter({
           styles.saveButton,
           {
             width: contentWidth,
-            maxWidth: 335,
             height: FOOTER.saveButtonHeight,
             borderRadius: Radius.md,
           },

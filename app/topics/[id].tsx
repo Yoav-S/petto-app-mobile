@@ -33,7 +33,6 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 const DESIGN_FOOTER_PAD_TOP = 12;
 const DESIGN_FOOTER_PAD_H = 20;
 const DESIGN_FOOTER_RADIUS = 24;
-const DESIGN_SAVE_BUTTON_WIDTH = 335;
 const DESIGN_SAVE_BUTTON_HEIGHT = 48;
 const DESIGN_FOOTER_MIN_BOTTOM = 10;
 const DESIGN_FOOTER_SAFE_GAP = 8;
@@ -55,7 +54,7 @@ export default function HealthDetailsScreen() {
       padTop: DESIGN_FOOTER_PAD_TOP,
       padBottom:
         Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM) + DESIGN_FOOTER_SAFE_GAP,
-      buttonWidth: Math.min(contentWidth, DESIGN_SAVE_BUTTON_WIDTH),
+      buttonWidth: contentWidth,
       buttonHeight: DESIGN_SAVE_BUTTON_HEIGHT,
       buttonRadius: 12,
       footerRadius: DESIGN_FOOTER_RADIUS,
