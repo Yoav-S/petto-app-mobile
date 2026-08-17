@@ -10,8 +10,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useColors } from '@/context/ThemeContext';
 
-/** Figma frame base width for the collage */
-const DESIGN_WIDTH = 360;
 const TILE_W = 114.68145751953125;
 const TILE_H = 203.434814453125;
 const TILE_RADIUS = 8.37;
@@ -67,16 +65,14 @@ function MarqueeColumn({
   left,
   topOffset,
   direction,
-  scale,
 }: {
   images: ImageSourcePropType[];
   left: number;
   topOffset: number;
   direction: Direction;
-  scale: number;
 }) {
   const progress = useSharedValue(0);
-  const cycle = TILE_STEP * images.length * scale;
+  const cycle = TILE_STEP * images.length;
 
   useEffect(() => {
     progress.value = 0;
@@ -100,9 +96,9 @@ function MarqueeColumn({
       style={[
         styles.column,
         {
-          left: left * scale,
-          top: topOffset * scale,
-          width: TILE_W * scale,
+          left,
+          top: topOffset,
+          width: TILE_W,
         },
         animatedStyle,
       ]}
@@ -112,10 +108,10 @@ function MarqueeColumn({
           key={`${left}-${index}`}
           source={source}
           style={{
-            width: TILE_W * scale,
-            height: TILE_H * scale,
-            borderRadius: TILE_RADIUS * scale,
-            marginBottom: (TILE_STEP - TILE_H) * scale,
+            width: TILE_W,
+            height: TILE_H,
+            borderRadius: TILE_RADIUS,
+            marginBottom: TILE_STEP - TILE_H,
           }}
           contentFit="cover"
         />
@@ -130,7 +126,6 @@ function MarqueeColumn({
 export function WelcomePhotoMarquee() {
   const { width, height } = useWindowDimensions();
   const colors = useColors();
-  const scale = width / DESIGN_WIDTH;
 
   const columns = useMemo(
     () => [
@@ -158,7 +153,7 @@ export function WelcomePhotoMarquee() {
 
   return (
     <View style={[styles.root, { width, height, backgroundColor: colors.background }]} pointerEvents="none">
-      <View style={[styles.grid, { width: DESIGN_WIDTH * scale, height: height + 200 * scale }]}>
+      <View style={[styles.grid, { width: '100%', height: height + 200 }]}>
         {columns.map((col) => (
           <MarqueeColumn
             key={col.left}
@@ -166,7 +161,6 @@ export function WelcomePhotoMarquee() {
             left={col.left}
             topOffset={col.topOffset}
             direction={col.direction}
-            scale={scale}
           />
         ))}
       </View>

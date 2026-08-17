@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -27,7 +26,6 @@ import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDateLong } from '@/utils/calendar';
 import type { Vaccination } from '@/types/api';
 
-const DESIGN_HEIGHT = 812;
 const EMPTY_TOP = 304;
 const EMPTY_GAP = 20;
 
@@ -49,11 +47,9 @@ export default function VaccinesScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const { activePetId } = useActivePet();
-  const { height } = useWindowDimensions();
-  const sy = height / DESIGN_HEIGHT;
-  const headerOffset = getVaccineHeaderContentOffset(height);
-  const emptyTop = Math.max(Spacing.lg, EMPTY_TOP * sy - headerOffset);
-  const emptyGap = EMPTY_GAP * sy;
+  const headerOffset = getVaccineHeaderContentOffset(812);
+  const emptyTop = Math.max(Spacing.lg, EMPTY_TOP - headerOffset);
+  const emptyGap = EMPTY_GAP;
 
   const [items, setItems] = useState<Vaccination[]>([]);
   const [loading, setLoading] = useState(true);

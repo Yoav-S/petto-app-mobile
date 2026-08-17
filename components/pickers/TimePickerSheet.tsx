@@ -7,7 +7,6 @@ import {
   FlatList,
   NativeSyntheticEvent,
   NativeScrollEvent,
-  useWindowDimensions,
 } from 'react-native';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,8 +24,6 @@ interface TimePickerSheetProps {
   onConfirm: (time: string) => void;
 }
 
-const DESIGN_WIDTH = 375;
-const DESIGN_HEIGHT = 812;
 const SHEET_HEIGHT = 474;
 const SHEET_RADIUS = 24;
 const ITEM_HEIGHT = 44;
@@ -153,9 +150,6 @@ export default function TimePickerSheet({ visible, value, onClose, onConfirm }: 
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-  const sx = width / DESIGN_WIDTH;
-  const sy = height / DESIGN_HEIGHT;
 
   const initial = parseTime24(value);
   const [hourIndex, setHourIndex] = useState(initial.hour12 - 1);
@@ -174,15 +168,15 @@ export default function TimePickerSheet({ visible, value, onClose, onConfirm }: 
 
   const layout = useMemo(
     () => ({
-      sheetHeight: SHEET_HEIGHT * sy + insets.bottom,
-      radius: SHEET_RADIUS * sx,
-      padH: 20 * sx,
-      padTop: 20 * sy,
+      sheetHeight: SHEET_HEIGHT + insets.bottom,
+      radius: SHEET_RADIUS,
+      padH: 20,
+      padTop: 20,
       wheelHeight: ITEM_HEIGHT * VISIBLE_ROWS,
-      buttonHeight: 48 * sy,
-      buttonRadius: 12 * sx,
+      buttonHeight: 48,
+      buttonRadius: 12,
     }),
-    [sx, sy, insets.bottom],
+    [insets.bottom],
   );
 
   const preview = formatReminderClockTime(
@@ -202,7 +196,7 @@ export default function TimePickerSheet({ visible, value, onClose, onConfirm }: 
             styles.sheet,
             {
               height: layout.sheetHeight,
-              paddingBottom: insets.bottom + 16 * sy,
+              paddingBottom: insets.bottom + 16,
               borderTopLeftRadius: layout.radius,
               borderTopRightRadius: layout.radius,
               paddingHorizontal: layout.padH,

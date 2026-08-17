@@ -1,11 +1,9 @@
 import { StyleSheet } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 
-/** Figma text block width inside home summary cards (375px frame). */
-export const HOME_CARD_TEXT_WIDTH = 132;
-
-/** Figma content width beside the health card icon (375px frame). */
-export const HOME_HEALTH_CONTENT_WIDTH = 263;
+/** Figma reference widths — use as maxWidth caps, not fixed layout widths. */
+export const HOME_CARD_TEXT_MAX_WIDTH = 132;
+export const HOME_HEALTH_CONTENT_MAX_WIDTH = 263;
 
 export const makeHomeCardTypography = (c: ThemeColors) => StyleSheet.create({
   title: {
@@ -27,14 +25,15 @@ export const makeHomeCardTypography = (c: ThemeColors) => StyleSheet.create({
     color: c.secondaryText,
   },
   titleSubtitleBlock: {
-    width: HOME_CARD_TEXT_WIDTH,
-    height: 46,
+    width: '100%',
+    maxWidth: HOME_CARD_TEXT_MAX_WIDTH,
     gap: 6,
     overflow: 'hidden',
   },
   footerRow: {
-    width: HOME_CARD_TEXT_WIDTH,
-    height: 16,
+    width: '100%',
+    maxWidth: HOME_CARD_TEXT_MAX_WIDTH,
+    minHeight: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -49,15 +48,13 @@ export const makeHomeCardTypography = (c: ThemeColors) => StyleSheet.create({
   healthContent: {
     flex: 1,
     minWidth: 0,
-    maxWidth: HOME_HEALTH_CONTENT_WIDTH,
-    height: 80,
     justifyContent: 'space-between',
   },
   healthTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 20,
+    minHeight: 20,
   },
   healthDateMeta: {
     flexDirection: 'row',
@@ -67,9 +64,10 @@ export const makeHomeCardTypography = (c: ThemeColors) => StyleSheet.create({
     maxWidth: 120,
   },
   healthBodyBlock: {
-    height: 42,
+    minHeight: 42,
     gap: 6,
     overflow: 'hidden',
+    flex: 1,
   },
   healthSubtitle: {
     fontFamily: 'Rubik-Regular',

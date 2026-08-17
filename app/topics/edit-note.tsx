@@ -8,7 +8,6 @@ import {
   Alert,
   ActivityIndicator,
   Keyboard,
-  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -41,8 +40,6 @@ import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDate } from '@/utils/calendar';
 import { normalizeRouteParam } from '@/utils/routeParams';
 
-const DESIGN_HEIGHT = 812;
-
 function reminderLabel(draft: HealthReminderDraft): string {
   return `${formatDisplayDate(draft.date)} ${draft.time}`;
 }
@@ -61,9 +58,7 @@ export default function EditNoteScreen() {
   const noteId = normalizeRouteParam(noteIdParam);
   const open = normalizeRouteParam(openParam);
   const { activePetId } = useActivePet();
-  const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const sy = height / DESIGN_HEIGHT;
   const openHandled = useRef(false);
 
   const [loading, setLoading] = useState(true);
@@ -301,8 +296,8 @@ export default function EditNoteScreen() {
           contentContainerStyle={[
             styles.content,
             {
-              paddingTop: Math.max(Spacing.md, 16 * sy),
-              paddingBottom: healthDoneScrollPadding(sy, insets.bottom),
+              paddingTop: Math.max(Spacing.md, 16),
+              paddingBottom: healthDoneScrollPadding(1, insets.bottom),
             },
           ]}
           keyboardShouldPersistTaps="handled"

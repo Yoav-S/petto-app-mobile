@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
   View,
   type ViewStyle,
 } from 'react-native';
@@ -19,11 +18,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
-import { DESIGN_WIDTH } from '@/components/home/PetHeader';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-/** Figma 375x812: left 299 -> right 20; top 718 -> bottom 38. */
+/** Figma 375×812: fixed FAB metrics — do not scale with screen width. */
 export const ADD_FAB = {
   size: 56,
   radius: 16,
@@ -34,9 +32,10 @@ export const ADD_FAB = {
   menuGap: 12,
   menuItemH: 40,
   animMs: 200,
+  menuIcon: 22,
 } as const;
 
-/** @deprecated use ADD_FAB.bottom â€” kept for existing style imports */
+/** @deprecated use ADD_FAB.bottom */
 export const ADD_FAB_BOTTOM = ADD_FAB.bottom;
 /** @deprecated use ADD_FAB.right */
 export const ADD_FAB_RIGHT = ADD_FAB.right;
@@ -57,7 +56,7 @@ interface SpeedDialFabProps {
 }
 
 /**
- * Shared add FAB: 56Ã—56 square, brand fill. Uses theme `overlay` (same as sheets).
+ * Shared add FAB: 56×56 square, brand fill. Fixed size/position across devices.
  */
 export default function SpeedDialFab({
   items,
@@ -68,8 +67,6 @@ export default function SpeedDialFab({
 }: SpeedDialFabProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const { width } = useWindowDimensions();
-  const s = width / DESIGN_WIDTH;
 
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const controlled = openProp !== undefined;
@@ -84,20 +81,6 @@ export default function SpeedDialFab({
   useEffect(() => {
     progress.value = withTiming(open ? 1 : 0, { duration: ADD_FAB.animMs });
   }, [open, progress]);
-
-  const layout = useMemo(
-    () => ({
-      size: ADD_FAB.size * s,
-      radius: ADD_FAB.radius * s,
-      iconSize: ADD_FAB.iconSize * s,
-      right: ADD_FAB.right * s,
-      bottom: ADD_FAB.bottom * s,
-      menuGap: ADD_FAB.menuGap * s,
-      menuItemH: ADD_FAB.menuItemH * s,
-      menuIcon: 22 * s,
-    }),
-    [s],
-  );
 
   const scrimStyle = useAnimatedStyle(() => ({
     opacity: progress.value,
@@ -116,8 +99,8 @@ export default function SpeedDialFab({
   const toggle = () => setOpen(!open);
 
   const maxMenuWidth = useMemo(() => {
-    return Math.max(...items.map((it) => it.label.length * 8 + 60), 120) * s;
-  }, [items, s]);
+    return Math.max(...items.map((it) => it.label.length * 8 + 60), 120);
+  }, [items]);
 
   return (
     <>
@@ -131,21 +114,25 @@ export default function SpeedDialFab({
         style={[
           styles.anchor,
           {
-            right: layout.right,
-            bottom: layout.bottom,
+            right: ADD_FAB.right,
+            bottom: ADD_FAB.bottom,
           },
           style,
         ]}
         pointerEvents="box-none"
       >
         <Animated.View
-          style={[styles.menu, { gap: layout.menuGap, marginBottom: layout.menuGap }, menuStyle]}
+          style={[
+            styles.menu,
+            { gap: ADD_FAB.menuGap, marginBottom: ADD_FAB.menuGap },
+            menuStyle,
+          ]}
           pointerEvents={open ? 'box-none' : 'none'}
         >
           {items.map((item) => (
             <TouchableOpacity
               key={item.key}
-              style={[styles.menuItem, { minHeight: layout.menuItemH, maxWidth: maxMenuWidth }]}
+              style={[styles.menuItem, { minHeight: ADD_FAB.menuItemH, maxWidth: maxMenuWidth }]}
               onPress={() => {
                 close();
                 item.onPress();
@@ -155,7 +142,7 @@ export default function SpeedDialFab({
               {item.icon ? (
                 <Image
                   source={item.icon}
-                  style={{ width: layout.menuIcon, height: layout.menuIcon }}
+                  style={{ width: ADD_FAB.menuIcon, height: ADD_FAB.menuIcon }}
                   contentFit="contain"
                 />
               ) : null}
@@ -170,9 +157,9 @@ export default function SpeedDialFab({
           style={[
             styles.btn,
             {
-              width: layout.size,
-              height: layout.size,
-              borderRadius: layout.radius,
+              width: ADD_FAB.size,
+              height: ADD_FAB.size,
+              borderRadius: ADD_FAB.radius,
             },
           ]}
           onPress={toggle}
@@ -182,7 +169,7 @@ export default function SpeedDialFab({
           accessibilityState={{ expanded: open }}
         >
           <Animated.View style={iconStyle}>
-            <Ionicons name="add" size={layout.iconSize} color={colors.button.primaryText} />
+            <Ionicons name="add" size={ADD_FAB.iconSize} color={colors.button.primaryText} />
           </Animated.View>
         </TouchableOpacity>
       </View>
@@ -236,4 +223,3 @@ const makeStyles = (c: ThemeColors) =>
       elevation: 6,
     },
   });
-

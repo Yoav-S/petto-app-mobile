@@ -5,7 +5,6 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
-  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
@@ -20,7 +19,6 @@ import SegmentedControl from '@/components/ui/SegmentedControl';
 import EmptyState from '@/components/ui/EmptyState';
 import HealthListItem, {
   HEALTH_LIST_CARD_HEIGHT,
-  HEALTH_LIST_DESIGN_WIDTH,
   HEALTH_LIST_ITEM_GAP,
   healthRecordSubtitle,
 } from '@/components/health/HealthListItem';
@@ -57,12 +55,8 @@ export default function HealthScreen() {
   const [recordPickerVisible, setRecordPickerVisible] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [listHeight, setListHeight] = useState(0);
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-
-  const listScale = screenWidth / HEALTH_LIST_DESIGN_WIDTH;
-  const headerGapSy = screenHeight / 812;
-  const cardHeight = HEALTH_LIST_CARD_HEIGHT * listScale;
-  const itemGap = HEALTH_LIST_ITEM_GAP * listScale;
+  const cardHeight = HEALTH_LIST_CARD_HEIGHT;
+  const itemGap = HEALTH_LIST_ITEM_GAP;
   const fadeZone = cardHeight * 0.89;
 
   const getItemFadeIntensity = useCallback(
@@ -250,7 +244,7 @@ export default function HealthScreen() {
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab as TabName)}
         getLabel={(tab) => t(`topics.tab_${tab.toLowerCase()}`)}
-        style={{ marginTop: 20 * headerGapSy }}
+        style={{ marginTop: 20 }}
       />
 
       {loading ? (

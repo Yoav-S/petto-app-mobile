@@ -1,33 +1,26 @@
 import React from 'react';
-import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   SPLASH_BACKGROUND,
-  SPLASH_DESIGN_HEIGHT,
-  SPLASH_DESIGN_WIDTH,
   SPLASH_LOGO,
 } from '@/constants/splash';
 
 /**
- * Brand splash: white canvas + Ragly wordmark at the Figma position.
- * Shown over the root stack while auth / first route settle.
+ * Brand splash: white canvas + Ragly wordmark at fixed Figma position.
  */
 export default function AppSplash() {
-  const { width, height } = useWindowDimensions();
-  const sx = width / SPLASH_DESIGN_WIDTH;
-  const sy = height / SPLASH_DESIGN_HEIGHT;
-
   return (
     <View style={styles.root} pointerEvents="auto" accessibilityRole="progressbar">
       <Text
         style={[
           styles.logo,
           {
-            top: SPLASH_LOGO.top * sy,
-            left: SPLASH_LOGO.left * sx,
-            width: SPLASH_LOGO.width * sx,
-            height: SPLASH_LOGO.height * sy,
-            fontSize: SPLASH_LOGO.fontSize * sx,
-            lineHeight: SPLASH_LOGO.lineHeight * sy,
+            top: SPLASH_LOGO.top,
+            left: SPLASH_LOGO.left,
+            width: SPLASH_LOGO.width,
+            height: SPLASH_LOGO.height,
+            fontSize: SPLASH_LOGO.fontSize,
+            lineHeight: SPLASH_LOGO.lineHeight,
             color: SPLASH_LOGO.color,
           },
         ]}

@@ -4,30 +4,24 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  useWindowDimensions,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { type ThemeColors } from '@/constants/theme';
+import { Radius, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 interface SegmentedControlProps {
   tabs: string[];
   activeTab: string;
   onTabChange: (tab: string) => void;
-  /** Maps a tab value to its display label (e.g. for translations). */
   getLabel?: (tab: string) => string;
-  /** Design-frame width (375 canvas). Health: 220, Reminders: 335. */
+  /** Figma design width cap (220 health, 335 reminders). */
   width?: number;
   style?: StyleProp<ViewStyle>;
 }
 
-const DESIGN_WIDTH = 375;
-const DESIGN_HEIGHT = 812;
-
-/** Figma segmented pill chrome. */
 const SEGMENT = {
-  width: 220,
   height: 36,
   padV: 2,
   padH: 4,
@@ -40,25 +34,15 @@ export default function SegmentedControl({
   activeTab,
   onTabChange,
   getLabel,
-  width: designWidth = SEGMENT.width,
+  width: designWidthCap = 220,
   style,
 }: SegmentedControlProps) {
   const styles = useThemedStyles(makeStyles);
-  const { width, height } = useWindowDimensions();
-  const sx = width / DESIGN_WIDTH;
-  const sy = height / DESIGN_HEIGHT;
+  const { contentWidth } = useResponsiveLayout();
 
-  const layout = useMemo(
-    () => ({
-      width: designWidth * sx,
-      height: SEGMENT.height * sy,
-      padV: SEGMENT.padV * sy,
-      padH: SEGMENT.padH * sx,
-      gap: SEGMENT.gap * sx,
-      radius: SEGMENT.radius * sx,
-      tabRadius: Math.max(6, (SEGMENT.radius - 2) * sx),
-    }),
-    [designWidth, sx, sy],
+  const segmentWidth = useMemo(
+    () => Math.min(contentWidth, designWidthCap),
+    [contentWidth, designWidthCap],
   );
 
   return (
@@ -67,12 +51,8 @@ export default function SegmentedControl({
         style={[
           styles.container,
           {
-            width: layout.width,
-            height: layout.height,
-            borderRadius: layout.radius,
-            paddingVertical: layout.padV,
-            paddingHorizontal: layout.padH,
-            gap: layout.gap,
+            width: segmentWidth,
+            maxWidth: '100%',
           },
         ]}
       >
@@ -81,15 +61,11 @@ export default function SegmentedControl({
           return (
             <TouchableOpacity
               key={tab}
-              style={[
-                styles.tab,
-                { borderRadius: layout.tabRadius },
-                isActive && styles.activeTab,
-              ]}
+              style={[styles.tab, isActive && styles.tabActive]}
               onPress={() => onTabChange(tab)}
-              activeOpacity={0.7}
+              activeOpacity={0.85}
             >
-              <Text style={[styles.tabText, isActive && styles.activeTabText]} numberOfLines={1}>
+              <Text style={[styles.tabText, isActive && styles.tabTextActive]} numberOfLines={1}>
                 {getLabel ? getLabel(tab) : tab}
               </Text>
             </TouchableOpacity>
@@ -105,39 +81,39 @@ const makeStyles = (c: ThemeColors) =>
     wrap: {
       width: '100%',
       alignItems: 'center',
-      marginBottom: 16,
     },
     container: {
       flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: c.track,
-      shadowColor: '#1F1F1F',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 3,
+      height: SEGMENT.height,
+      borderRadius: SEGMENT.radius,
+      paddingVertical: SEGMENT.padV,
+      paddingHorizontal: SEGMENT.padH,
+      gap: SEGMENT.gap,
+      backgroundColor: c.inactiveControl,
     },
     tab: {
       flex: 1,
-      height: '100%',
+      minWidth: 0,
       alignItems: 'center',
       justifyContent: 'center',
+      borderRadius: Math.max(6, SEGMENT.radius - 2),
     },
-    activeTab: {
+    tabActive: {
       backgroundColor: c.surface,
-      shadowColor: '#000',
+      shadowColor: '#1F1F1F',
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.08,
-      shadowRadius: 2,
+      shadowOpacity: 0.06,
+      shadowRadius: 4,
       elevation: 2,
     },
     tabText: {
-      fontFamily: 'Rubik-Medium',
+      fontFamily: 'Rubik-Regular',
       fontSize: 14,
       lineHeight: 20,
-      color: c.secondaryText,
+      color: c.tabInactiveText,
     },
-    activeTabText: {
+    tabTextActive: {
+      fontFamily: 'Rubik-Medium',
       color: c.primaryText,
     },
   });

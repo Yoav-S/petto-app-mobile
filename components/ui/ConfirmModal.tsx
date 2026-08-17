@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,11 @@ import {
   Modal,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  useWindowDimensions,
 } from 'react-native';
-import { type ThemeColors } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { t } from '@/i18n';
-
-const DESIGN_WIDTH = 375;
-const DESIGN_HEIGHT = 812;
 
 interface ConfirmModalProps {
   visible: boolean;
@@ -23,9 +20,18 @@ interface ConfirmModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   cancelText?: string;
-  /** `danger` = delete-style (default). `primary` = brand confirm. */
   variant?: 'danger' | 'primary';
 }
+
+const MODAL = {
+  maxWidth: 316,
+  padH: 20,
+  padV: 36,
+  contentGap: 10,
+  buttonRowGap: 12,
+  buttonWidth: 120,
+  buttonHeight: 44,
+} as const;
 
 export default function ConfirmModal({
   visible,
@@ -37,31 +43,9 @@ export default function ConfirmModal({
   cancelText,
   variant = 'danger',
 }: ConfirmModalProps) {
-  const { width, height } = useWindowDimensions();
   const styles = useThemedStyles(makeStyles);
-  const sx = width / DESIGN_WIDTH;
-  const sy = height / DESIGN_HEIGHT;
-
-  const layout = useMemo(
-    () => ({
-      modalWidth: 316 * sx,
-      modalRadius: 16 * sx,
-      modalPadH: 20 * sx,
-      modalPadV: 36 * sy,
-      contentGap: 10 * sy,
-      contentWidth: 276 * sx,
-      titleHeight: 20 * sy,
-      messageMinHeight: 20 * sy,
-      buttonRowHeight: 44 * sy,
-      buttonRowGap: 12 * sx,
-      buttonWidth: 120 * sx,
-      buttonHeight: 44 * sy,
-      buttonRadius: 10 * sx,
-      buttonPadV: 12 * sy,
-      buttonPadH: 16 * sx,
-    }),
-    [sx, sy],
-  );
+  const { contentWidth } = useResponsiveLayout();
+  const modalWidth = Math.min(contentWidth + Spacing.lg * 2, MODAL.maxWidth);
 
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onCancel}>
@@ -72,51 +56,25 @@ export default function ConfirmModal({
               style={[
                 styles.modalContainer,
                 {
-                  width: layout.modalWidth,
-                  borderRadius: layout.modalRadius,
-                  paddingHorizontal: layout.modalPadH,
-                  paddingVertical: layout.modalPadV,
-                  gap: layout.contentGap,
+                  width: modalWidth,
+                  maxWidth: '100%',
+                  paddingHorizontal: MODAL.padH,
+                  paddingVertical: MODAL.padV,
+                  gap: MODAL.contentGap,
                 },
               ]}
             >
-              <Text
-                style={[
-                  styles.title,
-                  { width: layout.contentWidth, minHeight: layout.titleHeight },
-                ]}
-              >
-                {title}
-              </Text>
+              <Text style={styles.title}>{title}</Text>
+              <Text style={styles.message}>{message}</Text>
 
-              <Text
-                style={[
-                  styles.message,
-                  { width: layout.contentWidth, minHeight: layout.messageMinHeight },
-                ]}
-              >
-                {message}
-              </Text>
-
-              <View
-                style={[
-                  styles.buttonRow,
-                  {
-                    width: layout.contentWidth,
-                    height: layout.buttonRowHeight,
-                    gap: layout.buttonRowGap,
-                  },
-                ]}
-              >
+              <View style={[styles.buttonRow, { gap: MODAL.buttonRowGap }]}>
                 <TouchableOpacity
                   style={[
                     styles.cancelButton,
                     {
-                      width: layout.buttonWidth,
-                      height: layout.buttonHeight,
-                      borderRadius: layout.buttonRadius,
-                      paddingVertical: layout.buttonPadV,
-                      paddingHorizontal: layout.buttonPadH,
+                      width: MODAL.buttonWidth,
+                      height: MODAL.buttonHeight,
+                      borderRadius: Radius.sm + 2,
                     },
                   ]}
                   onPress={onCancel}
@@ -129,11 +87,9 @@ export default function ConfirmModal({
                   style={[
                     variant === 'primary' ? styles.confirmButtonPrimary : styles.confirmButton,
                     {
-                      width: layout.buttonWidth,
-                      height: layout.buttonHeight,
-                      borderRadius: layout.buttonRadius,
-                      paddingVertical: layout.buttonPadV,
-                      paddingHorizontal: layout.buttonPadH,
+                      width: MODAL.buttonWidth,
+                      height: MODAL.buttonHeight,
+                      borderRadius: Radius.sm + 2,
                     },
                   ]}
                   onPress={onConfirm}
@@ -162,11 +118,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.overlay,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: Spacing.lg,
   },
   modalContainer: {
     backgroundColor: c.surface,
     alignItems: 'center',
+    borderRadius: Radius.lg,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -174,6 +131,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     elevation: 8,
   },
   title: {
+    width: '100%',
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     lineHeight: 20,
@@ -181,6 +139,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     textAlign: 'center',
   },
   message: {
+    width: '100%',
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     lineHeight: 20,
@@ -188,6 +147,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     textAlign: 'center',
   },
   buttonRow: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

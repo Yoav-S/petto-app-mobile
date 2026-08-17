@@ -34,21 +34,21 @@ export default function PetPhotoOnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const { sx, sy } = getPetOnboardingScale(width, height, insets.top, insets.bottom);
+  const { contentWidth } = getPetOnboardingScale(width, height, insets.top, insets.bottom);
 
   const { draft, setPhotoUri } = usePetOnboardingDraft();
   const [photoUri, setLocalPhotoUri] = useState<string | null>(draft.photoUri);
   const [sheetVisible, setSheetVisible] = useState(false);
 
-  const heroW = PET_PHOTO_STEP.heroWidth * sx;
-  const heroH = PET_PHOTO_STEP.heroHeight * sx;
-  const sheetHeight = PET_PHOTO_SHEET.height * sy;
+  const heroW = PET_PHOTO_STEP.heroWidth;
+  const heroH = PET_PHOTO_STEP.heroHeight;
+  const sheetHeight = PET_PHOTO_SHEET.height;
   const hasPhoto = Boolean(photoUri);
   // Dog with no user pick → show bundled default in the polaroid frame.
   const showDefaultDog = !hasPhoto && draft.type === 'dog';
   const actionBtnWidth = (
     hasPhoto ? PET_PHOTO_STEP.changeBtnWidth : PET_PHOTO_STEP.addBtnWidth
-  ) * sx;
+  );
 
   const closeSheet = () => setSheetVisible(false);
 
@@ -110,8 +110,8 @@ export default function PetPhotoOnboardingScreen() {
         style={[
           styles.header,
           {
-            marginTop: Math.max(8, PET_PHOTO_STEP.progressTop * sy - insets.top),
-            paddingHorizontal: PET_PHOTO_STEP.cardLeft * sx,
+            marginTop: Math.max(8, PET_PHOTO_STEP.progressTop - insets.top),
+            paddingHorizontal: PET_PHOTO_STEP.cardLeft,
           },
         ]}
       >
@@ -121,7 +121,7 @@ export default function PetPhotoOnboardingScreen() {
           <OnboardingProgressDots currentStep={3} />
         </View>
 
-        <OnboardingSkipButton onPress={handleSkip} scale={sx} />
+        <OnboardingSkipButton onPress={handleSkip} />
       </View>
 
       <View style={styles.flex}>
@@ -129,15 +129,15 @@ export default function PetPhotoOnboardingScreen() {
           style={[
             styles.card,
             {
-              marginTop: (PET_PHOTO_STEP.cardTop - PET_PHOTO_STEP.progressTop - 40) * sy,
-              marginHorizontal: PET_PHOTO_STEP.cardLeft * sx,
-              width: PET_PHOTO_STEP.cardWidth * sx,
-              minHeight: PET_PHOTO_STEP.cardHeight * sy,
-              borderRadius: PET_PHOTO_STEP.cardRadius * sx,
-              paddingTop: PET_PHOTO_STEP.cardPaddingTop * sy,
-              paddingHorizontal: PET_PHOTO_STEP.cardPaddingH * sx,
-              paddingBottom: PET_PHOTO_STEP.cardPaddingBottom * sy,
-              gap: PET_PHOTO_STEP.cardGap * sx,
+              marginTop: (PET_PHOTO_STEP.cardTop - PET_PHOTO_STEP.progressTop - 40),
+              marginHorizontal: PET_PHOTO_STEP.cardLeft,
+              width: contentWidth,
+              minHeight: PET_PHOTO_STEP.cardHeight,
+              borderRadius: PET_PHOTO_STEP.cardRadius,
+              paddingTop: PET_PHOTO_STEP.cardPaddingTop,
+              paddingHorizontal: PET_PHOTO_STEP.cardPaddingH,
+              paddingBottom: PET_PHOTO_STEP.cardPaddingBottom,
+              gap: PET_PHOTO_STEP.cardGap,
             },
           ]}
         >
@@ -145,8 +145,8 @@ export default function PetPhotoOnboardingScreen() {
             style={[
               styles.inner,
               {
-                width: PET_PHOTO_STEP.innerWidth * sx,
-                gap: PET_PHOTO_STEP.innerGap * sx,
+                width: PET_PHOTO_STEP.innerWidth,
+                gap: PET_PHOTO_STEP.innerGap,
               },
             ]}
           >
@@ -159,7 +159,7 @@ export default function PetPhotoOnboardingScreen() {
                 alignSelf: 'center',
                 position: 'relative',
                 overflow: 'hidden',
-                borderRadius: 12 * sx,
+                borderRadius: 12,
               }}
               accessibilityRole="button"
               accessibilityLabel={t('petOnboarding.photo_add_a11y')}
@@ -172,12 +172,11 @@ export default function PetPhotoOnboardingScreen() {
                   source={{ uri: photoUri! }}
                   style={{
                     position: 'absolute',
-                    width: PET_PHOTO_STEP.userPhotoWidth * sx,
-                    height: PET_PHOTO_STEP.userPhotoHeight * sx,
-                    top: PET_PHOTO_STEP.userPhotoTop * sx,
-                    left: PET_PHOTO_STEP.userPhotoLeft * sx,
+                    width: PET_PHOTO_STEP.userPhotoWidth,
+                    height: PET_PHOTO_STEP.userPhotoHeight,
+                    top: PET_PHOTO_STEP.userPhotoTop,
+                    left: PET_PHOTO_STEP.userPhotoLeft,
                     zIndex: 2,
-                    elevation: 2,
                   }}
                   contentFit="cover"
                 />
@@ -185,10 +184,10 @@ export default function PetPhotoOnboardingScreen() {
                 <View
                   style={{
                     position: 'absolute',
-                    width: PET_PHOTO_STEP.userPhotoWidth * sx,
-                    height: PET_PHOTO_STEP.userPhotoHeight * sx,
-                    top: PET_PHOTO_STEP.userPhotoTop * sx,
-                    left: PET_PHOTO_STEP.userPhotoLeft * sx,
+                    width: PET_PHOTO_STEP.userPhotoWidth,
+                    height: PET_PHOTO_STEP.userPhotoHeight,
+                    top: PET_PHOTO_STEP.userPhotoTop,
+                    left: PET_PHOTO_STEP.userPhotoLeft,
                     zIndex: 2,
                     elevation: 2,
                     overflow: 'hidden',
@@ -196,8 +195,8 @@ export default function PetPhotoOnboardingScreen() {
                   pointerEvents="none"
                 >
                   <OnboardingDefaultPetPhoto
-                    width={PET_PHOTO_STEP.userPhotoWidth * sx}
-                    height={PET_PHOTO_STEP.userPhotoHeight * sx}
+                    width={PET_PHOTO_STEP.userPhotoWidth}
+                    height={PET_PHOTO_STEP.userPhotoHeight}
                   />
                 </View>
               ) : null}
@@ -205,16 +204,16 @@ export default function PetPhotoOnboardingScreen() {
                 <View
                   style={{
                     position: 'absolute',
-                    top: PET_PHOTO_STEP.maskTop * sx,
-                    left: PET_PHOTO_STEP.maskLeft * sx,
+                    top: PET_PHOTO_STEP.maskTop,
+                    left: PET_PHOTO_STEP.maskLeft,
                     zIndex: 3,
                     elevation: 3,
                   }}
                   pointerEvents="none"
                 >
                   <OnboardingPhotoMask
-                    width={PET_PHOTO_STEP.maskWidth * sx}
-                    height={PET_PHOTO_STEP.maskHeight * sx}
+                    width={PET_PHOTO_STEP.maskWidth}
+                    height={PET_PHOTO_STEP.maskHeight}
                   />
                 </View>
               ) : null}
@@ -223,15 +222,15 @@ export default function PetPhotoOnboardingScreen() {
             <View
               style={[
                 styles.copyBlock,
-                { width: PET_PHOTO_STEP.copyWidth * sx, gap: PET_PHOTO_STEP.copyGap * sy },
+                { width: PET_PHOTO_STEP.copyWidth, gap: PET_PHOTO_STEP.copyGap },
               ]}
             >
               <Text
                 style={[
                   styles.title,
                   {
-                    fontSize: PET_PHOTO_STEP.titleSize * sx,
-                    lineHeight: PET_PHOTO_STEP.titleLine * sx,
+                    fontSize: PET_PHOTO_STEP.titleSize,
+                    lineHeight: PET_PHOTO_STEP.titleLine,
                   },
                 ]}
               >
@@ -241,8 +240,8 @@ export default function PetPhotoOnboardingScreen() {
                 style={[
                   styles.subtitle,
                   {
-                    fontSize: PET_PHOTO_STEP.subtitleSize * sx,
-                    lineHeight: PET_PHOTO_STEP.subtitleLine * sx,
+                    fontSize: PET_PHOTO_STEP.subtitleSize,
+                    lineHeight: PET_PHOTO_STEP.subtitleLine,
                   },
                 ]}
               >
@@ -256,11 +255,11 @@ export default function PetPhotoOnboardingScreen() {
                 styles.addPhotoBtn,
                 {
                   width: actionBtnWidth,
-                  height: PET_PHOTO_STEP.addBtnHeight * sx,
-                  borderRadius: PET_PHOTO_STEP.addBtnRadius * sx,
-                  paddingHorizontal: PET_PHOTO_STEP.addBtnPaddingH * sx,
-                  paddingVertical: PET_PHOTO_STEP.addBtnPaddingV * sx,
-                  gap: PET_PHOTO_STEP.addBtnGap * sx,
+                  height: PET_PHOTO_STEP.addBtnHeight,
+                  borderRadius: PET_PHOTO_STEP.addBtnRadius,
+                  paddingHorizontal: PET_PHOTO_STEP.addBtnPaddingH,
+                  paddingVertical: PET_PHOTO_STEP.addBtnPaddingV,
+                  gap: PET_PHOTO_STEP.addBtnGap,
                 },
               ]}
               accessibilityRole="button"
@@ -270,15 +269,15 @@ export default function PetPhotoOnboardingScreen() {
             >
               <Ionicons
                 name="image-outline"
-                size={PET_PHOTO_STEP.addBtnIconSize * sx}
+                size={PET_PHOTO_STEP.addBtnIconSize}
                 color={colors.primaryText}
               />
               <Text
                 style={[
                   styles.addPhotoText,
                   {
-                    fontSize: PET_PHOTO_STEP.addBtnFontSize * sx,
-                    lineHeight: PET_PHOTO_STEP.addBtnLineHeight * sx,
+                    fontSize: PET_PHOTO_STEP.addBtnFontSize,
+                    lineHeight: PET_PHOTO_STEP.addBtnLineHeight,
                   },
                 ]}
               >
@@ -293,11 +292,11 @@ export default function PetPhotoOnboardingScreen() {
         style={[
           styles.footer,
           {
-            paddingHorizontal: PET_PHOTO_STEP.continuePaddingH * sx,
-            paddingBottom: Math.max(insets.bottom, 10 * sy) + 8 * sy,
-            paddingTop: 12 * sy,
-            borderTopLeftRadius: 24 * sx,
-            borderTopRightRadius: 24 * sx,
+            paddingHorizontal: PET_PHOTO_STEP.continuePaddingH,
+            paddingBottom: Math.max(insets.bottom, 10) + 8,
+            paddingTop: 12,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
           },
         ]}
       >
@@ -306,14 +305,14 @@ export default function PetPhotoOnboardingScreen() {
           style={[
             styles.continueBtn,
             {
-              width: PET_PHOTO_STEP.continueBtnWidth * sx,
-              height: PET_PHOTO_STEP.continueBtnHeight * sy,
-              borderRadius: PET_PHOTO_STEP.continueBtnRadius * sx,
+              width: contentWidth, maxWidth: PET_PHOTO_STEP.continueBtnWidth,
+              height: PET_PHOTO_STEP.continueBtnHeight,
+              borderRadius: PET_PHOTO_STEP.continueBtnRadius,
             },
           ]}
           accessibilityRole="button"
         >
-          <Text style={[styles.continueText, { fontSize: 16 * sx, lineHeight: 24 * sx }]}>
+          <Text style={[styles.continueText, { fontSize: 16, lineHeight: 24 }]}>
             {t('onboarding.continue')}
           </Text>
         </Pressable>
@@ -324,10 +323,10 @@ export default function PetPhotoOnboardingScreen() {
           style={[
             styles.sheet,
             {
-              height: sheetHeight + insets.bottom + (hasPhoto ? 48 * sy : 0),
+              height: sheetHeight + insets.bottom + (hasPhoto ? 48 : 0),
               paddingBottom: insets.bottom,
-              borderTopLeftRadius: PET_PHOTO_SHEET.radius * sx,
-              borderTopRightRadius: PET_PHOTO_SHEET.radius * sx,
+              borderTopLeftRadius: PET_PHOTO_SHEET.radius,
+              borderTopRightRadius: PET_PHOTO_SHEET.radius,
             },
           ]}
         >
@@ -335,7 +334,7 @@ export default function PetPhotoOnboardingScreen() {
             style={[
               styles.sheetTitleRow,
               {
-                height: PET_PHOTO_SHEET.titleRowHeight * sy,
+                height: PET_PHOTO_SHEET.titleRowHeight,
                 marginTop: Spacing.md,
                 paddingHorizontal: Spacing.lg,
               },
@@ -346,8 +345,8 @@ export default function PetPhotoOnboardingScreen() {
               style={[
                 styles.sheetTitle,
                 {
-                  fontSize: PET_PHOTO_SHEET.optionFontSize * sx,
-                  lineHeight: PET_PHOTO_SHEET.optionLineHeight * sy,
+                  fontSize: PET_PHOTO_SHEET.optionFontSize,
+                  lineHeight: PET_PHOTO_SHEET.optionLineHeight,
                 },
               ]}
             >
@@ -359,8 +358,8 @@ export default function PetPhotoOnboardingScreen() {
               style={[
                 styles.sheetCloseBtn,
                 {
-                  width: PET_PHOTO_SHEET.closeSize * sx,
-                  height: PET_PHOTO_SHEET.closeSize * sx,
+                  width: PET_PHOTO_SHEET.closeSize,
+                  height: PET_PHOTO_SHEET.closeSize,
                 },
               ]}
               accessibilityRole="button"
@@ -368,7 +367,7 @@ export default function PetPhotoOnboardingScreen() {
             >
               <Ionicons
                 name="close"
-                size={PET_PHOTO_SHEET.closeSize * sx}
+                size={PET_PHOTO_SHEET.closeSize}
                 color={colors.primaryText}
               />
             </Pressable>
@@ -379,11 +378,11 @@ export default function PetPhotoOnboardingScreen() {
               style={[
                 styles.sheetOptions,
                 {
-                  width: PET_PHOTO_SHEET.optionsWidth * sx,
-                  minHeight: PET_PHOTO_SHEET.optionsHeight * sy,
-                  borderRadius: PET_PHOTO_SHEET.optionsRadius * sx,
-                  padding: PET_PHOTO_SHEET.optionsPadding * sx,
-                  gap: PET_PHOTO_SHEET.optionsGap * sy,
+                  width: PET_PHOTO_SHEET.optionsWidth,
+                  minHeight: PET_PHOTO_SHEET.optionsHeight,
+                  borderRadius: PET_PHOTO_SHEET.optionsRadius,
+                  padding: PET_PHOTO_SHEET.optionsPadding,
+                  gap: PET_PHOTO_SHEET.optionsGap,
                 },
               ]}
             >
@@ -392,8 +391,8 @@ export default function PetPhotoOnboardingScreen() {
                   style={[
                     styles.sheetOptionText,
                     {
-                      fontSize: PET_PHOTO_SHEET.optionFontSize * sx,
-                      lineHeight: PET_PHOTO_SHEET.optionLineHeight * sy,
+                      fontSize: PET_PHOTO_SHEET.optionFontSize,
+                      lineHeight: PET_PHOTO_SHEET.optionLineHeight,
                     },
                   ]}
                 >
@@ -403,7 +402,7 @@ export default function PetPhotoOnboardingScreen() {
               <View
                 style={[
                   styles.sheetDivider,
-                  { marginHorizontal: PET_PHOTO_SHEET.optionsPadding * sx },
+                  { marginHorizontal: PET_PHOTO_SHEET.optionsPadding },
                 ]}
               />
               <Pressable onPress={() => pickImage('library')} style={styles.sheetOptionRow}>
@@ -411,8 +410,8 @@ export default function PetPhotoOnboardingScreen() {
                   style={[
                     styles.sheetOptionText,
                     {
-                      fontSize: PET_PHOTO_SHEET.optionFontSize * sx,
-                      lineHeight: PET_PHOTO_SHEET.optionLineHeight * sy,
+                      fontSize: PET_PHOTO_SHEET.optionFontSize,
+                      lineHeight: PET_PHOTO_SHEET.optionLineHeight,
                     },
                   ]}
                 >
@@ -424,7 +423,7 @@ export default function PetPhotoOnboardingScreen() {
                   <View
                     style={[
                       styles.sheetDivider,
-                      { marginHorizontal: PET_PHOTO_SHEET.optionsPadding * sx },
+                      { marginHorizontal: PET_PHOTO_SHEET.optionsPadding },
                     ]}
                   />
                   <Pressable onPress={handleRemovePhoto} style={styles.sheetOptionRow}>
@@ -432,8 +431,8 @@ export default function PetPhotoOnboardingScreen() {
                       style={[
                         styles.sheetOptionTextDanger,
                         {
-                          fontSize: PET_PHOTO_SHEET.optionFontSize * sx,
-                          lineHeight: PET_PHOTO_SHEET.optionLineHeight * sy,
+                          fontSize: PET_PHOTO_SHEET.optionFontSize,
+                          lineHeight: PET_PHOTO_SHEET.optionLineHeight,
                         },
                       ]}
                     >
@@ -449,8 +448,8 @@ export default function PetPhotoOnboardingScreen() {
             style={[
               styles.sheetCancelSection,
               {
-                height: PET_PHOTO_SHEET.cancelSectionHeight * sy,
-                gap: PET_PHOTO_SHEET.cancelGap * sy,
+                height: PET_PHOTO_SHEET.cancelSectionHeight,
+                gap: PET_PHOTO_SHEET.cancelGap,
               },
             ]}
           >
@@ -459,8 +458,8 @@ export default function PetPhotoOnboardingScreen() {
                 style={[
                   styles.sheetCancelText,
                   {
-                    fontSize: PET_PHOTO_SHEET.cancelFontSize * sx,
-                    lineHeight: PET_PHOTO_SHEET.cancelLineHeight * sy,
+                    fontSize: PET_PHOTO_SHEET.cancelFontSize,
+                    lineHeight: PET_PHOTO_SHEET.cancelLineHeight,
                   },
                 ]}
               >

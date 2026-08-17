@@ -14,14 +14,12 @@ import {
   Text,
   TouchableOpacity,
   View,
-  useWindowDimensions,
   type KeyboardEvent,
 } from 'react-native';
 import { FullWindowOverlay } from 'react-native-screens';
 import { useColors } from '@/context/ThemeContext';
 import { t, isRTL } from '@/i18n';
 
-const DESIGN_WIDTH = 375;
 const DESIGN_TRAILING = 20;
 const DESIGN_BTN_W = 100;
 const DESIGN_BTN_H = 40;
@@ -86,26 +84,9 @@ export function useKeyboardBottomOffset(): number {
   return offset;
 }
 
-/** White Done chip — dismisses the keyboard. */
+/** Fixed Done chip — dismisses the keyboard. */
 export function KeyboardDismissDoneChip() {
   const colors = useColors();
-  const { width } = useWindowDimensions();
-  const sx = width / DESIGN_WIDTH;
-
-  const layout = useMemo(
-    () => ({
-      width: DESIGN_BTN_W * sx,
-      height: DESIGN_BTN_H * sx,
-      trailing: DESIGN_TRAILING * sx,
-      radius: 12 * sx,
-      padV: 8 * sx,
-      padH: 14 * sx,
-      fontSize: 14 * Math.min(sx, 1.15),
-      lineHeight: 18 * Math.min(sx, 1.15),
-      rowPadV: 8 * sx,
-    }),
-    [sx],
-  );
 
   const bg = colors.surface;
   const border = colors.border;
@@ -116,8 +97,8 @@ export function KeyboardDismissDoneChip() {
       style={[
         styles.row,
         {
-          paddingHorizontal: layout.trailing,
-          paddingVertical: layout.rowPadV,
+          paddingHorizontal: DESIGN_TRAILING,
+          paddingVertical: 8,
           alignItems: isRTL ? 'flex-start' : 'flex-end',
         },
       ]}
@@ -126,11 +107,11 @@ export function KeyboardDismissDoneChip() {
         style={[
           styles.button,
           {
-            width: layout.width,
-            height: layout.height,
-            borderRadius: layout.radius,
-            paddingVertical: layout.padV,
-            paddingHorizontal: layout.padH,
+            width: DESIGN_BTN_W,
+            height: DESIGN_BTN_H,
+            borderRadius: 12,
+            paddingVertical: 8,
+            paddingHorizontal: 14,
             backgroundColor: bg,
             borderColor: border,
           },
@@ -144,8 +125,8 @@ export function KeyboardDismissDoneChip() {
           style={[
             styles.label,
             {
-              fontSize: layout.fontSize,
-              lineHeight: layout.lineHeight,
+              fontSize: 14,
+              lineHeight: 18,
               color: text,
             },
           ]}

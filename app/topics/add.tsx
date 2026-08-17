@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import {
   StyleSheet,
   ScrollView,
-  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -20,9 +19,7 @@ import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { createRecord } from '@/services/health';
 import { getErrorMessage } from '@/services/errors';
-
-const DESIGN_WIDTH = 375;
-const DESIGN_HEIGHT = 812;
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 export default function AddHealthScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -30,9 +27,7 @@ export default function AddHealthScreen() {
   const router = useRouter();
   const { activePetId } = useActivePet();
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-  const sx = width / DESIGN_WIDTH;
-  const sy = height / DESIGN_HEIGHT;
+  const { contentWidth } = useResponsiveLayout();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -42,16 +37,16 @@ export default function AddHealthScreen() {
 
   const layout = useMemo(
     () => ({
-      formTop: 16 * sy,
-      cardWidth: 335 * sx,
-      cardRadius: 12 * sx,
-      cardPadH: 16 * sx,
-      cardPadV: 14 * sy,
-      nameHeight: 48 * sy,
-      descriptionHeight: 78 * sy,
-      gap: 22 * sy,
+      formTop: 16,
+      cardWidth: Math.min(contentWidth, 335),
+      cardRadius: 12,
+      cardPadH: 16,
+      cardPadV: 14,
+      nameHeight: 48,
+      descriptionHeight: 78,
+      gap: 22,
     }),
-    [sx, sy],
+    [contentWidth],
   );
 
   const canSave = name.trim().length > 0 && !submitting;
@@ -82,7 +77,7 @@ export default function AddHealthScreen() {
             styles.content,
             {
               paddingTop: layout.formTop,
-              paddingBottom: healthKeyboardScrollPadding(sy, insets.bottom),
+              paddingBottom: healthKeyboardScrollPadding(1, insets.bottom),
             },
           ]}
           keyboardShouldPersistTaps="handled"

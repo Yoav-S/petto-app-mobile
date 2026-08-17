@@ -3,7 +3,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import Animated, {
@@ -13,43 +12,33 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { type ThemeColors } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { isRTL } from '@/i18n';
 import { ADD_FAB } from '@/components/ui/SpeedDialFab';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 export interface BottomToastProps {
   visible: boolean;
   message: string;
-  /** Optional countdown seconds shown as "(Ns)" after the message. */
   countdownSec?: number | null;
   actionText?: string;
   onAction?: () => void;
-  /** When true, sits above the add FAB; otherwise ~50px from the bottom. */
   aboveFab?: boolean;
 }
 
-const DESIGN_WIDTH = 375;
-const DESIGN_HEIGHT = 812;
-
 const TOAST = {
-  width: 335,
+  maxWidth: 335,
   minHeight: 48,
   padV: 14,
   padH: 16,
   gap: 10,
-  radius: 12,
-  /** Figma top 658 on 812 → bottom offset when FAB is present. */
   bottomWithFab: 106,
   bottomPlain: 50,
   messageMaxWidth: 248,
   actionMinWidth: 36,
 } as const;
 
-/**
- * Bottom toast / error logger. Grows vertically for long messages.
- * Theme-aware inverse surface; RTL-aware row direction.
- */
 export default function BottomToast({
   visible,
   message,
@@ -60,29 +49,18 @@ export default function BottomToast({
 }: BottomToastProps) {
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-  const sx = width / DESIGN_WIDTH;
-  const sy = height / DESIGN_HEIGHT;
+  const { contentWidth } = useResponsiveLayout();
   const translateY = useSharedValue(120);
   const opacity = useSharedValue(0);
 
-  const layout = useMemo(() => {
-    const withFab =
-      (ADD_FAB.bottom + ADD_FAB.size + 12) * sy + Math.max(0, insets.bottom);
-    return {
-      width: TOAST.width * sx,
-      minHeight: TOAST.minHeight * sy,
-      padV: TOAST.padV * sy,
-      padH: TOAST.padH * sx,
-      gap: TOAST.gap * sx,
-      radius: TOAST.radius * sx,
-      bottom: aboveFab
-        ? Math.max(TOAST.bottomWithFab * sy, withFab)
-        : TOAST.bottomPlain * sy + Math.max(0, insets.bottom),
-      messageMaxWidth: TOAST.messageMaxWidth * sx,
-      actionMinWidth: TOAST.actionMinWidth * sx,
-    };
-  }, [aboveFab, insets.bottom, sx, sy]);
+  const toastWidth = Math.min(contentWidth, TOAST.maxWidth);
+
+  const bottom = useMemo(() => {
+    const withFab = ADD_FAB.bottom + ADD_FAB.size + 12 + Math.max(0, insets.bottom);
+    return aboveFab
+      ? Math.max(TOAST.bottomWithFab, withFab)
+      : TOAST.bottomPlain + Math.max(0, insets.bottom);
+  }, [aboveFab, insets.bottom]);
 
   useEffect(() => {
     if (visible) {
@@ -109,25 +87,18 @@ export default function BottomToast({
   return (
     <Animated.View
       pointerEvents="box-none"
-      style={[
-        styles.wrap,
-        animatedStyle,
-        {
-          bottom: layout.bottom,
-          paddingHorizontal: ((DESIGN_WIDTH - TOAST.width) / 2) * sx,
-        },
-      ]}
+      style={[styles.wrap, animatedStyle, { bottom, paddingHorizontal: Spacing.lg }]}
     >
       <View
         style={[
           styles.container,
           {
-            width: layout.width,
-            minHeight: layout.minHeight,
-            borderRadius: layout.radius,
-            paddingVertical: layout.padV,
-            paddingHorizontal: layout.padH,
-            gap: layout.gap,
+            width: toastWidth,
+            minHeight: TOAST.minHeight,
+            borderRadius: Radius.md,
+            paddingVertical: TOAST.padV,
+            paddingHorizontal: TOAST.padH,
+            gap: TOAST.gap,
             flexDirection: isRTL ? 'row-reverse' : 'row',
           },
         ]}
@@ -136,7 +107,7 @@ export default function BottomToast({
           style={[
             styles.message,
             {
-              maxWidth: actionText ? layout.messageMaxWidth : undefined,
+              maxWidth: actionText ? TOAST.messageMaxWidth : undefined,
               flex: 1,
               textAlign: isRTL ? 'right' : 'left',
             },
@@ -152,7 +123,7 @@ export default function BottomToast({
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             accessibilityRole="button"
             accessibilityLabel={actionText}
-            style={{ minWidth: layout.actionMinWidth }}
+            style={{ minWidth: TOAST.actionMinWidth }}
           >
             <Text style={[styles.actionText, { textAlign: isRTL ? 'left' : 'right' }]}>
               {actionText}
@@ -175,7 +146,6 @@ const makeStyles = (c: ThemeColors) =>
       elevation: 20,
     },
     container: {
-      // Inverse of page: dark bar in light mode, light bar in dark mode.
       backgroundColor: c.primaryText,
       alignItems: 'flex-start',
       justifyContent: 'space-between',

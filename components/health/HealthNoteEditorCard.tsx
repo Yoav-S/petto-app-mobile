@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,27 +12,19 @@ import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t, isRTL } from '@/i18n';
 
-const DESIGN_WIDTH = 375;
-
 export function useHealthNoteCardLayout() {
-  const { width } = useWindowDimensions();
-  const sx = width / DESIGN_WIDTH;
-
-  return useMemo(
-    () => ({
-      cardWidth: 335 * sx,
-      cardRadius: 12 * sx,
-      cardPadTop: 14 * sx,
-      cardPadH: 16 * sx,
-      cardPadBottom: 20 * sx,
-      innerGap: 12 * sx,
-      imageHeight: 160 * sx,
-      imageRadius: 12 * sx,
-      iconRowHeight: 24 * sx,
-      iconRowGap: 16 * sx,
-    }),
-    [sx],
-  );
+  return useMemo(() => ({
+    cardWidth: '100%' as const,
+    cardRadius: 12,
+    cardPadTop: 14,
+    cardPadH: 16,
+    cardPadBottom: 20,
+    innerGap: 12,
+    imageHeight: 160,
+    imageRadius: 12,
+    iconRowHeight: 24,
+    iconRowGap: 16,
+  }), []);
 }
 
 interface HealthNoteEditorCardProps {

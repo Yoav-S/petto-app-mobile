@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Alert, useWindowDimensions } from 'react-native';
+import { StyleSheet, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
@@ -11,8 +11,6 @@ import HealthKeyboardFooter, {
   healthKeyboardScrollPadding,
 } from '@/components/health/HealthKeyboardFooter';
 import {
-  DESIGN_HEIGHT,
-  DESIGN_WIDTH,
   hasDuplicateInList,
   isBeforeMinReminderDate,
   type ReminderSheet,
@@ -27,6 +25,7 @@ import {
   resolveReminderCategory,
   type ReminderCategory,
 } from '@/utils/reminderCategory';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 export default function AddReminderScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -34,9 +33,7 @@ export default function AddReminderScreen() {
   const router = useRouter();
   const { activePetId } = useActivePet();
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-  const sx = width / DESIGN_WIDTH;
-  const sy = height / DESIGN_HEIGHT;
+  const { contentWidth } = useResponsiveLayout();
 
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<ReminderCategory>('general');
@@ -52,21 +49,21 @@ export default function AddReminderScreen() {
 
   const layout = useMemo(
     () => ({
-      formTop: 16 * sy,
-      formGap: 22 * sy,
-      cardWidth: 335 * sx,
-      cardRadius: 12 * sx,
-      cardPadH: 16 * sx,
-      cardPadV: 14 * sy,
-      nameHeight: 48 * sy,
-      categoryHeight: 52 * sy,
-      scheduleHeight: 120 * sy,
-      noteHeight: 78 * sy,
-      innerGap: 8 * sy,
-      rowHeight: 20 * sy,
-      footerHeight: 48 * sy,
+      formTop: 16,
+      formGap: 22,
+      cardWidth: Math.min(contentWidth, 335),
+      cardRadius: 12,
+      cardPadH: 16,
+      cardPadV: 14,
+      nameHeight: 48,
+      categoryHeight: 52,
+      scheduleHeight: 120,
+      noteHeight: 78,
+      innerGap: 8,
+      rowHeight: 20,
+      footerHeight: 48,
     }),
-    [sx, sy],
+    [contentWidth],
   );
 
   const loadExistingReminders = useCallback(async (): Promise<Reminder[]> => {
@@ -196,7 +193,7 @@ export default function AddReminderScreen() {
         onTimeConfirm={handleTimeConfirm}
         onRepeatSelect={setRepeat}
         autoFocus
-        scrollPaddingBottom={healthKeyboardScrollPadding(sy, insets.bottom)}
+        scrollPaddingBottom={healthKeyboardScrollPadding(1, insets.bottom)}
         stickyFooter={
           <HealthKeyboardFooter
             label={t('common.save')}

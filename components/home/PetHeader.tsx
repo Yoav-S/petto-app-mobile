@@ -10,9 +10,9 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from 'react-native';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { petPhotoSource } from '@/utils/petPhotoSource';
 import PetPhotoImage from '@/components/ui/PetPhotoImage';
@@ -20,13 +20,11 @@ import HeaderIconButton, {
   HEADER_ICON_BTN,
 } from '@/components/ui/HeaderIconButton';
 
-export const DESIGN_WIDTH = 375;
-export const DESIGN_HEIGHT = 812;
-/** Figma 375x812: bottom panel starts at y=328 and is 484px tall. */
-export const DESIGN_COVER_HEIGHT = 352;
-export const DESIGN_PANEL_TOP = 328;
-export const DESIGN_PANEL_HEIGHT = 484;
-export const DESIGN_PANEL_RADIUS = 24;
+import {
+  DESIGN_COVER_HEIGHT,
+  DESIGN_PANEL_RADIUS,
+  DESIGN_PANEL_TOP,
+} from '@/constants/layout';
 
 interface PetHeaderProps {
   pet: {
@@ -81,14 +79,13 @@ export default function PetHeader({
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const { width: screenWidth } = useResponsiveLayout();
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
 
-  const scaleX = screenWidth / DESIGN_WIDTH;
-  const scaleY = screenHeight / DESIGN_HEIGHT;
-  const coverHeight = Math.round(DESIGN_COVER_HEIGHT * scaleY);
-  const panelOverlap = Math.round((DESIGN_COVER_HEIGHT - DESIGN_PANEL_TOP) * scaleY);
-  const panelRadius = Math.round(DESIGN_PANEL_RADIUS * scaleX);
+  const coverHeight = DESIGN_COVER_HEIGHT;
+  const panelOverlap = DESIGN_COVER_HEIGHT - DESIGN_PANEL_TOP;
+  const panelRadius = DESIGN_PANEL_RADIUS;
+  const nameBlockWidth = Math.min(screenWidth - 40, 335);
 
   useEffect(() => {
     if (loading) {
@@ -191,12 +188,12 @@ export default function PetHeader({
           ]}
         >
           {loading ? (
-            <View style={[styles.nameSection, profileActive && styles.profileNameSection]}>
+            <View style={[styles.nameSection, { maxWidth: nameBlockWidth }]}>
               <Animated.View style={[styles.nameSkeleton, { opacity: fadeAnim }]} />
               <Animated.View style={[styles.subtitleSkeleton, { opacity: fadeAnim }]} />
             </View>
           ) : (
-            <View style={[styles.nameSection, profileActive && styles.profileNameSection]}>
+            <View style={[styles.nameSection, { maxWidth: nameBlockWidth }]}>
               <TouchableOpacity
                 style={styles.nameRow}
                 onPress={canSwitch ? onSwitchPress : undefined}
@@ -302,21 +299,21 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
   },
   nameSection: {
-    width: 141,
-    height: 72,
+    width: '100%',
+    maxWidth: 335,
+    minHeight: 72,
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'flex-start',
     marginBottom: 12,
     paddingBottom: 0,
-  },
-  profileNameSection: {
-    width: 335,
+    paddingHorizontal: 20,
   },
   nameRow: {
     maxWidth: '100%',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: Spacing.xs,
     marginBottom: 4,
   },
@@ -330,12 +327,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   subtitleRow: {
     width: '100%',
-    height: 20,
+    minHeight: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    flexWrap: 'nowrap',
     gap: 4,
-    overflow: 'hidden',
   },
   breed: {
     flexShrink: 1,
@@ -344,6 +341,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: c.secondaryText,
+    textAlign: 'center',
   },
   subtitleSeparator: {
     flexShrink: 0,

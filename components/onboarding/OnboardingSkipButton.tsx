@@ -8,11 +8,10 @@ import { PET_PHOTO_STEP } from '@/constants/petOnboarding';
 type Props = {
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
-  scale?: number;
 };
 
 /** Top-right Skip on optional onboarding steps (photo / birth). */
-export default function OnboardingSkipButton({ onPress, style, scale = 1 }: Props) {
+export default function OnboardingSkipButton({ onPress, style }: Props) {
   const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
@@ -22,17 +21,7 @@ export default function OnboardingSkipButton({ onPress, style, scale = 1 }: Prop
       accessibilityRole="button"
       accessibilityLabel={t('petOnboarding.skip')}
     >
-      <Text
-        style={[
-          styles.text,
-          {
-            fontSize: PET_PHOTO_STEP.skipFontSize * scale,
-            lineHeight: PET_PHOTO_STEP.skipLineHeight * scale,
-          },
-        ]}
-      >
-        {t('petOnboarding.skip')}
-      </Text>
+      <Text style={styles.text}>{t('petOnboarding.skip')}</Text>
     </Pressable>
   );
 }
@@ -47,6 +36,8 @@ const makeStyles = (c: ThemeColors) =>
     },
     text: {
       fontFamily: 'Rubik-Medium',
+      fontSize: PET_PHOTO_STEP.skipFontSize,
+      lineHeight: PET_PHOTO_STEP.skipLineHeight,
       color: c.primaryText,
       textAlign: 'center',
     },

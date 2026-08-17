@@ -1,15 +1,19 @@
 ﻿import React from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
-import {
-  PET_ONBOARDING_DESIGN_WIDTH,
-  PET_ONBOARDING_STEPS,
-} from '@/constants/petOnboarding';
+import { View, StyleSheet } from 'react-native';
+import { PET_ONBOARDING_STEPS } from '@/constants/petOnboarding';
 import { useTheme } from '@/context/ThemeContext';
 
 interface OnboardingProgressDotsProps {
   currentStep: number;
   totalSteps?: number;
 }
+
+const DOT = {
+  inactive: 8,
+  activeWidth: 18,
+  activeHeight: 8,
+  activeRadius: 5,
+} as const;
 
 /** Figma fill for dark canvases. Light mode keeps brand so dots stay visible on #F6F7F9. */
 const DOT_COLOR_DARK = '#F6F7F9';
@@ -19,13 +23,6 @@ export default function OnboardingProgressDots({
   totalSteps = PET_ONBOARDING_STEPS,
 }: OnboardingProgressDotsProps) {
   const { isDark, colors } = useTheme();
-  const { width } = useWindowDimensions();
-  const sx = width / PET_ONBOARDING_DESIGN_WIDTH;
-
-  const inactiveSize = 8 * sx;
-  const activeWidth = 18 * sx;
-  const activeHeight = 8 * sx;
-  const activeRadius = 5 * sx;
   const dotColor = isDark ? DOT_COLOR_DARK : colors.brand;
 
   return (
@@ -40,16 +37,16 @@ export default function OnboardingProgressDots({
             style={
               isActive
                 ? {
-                    width: activeWidth,
-                    height: activeHeight,
-                    borderRadius: activeRadius,
+                    width: DOT.activeWidth,
+                    height: DOT.activeHeight,
+                    borderRadius: DOT.activeRadius,
                     backgroundColor: dotColor,
                     opacity: 1,
                   }
                 : {
-                    width: inactiveSize,
-                    height: inactiveSize,
-                    borderRadius: inactiveSize / 2,
+                    width: DOT.inactive,
+                    height: DOT.inactive,
+                    borderRadius: DOT.inactive / 2,
                     backgroundColor: dotColor,
                     opacity: 0.3,
                   }

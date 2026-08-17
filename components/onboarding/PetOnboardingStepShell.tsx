@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
 import { usePetOnboardingLayout } from '@/hooks/usePetOnboardingLayout';
 import { t } from '@/i18n';
-import { type ThemeColors } from '@/constants/theme';
+import { type ThemeColors, Radius, Spacing, FontSize } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 
 interface PetOnboardingStepShellProps {
@@ -29,14 +29,14 @@ export default function PetOnboardingStepShell({
   children,
 }: PetOnboardingStepShellProps) {
   const styles = useThemedStyles(makeStyles);
-  const { s, horizontalPadding, contentWidth } = usePetOnboardingLayout();
+  const { horizontalPadding, contentWidth } = usePetOnboardingLayout();
 
   const doneBtnStyle = {
-    minWidth: s(100),
-    height: s(40),
-    borderRadius: s(12),
-    paddingHorizontal: s(14),
-    paddingVertical: s(8),
+    minWidth: 100,
+    height: 40,
+    borderRadius: Radius.md,
+    paddingHorizontal: 14,
+    paddingVertical: Spacing.sm,
   };
 
   return (
@@ -46,7 +46,7 @@ export default function PetOnboardingStepShell({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
       >
-        <View style={[styles.header, { paddingHorizontal: horizontalPadding, paddingVertical: s(12) }]}>
+        <View style={[styles.header, { paddingHorizontal: horizontalPadding, paddingVertical: Spacing.md }]}>
           <View style={styles.headerSide} />
           <OnboardingProgressDots currentStep={step} />
           <View style={[styles.headerSide, styles.headerSideEnd]}>
@@ -56,7 +56,7 @@ export default function PetOnboardingStepShell({
                 style={[styles.doneBtn, doneBtnStyle]}
                 accessibilityRole="button"
               >
-                <Text style={[styles.doneText, { fontSize: s(14) }]}>{t('petOnboarding.done')}</Text>
+                <Text style={styles.doneText}>{t('petOnboarding.done')}</Text>
               </Pressable>
             ) : (
               <View
@@ -65,7 +65,7 @@ export default function PetOnboardingStepShell({
                 accessibilityRole="button"
                 accessibilityState={{ disabled: true }}
               >
-                <Text style={[styles.doneText, { fontSize: s(14) }]}>{t('petOnboarding.done')}</Text>
+                <Text style={styles.doneText}>{t('petOnboarding.done')}</Text>
               </View>
             )}
           </View>
@@ -75,7 +75,7 @@ export default function PetOnboardingStepShell({
           style={styles.flex}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingHorizontal: horizontalPadding, paddingBottom: s(32) },
+            { paddingHorizontal: horizontalPadding, paddingBottom: Spacing.xl },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -85,11 +85,11 @@ export default function PetOnboardingStepShell({
               styles.card,
               {
                 width: contentWidth,
-                borderRadius: s(12),
-                paddingHorizontal: s(16),
-                paddingTop: s(22),
-                paddingBottom: s(32),
-                gap: s(22),
+                borderRadius: Radius.md,
+                paddingHorizontal: Spacing.lg,
+                paddingTop: 22,
+                paddingBottom: Spacing.xl,
+                gap: 22,
               },
             ]}
           >
@@ -129,6 +129,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   doneText: {
     fontFamily: 'Rubik-Medium',
+    fontSize: FontSize.h5,
     color: c.button.primaryText,
   },
   scrollContent: {

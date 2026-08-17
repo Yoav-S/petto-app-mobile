@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -15,10 +14,8 @@ import { setTermsAccepted } from '@/services/onboarding';
 import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles, useTheme } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
-/** Figma welcome frame (360×812). */
-const DESIGN_WIDTH = 360;
-const DESIGN_HEIGHT = 812;
 const LOGO = RAGLY_WORDMARK;
 const CARD = {
   width: 335,
@@ -36,47 +33,45 @@ export default function OnboardingWelcomeScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-  const sx = width / DESIGN_WIDTH;
-  const sy = height / DESIGN_HEIGHT;
+  const { contentWidth, height } = useResponsiveLayout();
 
   const layout = useMemo(() => {
     // Keep side breathing room on notched / narrow phones.
-    const sidePad = Math.max(CARD.sidePad * sx, insets.left, insets.right, 16);
+    const sidePad = Math.max(CARD.sidePad, insets.left, insets.right, 16);
     const bottomPad = Math.max(insets.bottom, 16);
-    const cardWidth = Math.min(CARD.width * sx, width - sidePad * 2);
-    const paddingH = Math.max(CARD.paddingH * sx, 16);
+    const cardWidth = Math.min(CARD.width, contentWidth);
+    const paddingH = Math.max(CARD.paddingH, 16);
     // Full content width so subtitle stays ~2 lines (old 233px cap forced 3 on iPhone).
     const copyWidth = Math.max(cardWidth - paddingH * 2, 0);
     const compact = height < 740;
-    const logoH = (compact ? 40 : 48) * sx;
+    const logoH = compact ? 40 : 48;
     const logoW = logoH * (LOGO.width / LOGO.height);
     return {
       sidePad,
       bottomPad,
       cardWidth,
-      radius: CARD.radius * sx,
-      paddingV: (compact ? 28 : CARD.paddingV) * sy,
+      radius: CARD.radius,
+      paddingV: compact ? 28 : CARD.paddingV,
       paddingH,
-      gap: (compact ? 24 : CARD.gap) * sy,
+      gap: compact ? 24 : CARD.gap,
       logoW,
       logoH,
       copyWidth,
-      titleSize: 24 * sx,
-      titleLine: 28 * sx,
-      subtitleSize: 14 * sx,
-      subtitleLine: 20 * sx,
-      buttonH: Math.max(48 * sy, 48),
-      buttonRadius: 12 * sx,
-      buttonFont: 16 * sx,
-      buttonLine: 24 * sx,
-      legalFont: Math.max(10 * sx, 10),
-      legalLine: Math.max(14 * sx, 14),
-      copyGap: (compact ? 12 : 16) * sy,
-      actionsGap: (compact ? 12 : 16) * sy,
-      textGap: 8 * sy,
+      titleSize: 24,
+      titleLine: 28,
+      subtitleSize: 14,
+      subtitleLine: 20,
+      buttonH: 48,
+      buttonRadius: 12,
+      buttonFont: 16,
+      buttonLine: 24,
+      legalFont: 10,
+      legalLine: 14,
+      copyGap: compact ? 12 : 16,
+      actionsGap: compact ? 12 : 16,
+      textGap: 8,
     };
-  }, [width, height, sx, sy, insets.left, insets.right, insets.bottom]);
+  }, [contentWidth, height, insets.left, insets.right, insets.bottom]);
 
   const openTerms = () => {
     router.push('/(auth)/terms' as never);

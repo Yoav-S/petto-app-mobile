@@ -33,7 +33,7 @@ export default function PetNameOnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const { sx, sy } = getPetOnboardingScale(
+  const { contentWidth } = getPetOnboardingScale(
     width,
     height,
     insets.top,
@@ -64,9 +64,9 @@ export default function PetNameOnboardingScreen() {
     router.push('/(onboarding)/type' as never);
   };
 
-  const cardRadius = PET_NAME_STEP.cardRadius * sx;
-  const heroW = PET_NAME_STEP.heroWidth * sx;
-  const heroH = PET_NAME_STEP.heroHeight * sx;
+  const cardRadius = PET_NAME_STEP.cardRadius;
+  const heroW = PET_NAME_STEP.heroWidth;
+  const heroH = PET_NAME_STEP.heroHeight;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -76,8 +76,8 @@ export default function PetNameOnboardingScreen() {
           style={[
             styles.header,
             {
-              marginTop: Math.max(8, PET_NAME_STEP.progressTop * sy - insets.top),
-              paddingHorizontal: PET_NAME_STEP.cardLeft * sx,
+              marginTop: Math.max(8, PET_NAME_STEP.progressTop - insets.top),
+              paddingHorizontal: PET_NAME_STEP.cardLeft,
             },
           ]}
         >
@@ -93,15 +93,15 @@ export default function PetNameOnboardingScreen() {
             style={[
               styles.card,
               {
-                marginTop: (PET_NAME_STEP.cardTop - PET_NAME_STEP.progressTop - 40) * sy,
-                marginHorizontal: PET_NAME_STEP.cardLeft * sx,
-                width: PET_NAME_STEP.cardWidth * sx,
-                minHeight: PET_NAME_STEP.cardHeight * sy,
+                marginTop: PET_NAME_STEP.cardTop - PET_NAME_STEP.progressTop - 40,
+                marginHorizontal: PET_NAME_STEP.cardLeft,
+                width: contentWidth,
+                minHeight: PET_NAME_STEP.cardHeight,
                 borderRadius: cardRadius,
-                paddingHorizontal: PET_NAME_STEP.cardPaddingH * sx,
-                paddingTop: PET_NAME_STEP.cardPaddingTop * sy,
-                paddingBottom: PET_NAME_STEP.cardPaddingBottom * sy,
-                gap: PET_NAME_STEP.cardGap * sx,
+                paddingHorizontal: PET_NAME_STEP.cardPaddingH,
+                paddingTop: PET_NAME_STEP.cardPaddingTop,
+                paddingBottom: PET_NAME_STEP.cardPaddingBottom,
+                gap: PET_NAME_STEP.cardGap,
               },
             ]}
           >
@@ -113,8 +113,8 @@ export default function PetNameOnboardingScreen() {
               style={[
                 styles.copyBlock,
                 {
-                  width: PET_NAME_STEP.copyWidth * sx,
-                  gap: PET_NAME_STEP.copyGap * sx,
+                  width: '100%',
+                  gap: PET_NAME_STEP.copyGap,
                 },
               ]}
             >
@@ -122,8 +122,8 @@ export default function PetNameOnboardingScreen() {
                 style={[
                   styles.title,
                   {
-                    fontSize: PET_NAME_STEP.titleSize * sx,
-                    lineHeight: PET_NAME_STEP.titleLine * sx,
+                    fontSize: PET_NAME_STEP.titleSize,
+                    lineHeight: PET_NAME_STEP.titleLine,
                   },
                 ]}
               >
@@ -133,8 +133,8 @@ export default function PetNameOnboardingScreen() {
                 style={[
                   styles.subtitle,
                   {
-                    fontSize: PET_NAME_STEP.subtitleSize * sx,
-                    lineHeight: PET_NAME_STEP.subtitleLine * sx,
+                    fontSize: PET_NAME_STEP.subtitleSize,
+                    lineHeight: PET_NAME_STEP.subtitleLine,
                   },
                 ]}
               >
@@ -146,10 +146,10 @@ export default function PetNameOnboardingScreen() {
                 style={[
                   styles.input,
                   {
-                    width: PET_NAME_STEP.inputWidth * sx,
-                    height: PET_NAME_STEP.inputHeight * sy,
-                    borderRadius: PET_NAME_STEP.inputRadius * sx,
-                    fontSize: 16 * sx,
+                    width: '100%',
+                    height: PET_NAME_STEP.inputHeight,
+                    borderRadius: PET_NAME_STEP.inputRadius,
+                    fontSize: 16,
                   },
                 ]}
                 value={name}
@@ -173,11 +173,11 @@ export default function PetNameOnboardingScreen() {
           style={[
             styles.footer,
             {
-              paddingHorizontal: 20 * sx,
-              paddingBottom: Math.max(insets.bottom, 10 * sy) + 8 * sy,
-              paddingTop: 12 * sy,
-              borderTopLeftRadius: 24 * sx,
-              borderTopRightRadius: 24 * sx,
+              paddingHorizontal: 20,
+              paddingBottom: Math.max(insets.bottom, 10) + 8,
+              paddingTop: 12,
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
             },
           ]}
         >
@@ -187,16 +187,16 @@ export default function PetNameOnboardingScreen() {
             style={[
               styles.continueBtn,
               {
-                width: 335 * sx,
-                height: 48 * sy,
-                borderRadius: 12 * sx,
+                width: contentWidth,
+                height: 48,
+                borderRadius: 12,
               },
               !canContinue && styles.continueBtnDisabled,
             ]}
             accessibilityRole="button"
             accessibilityState={{ disabled: !canContinue }}
           >
-            <Text style={[styles.continueText, { fontSize: 16 * sx, lineHeight: 24 * sy }]}>
+            <Text style={[styles.continueText, { fontSize: 16, lineHeight: 24 }]}>
               {t('onboarding.continue')}
             </Text>
           </Pressable>

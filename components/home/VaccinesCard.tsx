@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Image } from 'expo-image';
-import { Spacing, type ThemeColors } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
 import { homeCategoryIconBg, HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
@@ -121,22 +121,21 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   contentContainer: {
     width: '100%',
-    maxWidth: 132,
-    height: 144,
-    gap: 12,
+    flex: 1,
+    gap: Spacing.md,
     overflow: 'hidden',
+    minWidth: 0,
   },
   iconTitleBlock: {
     width: '100%',
-    height: 64,
-    gap: 8,
+    gap: Spacing.sm,
     overflow: 'hidden',
   },
   vaccineDetails: {
     width: '100%',
-    height: 68,
     gap: 6,
     overflow: 'hidden',
+    flex: 1,
   },
   iconContainer: {
     width: 36,

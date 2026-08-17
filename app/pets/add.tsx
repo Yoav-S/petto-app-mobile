@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   Alert,
-  useWindowDimensions,
   Pressable,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -34,9 +33,7 @@ import { getErrorMessage } from '@/services/errors';
 import { useActivePet } from '@/store/petStore';
 import { formatDisplayDate, parseIsoDate } from '@/utils/calendar';
 import type { PetType } from '@/store/petOnboardingDraft';
-
-const DESIGN_WIDTH = 375;
-const DESIGN_HEIGHT = 812;
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 const CARD_SHADOW = {
   shadowColor: '#2D2D2A',
@@ -52,9 +49,7 @@ export default function AddPetScreen() {
   const toast = useToast();
   const router = useRouter();
   const { setActivePetId } = useActivePet();
-  const { width, height } = useWindowDimensions();
-  const sx = width / DESIGN_WIDTH;
-  const sy = height / DESIGN_HEIGHT;
+  const { contentWidth } = useResponsiveLayout();
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -67,20 +62,20 @@ export default function AddPetScreen() {
 
   const layout = useMemo(
     () => ({
-      formTop: 16 * sy,
-      formGap: 22 * sy,
-      cardWidth: 335 * sx,
-      photoSize: 128 * sx,
-      photoInner: 116 * sx,
-      photoInset: 6 * sx,
-      photoRadius: 22 * sx,
-      inputHeight: 52 * sy,
-      typeRowWidth: 304 * sx,
-      typeTileWidth: 144 * sx,
-      typeTileHeight: 110 * sy,
-      typeGap: 16 * sx,
+      formTop: 16,
+      formGap: 22,
+      cardWidth: Math.min(contentWidth, 335),
+      photoSize: 128,
+      photoInner: 116,
+      photoInset: 6,
+      photoRadius: 22,
+      inputHeight: 52,
+      typeRowWidth: Math.min(contentWidth, 304),
+      typeTileWidth: 144,
+      typeTileHeight: 110,
+      typeGap: 16,
     }),
-    [sx, sy],
+    [contentWidth],
   );
 
   const canSave = name.trim().length > 0 && !!petType && !submitting;
@@ -155,7 +150,7 @@ export default function AddPetScreen() {
             styles.content,
             {
               paddingTop: layout.formTop,
-              paddingBottom: 12 * sy,
+              paddingBottom: 12,
               gap: layout.formGap,
             },
           ]}
@@ -194,7 +189,7 @@ export default function AddPetScreen() {
               {
                 width: layout.cardWidth,
                 height: layout.inputHeight,
-                borderRadius: 12 * sx,
+                borderRadius: 12,
               },
             ]}
             value={name}

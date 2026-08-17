@@ -10,7 +10,6 @@ import {
   Modal,
   Pressable,
   Keyboard,
-  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -40,11 +39,9 @@ import {
   parseIsoDate,
   todayIsoDate,
 } from '@/utils/calendar';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 type DateSheet = 'date' | 'next' | null;
-
-const DESIGN_WIDTH = 375;
-const DESIGN_HEIGHT = 812;
 
 export default function AddVaccineScreen() {
   const router = useRouter();
@@ -53,9 +50,7 @@ export default function AddVaccineScreen() {
   const toast = useToast();
   const { activePetId } = useActivePet();
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-  const sx = width / DESIGN_WIDTH;
-  const sy = height / DESIGN_HEIGHT;
+  const { contentWidth } = useResponsiveLayout();
 
   const [name, setName] = useState('');
   const [date, setDate] = useState(todayIsoDate);
@@ -64,35 +59,35 @@ export default function AddVaccineScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
 
   const layout = useMemo(() => {
-    const innerGap = 10 * sy;
-    const cardPadV = 14 * sy;
-    const photoPadBottom = 20 * sy;
-    const photoCardHeight = (photoUri ? 286 : 150) * sy;
-    const labelAndGap = 18 * sy + innerGap;
+    const innerGap = 10;
+    const cardPadV = 14;
+    const photoPadBottom = 20;
+    const photoCardHeight = photoUri ? 286 : 150;
+    const labelAndGap = 18 + innerGap;
     const photoInnerHeight = Math.max(
-      72 * sy,
+      72,
       photoCardHeight - cardPadV - photoPadBottom - labelAndGap,
     );
 
     return {
-      formTop: 16 * sy,
-      formGap: 22 * sy,
-      cardWidth: 335 * sx,
-      cardRadius: 12 * sx,
-      cardPadH: 16 * sx,
+      formTop: 16,
+      formGap: 22,
+      cardWidth: Math.min(contentWidth, 335),
+      cardRadius: 12,
+      cardPadH: 16,
       cardPadV,
-      nameHeight: 48 * sy,
-      datesHeight: 84 * sy,
+      nameHeight: 48,
+      datesHeight: 84,
       photoHeight: photoCardHeight,
-      clinicHeight: 78 * sy,
+      clinicHeight: 78,
       photoPadBottom,
       innerGap,
       photoInnerHeight,
-      saveHeight: 48 * sy,
-      savePadV: 12 * sy,
-      savePadH: 16 * sx,
+      saveHeight: 48,
+      savePadV: 12,
+      savePadH: 16,
     };
-  }, [sx, sy, photoUri]);
+  }, [contentWidth, photoUri]);
   const [dateSheet, setDateSheet] = useState<DateSheet>(null);
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
@@ -175,7 +170,7 @@ export default function AddVaccineScreen() {
             styles.content,
             {
               paddingTop: layout.formTop,
-              paddingBottom: healthKeyboardScrollPadding(sy, insets.bottom),
+              paddingBottom: healthKeyboardScrollPadding(1, insets.bottom),
               gap: layout.formGap,
               alignItems: 'center',
             },

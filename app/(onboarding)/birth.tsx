@@ -23,7 +23,7 @@ import { setOnboardingComplete } from '@/services/onboarding';
 import { useAuth } from '@/context/AuthContext';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
-import { type ThemeColors } from '@/constants/theme';
+import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_BIRTH_STEP } from '@/constants/petOnboarding';
 import { getPetOnboardingScale } from '@/utils/petOnboardingScale';
@@ -41,7 +41,7 @@ export default function PetBirthOnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const { sx, sy } = getPetOnboardingScale(
+  const { contentWidth } = getPetOnboardingScale(
     width,
     height,
     insets.top,
@@ -131,8 +131,8 @@ export default function PetBirthOnboardingScreen() {
         style={[
           styles.header,
           {
-            marginTop: Math.max(8, PET_BIRTH_STEP.progressTop * sy - insets.top),
-            paddingHorizontal: PET_BIRTH_STEP.cardLeft * sx,
+            marginTop: Math.max(8, PET_BIRTH_STEP.progressTop - insets.top),
+            paddingHorizontal: PET_BIRTH_STEP.cardLeft,
           },
         ]}
       >
@@ -142,7 +142,7 @@ export default function PetBirthOnboardingScreen() {
           <OnboardingProgressDots currentStep={4} />
         </View>
 
-        <OnboardingSkipButton onPress={handleSkip} scale={sx} />
+        <OnboardingSkipButton onPress={handleSkip} />
       </View>
 
       <View style={styles.flex}>
@@ -150,22 +150,22 @@ export default function PetBirthOnboardingScreen() {
           style={[
             styles.card,
             {
-              marginTop: (PET_BIRTH_STEP.cardTop - PET_BIRTH_STEP.progressTop - 40) * sy,
-              marginHorizontal: PET_BIRTH_STEP.cardLeft * sx,
-              width: PET_BIRTH_STEP.cardWidth * sx,
-              minHeight: PET_BIRTH_STEP.cardHeight * sy,
-              borderRadius: PET_BIRTH_STEP.cardRadius * sx,
-              paddingHorizontal: PET_BIRTH_STEP.cardPaddingH * sx,
-              paddingTop: PET_BIRTH_STEP.cardPaddingTop * sy,
-              paddingBottom: PET_BIRTH_STEP.cardPaddingBottom * sy,
-              gap: PET_BIRTH_STEP.cardGap * sx,
+              marginTop: PET_BIRTH_STEP.cardTop - PET_BIRTH_STEP.progressTop - 40,
+              marginHorizontal: PET_BIRTH_STEP.cardLeft,
+              width: contentWidth,
+              minHeight: PET_BIRTH_STEP.cardHeight,
+              borderRadius: PET_BIRTH_STEP.cardRadius,
+              paddingHorizontal: PET_BIRTH_STEP.cardPaddingH,
+              paddingTop: PET_BIRTH_STEP.cardPaddingTop,
+              paddingBottom: PET_BIRTH_STEP.cardPaddingBottom,
+              gap: PET_BIRTH_STEP.cardGap,
             },
           ]}
         >
           <View style={{ alignSelf: 'center' }}>
             <OnboardingCalendar
-              width={PET_BIRTH_STEP.heroWidth * sx}
-              height={PET_BIRTH_STEP.heroHeight * sx}
+              width={PET_BIRTH_STEP.heroWidth}
+              height={PET_BIRTH_STEP.heroHeight}
             />
           </View>
 
@@ -173,18 +173,18 @@ export default function PetBirthOnboardingScreen() {
             style={[
               styles.copyBlock,
               {
-                width: PET_BIRTH_STEP.copyWidth * sx,
-                gap: PET_BIRTH_STEP.copyGap * sy,
+                width: '100%',
+                gap: PET_BIRTH_STEP.copyGap,
               },
             ]}
           >
-            <View style={{ gap: PET_BIRTH_STEP.titleBlockGap * sy }}>
+            <View style={{ gap: PET_BIRTH_STEP.titleBlockGap }}>
               <Text
                 style={[
                   styles.title,
                   {
-                    fontSize: PET_BIRTH_STEP.titleSize * sx,
-                    lineHeight: PET_BIRTH_STEP.titleLine * sx,
+                    fontSize: PET_BIRTH_STEP.titleSize,
+                    lineHeight: PET_BIRTH_STEP.titleLine,
                   },
                 ]}
               >
@@ -194,8 +194,8 @@ export default function PetBirthOnboardingScreen() {
                 style={[
                   styles.subtitle,
                   {
-                    fontSize: PET_BIRTH_STEP.subtitleSize * sx,
-                    lineHeight: PET_BIRTH_STEP.subtitleLine * sy,
+                    fontSize: PET_BIRTH_STEP.subtitleSize,
+                    lineHeight: PET_BIRTH_STEP.subtitleLine,
                   },
                 ]}
               >
@@ -208,11 +208,12 @@ export default function PetBirthOnboardingScreen() {
               style={[
                 styles.selectBtn,
                 {
-                  width: PET_BIRTH_STEP.selectBtnWidth * sx,
-                  height: PET_BIRTH_STEP.selectBtnHeight * sy,
-                  borderRadius: PET_BIRTH_STEP.selectBtnRadius * sx,
-                  paddingHorizontal: 16 * sx,
-                  paddingVertical: 12 * sy,
+                  width: '100%',
+                  maxWidth: PET_BIRTH_STEP.selectBtnWidth,
+                  height: PET_BIRTH_STEP.selectBtnHeight,
+                  borderRadius: PET_BIRTH_STEP.selectBtnRadius,
+                  paddingHorizontal: Spacing.lg,
+                  paddingVertical: Spacing.md,
                 },
               ]}
               accessibilityRole="button"
@@ -221,8 +222,8 @@ export default function PetBirthOnboardingScreen() {
                 style={[
                   styles.selectBtnText,
                   {
-                    fontSize: 16 * sx,
-                    lineHeight: 24 * sy,
+                    fontSize: 16,
+                    lineHeight: 24,
                     color: birthDate ? colors.primaryText : colors.secondaryText,
                   },
                 ]}
@@ -238,11 +239,11 @@ export default function PetBirthOnboardingScreen() {
         style={[
           styles.footer,
           {
-            paddingHorizontal: PET_BIRTH_STEP.continuePaddingH * sx,
-            paddingBottom: Math.max(insets.bottom, 10 * sy) + 8 * sy,
-            paddingTop: 12 * sy,
-            borderTopLeftRadius: 24 * sx,
-            borderTopRightRadius: 24 * sx,
+            paddingHorizontal: PET_BIRTH_STEP.continuePaddingH,
+            paddingBottom: Math.max(insets.bottom, 10) + Spacing.sm,
+            paddingTop: Spacing.md,
+            borderTopLeftRadius: Radius.xl,
+            borderTopRightRadius: Radius.xl,
           },
         ]}
       >
@@ -252,9 +253,10 @@ export default function PetBirthOnboardingScreen() {
           style={[
             styles.continueBtn,
             {
-              width: PET_BIRTH_STEP.continueBtnWidth * sx,
-              height: PET_BIRTH_STEP.continueBtnHeight * sy,
-              borderRadius: PET_BIRTH_STEP.continueBtnRadius * sx,
+              width: contentWidth,
+              maxWidth: PET_BIRTH_STEP.continueBtnWidth,
+              height: PET_BIRTH_STEP.continueBtnHeight,
+              borderRadius: PET_BIRTH_STEP.continueBtnRadius,
               opacity: isSubmitting ? 0.6 : 1,
             },
           ]}
@@ -263,9 +265,7 @@ export default function PetBirthOnboardingScreen() {
           {isSubmitting ? (
             <ActivityIndicator color={colors.surface} />
           ) : (
-            <Text style={[styles.continueText, { fontSize: 16 * sx, lineHeight: 24 * sy }]}>
-              {t('petOnboarding.finish')}
-            </Text>
+            <Text style={styles.continueText}>{t('petOnboarding.finish')}</Text>
           )}
         </Pressable>
       </View>
@@ -347,6 +347,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   continueText: {
     fontFamily: 'Rubik-Medium',
+    fontSize: 16,
+    lineHeight: 24,
     color: c.button.primaryText,
     textAlign: 'center',
   },

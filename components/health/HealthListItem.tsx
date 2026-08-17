@@ -4,15 +4,14 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import { formatHealthCreatedLabel, truncateHealthDescription } from '@/utils/calendar';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
-export const HEALTH_LIST_DESIGN_WIDTH = 375;
 export const HEALTH_LIST_CARD_WIDTH = 335;
 export const HEALTH_LIST_CARD_HEIGHT = 122;
 export const HEALTH_LIST_ITEM_GAP = 10;
@@ -72,21 +71,19 @@ export default function HealthListItem({
 }: HealthListItemProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
-  const { width: screenWidth } = useWindowDimensions();
-  const sx = screenWidth / HEALTH_LIST_DESIGN_WIDTH;
-
-  const cardWidth = HEALTH_LIST_CARD_WIDTH * sx;
-  const cardHeight = HEALTH_LIST_CARD_HEIGHT * sx;
-  const padV = 14 * sx;
-  const padH = 16 * sx;
-  const innerGap = 12 * sx;
-  const textGap = 6 * sx;
-  const titleSize = 16 * sx;
-  const titleLine = 20 * sx;
-  const subtitleSize = 14 * sx;
-  const subtitleLine = 20 * sx;
-  const metaSize = 14 * sx;
-  const metaLine = 20 * sx;
+  const { contentWidth } = useResponsiveLayout();
+  const cardWidth = Math.min(contentWidth, HEALTH_LIST_CARD_WIDTH);
+  const cardHeight = HEALTH_LIST_CARD_HEIGHT;
+  const padV = 14;
+  const padH = 16;
+  const innerGap = 12;
+  const textGap = 6;
+  const titleSize = 16;
+  const titleLine = 20;
+  const subtitleSize = 14;
+  const subtitleLine = 20;
+  const metaSize = 14;
+  const metaLine = 20;
   const innerWidth = cardWidth - padH * 2;
 
   const createdLabel = formatHealthCreatedLabel(createdAt, {
@@ -105,8 +102,8 @@ export default function HealthListItem({
           paddingTop: padV,
           paddingBottom: padV,
           paddingHorizontal: padH,
-          borderRadius: 12 * sx,
-          marginBottom: HEALTH_LIST_ITEM_GAP * sx,
+          borderRadius: 12,
+          marginBottom: HEALTH_LIST_ITEM_GAP,
           alignSelf: 'center',
         },
       ]}
@@ -120,7 +117,7 @@ export default function HealthListItem({
           <Text
             style={[
               styles.title,
-              { fontSize: titleSize, lineHeight: titleLine, maxWidth: innerWidth - 28 * sx },
+              { fontSize: titleSize, lineHeight: titleLine, maxWidth: innerWidth - 28 },
             ]}
             numberOfLines={1}
             ellipsizeMode="tail"
@@ -135,10 +132,10 @@ export default function HealthListItem({
               disabled={!onReminderPress}
               style={styles.reminderIconBtn}
             >
-              <Ionicons name="notifications-outline" size={16 * sx} color={colors.secondaryText} />
+              <Ionicons name="notifications-outline" size={16} color={colors.secondaryText} />
             </TouchableOpacity>
           ) : (
-            <View style={{ width: 16 * sx }} />
+            <View style={{ width: 16 }} />
           )}
         </View>
 

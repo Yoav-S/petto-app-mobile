@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,9 +28,8 @@ import HealthReminderLine from '@/components/health/HealthReminderLine';
 import HealthNoteIconRow from '@/components/health/HealthNoteIconRow';
 import { normalizeRouteParam } from '@/utils/routeParams';
 import type { MedicalRecordDetail } from '@/types/api';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
-const DESIGN_WIDTH = 375;
-const DESIGN_HEIGHT = 812;
 const DESIGN_FOOTER_PAD_TOP = 12;
 const DESIGN_FOOTER_PAD_H = 20;
 const DESIGN_FOOTER_RADIUS = 24;
@@ -48,28 +46,26 @@ export default function HealthDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const recordId = normalizeRouteParam(id);
   const { activePetId } = useActivePet();
-  const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const sx = width / DESIGN_WIDTH;
-  const sy = height / DESIGN_HEIGHT;
+  const { contentWidth } = useResponsiveLayout();
 
   const footerLayout = useMemo(
     () => ({
-      padH: DESIGN_FOOTER_PAD_H * sx,
-      padTop: DESIGN_FOOTER_PAD_TOP * sy,
+      padH: DESIGN_FOOTER_PAD_H,
+      padTop: DESIGN_FOOTER_PAD_TOP,
       padBottom:
-        Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM * sy) + DESIGN_FOOTER_SAFE_GAP * sy,
-      buttonWidth: DESIGN_SAVE_BUTTON_WIDTH * sx,
-      buttonHeight: DESIGN_SAVE_BUTTON_HEIGHT * sx,
-      buttonRadius: 12 * sx,
-      footerRadius: DESIGN_FOOTER_RADIUS * sx,
+        Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM) + DESIGN_FOOTER_SAFE_GAP,
+      buttonWidth: Math.min(contentWidth, DESIGN_SAVE_BUTTON_WIDTH),
+      buttonHeight: DESIGN_SAVE_BUTTON_HEIGHT,
+      buttonRadius: 12,
+      footerRadius: DESIGN_FOOTER_RADIUS,
       scrollPadBottom:
-        (DESIGN_FOOTER_PAD_TOP + DESIGN_SAVE_BUTTON_HEIGHT) * sy +
-        Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM * sy) +
-        DESIGN_FOOTER_SAFE_GAP * sy +
+        DESIGN_FOOTER_PAD_TOP + DESIGN_SAVE_BUTTON_HEIGHT +
+        Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM) +
+        DESIGN_FOOTER_SAFE_GAP +
         16,
     }),
-    [sx, sy, insets.bottom],
+    [contentWidth, insets.bottom],
   );
 
   const [record, setRecord] = useState<MedicalRecordDetail | null>(null);

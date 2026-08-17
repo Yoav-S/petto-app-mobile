@@ -1,45 +1,32 @@
-import { useWindowDimensions } from 'react-native';
+import { useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  PET_ONBOARDING_DESIGN_WIDTH,
-  PET_ONBOARDING_DESIGN_HEIGHT,
-} from '@/constants/petOnboarding';
-
-/** Keep typography readable on small phones without overflowing tall Figma frames. */
-const MIN_SCALE = 0.78;
-const MAX_SCALE = 1.12;
+import { PET_ONBOARDING_DESIGN_HEIGHT } from '@/constants/petOnboarding';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 /**
- * Uniform scale from the 375×812 Figma frame.
- * Uses min(widthScale, heightScale) so short screens shrink content proportionally.
+ * Pet onboarding layout — fixed Figma metrics + fluid content width.
+ * No global scale factor; typography and control sizes stay fixed.
  */
 export function usePetOnboardingLayout() {
-  const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const { width, height, contentWidth, pagePadding } = useResponsiveLayout();
 
-  const scaleX = width / PET_ONBOARDING_DESIGN_WIDTH;
-  const scaleY = height / PET_ONBOARDING_DESIGN_HEIGHT;
-  const rawScale = Math.min(scaleX, scaleY);
-  const scale = Math.max(MIN_SCALE, Math.min(rawScale, MAX_SCALE));
-
-  const s = (value: number) => value * scale;
-
-  const horizontalPadding = s(20);
-  const contentWidth = Math.min(width - horizontalPadding * 2, s(335));
   const availableHeight = height - insets.top - insets.bottom;
 
   /** Hero image (collar, etc.) — capped by viewport so the form stays visible. */
-  const heroSize = Math.min(s(222), contentWidth * 0.66, availableHeight * 0.28);
+  const heroSize = useMemo(
+    () => Math.min(222, contentWidth * 0.66, availableHeight * 0.28),
+    [availableHeight, contentWidth],
+  );
 
   return {
-    scale,
-    s,
     width,
     height,
     insets,
-    horizontalPadding,
-    contentWidth,
+    horizontalPadding: pagePadding,
+    contentWidth: Math.min(contentWidth, 335),
     availableHeight,
     heroSize,
+    designHeight: PET_ONBOARDING_DESIGN_HEIGHT,
   };
 }

@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  useWindowDimensions,
 } from 'react-native';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,6 +24,7 @@ import {
   parseIsoDate,
 } from '@/utils/calendar';
 import { isBeforeMinReminderDate } from '@/components/reminders/reminderFormShared';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 interface ReminderPickerSheetProps {
   visible: boolean;
@@ -34,9 +34,6 @@ interface ReminderPickerSheetProps {
   onClose: () => void;
   onConfirm: (draft: HealthReminderDraft) => void;
 }
-
-const DESIGN_WIDTH = 375;
-const DESIGN_HEIGHT = 812;
 
 /** Figma sheet chrome (375×812 frame). */
 const SHEET = {
@@ -127,9 +124,7 @@ export default function ReminderPickerSheet({
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-  const sx = width / DESIGN_WIDTH;
-  const sy = height / DESIGN_HEIGHT;
+  const { contentWidth } = useResponsiveLayout();
 
   const [date, setDate] = useState(minReminderDateIso);
   const [time, setTime] = useState('13:00');
@@ -172,43 +167,43 @@ export default function ReminderPickerSheet({
 
   const layout = useMemo(
     () => ({
-      sheetHeight: SHEET.height * sy + Math.max(0, insets.bottom),
-      radius: SHEET.radius * sx,
-      headerTop: SHEET.headerTop * sy,
-      headerHeight: SHEET.headerHeight * sy,
-      bodyGap: SHEET.bodyGap * sy,
-      footerHeight: SHEET.footerHeight * sy,
-      contentWidth: SHEET.contentWidth * sx,
-      cardHeight: SHEET.cardHeight * sy,
-      cardPadTop: SHEET.cardPadTop * sy,
-      cardPadBottom: SHEET.cardPadBottom * sy,
-      cardPadH: SHEET.cardPadH * sx,
-      cardRadius: SHEET.cardRadius * sx,
-      innerGap: SHEET.innerGap * sy,
-      todayBlockHeight: SHEET.todayBlockHeight * sy,
-      todayTitleHeight: SHEET.todayTitleHeight * sy,
-      todayBlockGap: SHEET.todayBlockGap * sy,
-      chipsRowHeight: SHEET.chipsRowHeight * sy,
-      chipsGap: SHEET.chipsGap * sx,
-      chipWidth: SHEET.chipWidth * sx,
-      chipHeight: SHEET.chipHeight * sy,
-      chipPadV: SHEET.chipPadV * sy,
-      chipPadH: SHEET.chipPadH * sx,
-      chipGap: SHEET.chipGap * sy,
-      chipRadius: SHEET.chipRadius * sx,
-      settingsHeight: SHEET.settingsHeight * sy,
-      settingsPadV: SHEET.settingsPadV * sy,
-      settingsPadH: SHEET.settingsPadH * sx,
-      settingsInnerGap: SHEET.settingsInnerGap * sy,
-      settingsRowHeight: SHEET.settingsRowHeight * sy,
-      buttonWidth: SHEET.buttonWidth * sx,
-      buttonHeight: SHEET.buttonHeight * sy,
-      buttonRadius: SHEET.buttonRadius * sx,
-      closeSize: SHEET.closeSize * sx,
-      closeRadius: SHEET.closeRadius * sx,
-      padH: SHEET.padH * sx,
+      sheetHeight: SHEET.height + Math.max(0, insets.bottom),
+      radius: SHEET.radius,
+      headerTop: SHEET.headerTop,
+      headerHeight: SHEET.headerHeight,
+      bodyGap: SHEET.bodyGap,
+      footerHeight: SHEET.footerHeight,
+      contentWidth: Math.min(contentWidth, SHEET.contentWidth),
+      cardHeight: SHEET.cardHeight,
+      cardPadTop: SHEET.cardPadTop,
+      cardPadBottom: SHEET.cardPadBottom,
+      cardPadH: SHEET.cardPadH,
+      cardRadius: SHEET.cardRadius,
+      innerGap: SHEET.innerGap,
+      todayBlockHeight: SHEET.todayBlockHeight,
+      todayTitleHeight: SHEET.todayTitleHeight,
+      todayBlockGap: SHEET.todayBlockGap,
+      chipsRowHeight: SHEET.chipsRowHeight,
+      chipsGap: SHEET.chipsGap,
+      chipWidth: SHEET.chipWidth,
+      chipHeight: SHEET.chipHeight,
+      chipPadV: SHEET.chipPadV,
+      chipPadH: SHEET.chipPadH,
+      chipGap: SHEET.chipGap,
+      chipRadius: SHEET.chipRadius,
+      settingsHeight: SHEET.settingsHeight,
+      settingsPadV: SHEET.settingsPadV,
+      settingsPadH: SHEET.settingsPadH,
+      settingsInnerGap: SHEET.settingsInnerGap,
+      settingsRowHeight: SHEET.settingsRowHeight,
+      buttonWidth: '100%' as const,
+      buttonHeight: SHEET.buttonHeight,
+      buttonRadius: SHEET.buttonRadius,
+      closeSize: SHEET.closeSize,
+      closeRadius: SHEET.closeRadius,
+      padH: SHEET.padH,
     }),
-    [sx, sy, insets.bottom],
+    [contentWidth, insets.bottom],
   );
 
   const handleChipPress = (chipId: string, chipTime: string) => {

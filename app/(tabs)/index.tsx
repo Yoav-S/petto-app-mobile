@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useActivePet } from '@/store/petStore';
 import { Spacing, type ThemeColors } from '@/constants/theme';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { apiGet } from '@/services/api';
 import { getErrorMessage } from '@/services/errors';
@@ -110,6 +111,7 @@ function pickLatestHealthRecord(records: MedicalRecord[]): MedicalRecord | null 
 
 export default function HomeScreen() {
   const styles = useThemedStyles(makeStyles);
+  const { contentWidth } = useResponsiveLayout();
   const router = useRouter();
   const { user, isLoading: authLoading, syncError, retryBackendSync, isSyncing, signOut } = useAuth();
   const { activePetId, setActivePetId } = useActivePet();
@@ -288,7 +290,7 @@ export default function HomeScreen() {
             {effectiveMode === 'profile' ? (
               <PetProfilePanel pet={pet} />
             ) : (
-              <View style={styles.cardsGrid}>
+              <View style={[styles.cardsGrid, { width: contentWidth, maxWidth: 335 }]}>
                 <View style={styles.row}>
                   <VaccinesCard
                     latestVaccine={
@@ -387,10 +389,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.primaryText,
   },
   cardsGrid: {
-    width: 335,
-    height: 318,
     alignSelf: 'center',
-    gap: 8,
+    gap: Spacing.sm,
     overflow: 'visible',
   },
   row: {
