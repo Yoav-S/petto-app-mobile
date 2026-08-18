@@ -44,7 +44,10 @@ export default function EmptyState({
           onPress={onAction}
           activeOpacity={0.8}
         >
-          <Text style={[styles.buttonText, actionCompact && styles.buttonTextCompact]}>
+          <Text
+            style={[styles.buttonText, actionCompact && styles.buttonTextCompact]}
+            numberOfLines={1}
+          >
             {actionTitle}
           </Text>
         </TouchableOpacity>
@@ -88,11 +91,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   buttonCompact: {
-    width: 125,
+    minWidth: 125,
     height: 48,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    gap: 10,
+    alignSelf: 'center',
   },
   buttonText: {
     fontFamily: 'Rubik-Medium',
@@ -103,5 +106,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 14,
     lineHeight: 18,
     color: c.button.primaryText,
+    textAlign: 'center',
+    flexShrink: 0,
   },
 });

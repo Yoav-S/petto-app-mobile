@@ -256,6 +256,21 @@ export function isReminderDateTimeInPast(isoDate: string, time: string): boolean
   return scheduled.getTime() < now.getTime();
 }
 
+/** Earliest HH:MM on `isoDate` that is still in the future. Null if the day is over. */
+export function soonestValidReminderTime(isoDate: string): string | null {
+  const date = parseIsoDate(isoDate);
+  if (!date) return null;
+  const now = new Date();
+  const next = new Date(now.getTime() + 60_000);
+  next.setSeconds(0, 0);
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+  const end = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 0, 0);
+  const candidate = next.getTime() < start.getTime() ? start : next;
+  if (candidate.getTime() > end.getTime()) return null;
+  if (candidate.getTime() < now.getTime()) return null;
+  return formatHourMinute(candidate.getHours(), candidate.getMinutes());
+}
+
 /** True if `date` is strictly after today (ignoring time-of-day). */
 export function isFutureDate(date: Date): boolean {
   const today = new Date();
