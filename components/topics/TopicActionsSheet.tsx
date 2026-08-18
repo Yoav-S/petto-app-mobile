@@ -7,7 +7,7 @@ import BottomSheetModal, {
 } from '@/components/ui/BottomSheetModal';
 import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
-import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useColors, useTheme, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 
 interface TopicActionsSheetProps {
@@ -29,6 +29,7 @@ export default function TopicActionsSheet({
 }: TopicActionsSheetProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
+  const { isDark } = useTheme();
   const insets = useSafeAreaInsets();
 
   const runAfterClose = (action: () => void) => {
@@ -70,13 +71,17 @@ export default function TopicActionsSheet({
               onPress={() => runAfterClose(onRemoveTopic)}
               accessibilityRole="button"
             >
-              <Text style={styles.menuItemText}>{t('topics.remove_topic')}</Text>
+              <Text style={[styles.menuItemText, styles.removeText]}>
+                {t('topics.remove_topic')}
+              </Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.cancelWrap}>
             <TouchableOpacity style={styles.cancelButton} onPress={onClose} activeOpacity={0.8}>
-              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+              <Text style={[styles.cancelText, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+                {t('common.cancel')}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -143,10 +148,14 @@ const makeStyles = (c: ThemeColors) =>
       justifyContent: 'center',
     },
     menuItemText: {
-      fontFamily: 'Rubik-Medium',
+      fontFamily: 'Rubik-Regular',
       fontSize: 16,
       lineHeight: 24,
       color: c.primaryText,
+      textAlign: 'center',
+    },
+    removeText: {
+      color: c.error,
     },
     cancelWrap: {
       minHeight: 84,
@@ -173,6 +182,6 @@ const makeStyles = (c: ThemeColors) =>
       fontFamily: 'Rubik-Medium',
       fontSize: 16,
       lineHeight: 24,
-      color: c.primaryText,
+      textAlign: 'center',
     },
   });
