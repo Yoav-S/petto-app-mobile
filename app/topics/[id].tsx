@@ -22,7 +22,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import TopicActionsSheet from '@/components/topics/TopicActionsSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import { getRecord, resolveRecord } from '@/services/health';
+import { getRecord, resolveRecord, deleteRecord } from '@/services/health';
 import { getErrorMessage } from '@/services/errors';
 import HealthReminderLine from '@/components/health/HealthReminderLine';
 import HealthNoteIconRow from '@/components/health/HealthNoteIconRow';
@@ -73,6 +73,7 @@ export default function HealthDetailsScreen() {
   const [failedPhotoIds, setFailedPhotoIds] = useState<Record<string, true>>({});
   const [menuVisible, setMenuVisible] = useState(false);
   const [resolveVisible, setResolveVisible] = useState(false);
+  const [deleteVisible, setDeleteVisible] = useState(false);
   const [resolving, setResolving] = useState(false);
   const recordRef = useRef<MedicalRecordDetail | null>(null);
   recordRef.current = record;
@@ -123,6 +124,37 @@ export default function HealthDetailsScreen() {
     }
   }, [activePetId, recordId, resolving, router, toast]);
 
+  const handleDeleteRecord = useCallback(() => {
+    if (!activePetId || !recordId) return;
+    setDeleteVisible(false);
+    toast.showUndo({
+      message: t('topics.record_deleted'),
+      onUndo: () => {},
+      onCommit: async () => {
+        try {
+          await deleteRecord(activePetId, recordId);
+          router.replace('/topics' as never);
+        } catch (err) {
+          toast.showError(getErrorMessage(err));
+        }
+      },
+    });
+  }, [activePetId, recordId, router, toast]);
+
+  const openNote = useCallback(
+    (noteId: string, open?: 'photo' | 'reminder' | 'focus') => {
+      router.push({
+        pathname: '/topics/edit-note',
+        params: {
+          recordId: recordId!,
+          noteId,
+          ...(open ? { open } : {}),
+        },
+      } as never);
+    },
+    [recordId, router],
+  );
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
@@ -151,82 +183,96 @@ export default function HealthDetailsScreen() {
   }
 
   const isActive = record.status === 'active';
-  const menuButton = isActive ? (
+  const menuButton = (
     <HeaderIconButton
       onPress={() => setMenuVisible(true)}
-      accessibilityLabel={t('topics.mark_resolved')}
+      accessibilityLabel={t('topics.topic_actions')}
     >
-      <Ionicons name="ellipsis-vertical" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
+      <Ionicons name="ellipsis-horizontal" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
     </HeaderIconButton>
-  ) : undefined;
+  );
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <ScreenHeader title={record.title} right={menuButton} />
 
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: footerLayout.scrollPadBottom },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        {(record.notes ?? []).length === 0 ? (
-          <Text style={styles.emptyNotes}>{t('topics.no_notes_yet')}</Text>
-        ) : (
-          (record.notes ?? []).map((note) => (
-            <View key={note.id} style={styles.noteCard}>
-              {note.photo_url && !failedPhotoIds[note.id] ? (
-                <View style={styles.noteImageWrap}>
-                  <Image
-                    source={{ uri: note.photo_url }}
-                    style={styles.noteImage}
-                    contentFit="cover"
-                    cachePolicy="memory-disk"
-                    recyclingKey={note.id}
-                    onError={() =>
-                      setFailedPhotoIds((prev) => ({ ...prev, [note.id]: true }))
-                    }
-                  />
-                </View>
-              ) : null}
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() =>
-                  router.push({
-                    pathname: '/topics/edit-note',
-                    params: { recordId: record.id, noteId: note.id },
-                  } as never)
-                }
-              >
-                <Text style={styles.noteText}>{note.text}</Text>
-              </TouchableOpacity>
-              {note.linked_reminder_date || note.linked_reminder_time ? (
-                <View style={styles.reminderRow}>
-                  <HealthReminderLine
-                    date={note.linked_reminder_date}
-                    time={note.linked_reminder_time}
-                  />
-                </View>
-              ) : null}
-              <HealthNoteIconRow
-                onPhotoPress={() =>
-                  router.push({
-                    pathname: '/topics/edit-note',
-                    params: { recordId: record.id, noteId: note.id, open: 'photo' },
-                  } as never)
-                }
-                onReminderPress={() =>
-                  router.push({
-                    pathname: '/topics/edit-note',
-                    params: { recordId: record.id, noteId: note.id, open: 'reminder' },
-                  } as never)
-                }
+      <View style={styles.listArea}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: footerLayout.scrollPadBottom },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {(record.notes ?? []).length === 0 ? (
+            <Text style={styles.emptyNotes}>{t('topics.no_notes_yet')}</Text>
+          ) : (
+            (record.notes ?? []).map((note) => (
+              <View key={note.id} style={styles.noteCard}>
+                {note.photo_url && !failedPhotoIds[note.id] ? (
+                  <TouchableOpacity
+                    style={styles.noteImageWrap}
+                    activeOpacity={0.85}
+                    onPress={() => openNote(note.id, 'photo')}
+                  >
+                    <Image
+                      source={{ uri: note.photo_url }}
+                      style={styles.noteImage}
+                      contentFit="cover"
+                      cachePolicy="memory-disk"
+                      recyclingKey={note.id}
+                      onError={() =>
+                        setFailedPhotoIds((prev) => ({ ...prev, [note.id]: true }))
+                      }
+                    />
+                  </TouchableOpacity>
+                ) : null}
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => openNote(note.id, 'focus')}
+                >
+                  <Text style={styles.noteText}>{note.text}</Text>
+                </TouchableOpacity>
+                {note.linked_reminder_date || note.linked_reminder_time ? (
+                  <TouchableOpacity
+                    style={styles.reminderRow}
+                    activeOpacity={0.7}
+                    onPress={() => openNote(note.id, 'reminder')}
+                  >
+                    <HealthReminderLine
+                      date={note.linked_reminder_date}
+                      time={note.linked_reminder_time}
+                    />
+                  </TouchableOpacity>
+                ) : null}
+                <HealthNoteIconRow
+                  onPhotoPress={() => openNote(note.id, 'photo')}
+                  onReminderPress={() => openNote(note.id, 'reminder')}
+                />
+              </View>
+            ))
+          )}
+        </ScrollView>
+        <View style={styles.topFade} pointerEvents="none">
+          {[0, 0.18, 0.36, 0.55, 0.75, 1].map((stop, index, stops) => {
+            const nextStop = stops[index + 1] ?? 1;
+            return (
+              <View
+                key={stop}
+                style={[
+                  styles.topFadeBand,
+                  {
+                    top: `${stop * 100}%`,
+                    height: `${(nextStop - stop) * 100}%`,
+                    backgroundColor: colors.background,
+                    opacity: 1 - stop,
+                  },
+                ]}
               />
-            </View>
-          ))
-        )}
-      </ScrollView>
+            );
+          })}
+        </View>
+      </View>
 
       <View
         style={[
@@ -260,8 +306,13 @@ export default function HealthDetailsScreen() {
 
       <TopicActionsSheet
         visible={menuVisible}
+        canResolve={isActive}
         onClose={() => setMenuVisible(false)}
         onMarkResolved={() => setResolveVisible(true)}
+        onEditTopic={() =>
+          router.push({ pathname: '/topics/add', params: { id: record.id } } as never)
+        }
+        onRemoveTopic={() => setDeleteVisible(true)}
       />
 
       <ConfirmModal
@@ -277,6 +328,15 @@ export default function HealthDetailsScreen() {
         onConfirm={() => {
           void handleResolve();
         }}
+      />
+
+      <ConfirmModal
+        visible={deleteVisible}
+        title={t('topics.delete_record_confirm_title')}
+        message={t('topics.delete_record_confirm_body')}
+        confirmText={t('common.delete')}
+        onConfirm={handleDeleteRecord}
+        onCancel={() => setDeleteVisible(false)}
       />
     </SafeAreaView>
   );
@@ -294,7 +354,24 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
+    paddingTop: 24,
+  },
+  listArea: {
+    flex: 1,
+    position: 'relative',
+  },
+  topFade: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 56,
+    overflow: 'hidden',
+  },
+  topFadeBand: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
   },
   emptyNotes: {
     fontFamily: 'Rubik-Regular',

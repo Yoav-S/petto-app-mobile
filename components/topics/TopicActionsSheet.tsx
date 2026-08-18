@@ -1,57 +1,85 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomSheetModal, {
   waitForBottomSheetsToSettle,
 } from '@/components/ui/BottomSheetModal';
+import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 
 interface TopicActionsSheetProps {
   visible: boolean;
+  canResolve?: boolean;
   onClose: () => void;
   onMarkResolved: () => void;
+  onEditTopic: () => void;
+  onRemoveTopic: () => void;
 }
 
 export default function TopicActionsSheet({
   visible,
+  canResolve = true,
   onClose,
   onMarkResolved,
+  onEditTopic,
+  onRemoveTopic,
 }: TopicActionsSheetProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
+  const insets = useSafeAreaInsets();
+
+  const runAfterClose = (action: () => void) => {
+    onClose();
+    void waitForBottomSheetsToSettle().then(action);
+  };
 
   return (
     <BottomSheetModal visible={visible} onClose={onClose}>
-      <View style={styles.sheet}>
-        <View style={styles.dragHandle} />
-
+      <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <View style={styles.header}>
           <View style={styles.headerSpacer} />
-          <Text style={styles.title}>{t('topics.title')}</Text>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Ionicons name="close" size={20} color={colors.primaryText} />
-          </TouchableOpacity>
+          <Text style={styles.title}>{t('topics.topic_actions')}</Text>
+          <HeaderIconButton onPress={onClose} accessibilityLabel={t('common.close')}>
+            <Ionicons name="close" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
+          </HeaderIconButton>
         </View>
 
-        <View style={styles.menuContainer}>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => {
-              onClose();
-              // Never present ConfirmModal over a dismissing sheet on iOS.
-              void waitForBottomSheetsToSettle().then(onMarkResolved);
-            }}
-            accessibilityRole="button"
-          >
-            <Text style={styles.menuItemText}>{t('topics.mark_resolved')}</Text>
-          </TouchableOpacity>
-        </View>
+        <View style={styles.body}>
+          <View style={[styles.menuContainer, !canResolve && styles.menuContainerCompact]}>
+            {canResolve ? (
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => runAfterClose(onMarkResolved)}
+                accessibilityRole="button"
+              >
+                <Text style={styles.menuItemText}>{t('topics.mark_resolved')}</Text>
+              </TouchableOpacity>
+            ) : null}
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => runAfterClose(onEditTopic)}
+              accessibilityRole="button"
+            >
+              <Text style={styles.menuItemText}>{t('topics.edit_topic')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => runAfterClose(onRemoveTopic)}
+              accessibilityRole="button"
+            >
+              <Text style={styles.menuItemText}>{t('topics.remove_topic')}</Text>
+            </TouchableOpacity>
+          </View>
 
-        <TouchableOpacity style={styles.cancelButton} onPress={onClose} activeOpacity={0.8}>
-          <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-        </TouchableOpacity>
+          <View style={styles.cancelWrap}>
+            <TouchableOpacity style={styles.cancelButton} onPress={onClose} activeOpacity={0.8}>
+              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </BottomSheetModal>
   );
@@ -60,70 +88,91 @@ export default function TopicActionsSheet({
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     sheet: {
+      backgroundColor: c.panel,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingTop: 32,
       paddingHorizontal: Spacing.lg,
-      paddingBottom: Spacing.lg,
-      gap: Spacing.md,
-    },
-    dragHandle: {
-      alignSelf: 'center',
-      width: 40,
-      height: 4,
-      borderRadius: 2,
-      backgroundColor: c.border,
-      marginTop: Spacing.sm,
-      marginBottom: Spacing.xs,
+      shadowColor: '#1E1E1E',
+      shadowOffset: { width: 0, height: -3 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 12,
     },
     header: {
+      height: 32,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      marginBottom: 22,
     },
     headerSpacer: {
-      width: 36,
+      width: HEADER_ICON_BTN.size,
+      height: HEADER_ICON_BTN.size,
     },
     title: {
       flex: 1,
       fontFamily: 'Rubik-Medium',
-      fontSize: 16,
-      lineHeight: 20,
+      fontSize: 20,
+      lineHeight: 24,
       color: c.primaryText,
       textAlign: 'center',
     },
-    closeButton: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: c.background,
+    body: {
+      gap: 22,
     },
     menuContainer: {
-      backgroundColor: c.background,
+      minHeight: 136,
+      backgroundColor: c.surface,
       borderRadius: Radius.lg,
-      overflow: 'hidden',
+      padding: 16,
+      gap: 10,
+      justifyContent: 'center',
+      shadowColor: '#1F1F1F',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    menuContainerCompact: {
+      minHeight: 96,
     },
     menuItem: {
-      paddingVertical: 16,
-      paddingHorizontal: Spacing.lg,
+      minHeight: 28,
       alignItems: 'center',
+      justifyContent: 'center',
     },
     menuItemText: {
       fontFamily: 'Rubik-Medium',
       fontSize: 16,
-      lineHeight: 22,
+      lineHeight: 24,
       color: c.primaryText,
     },
+    cancelWrap: {
+      minHeight: 84,
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      gap: 2,
+    },
     cancelButton: {
-      marginTop: Spacing.xs,
+      width: '100%',
       height: 48,
-      borderRadius: Radius.md,
-      backgroundColor: c.background,
+      borderRadius: 12,
+      backgroundColor: c.surface,
       alignItems: 'center',
       justifyContent: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      shadowColor: '#2D2D2A',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 20,
+      elevation: 3,
     },
     cancelText: {
       fontFamily: 'Rubik-Medium',
       fontSize: 16,
+      lineHeight: 24,
       color: c.primaryText,
     },
   });

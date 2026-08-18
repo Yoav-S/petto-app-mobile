@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { pickImageFromLibrary } from '@/services/imagePicker';
+import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
@@ -20,6 +20,7 @@ import HealthKeyboardFooter, {
   healthKeyboardScrollPadding,
 } from '@/components/health/HealthKeyboardFooter';
 import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
+import EditPhotoSheet from '@/components/health/EditPhotoSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { addNote, getRecord } from '@/services/health';
@@ -55,6 +56,7 @@ export default function AddNoteScreen() {
   const [reminderDraft, setReminderDraft] = useState<HealthReminderDraft | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [reminderSheetVisible, setReminderSheetVisible] = useState(false);
+  const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
 
   useEffect(() => {
     if (!recordId) {
@@ -71,22 +73,12 @@ export default function AddNoteScreen() {
       .finally(() => setLoadingRecord(false));
   }, [activePetId, recordId, router]);
 
-  const handleRemoveReminder = () => {
-    if (!reminderDraft) return;
-    const snapshot = reminderDraft;
-    setReminderDraft(null);
-    toast.showUndo({
-      message: t('reminders.deleted'),
-      onUndo: () => setReminderDraft(snapshot),
-      onCommit: () => {},
-    });
-  };
-
   const canSave = note.trim().length > 0 && !submitting && !loadingRecord;
 
-  const pickImage = async () => {
+  const handlePickedPhoto = async (source: 'camera' | 'library') => {
     setReminderSheetVisible(false);
-    const picked = await pickImageFromLibrary();
+    const picked =
+      source === 'camera' ? await pickImageFromCamera() : await pickImageFromLibrary();
     if (picked === 'denied') {
       Alert.alert(t('petOnboarding.photo_permission_title'), t('petOnboarding.photo_permission_body'));
       return;
@@ -159,29 +151,55 @@ export default function AddNoteScreen() {
           showsVerticalScrollIndicator={false}
         >
           <HealthNoteEditorCard
-            key={photoUri ?? 'no-photo'}
             noteText={note}
             onChangeNoteText={setNote}
             photoUri={photoUri}
-            onPickImage={pickImage}
+            onPickImage={() => {
+              Keyboard.dismiss();
+              setReminderSheetVisible(false);
+              setPhotoSheetVisible(true);
+            }}
             reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
             onReminderPress={() => {
               Keyboard.dismiss();
+              setPhotoSheetVisible(false);
               setReminderSheetVisible(true);
             }}
-            onRemoveReminder={handleRemoveReminder}
             placeholder={t('topics.note_body_placeholder')}
           />
         </ScrollView>
 
         <HealthKeyboardFooter
-          label={t('pickers.done')}
+          label={t('common.save')}
           disabled={!canSave}
           loading={submitting}
           onPress={handleSave}
           fullWidth
         />
       </HealthKeyboardAvoidingView>
+
+      <EditPhotoSheet
+        visible={photoSheetVisible}
+        hasPhoto={Boolean(photoUri)}
+        onClose={() => setPhotoSheetVisible(false)}
+        onTake={() => {
+          setPhotoSheetVisible(false);
+          void handlePickedPhoto('camera');
+        }}
+        onChoose={() => {
+          setPhotoSheetVisible(false);
+          void handlePickedPhoto('library');
+        }}
+        onRemove={
+          photoUri
+            ? () => {
+                setPhotoSheetVisible(false);
+                setPhotoUri(null);
+                setPhotoMime(null);
+              }
+            : undefined
+        }
+      />
 
       <ReminderPickerSheet
         visible={reminderSheetVisible}

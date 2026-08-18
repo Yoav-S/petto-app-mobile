@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -34,8 +34,8 @@ interface HealthNoteEditorCardProps {
   onPickImage: () => void;
   reminderValue?: string | null;
   onReminderPress: () => void;
-  onRemoveReminder?: () => void;
   placeholder?: string;
+  autoFocus?: boolean;
 }
 
 export default function HealthNoteEditorCard({
@@ -45,18 +45,25 @@ export default function HealthNoteEditorCard({
   onPickImage,
   reminderValue,
   onReminderPress,
-  onRemoveReminder,
   placeholder,
+  autoFocus = false,
 }: HealthNoteEditorCardProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
   const layout = useHealthNoteCardLayout();
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(photoUri) && !imageFailed;
+  const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     setImageFailed(false);
   }, [photoUri]);
+
+  useEffect(() => {
+    if (!autoFocus) return;
+    const id = setTimeout(() => inputRef.current?.focus(), 250);
+    return () => clearTimeout(id);
+  }, [autoFocus]);
 
   return (
     <View
@@ -72,7 +79,9 @@ export default function HealthNoteEditorCard({
     >
       <View style={[styles.inner, { gap: layout.innerGap }]}>
         {showImage ? (
-          <View
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={onPickImage}
             style={{
               width: '100%',
               height: layout.imageHeight,
@@ -88,42 +97,32 @@ export default function HealthNoteEditorCard({
               cachePolicy="memory-disk"
               onError={() => setImageFailed(true)}
             />
-          </View>
+          </TouchableOpacity>
         ) : null}
 
         <TextInput
+          ref={inputRef}
           style={styles.noteInput}
           value={noteText}
           onChangeText={onChangeNoteText}
           multiline
+          autoFocus={autoFocus}
           placeholder={placeholder ?? t('topics.note_placeholder')}
           placeholderTextColor={colors.secondaryText}
           textAlignVertical="top"
         />
 
         {reminderValue ? (
-          <View style={styles.reminderRow}>
-            <TouchableOpacity
-              style={styles.reminderContent}
-              activeOpacity={0.8}
-              onPress={onReminderPress}
-            >
-              <Text style={styles.reminderLabel}>{t('topics.reminder_label')}</Text>
-              <Text style={styles.reminderValue} numberOfLines={1}>
-                {reminderValue}
-              </Text>
-            </TouchableOpacity>
-            {onRemoveReminder ? (
-              <TouchableOpacity
-                onPress={onRemoveReminder}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel={t('topics.remove_reminder')}
-              >
-                <Ionicons name="close-circle" size={16} color={colors.secondaryText} />
-              </TouchableOpacity>
-            ) : null}
-          </View>
+          <TouchableOpacity
+            style={styles.reminderRow}
+            activeOpacity={0.8}
+            onPress={onReminderPress}
+          >
+            <Text style={styles.reminderLabel}>{t('topics.reminder_label')}</Text>
+            <Text style={styles.reminderValue} numberOfLines={1}>
+              {reminderValue}
+            </Text>
+          </TouchableOpacity>
         ) : null}
 
         <View
@@ -171,17 +170,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     minHeight: 40,
   },
   reminderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  reminderContent: {
-    flex: 1,
     flexDirection: isRTL ? 'row-reverse' : 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-    minWidth: 0,
+    gap: 6,
+    flexWrap: 'nowrap',
   },
   reminderLabel: {
     fontFamily: 'Rubik-Medium',
@@ -195,8 +187,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: c.primaryText,
-    flex: 1,
-    textAlign: isRTL ? 'left' : 'right',
+    flexShrink: 1,
   },
   iconRow: {
     flexDirection: 'row',

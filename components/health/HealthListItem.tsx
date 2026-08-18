@@ -91,6 +91,7 @@ export default function HealthListItem({
     yesterday: t('topics.created_yesterday'),
     createdPrefix: t('topics.created_prefix'),
   });
+  const hasSubtitle = Boolean(subtitle.trim());
 
   return (
     <TouchableOpacity
@@ -98,7 +99,8 @@ export default function HealthListItem({
         styles.card,
         {
           width: cardWidth,
-          height: cardHeight,
+          height: hasSubtitle ? cardHeight : undefined,
+          minHeight: hasSubtitle ? cardHeight : 80,
           paddingTop: padV,
           paddingBottom: padV,
           paddingHorizontal: padH,
@@ -112,7 +114,16 @@ export default function HealthListItem({
       activeOpacity={0.7}
       disabled={!onPress}
     >
-      <View style={[styles.inner, { width: innerWidth, gap: innerGap }]}>
+      <View
+        style={[
+          styles.inner,
+          {
+            width: innerWidth,
+            gap: innerGap,
+            justifyContent: hasSubtitle ? 'space-between' : 'flex-start',
+          },
+        ]}
+      >
         <View style={[styles.topRow, { width: innerWidth }]}>
           <Text
             style={[
@@ -139,8 +150,8 @@ export default function HealthListItem({
           )}
         </View>
 
-        <View style={[styles.textBlock, { width: innerWidth, gap: textGap }]}>
-          {subtitle ? (
+        {hasSubtitle ? (
+          <View style={[styles.textBlock, { width: innerWidth, gap: textGap }]}>
             <Text
               style={[styles.subtitle, { fontSize: subtitleSize, lineHeight: subtitleLine }]}
               numberOfLines={2}
@@ -148,8 +159,8 @@ export default function HealthListItem({
             >
               {subtitle}
             </Text>
-          ) : null}
-        </View>
+          </View>
+        ) : null}
 
         {createdLabel ? (
           <Text

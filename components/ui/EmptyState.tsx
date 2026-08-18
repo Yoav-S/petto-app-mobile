@@ -68,12 +68,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   title: {
     fontFamily: 'Rubik-Medium',
     fontSize: 20,
+    lineHeight: 24,
     color: c.primaryText,
     textAlign: 'center',
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
+    lineHeight: 24,
     color: c.secondaryText,
     textAlign: 'center',
   },
@@ -86,10 +88,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   buttonCompact: {
-    minWidth: 124,
+    width: 125,
     height: 48,
     paddingVertical: 12,
     paddingHorizontal: 16,
+    gap: 10,
   },
   buttonText: {
     fontFamily: 'Rubik-Medium',
@@ -99,6 +102,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   buttonTextCompact: {
     fontSize: 14,
     lineHeight: 18,
-    color: '#F6F7F9',
+    color: c.button.primaryText,
   },
 });

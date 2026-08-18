@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  FlatList,
+  ScrollView,
   NativeSyntheticEvent,
   NativeScrollEvent,
   Platform,
@@ -36,6 +36,10 @@ function pad2(n: number): string {
   return String(n).padStart(2, '0');
 }
 
+function clampIndex(index: number, length: number): number {
+  return Math.max(0, Math.min(length - 1, index));
+}
+
 interface WheelColumnProps {
   items: readonly number[];
   selectedIndex: number;
@@ -52,86 +56,94 @@ function WheelColumn({
   mountKey,
 }: WheelColumnProps) {
   const styles = useThemedStyles(makeStyles);
-  const listRef = useRef<FlatList<number>>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const [visualIndex, setVisualIndex] = useState(selectedIndex);
+  const snappingRef = useRef(false);
+  const snapOffsets = useMemo(
+    () => items.map((_, index) => index * ITEM_HEIGHT),
+    [items],
+  );
 
   useEffect(() => {
+    setVisualIndex(selectedIndex);
+    const y = selectedIndex * ITEM_HEIGHT;
     requestAnimationFrame(() => {
-      listRef.current?.scrollToOffset({
-        offset: selectedIndex * ITEM_HEIGHT,
-        animated: false,
-      });
+      scrollRef.current?.scrollTo({ y, animated: false });
     });
     // Only re-sync when the sheet opens, not on every snap.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mountKey]);
 
-  const snapToIndex = useCallback(
-    (index: number) => {
-      const clamped = Math.max(0, Math.min(items.length - 1, index));
-      listRef.current?.scrollToOffset({
-        offset: clamped * ITEM_HEIGHT,
-        animated: true,
-      });
-      if (clamped !== selectedIndex) onIndexChange(clamped);
+  const commitFromOffset = useCallback(
+    (y: number) => {
+      const index = clampIndex(Math.round(y / ITEM_HEIGHT), items.length);
+      setVisualIndex(index);
+      if (index !== selectedIndex) onIndexChange(index);
     },
     [items.length, onIndexChange, selectedIndex],
   );
 
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (snappingRef.current) return;
+    const index = clampIndex(
+      Math.round(event.nativeEvent.contentOffset.y / ITEM_HEIGHT),
+      items.length,
+    );
+    setVisualIndex(index);
+  }, [items.length]);
+
   const handleScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const index = Math.round(event.nativeEvent.contentOffset.y / ITEM_HEIGHT);
-      snapToIndex(index);
+      snappingRef.current = false;
+      commitFromOffset(event.nativeEvent.contentOffset.y);
     },
-    [snapToIndex],
-  );
-
-  const renderItem = useCallback(
-    ({ item, index }: { item: number; index: number }) => {
-      const isActive = index === selectedIndex;
-      return (
-        <View style={styles.cell}>
-          <Text
-            style={[styles.cellText, isActive && styles.cellTextActive]}
-            allowFontScaling={false}
-          >
-            {pad2(item)}
-          </Text>
-        </View>
-      );
-    },
-    [selectedIndex, styles.cell, styles.cellText, styles.cellTextActive],
+    [commitFromOffset],
   );
 
   return (
     <View style={styles.column}>
       <Text style={styles.columnLabel}>{label}</Text>
       <View style={styles.wheelWrap}>
-        <FlatList
-          ref={listRef}
-          data={items as number[]}
-          keyExtractor={(item) => String(item)}
-          renderItem={renderItem}
+        <ScrollView
+          ref={scrollRef}
           showsVerticalScrollIndicator={false}
-          snapToInterval={ITEM_HEIGHT}
-          snapToAlignment="start"
-          decelerationRate="fast"
           nestedScrollEnabled
-          disableIntervalMomentum
+          bounces
+          alwaysBounceVertical
+          overScrollMode="always"
+          directionalLockEnabled
+          snapToOffsets={snapOffsets}
+          snapToEnd={false}
+          decelerationRate="fast"
+          scrollEventThrottle={16}
+          onScroll={handleScroll}
+          onScrollBeginDrag={() => {
+            snappingRef.current = false;
+          }}
           onMomentumScrollEnd={handleScrollEnd}
           onScrollEndDrag={(event) => {
-            if (!event.nativeEvent.velocity || Math.abs(event.nativeEvent.velocity.y) < 0.1) {
+            const velocity = event.nativeEvent.velocity?.y ?? 0;
+            if (Math.abs(velocity) < 0.05) {
               handleScrollEnd(event);
             }
           }}
-          getItemLayout={(_, index) => ({
-            length: ITEM_HEIGHT,
-            offset: ITEM_HEIGHT * index,
-            index,
+        >
+          <View style={{ height: SPACER }} />
+          {items.map((item, index) => {
+            const isActive = index === visualIndex;
+            return (
+              <View key={item} style={styles.cell}>
+                <Text
+                  style={[styles.cellText, isActive && styles.cellTextActive]}
+                  allowFontScaling={false}
+                >
+                  {pad2(item)}
+                </Text>
+              </View>
+            );
           })}
-          extraData={selectedIndex}
-          ListHeaderComponent={<View style={{ height: SPACER }} />}
-          ListFooterComponent={<View style={{ height: SPACER }} />}
-        />
+          <View style={{ height: SPACER }} />
+        </ScrollView>
         <View style={styles.selectionBand} pointerEvents="none" />
         <View style={[styles.fade, styles.fadeTop]} pointerEvents="none" />
         <View style={[styles.fade, styles.fadeBottom]} pointerEvents="none" />

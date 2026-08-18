@@ -382,7 +382,7 @@ function parseApiDateTime(value: string | null | undefined): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-/** Health list footer: Today HH:MM, Yesterday, or Created DD.MM.YYYY. */
+/** Health list footer: Created Today 17:15, Created Yesterday 20:11, or Created DD.MM.YYYY. */
 export function formatHealthCreatedLabel(
   isoDateTime: string | null | undefined,
   labels: { today: string; yesterday: string; createdPrefix: string },
@@ -396,13 +396,13 @@ export function formatHealthCreatedLabel(
   const diffDays = Math.floor(
     (startOfLocalDay(now).getTime() - startOfLocalDay(created).getTime()) / dayMs,
   );
+  const time = formatHourMinute(created.getHours(), created.getMinutes());
 
   if (diffDays <= 0) {
-    const time = formatReminderClockTime(extractTimeFromIso(isoDateTime));
-    return time ? `${labels.today} ${time}` : labels.today;
+    return `${labels.createdPrefix} ${labels.today} ${time}`;
   }
   if (diffDays === 1) {
-    return labels.yesterday;
+    return `${labels.createdPrefix} ${labels.yesterday} ${time}`;
   }
   const day = String(created.getDate()).padStart(2, '0');
   const month = String(created.getMonth() + 1).padStart(2, '0');

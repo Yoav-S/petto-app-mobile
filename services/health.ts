@@ -23,6 +23,14 @@ export function createRecord(
   return apiPost<MedicalRecord>(`/pets/${petId}/medical-records`, input);
 }
 
+export function updateRecord(
+  petId: string,
+  id: string,
+  input: { title?: string; description?: string | null },
+): Promise<MedicalRecord> {
+  return apiPatch<MedicalRecord>(`/pets/${petId}/medical-records/${id}`, input);
+}
+
 export function getRecord(petId: string, id: string): Promise<MedicalRecordDetail> {
   return apiGet<MedicalRecordDetail>(`/pets/${petId}/medical-records/${id}`);
 }

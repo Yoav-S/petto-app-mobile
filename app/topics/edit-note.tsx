@@ -9,9 +9,9 @@ import {
   ActivityIndicator,
   Keyboard,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { pickImageFromLibrary } from '@/services/imagePicker';
+import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { useFocusEffect } from '@react-navigation/native';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -20,11 +20,11 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import HealthNoteEditorCard from '@/components/health/HealthNoteEditorCard';
-import HealthKeyboardFooter, {
+import {
   HealthKeyboardAvoidingView,
-  healthDoneScrollPadding,
 } from '@/components/health/HealthKeyboardFooter';
 import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
+import EditPhotoSheet from '@/components/health/EditPhotoSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { getRecord, updateNote, deleteNote } from '@/services/health';
@@ -39,6 +39,8 @@ import { uploadHealthNotePhoto } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDate } from '@/utils/calendar';
 import { normalizeRouteParam } from '@/utils/routeParams';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { DESIGN_HEIGHT } from '@/constants/layout';
 
 function reminderLabel(draft: HealthReminderDraft): string {
   return `${formatDisplayDate(draft.date)} ${draft.time}`;
@@ -58,12 +60,14 @@ export default function EditNoteScreen() {
   const noteId = normalizeRouteParam(noteIdParam);
   const open = normalizeRouteParam(openParam);
   const { activePetId } = useActivePet();
-  const insets = useSafeAreaInsets();
+  const { contentWidth, height } = useResponsiveLayout();
+  const deleteBottomPad = Math.max(24, Math.round(height * (58 / DESIGN_HEIGHT)));
   const openHandled = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [savingPhoto, setSavingPhoto] = useState(false);
 
   const [noteText, setNoteText] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -74,7 +78,11 @@ export default function EditNoteScreen() {
   const [linkedReminderId, setLinkedReminderId] = useState<string | null>(null);
   const [reminderDraft, setReminderDraft] = useState<HealthReminderDraft | null>(null);
   const [reminderSheetVisible, setReminderSheetVisible] = useState(false);
+  const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
+  const [viewportH, setViewportH] = useState(0);
+  const [contentH, setContentH] = useState(0);
+  const needsScroll = contentH > viewportH + 1;
   const loadedRef = useRef(false);
 
   useFocusEffect(
@@ -152,58 +160,62 @@ export default function EditNoteScreen() {
     }, [activePetId, recordId, noteId]),
   );
 
-  const pickImage = useCallback(async () => {
-    setReminderSheetVisible(false);
-    const picked = await pickImageFromLibrary();
-    if (picked === 'denied') {
-      Alert.alert(t('petOnboarding.photo_permission_title'), t('petOnboarding.photo_permission_body'));
-      return;
-    }
-    if (picked?.uri) {
-      setPhotoUri(picked.uri);
-      setPhotoMime(picked.mimeType);
-      setPhotoChanged(true);
-    }
-  }, []);
+  const persistPhoto = useCallback(
+    async (uri: string | null, mime: string | null) => {
+      if (!activePetId || !recordId || !noteId) return;
+      setSavingPhoto(true);
+      try {
+        const photoUrl = uri ? await uploadHealthNotePhoto(uri, mime) : null;
+        await updateNote(activePetId, recordId, noteId, { photo_url: photoUrl });
+        setPhotoChanged(false);
+      } catch (err) {
+        toast.showError(getErrorMessage(err));
+      } finally {
+        setSavingPhoto(false);
+      }
+    },
+    [activePetId, recordId, noteId, toast],
+  );
+
+  const handlePickedPhoto = useCallback(
+    async (source: 'camera' | 'library') => {
+      setReminderSheetVisible(false);
+      const picked =
+        source === 'camera' ? await pickImageFromCamera() : await pickImageFromLibrary();
+      if (picked === 'denied') {
+        Alert.alert(
+          t('petOnboarding.photo_permission_title'),
+          t('petOnboarding.photo_permission_body'),
+        );
+        return;
+      }
+      if (picked?.uri) {
+        setPhotoUri(picked.uri);
+        setPhotoMime(picked.mimeType);
+        setPhotoChanged(true);
+        await persistPhoto(picked.uri, picked.mimeType);
+      }
+    },
+    [persistPhoto],
+  );
+
+  const handleRemovePhoto = useCallback(() => {
+    setPhotoUri(null);
+    setPhotoMime(null);
+    setPhotoChanged(true);
+    void persistPhoto(null, null);
+  }, [persistPhoto]);
 
   useEffect(() => {
     if (loading || notFound || openHandled.current || !open) return;
     openHandled.current = true;
     if (open === 'photo') {
-      void pickImage();
+      setPhotoSheetVisible(true);
     } else if (open === 'reminder') {
       Keyboard.dismiss();
       setReminderSheetVisible(true);
     }
-  }, [loading, notFound, open, pickImage]);
-
-  const handleRemoveReminder = () => {
-    if (!reminderDraft) return;
-    const snapshot = reminderDraft;
-    const reminderId = linkedReminderId;
-
-    setReminderDraft(null);
-    if (reminderId) setLinkedReminderId(null);
-
-    toast.showUndo({
-      message: t('reminders.deleted'),
-      onUndo: () => {
-        setReminderDraft(snapshot);
-        if (reminderId) setLinkedReminderId(reminderId);
-      },
-      onCommit: async () => {
-        if (!activePetId || !reminderId || !recordId || !noteId) return;
-        try {
-          await removeHealthReminder(activePetId, reminderId);
-          await updateNote(activePetId, recordId, noteId, { linked_reminder_id: null });
-        } catch (err) {
-          setReminderDraft(snapshot);
-          setLinkedReminderId(reminderId);
-          toast.showError(getErrorMessage(err));
-        }
-      },
-    });
-  };
+  }, [loading, notFound, open]);
 
   const handleSave = async () => {
     if (!activePetId || !recordId || !noteId || !noteText.trim()) return;
@@ -225,7 +237,6 @@ export default function EditNoteScreen() {
           linkedReminderId,
         );
       } else if (linkedReminderId) {
-        // Fallback if UI cleared draft but toast commit hasn't run yet.
         await removeHealthReminder(activePetId, linkedReminderId);
         nextLinkedReminderId = null;
       }
@@ -287,58 +298,107 @@ export default function EditNoteScreen() {
     );
   }
 
+  const canSave = Boolean(noteText.trim()) && !saving && !savingPhoto;
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <ScreenHeader title={t('topics.edit_note')} />
 
       <HealthKeyboardAvoidingView>
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[
-            styles.content,
-            {
-              paddingTop: Math.max(Spacing.md, 16),
-              paddingBottom: healthDoneScrollPadding(1, insets.bottom),
-            },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+        <View
+          style={styles.flex}
+          onLayout={(e) => setViewportH(e.nativeEvent.layout.height)}
         >
-          <HealthNoteEditorCard
-            key={photoUri ?? 'no-photo'}
-            noteText={noteText}
-            onChangeNoteText={setNoteText}
-            photoUri={photoUri}
-            onPickImage={pickImage}
-            reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
-            onReminderPress={() => {
-              Keyboard.dismiss();
-              setReminderSheetVisible(true);
-            }}
-            onRemoveReminder={handleRemoveReminder}
-            placeholder={t('topics.note_body_placeholder')}
-          />
-
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => {
-              setReminderSheetVisible(false);
-              setDeleteVisible(true);
-            }}
-            activeOpacity={0.7}
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={[
+              styles.content,
+              {
+                paddingTop: Math.max(Spacing.md, 16),
+                paddingBottom: deleteBottomPad,
+              },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={needsScroll}
+            onContentSizeChange={(_w, h) => setContentH(h)}
           >
-            <Text style={styles.deleteText}>{t('topics.delete_note')}</Text>
-          </TouchableOpacity>
-        </ScrollView>
+            <HealthNoteEditorCard
+              noteText={noteText}
+              onChangeNoteText={setNoteText}
+              photoUri={photoUri}
+              onPickImage={() => {
+                Keyboard.dismiss();
+                setReminderSheetVisible(false);
+                setPhotoSheetVisible(true);
+              }}
+              reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
+              onReminderPress={() => {
+                Keyboard.dismiss();
+                setPhotoSheetVisible(false);
+                setReminderSheetVisible(true);
+              }}
+              placeholder={t('topics.note_body_placeholder')}
+              autoFocus={open === 'focus'}
+            />
 
-        <HealthKeyboardFooter
-          label={t('pickers.done')}
-          disabled={!noteText.trim() || saving}
-          loading={saving}
-          onPress={handleSave}
-          fullWidth={false}
-        />
+            <View style={styles.footerSpacer} />
+
+            <TouchableOpacity
+              style={[
+                styles.saveButton,
+                { width: contentWidth },
+                !canSave && styles.saveButtonDisabled,
+              ]}
+              onPress={handleSave}
+              disabled={!canSave}
+              activeOpacity={0.85}
+            >
+              {saving || savingPhoto ? (
+                <ActivityIndicator color={colors.surface} />
+              ) : (
+                <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>
+                  {t('common.save')}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => {
+                setReminderSheetVisible(false);
+                setPhotoSheetVisible(false);
+                setDeleteVisible(true);
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.deleteText}>{t('topics.delete_note')}</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
       </HealthKeyboardAvoidingView>
+
+      <EditPhotoSheet
+        visible={photoSheetVisible}
+        hasPhoto={Boolean(photoUri)}
+        onClose={() => setPhotoSheetVisible(false)}
+        onTake={() => {
+          setPhotoSheetVisible(false);
+          void handlePickedPhoto('camera');
+        }}
+        onChoose={() => {
+          setPhotoSheetVisible(false);
+          void handlePickedPhoto('library');
+        }}
+        onRemove={
+          photoUri
+            ? () => {
+                setPhotoSheetVisible(false);
+                handleRemovePhoto();
+              }
+            : undefined
+        }
+      />
 
       <ReminderPickerSheet
         visible={reminderSheetVisible}
@@ -366,7 +426,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
     backgroundColor: c.background,
   },
-  container: {
+  flex: {
     flex: 1,
   },
   scroll: {
@@ -378,9 +438,33 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
+    flexGrow: 1,
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xl,
     gap: Spacing.lg,
+  },
+  footerSpacer: {
+    flexGrow: 1,
+    minHeight: 24,
+  },
+  saveButton: {
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: c.brand,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+  },
+  saveButtonDisabled: {
+    backgroundColor: c.button.disabledBg,
+  },
+  saveText: {
+    fontFamily: 'Rubik-Medium',
+    fontSize: 16,
+    lineHeight: 24,
+    color: c.button.primaryText,
+  },
+  saveTextDisabled: {
+    color: c.button.disabledText,
   },
   deleteButton: {
     padding: Spacing.md,

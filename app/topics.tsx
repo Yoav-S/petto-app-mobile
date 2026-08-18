@@ -22,9 +22,7 @@ import HealthListItem, {
   HEALTH_LIST_ITEM_GAP,
   healthRecordSubtitle,
 } from '@/components/health/HealthListItem';
-import HealthRecordPickerSheet from '@/components/health/HealthRecordPickerSheet';
 import ConfirmModal from '@/components/ui/ConfirmModal';
-import { waitForBottomSheetsToSettle } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { listRecords, deleteRecord, enrichRecordsWithLatestNoteReminders } from '@/services/health';
@@ -53,7 +51,6 @@ export default function HealthScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-  const [recordPickerVisible, setRecordPickerVisible] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [listHeight, setListHeight] = useState(0);
   const cardHeight = HEALTH_LIST_CARD_HEIGHT;
@@ -83,11 +80,6 @@ export default function HealthScreen() {
   );
 
   const hasAnyRecords = tabPresence.active || tabPresence.resolved;
-
-  const noteTargetRecords = useMemo(
-    () => [...listsByTab.Active, ...listsByTab.Resolved],
-    [listsByTab],
-  );
 
   React.useEffect(() => {
     if (deletedNote) {
@@ -194,18 +186,16 @@ export default function HealthScreen() {
     });
   };
 
-  const addRecordAction = {
-    actionTitle: t('topics.add_first'),
-    onAction: () => router.push('/topics/add' as never),
-  };
-
   const renderEmptyState = () => {
     if (!hasAnyRecords) {
       return (
         <EmptyState
           title={t('topics.empty_all_title')}
           subtitle={t('topics.empty_all_subtitle')}
-          {...addRecordAction}
+          actionTitle={t('topics.add_first_note')}
+          actionCompact
+          contentGap={20}
+          onAction={() => router.push('/topics/add' as never)}
         />
       );
     }
@@ -215,6 +205,7 @@ export default function HealthScreen() {
         <EmptyState
           title={t('topics.empty_active_only_title')}
           subtitle={t('topics.empty_active_only_subtitle')}
+          contentGap={8}
         />
       );
     }
@@ -224,6 +215,7 @@ export default function HealthScreen() {
         <EmptyState
           title={t('topics.empty_resolved_with_active_title')}
           subtitle={t('topics.empty_resolved_with_active_subtitle')}
+          contentGap={8}
         />
       );
     }
@@ -232,6 +224,7 @@ export default function HealthScreen() {
       <EmptyState
         title={t('topics.empty_resolved_title')}
         subtitle={t('topics.empty_resolved_subtitle')}
+        contentGap={8}
       />
     );
   };
@@ -307,38 +300,19 @@ export default function HealthScreen() {
         </View>
       )}
 
-      <SpeedDialFab
-        items={[
-          {
-            key: 'add-health',
-            label: t('topics.add_health'),
-            icon: HOME_CATEGORY_ICONS.health,
-            onPress: () => router.push('/topics/add' as never),
-          },
-          {
-            key: 'add-note',
-            label: t('topics.add_note'),
-            icon: HOME_CATEGORY_ICONS.health,
-            onPress: () => setRecordPickerVisible(true),
-          },
-        ]}
-        accessibilityLabel={t('fab.add')}
-      />
-
-      <HealthRecordPickerSheet
-        visible={recordPickerVisible}
-        records={noteTargetRecords}
-        onClose={() => setRecordPickerVisible(false)}
-        onSelect={(record) => {
-          setRecordPickerVisible(false);
-          void waitForBottomSheetsToSettle().then(() => {
-            router.push({
-              pathname: '/topics/add-note',
-              params: { recordId: record.id },
-            } as never);
-          });
-        }}
-      />
+      {hasAnyRecords ? (
+        <SpeedDialFab
+          items={[
+            {
+              key: 'add-health',
+              label: t('topics.add_health'),
+              icon: HOME_CATEGORY_ICONS.health,
+              onPress: () => router.push('/topics/add' as never),
+            },
+          ]}
+          accessibilityLabel={t('topics.add_health')}
+        />
+      ) : null}
 
       <ConfirmModal
         visible={deleteTargetId != null}

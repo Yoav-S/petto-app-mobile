@@ -97,6 +97,7 @@ interface DescriptionFieldCardProps {
   value: string;
   onChangeText: (text: string) => void;
   label: string;
+  placeholder: string;
   focused: boolean;
   onFocus: () => void;
   onBlur: () => void;
@@ -109,47 +110,33 @@ interface DescriptionFieldCardProps {
   };
 }
 
-/** Description: centered placeholder when idle; moves to top label on focus only. */
+/** Description: always-visible top label; placeholder lives in the input. */
 function DescriptionFieldCard({
   value,
   onChangeText,
   label,
-  focused,
+  placeholder,
   onFocus,
   onBlur,
   cardStyle,
 }: DescriptionFieldCardProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
-  const showTopLabel = focused;
-  const centerPlaceholder = !focused && !value.trim();
 
   return (
     <FieldCardShell cardStyle={cardStyle}>
-      <View
-        style={[
-          styles.inner,
-          styles.descriptionInner,
-          centerPlaceholder && styles.descriptionInnerCentered,
-        ]}
-      >
-        {showTopLabel ? <Text style={styles.floatingLabel}>{label}</Text> : null}
+      <View style={[styles.inner, styles.descriptionInner]}>
+        <Text style={styles.floatingLabel}>{label}</Text>
         <TextInput
-          style={[
-            styles.input,
-            styles.descriptionInput,
-            showTopLabel || value.trim()
-              ? styles.descriptionInputFocused
-              : styles.descriptionInputCentered,
-          ]}
+          style={[styles.input, styles.descriptionInput, styles.descriptionInputFocused]}
           value={value}
           onChangeText={onChangeText}
           onFocus={onFocus}
           onBlur={onBlur}
-          placeholder={showTopLabel ? undefined : label}
+          placeholder={placeholder}
           placeholderTextColor={colors.secondaryText}
           multiline
-          textAlignVertical={centerPlaceholder ? 'center' : 'top'}
+          textAlignVertical="top"
         />
       </View>
     </FieldCardShell>
@@ -166,6 +153,7 @@ interface HealthRecordFormFieldsProps {
   description: string;
   onDescriptionChange: (text: string) => void;
   descriptionLabel: string;
+  descriptionPlaceholder: string;
   descriptionFocused: boolean;
   onDescriptionFocus: () => void;
   onDescriptionBlur: () => void;
@@ -178,6 +166,7 @@ interface HealthRecordFormFieldsProps {
     descriptionHeight: number;
     gap: number;
   };
+  autoFocusName?: boolean;
 }
 
 export default function HealthRecordFormFields({
@@ -190,10 +179,12 @@ export default function HealthRecordFormFields({
   description,
   onDescriptionChange,
   descriptionLabel,
+  descriptionPlaceholder,
   descriptionFocused,
   onDescriptionFocus,
   onDescriptionBlur,
   layout,
+  autoFocusName = true,
 }: HealthRecordFormFieldsProps) {
   const styles = useThemedStyles(makeStyles);
   const cardBase = {
@@ -213,12 +204,13 @@ export default function HealthRecordFormFields({
         onFocus={onNameFocus}
         onBlur={onNameBlur}
         cardStyle={{ ...cardBase, minHeight: layout.nameHeight }}
-        autoFocus
+        autoFocus={autoFocusName}
       />
       <DescriptionFieldCard
         value={description}
         onChangeText={onDescriptionChange}
         label={descriptionLabel}
+        placeholder={descriptionPlaceholder}
         focused={descriptionFocused}
         onFocus={onDescriptionFocus}
         onBlur={onDescriptionBlur}
@@ -246,9 +238,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   descriptionInner: {
     flex: 1,
-  },
-  descriptionInnerCentered: {
-    justifyContent: 'center',
+    minHeight: 50,
+    justifyContent: 'flex-start',
   },
   floatingLabel: {
     fontFamily: 'Rubik-Regular',
@@ -277,14 +268,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
     lineHeight: 24,
-  },
-  descriptionInputCentered: {
-    textAlignVertical: 'center',
     minHeight: 24,
+    color: c.primaryText,
   },
   descriptionInputFocused: {
     textAlignVertical: 'top',
-    minHeight: 24,
     flex: 1,
   },
 });
