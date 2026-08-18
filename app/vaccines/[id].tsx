@@ -7,8 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Modal,
-  Pressable,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -26,13 +24,17 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
-import { useSettledModalVisible } from '@/components/ui/BottomSheetModal';
+import VaccinePhotoViewer from '@/components/vaccines/VaccinePhotoViewer';
+import VaccineClinicField from '@/components/vaccines/VaccineClinicField';
+import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { getVaccination, updateVaccination, deleteVaccination } from '@/services/vaccines';
 import { uploadImage } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import { addYearsToIsoDate, formatDisplayDate, isIsoDateAfter, parseIsoDate, todayIsoDate } from '@/utils/calendar';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { DESIGN_HEIGHT } from '@/constants/layout';
 import type { Vaccination } from '@/types/api';
 
 type PickerTarget = 'date' | 'next' | null;
@@ -44,6 +46,8 @@ export default function VaccineDetailsScreen() {
   const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { activePetId } = useActivePet();
+  const { height } = useResponsiveLayout();
+  const deleteBottomPad = Math.max(24, Math.round(height * (58 / DESIGN_HEIGHT)));
 
   const [vaccine, setVaccine] = useState<Vaccination | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,7 +59,9 @@ export default function VaccineDetailsScreen() {
   const [uploading, setUploading] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
-  const viewerPresented = useSettledModalVisible(viewerVisible);
+  const [viewportH, setViewportH] = useState(0);
+  const [contentH, setContentH] = useState(0);
+  const needsScroll = contentH > viewportH + 1;
 
   const fetchData = useCallback(async () => {
     if (!activePetId || !id) {
@@ -184,7 +190,17 @@ export default function VaccineDetailsScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={[styles.content, { paddingBottom: deleteBottomPad }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={needsScroll}
+          bounces={needsScroll}
+          onLayout={(e) => setViewportH(e.nativeEvent.layout.height)}
+          onContentSizeChange={(_w, h) => setContentH(h)}
+        >
+          <View>
           {/* Name */}
           <View style={styles.card}>
             <TextInput
@@ -260,7 +276,11 @@ export default function VaccineDetailsScreen() {
                   <ActivityIndicator color={colors.secondaryText} />
                 ) : (
                   <>
-                    <Ionicons name="camera-outline" size={28} color={colors.secondaryText} />
+                    <Image
+                      source={HOME_CATEGORY_ICONS.vaccines}
+                      style={styles.defaultPhoto}
+                      contentFit="contain"
+                    />
                     <Text style={styles.photoPlaceholderText}>{t('vaccines.add_photo')}</Text>
                   </>
                 )}
@@ -268,19 +288,15 @@ export default function VaccineDetailsScreen() {
             )}
           </View>
 
-          {/* Veterinarian / Clinic */}
-          <View style={styles.card}>
-            <Text style={styles.sectionLabel}>{t('vaccines.vet_clinic')}</Text>
-            <TextInput
-              style={styles.clinicInput}
-              value={clinic}
-              onChangeText={setClinic}
-              onBlur={handleClinicBlur}
-              placeholder={t('vaccines.vet_clinic_placeholder')}
-              placeholderTextColor={colors.secondaryText}
-              returnKeyType="done"
-            />
+          <VaccineClinicField
+            value={clinic}
+            onChangeText={setClinic}
+            onBlur={handleClinicBlur}
+            style={styles.clinicCard}
+          />
           </View>
+
+          <View style={styles.deleteSpacer} />
 
           <TouchableOpacity
             style={styles.deleteButton}
@@ -339,23 +355,11 @@ export default function VaccineDetailsScreen() {
         onCancel={() => setDeleteVisible(false)}
       />
 
-      {viewerPresented ? (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setViewerVisible(false)}>
-          <View style={styles.viewerOverlay}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setViewerVisible(false)} />
-            <TouchableOpacity
-              style={styles.viewerClose}
-              onPress={() => setViewerVisible(false)}
-              hitSlop={10}
-            >
-              <Ionicons name="close" size={28} color={colors.surface} />
-            </TouchableOpacity>
-            {vaccine.photo_url ? (
-              <Image source={{ uri: vaccine.photo_url }} style={styles.viewerImage} contentFit="contain" />
-            ) : null}
-          </View>
-        </Modal>
-      ) : null}
+      <VaccinePhotoViewer
+        visible={viewerVisible}
+        uri={vaccine.photo_url}
+        onClose={() => setViewerVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -374,9 +378,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
+    flexGrow: 1,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
-    paddingBottom: Spacing.xl,
   },
   card: {
     backgroundColor: c.surface,
@@ -459,14 +463,15 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   photoPlaceholder: {
-    borderWidth: 1,
-    borderColor: c.border,
-    borderStyle: 'dashed',
     borderRadius: Radius.md,
     aspectRatio: 1.6,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: c.background,
+    backgroundColor: c.category.vaccinesBg,
+  },
+  defaultPhoto: {
+    width: 48,
+    height: 48,
   },
   photoPlaceholderText: {
     fontFamily: 'Rubik-Regular',
@@ -474,36 +479,29 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.secondaryText,
     marginTop: Spacing.sm,
   },
-  clinicInput: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    color: c.primaryText,
-    padding: 0,
+  clinicCard: {
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    marginBottom: 0,
+    minHeight: 78,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  deleteSpacer: {
+    flexGrow: 1,
+    minHeight: 24,
   },
   deleteButton: {
     alignItems: 'center',
-    paddingVertical: Spacing.lg,
-    marginTop: Spacing.sm,
+    paddingVertical: Spacing.sm,
   },
   deleteText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
+    lineHeight: 18,
     color: c.error,
-  },
-  viewerOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.92)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  viewerClose: {
-    position: 'absolute',
-    top: 48,
-    right: Spacing.lg,
-    zIndex: 2,
-  },
-  viewerImage: {
-    width: '92%',
-    height: '80%',
   },
 });

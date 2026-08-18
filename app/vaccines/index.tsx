@@ -12,11 +12,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import SpeedDialFab from '@/components/ui/SpeedDialFab';
+import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import VaccineScreenHeader, { getVaccineHeaderContentOffset } from '@/components/vaccines/VaccineScreenHeader';
+import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import EmptyState from '@/components/ui/EmptyState';
 import { t } from '@/i18n';
@@ -30,14 +30,13 @@ const EMPTY_TOP = 304;
 const EMPTY_GAP = 20;
 
 function VaccineThumbnail({ uri }: { uri?: string | null }) {
-  const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   if (uri) {
     return <Image source={{ uri }} style={styles.thumb} contentFit="cover" />;
   }
   return (
     <View style={[styles.thumb, styles.thumbPlaceholder]}>
-      <MaterialCommunityIcons name="needle" size={22} color={colors.category.vaccines} />
+      <Image source={HOME_CATEGORY_ICONS.vaccines} style={styles.thumbIcon} contentFit="contain" />
     </View>
   );
 }
@@ -145,8 +144,6 @@ export default function VaccinesScreen() {
           <EmptyState
             title={t('vaccines.empty_title')}
             subtitle={t('vaccines.empty_subtitle')}
-            actionTitle={t('vaccines.add')}
-            onAction={() => router.push('/vaccines/add' as never)}
             topOffset={emptyTop}
             contentGap={emptyGap}
           />
@@ -160,20 +157,18 @@ export default function VaccinesScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
-      <VaccineScreenHeader title={t('vaccines.list_title')} />
-      {renderContent()}
-
-      <SpeedDialFab
-        items={[
-          {
-            key: 'add',
-            label: t('vaccines.add'),
-            icon: HOME_CATEGORY_ICONS.vaccines,
-            onPress: () => router.push('/vaccines/add' as never),
-          },
-        ]}
-        accessibilityLabel={t('vaccines.add')}
+      <VaccineScreenHeader
+        title={t('vaccines.list_title')}
+        right={
+          <HeaderIconButton
+            onPress={() => router.push('/vaccines/add' as never)}
+            accessibilityLabel={t('vaccines.add')}
+          >
+            <Ionicons name="add" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
+          </HeaderIconButton>
+        }
       />
+      {renderContent()}
     </SafeAreaView>
   );
 }
@@ -226,6 +221,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: c.category.vaccinesBg,
+  },
+  thumbIcon: {
+    width: 28,
+    height: 28,
   },
   cardBody: {
     flex: 1,

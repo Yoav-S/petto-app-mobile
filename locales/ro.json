@@ -201,7 +201,7 @@
     "not_found_title": "Vaccinul nu a fost găsit",
     "not_found_subtitle": "Acest vaccin ar putea fi șters",
     "empty_title": "Niciun vaccin încă",
-    "empty_subtitle": "Adaugă vaccinurile animalului pentru a le urmări",
+    "empty_subtitle": "Adaugă prima vaccinare ca să începi",
     "field_name": "Numele vaccinului",
     "field_name_placeholder": "Numele vaccinului",
     "field_date": "Data administrării",

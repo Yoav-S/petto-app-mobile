@@ -201,7 +201,7 @@
     "not_found_title": "Vaccine not found",
     "not_found_subtitle": "This vaccine may have been deleted",
     "empty_title": "No vaccinations yet",
-    "empty_subtitle": "Add your pet's vaccines to keep track of them",
+    "empty_subtitle": "Add your first vaccination to get started",
     "field_name": "Vaccine name",
     "field_name_placeholder": "Vaccine name",
     "field_date": "Date given",

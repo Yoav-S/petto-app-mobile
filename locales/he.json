@@ -201,7 +201,7 @@
     "not_found_title": "החיסון לא נמצא",
     "not_found_subtitle": "ייתכן שהחיסון נמחק",
     "empty_title": "אין חיסונים עדיין",
-    "empty_subtitle": "הוסף את החיסונים של חיית המחמד כדי לעקוב אחריהם",
+    "empty_subtitle": "הוסף את החיסון הראשון כדי להתחיל",
     "field_name": "שם החיסון",
     "field_name_placeholder": "שם החיסון",
     "field_date": "תאריך מתן",

@@ -7,9 +7,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  Modal,
-  Pressable,
-  Keyboard,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -21,6 +18,8 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import VaccinePhotoSourceSheet from '@/components/vaccines/VaccinePhotoSourceSheet';
+import VaccinePhotoViewer from '@/components/vaccines/VaccinePhotoViewer';
+import VaccineClinicField from '@/components/vaccines/VaccineClinicField';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import HealthKeyboardFooter, {
   HealthKeyboardAvoidingView,
@@ -31,6 +30,7 @@ import { useActivePet } from '@/store/petStore';
 import { createVaccination } from '@/services/vaccines';
 import { uploadImage } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
+import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import {
   addYearsToIsoDate,
   formatDisplayDate,
@@ -40,7 +40,6 @@ import {
   todayIsoDate,
 } from '@/utils/calendar';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { useSettledModalVisible } from '@/components/ui/BottomSheetModal';
 
 type DateSheet = 'date' | 'next' | null;
 
@@ -93,7 +92,6 @@ export default function AddVaccineScreen() {
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const viewerPresented = useSettledModalVisible(viewerVisible);
 
   const openDateSheet = (target: DateSheet) => {
     setPhotoSheetVisible(false);
@@ -117,10 +115,8 @@ export default function AddVaccineScreen() {
 
   const handleVaccinatedDateChange = (iso: string) => {
     setDate(iso);
+    setNextDate(addYearsToIsoDate(iso, 1));
     setDateSheet(null);
-    if (isIsoDateBefore(nextDate, iso)) {
-      setNextDate(addYearsToIsoDate(iso, 1));
-    }
   };
 
   const handleValidUntilChange = (iso: string) => {
@@ -293,14 +289,19 @@ export default function AddVaccineScreen() {
                 onPress={openPhotoSheet}
                 activeOpacity={0.7}
               >
-                <Ionicons name="image-outline" size={24} color={colors.secondaryText} />
+                <Image
+                  source={HOME_CATEGORY_ICONS.vaccines}
+                  style={styles.defaultPhoto}
+                  contentFit="contain"
+                />
                 <Text style={styles.photoPlaceholderText}>{t('vaccines.add_vaccine_photo')}</Text>
               </TouchableOpacity>
             )}
           </View>
 
-          {/* Veterinarian / Clinic */}
-          <View
+          <VaccineClinicField
+            value={clinic}
+            onChangeText={setClinic}
             style={[
               styles.card,
               {
@@ -309,22 +310,9 @@ export default function AddVaccineScreen() {
                 paddingHorizontal: layout.cardPadH,
                 paddingVertical: layout.cardPadV,
                 minHeight: layout.clinicHeight,
-                gap: layout.innerGap,
-                justifyContent: 'center',
               },
             ]}
-          >
-            <Text style={styles.fieldLabel}>{t('vaccines.vet_clinic')}</Text>
-            <TextInput
-              style={styles.clinicInput}
-              value={clinic}
-              onChangeText={setClinic}
-              placeholder={t('vaccines.vet_clinic_placeholder')}
-              placeholderTextColor={colors.secondaryText}
-              returnKeyType="done"
-              onSubmitEditing={() => Keyboard.dismiss()}
-            />
-          </View>
+          />
         </ScrollView>
 
         <HealthKeyboardFooter
@@ -362,19 +350,11 @@ export default function AddVaccineScreen() {
         confirmLabel={t('pickers.done')}
       />
 
-      {viewerPresented ? (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setViewerVisible(false)}>
-          <View style={styles.viewerOverlay}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setViewerVisible(false)} />
-            <TouchableOpacity style={styles.viewerClose} onPress={() => setViewerVisible(false)} hitSlop={10}>
-              <Ionicons name="close" size={28} color={colors.surface} />
-            </TouchableOpacity>
-            {photoUri ? (
-              <Image source={{ uri: photoUri }} style={styles.viewerImage} contentFit="contain" />
-            ) : null}
-          </View>
-        </Modal>
-      ) : null}
+      <VaccinePhotoViewer
+        visible={viewerVisible}
+        uri={photoUri}
+        onClose={() => setViewerVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -454,42 +434,19 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   photoPlaceholder: {
-    backgroundColor: c.background,
+    backgroundColor: c.category.vaccinesBg,
     borderRadius: Radius.md,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  defaultPhoto: {
+    width: 48,
+    height: 48,
   },
   photoPlaceholderText: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     color: c.secondaryText,
     marginTop: 6,
-  },
-  fieldLabel: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: c.secondaryText,
-  },
-  clinicInput: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    color: c.primaryText,
-    padding: 0,
-  },
-  viewerOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.92)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  viewerClose: {
-    position: 'absolute',
-    top: 48,
-    right: Spacing.lg,
-    zIndex: 2,
-  },
-  viewerImage: {
-    width: '92%',
-    height: '80%',
   },
 });
