@@ -263,7 +263,7 @@
     "field_description": "Description",
     "field_description_placeholder": "Description",
     "duplicate_datetime": "You already have a reminder at this date and time",
-    "past_datetime": "Choose a later time today, or a future date",
+    "past_datetime": "Choose today or a future date",
     "repeat_toggle_on": "On",
     "repeat_toggle_off": "Off",
     "repeat_title": "Repeat",

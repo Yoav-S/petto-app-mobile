@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { centeredInputText } from '@/constants/textField';
 
 const CARD_SHADOW = {
   shadowColor: '#2D2D2A',
@@ -61,29 +62,28 @@ interface NameFieldCardProps {
   autoFocus?: boolean;
 }
 
-/** Name: single placeholder when idle; it disappears on focus — no top label. */
+/** Name: placeholder stays until the user types — no top label, no focus jump. */
 function NameFieldCard({
   value,
   onChangeText,
   placeholder,
-  focused,
   onFocus,
   onBlur,
   cardStyle,
   autoFocus = false,
-}: Omit<NameFieldCardProps, 'label'>) {
+}: Omit<NameFieldCardProps, 'label' | 'focused'>) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
   return (
     <FieldCardShell cardStyle={cardStyle}>
-      <View style={[styles.inner, styles.nameInnerCentered]}>
+      <View style={styles.nameInnerCentered}>
         <TextInput
-          style={[styles.input, styles.nameInput, styles.nameInputUnfocused]}
+          style={styles.nameInput}
           value={value}
           onChangeText={onChangeText}
           onFocus={onFocus}
           onBlur={onBlur}
-          placeholder={focused ? undefined : placeholder}
+          placeholder={placeholder}
           placeholderTextColor={colors.secondaryText}
           textAlignVertical="center"
           autoFocus={autoFocus}
@@ -128,7 +128,7 @@ function DescriptionFieldCard({
       <View style={[styles.inner, styles.descriptionInner]}>
         <Text style={styles.floatingLabel}>{label}</Text>
         <TextInput
-          style={[styles.input, styles.descriptionInput, styles.descriptionInputFocused]}
+          style={styles.descriptionInput}
           value={value}
           onChangeText={onChangeText}
           onFocus={onFocus}
@@ -173,7 +173,6 @@ export default function HealthRecordFormFields({
   name,
   onNameChange,
   namePlaceholder,
-  nameFocused,
   onNameFocus,
   onNameBlur,
   description,
@@ -200,7 +199,6 @@ export default function HealthRecordFormFields({
         value={name}
         onChangeText={onNameChange}
         placeholder={namePlaceholder}
-        focused={nameFocused}
         onFocus={onNameFocus}
         onBlur={onNameBlur}
         cardStyle={{ ...cardBase, minHeight: layout.nameHeight }}
@@ -233,11 +231,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     width: '100%',
   },
   nameInnerCentered: {
-    flex: 1,
+    width: '100%',
     justifyContent: 'center',
   },
   descriptionInner: {
-    flex: 1,
     minHeight: 50,
     justifyContent: 'flex-start',
   },
@@ -247,22 +244,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     lineHeight: 20,
     color: c.secondaryText,
   },
-  input: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    lineHeight: 24,
-    color: c.primaryText,
-    padding: 0,
-    margin: 0,
-  },
   nameInput: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    lineHeight: 20,
-    minHeight: 20,
-  },
-  nameInputUnfocused: {
-    textAlignVertical: 'center',
+    ...centeredInputText({
+      fontFamily: 'Rubik-Medium',
+      fontSize: 16,
+      lineHeight: 20,
+      color: c.primaryText,
+    }),
   },
   descriptionInput: {
     fontFamily: 'Rubik-Regular',
@@ -270,9 +258,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     lineHeight: 24,
     minHeight: 24,
     color: c.primaryText,
-  },
-  descriptionInputFocused: {
+    padding: 0,
+    margin: 0,
+    includeFontPadding: false,
     textAlignVertical: 'top',
-    flex: 1,
   },
 });

@@ -18,6 +18,7 @@ import { pickImageFromLibrary } from '@/services/imagePicker';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { centeredInputText } from '@/constants/textField';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -202,7 +203,7 @@ export default function VaccineDetailsScreen() {
         >
           <View>
           {/* Name */}
-          <View style={styles.card}>
+          <View style={[styles.card, styles.nameCard]}>
             <TextInput
               style={styles.nameInput}
               value={name}
@@ -211,6 +212,7 @@ export default function VaccineDetailsScreen() {
               placeholder={t('vaccines.field_name')}
               placeholderTextColor={colors.secondaryText}
               returnKeyType="done"
+              textAlignVertical="center"
             />
           </View>
 
@@ -393,11 +395,17 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  nameCard: {
+    minHeight: 52,
+    justifyContent: 'center',
+  },
   nameInput: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 22,
-    color: c.primaryText,
-    padding: 0,
+    ...centeredInputText({
+      fontFamily: 'Rubik-Medium',
+      fontSize: 22,
+      lineHeight: 28,
+      color: c.primaryText,
+    }),
   },
   dateRow: {
     flexDirection: 'row',

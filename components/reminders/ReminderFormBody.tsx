@@ -31,6 +31,7 @@ import {
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
 import { formatDisplayDate } from '@/utils/calendar';
+import { centeredInputText } from '@/constants/textField';
 import {
   reminderCategoryIconFor,
   type ReminderCategory,
@@ -94,7 +95,6 @@ export default function ReminderFormBody({
   repeat,
   note,
   onNoteChange,
-  noteFocused,
   onNoteFocus,
   onNoteBlur,
   sheet,
@@ -111,7 +111,6 @@ export default function ReminderFormBody({
 }: ReminderFormBodyProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const showNoteLabel = noteFocused || note.trim().length > 0;
   const [viewportH, setViewportH] = useState(0);
   const [contentH, setContentH] = useState(0);
   const needsScroll = !pinFooterToBottom || contentH > viewportH + 1;
@@ -160,6 +159,7 @@ export default function ReminderFormBody({
               placeholderTextColor={colors.secondaryText}
               autoFocus={autoFocus}
               returnKeyType="next"
+              textAlignVertical="center"
             />
           </View>
 
@@ -264,21 +264,17 @@ export default function ReminderFormBody({
             ]}
           >
             <View style={[styles.noteInner, { minHeight: 50, gap: 6 }]}>
-              {showNoteLabel ? (
-                <Text style={styles.noteLabel}>{t('reminders.field_description')}</Text>
-              ) : null}
+              <Text style={styles.noteLabel}>{t('reminders.field_description')}</Text>
               <TextInput
-                style={[styles.noteInput, !showNoteLabel && styles.noteInputCentered]}
+                style={styles.noteInput}
                 value={note}
                 onChangeText={onNoteChange}
                 onFocus={onNoteFocus}
                 onBlur={onNoteBlur}
-                placeholder={
-                  showNoteLabel ? undefined : t('reminders.field_description_placeholder')
-                }
+                placeholder={t('reminders.field_note_placeholder')}
                 placeholderTextColor={colors.secondaryText}
                 multiline
-                textAlignVertical={showNoteLabel ? 'top' : 'center'}
+                textAlignVertical="top"
                 returnKeyType="done"
                 onSubmitEditing={() => Keyboard.dismiss()}
               />
@@ -399,12 +395,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   content: { paddingHorizontal: 0 },
   card: { backgroundColor: c.surface },
   nameInput: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 20,
-    lineHeight: 24,
-    color: c.primaryText,
-    padding: 0,
-    margin: 0,
+    ...centeredInputText({
+      fontFamily: 'Rubik-Medium',
+      fontSize: 20,
+      lineHeight: 24,
+      color: c.primaryText,
+    }),
   },
   categoryRow: {
     flexDirection: 'row',
@@ -464,10 +460,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     padding: 0,
     margin: 0,
     minHeight: 24,
-  },
-  noteInputCentered: {
-    minHeight: 50,
-    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   saveButton: {
     backgroundColor: c.brand,

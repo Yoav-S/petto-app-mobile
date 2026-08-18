@@ -263,7 +263,7 @@
     "field_description": "Descriere",
     "field_description_placeholder": "Descriere",
     "duplicate_datetime": "Ai deja un memento la această dată și oră",
-    "past_datetime": "Alege o oră mai târzie astăzi sau o dată viitoare",
+    "past_datetime": "Alege astăzi sau o dată viitoare",
     "repeat_toggle_on": "Activat",
     "repeat_toggle_off": "Dezactivat",
     "repeat_title": "Repetare",

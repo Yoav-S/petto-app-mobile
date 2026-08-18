@@ -20,15 +20,12 @@ import {
   formatDisplayDate,
   formatHourMinute,
   isIsoDateBefore,
-  isReminderDateTimeInPast,
   minReminderDateIso,
   parseIsoDate,
-  soonestValidReminderTime,
   todayIsoDate,
 } from '@/utils/calendar';
 import { isBeforeMinReminderDate } from '@/components/reminders/reminderFormShared';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { useToast } from '@/context/ToastContext';
 
 interface ReminderPickerSheetProps {
   visible: boolean;
@@ -105,18 +102,9 @@ function resolveInitialDate(preferred?: string | null): string {
   return preferred;
 }
 
-function resolveInitialTime(isoDate: string, preferred: string): { time: string; chipId: string | null } {
-  if (preferred && !isReminderDateTimeInPast(isoDate, preferred)) {
-    return { time: preferred, chipId: chipForTime(preferred) };
-  }
-  for (const chip of TIME_CHIPS) {
-    if (!isReminderDateTimeInPast(isoDate, chip.time)) {
-      return { time: chip.time, chipId: chip.id };
-    }
-  }
-  const soonest = soonestValidReminderTime(isoDate);
-  if (soonest) return { time: soonest, chipId: chipForTime(soonest) };
-  return { time: preferred || formatHourMinute(13, 0), chipId: chipForTime(preferred) };
+function resolveInitialTime(preferred: string): { time: string; chipId: string | null } {
+  const time = preferred || formatHourMinute(13, 0);
+  return { time, chipId: chipForTime(time) };
 }
 
 export default function ReminderPickerSheet({
@@ -129,7 +117,6 @@ export default function ReminderPickerSheet({
 }: ReminderPickerSheetProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
-  const toast = useToast();
   const insets = useSafeAreaInsets();
   const { contentWidth } = useResponsiveLayout();
 
@@ -146,7 +133,7 @@ export default function ReminderPickerSheet({
     }
     const nextDate = resolveInitialDate(initialDate);
     const preferred = initialTime ?? '13:00';
-    const resolved = resolveInitialTime(nextDate, preferred);
+    const resolved = resolveInitialTime(preferred);
     setDate(nextDate);
     setTime(resolved.time);
     setRepeat(initialRepeat);
@@ -155,10 +142,7 @@ export default function ReminderPickerSheet({
   }, [visible, initialDate, initialTime, initialRepeat]);
 
   const canSave = useMemo(
-    () =>
-      Boolean(date && time) &&
-      !isBeforeMinReminderDate(date) &&
-      !isReminderDateTimeInPast(date, time),
+    () => Boolean(date && time) && !isBeforeMinReminderDate(date),
     [date, time],
   );
 
@@ -214,27 +198,19 @@ export default function ReminderPickerSheet({
   );
 
   const handleChipPress = (chipId: string, chipTime: string) => {
-    const today = todayIsoDate();
-    if (isReminderDateTimeInPast(today, chipTime)) return;
-    setDate(today);
+    setDate(todayIsoDate());
     setSelectedChip(chipId);
     setTime(chipTime);
   };
 
   const handleDateConfirm = (iso: string) => {
-    const nextDate = resolveInitialDate(iso);
-    setDate(nextDate);
-    if (isReminderDateTimeInPast(nextDate, time)) {
-      const resolved = resolveInitialTime(nextDate, time);
-      setTime(resolved.time);
-      setSelectedChip(resolved.chipId);
-    }
+    setDate(resolveInitialDate(iso));
     setSubSheet(null);
   };
 
   const handleDone = () => {
     if (!canSave) return;
-    if (isBeforeMinReminderDate(date) || isReminderDateTimeInPast(date, time)) return;
+    if (isBeforeMinReminderDate(date)) return;
     onConfirm({ date, time, repeat });
     onClose();
   };
@@ -360,7 +336,6 @@ export default function ReminderPickerSheet({
                     >
                       {TIME_CHIPS.map((chip) => {
                         const isSelected = selectedChip === chip.id && date === todayIsoDate();
-                        const chipPast = isReminderDateTimeInPast(todayIsoDate(), chip.time);
                         return (
                           <TouchableOpacity
                             key={chip.id}
@@ -375,17 +350,14 @@ export default function ReminderPickerSheet({
                                 gap: layout.chipGap,
                               },
                               isSelected && styles.chipActive,
-                              chipPast && !isSelected && styles.chipDisabled,
                             ]}
                             onPress={() => handleChipPress(chip.id, chip.time)}
-                            disabled={chipPast}
                             activeOpacity={0.8}
                           >
                             <Text
                               style={[
                                 styles.chipLabel,
                                 isSelected && styles.chipLabelActive,
-                                chipPast && !isSelected && styles.chipLabelDisabled,
                               ]}
                               numberOfLines={1}
                             >
@@ -395,7 +367,6 @@ export default function ReminderPickerSheet({
                               style={[
                                 styles.chipTime,
                                 isSelected && styles.chipTimeActive,
-                                chipPast && !isSelected && styles.chipTimeDisabled,
                               ]}
                               numberOfLines={1}
                             >
@@ -487,10 +458,6 @@ export default function ReminderPickerSheet({
         value={time}
         onClose={() => setSubSheet(null)}
         onConfirm={(value) => {
-          if (isReminderDateTimeInPast(date, value)) {
-            toast.showError(t('reminders.past_datetime'));
-            return;
-          }
           setTime(value);
           setSelectedChip(chipForTime(value));
           setSubSheet(null);

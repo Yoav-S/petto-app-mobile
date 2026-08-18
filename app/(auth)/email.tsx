@@ -19,6 +19,7 @@ import { sendOtp, setPendingEmail } from '@/services/auth';
 import { t } from '@/i18n';
 import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { centeredInputText } from '@/constants/textField';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 
@@ -180,17 +181,21 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.surface,
     paddingRight: Spacing.sm,
     marginBottom: Spacing.md,
+    minHeight: 48,
   },
   inputWrapFocused: {
     borderColor: c.brand,
   },
   input: {
-    flex: 1,
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    color: c.primaryText,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: 14,
+    ...centeredInputText({
+      flex: 1,
+      fontFamily: 'Rubik-Regular',
+      fontSize: 16,
+      lineHeight: 20,
+      color: c.primaryText,
+      paddingHorizontal: Spacing.lg,
+      height: 20,
+    }),
   },
   clearBtn: {
     padding: Spacing.xs,

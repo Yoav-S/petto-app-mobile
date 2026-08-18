@@ -263,7 +263,7 @@
     "field_description": "תיאור",
     "field_description_placeholder": "תיאור",
     "duplicate_datetime": "כבר יש לך תזכורת בתאריך ובשעה האלה",
-    "past_datetime": "בחר שעה מאוחרת יותר היום, או תאריך עתידי",
+    "past_datetime": "בחר היום או תאריך עתידי",
     "repeat_toggle_on": "פעיל",
     "repeat_toggle_off": "כבוי",
     "repeat_title": "חזרה",

@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { type ThemeColors } from '@/constants/theme';
+import { centeredInputText } from '@/constants/textField';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
@@ -201,6 +202,7 @@ export default function AddPetScreen() {
             placeholderTextColor={colors.secondaryText}
             autoCapitalize="words"
             returnKeyType="done"
+            textAlignVertical="center"
           />
 
           <View
@@ -308,14 +310,15 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: 'center',
     },
     nameInput: {
-      fontFamily: 'Rubik-Regular',
-      fontSize: 16,
-      lineHeight: 20,
-      color: c.primaryText,
-      backgroundColor: c.surface,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-      gap: 10,
+      ...centeredInputText({
+        fontFamily: 'Rubik-Regular',
+        fontSize: 16,
+        lineHeight: 20,
+        color: c.primaryText,
+        backgroundColor: c.surface,
+        paddingHorizontal: 16,
+        height: undefined,
+      }),
     },
     typeRow: {
       flexDirection: 'row',

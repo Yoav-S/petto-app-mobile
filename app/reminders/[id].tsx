@@ -280,13 +280,6 @@ export default function EditReminderScreen() {
   const handleDateConfirm = (iso: string) => {
     if (warnPastSchedule(iso, null)) return;
     if (time && warnDuplicate(iso, time)) return;
-    if (time && isReminderScheduleInPast(iso, time)) {
-      toast.showError(t('reminders.past_datetime'));
-      setDate(iso);
-      setTime(null);
-      setSheet(null);
-      return;
-    }
     setDate(iso);
     setSheet(null);
   };

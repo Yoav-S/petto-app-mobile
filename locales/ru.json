@@ -263,7 +263,7 @@
     "field_description": "Описание",
     "field_description_placeholder": "Описание",
     "duplicate_datetime": "У вас уже есть напоминание на эту дату и время",
-    "past_datetime": "Выберите более позднее время сегодня или будущую дату",
+    "past_datetime": "Выберите сегодня или будущую дату",
     "repeat_toggle_on": "Вкл",
     "repeat_toggle_off": "Выкл",
     "repeat_title": "Повтор",

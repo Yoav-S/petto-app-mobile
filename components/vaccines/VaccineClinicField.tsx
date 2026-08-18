@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { centeredInputText } from '@/constants/textField';
 import { t } from '@/i18n';
 
 interface VaccineClinicFieldProps {
@@ -19,7 +20,7 @@ interface VaccineClinicFieldProps {
   style?: StyleProp<ViewStyle>;
 }
 
-/** Idle: label sits in the input. Focus or value: label floats above. */
+/** Static label + placeholder that only disappears when the user types. */
 export default function VaccineClinicField({
   value,
   onChangeText,
@@ -28,25 +29,20 @@ export default function VaccineClinicField({
 }: VaccineClinicFieldProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const [focused, setFocused] = useState(false);
-  const floated = focused || value.trim().length > 0;
   const label = t('vaccines.vet_clinic');
 
   return (
     <View style={[styles.card, style]}>
-      <View style={[styles.inner, !floated && styles.innerCentered]}>
-        {floated ? <Text style={styles.label}>{label}</Text> : null}
+      <View style={styles.inner}>
+        <Text style={styles.label}>{label}</Text>
         <TextInput
-          style={[styles.input, !floated && styles.inputCentered]}
+          style={styles.input}
           value={value}
           onChangeText={onChangeText}
-          onFocus={() => setFocused(true)}
-          onBlur={() => {
-            setFocused(false);
-            onBlur?.();
-          }}
-          placeholder={floated ? undefined : label}
+          onBlur={onBlur}
+          placeholder={t('vaccines.vet_clinic_placeholder')}
           placeholderTextColor={colors.secondaryText}
+          textAlignVertical="center"
           returnKeyType="done"
           onSubmitEditing={() => Keyboard.dismiss()}
         />
@@ -65,10 +61,6 @@ const makeStyles = (c: ThemeColors) =>
       width: '100%',
       gap: 6,
     },
-    innerCentered: {
-      flex: 1,
-      justifyContent: 'center',
-    },
     label: {
       fontFamily: 'Rubik-Regular',
       fontWeight: '400',
@@ -77,15 +69,11 @@ const makeStyles = (c: ThemeColors) =>
       color: c.secondaryText,
     },
     input: {
-      fontFamily: 'Rubik-Regular',
-      fontSize: 16,
-      lineHeight: 24,
-      color: c.primaryText,
-      padding: 0,
-      margin: 0,
-    },
-    inputCentered: {
-      minHeight: 24,
-      textAlignVertical: 'center',
+      ...centeredInputText({
+        fontFamily: 'Rubik-Regular',
+        fontSize: 16,
+        lineHeight: 24,
+        color: c.primaryText,
+      }),
     },
   });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { centeredInputText } from '@/constants/textField';
 
 const CARD_SHADOW = {
   shadowColor: '#2D2D2A',
@@ -54,9 +55,8 @@ export function ProfileNameField({
 }
 
 /**
- * Optional text field with a floating label:
- * empty + unfocused -> label acts as centered placeholder;
- * focused or filled -> label floats to the top, value below.
+ * Optional text field with a static top label. The input stays still;
+ * only the placeholder disappears when the user types.
  */
 export function ProfileTextField({
   label,
@@ -73,25 +73,19 @@ export function ProfileTextField({
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   minHeight?: number;
 }) {
-  const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const [focused, setFocused] = useState(false);
-  const floated = focused || value.trim().length > 0;
 
   return (
     <CardShell minHeight={minHeight}>
-      <View style={[styles.inner, !floated && styles.innerCentered]}>
-        {floated ? <Text style={styles.fieldLabel}>{label}</Text> : null}
+      <View style={styles.inner}>
+        <Text style={styles.fieldLabel}>{label}</Text>
         <TextInput
-          style={[styles.textInput, !floated && styles.textInputCentered]}
+          style={styles.textInput}
           value={value}
           onChangeText={onChangeText}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          placeholder={floated ? undefined : label}
-          placeholderTextColor={colors.secondaryText}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
+          textAlignVertical="center"
         />
       </View>
     </CardShell>
@@ -112,15 +106,17 @@ export function ProfileSelectField({
 }) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const floated = !!valueText;
   return (
     <Pressable onPress={onPress} accessibilityRole="button">
       <CardShell minHeight={78}>
         <View style={styles.selectRow}>
-          <View style={[styles.inner, !floated && styles.innerCentered, styles.selectTextWrap]}>
-            {floated ? <Text style={styles.fieldLabel}>{label}</Text> : null}
-            <Text style={[floated ? styles.selectValue : styles.selectPlaceholder]}>
-              {valueText ?? label}
+          <View style={[styles.inner, styles.selectTextWrap]}>
+            <Text style={styles.fieldLabel}>{label}</Text>
+            <Text
+              style={[valueText ? styles.selectValue : styles.selectPlaceholder]}
+              numberOfLines={1}
+            >
+              {valueText ?? ' '}
             </Text>
           </View>
           {showIcon ? (
@@ -189,10 +185,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     gap: 6,
     width: '100%',
   },
-  innerCentered: {
-    flex: 1,
-    justifyContent: 'center',
-  },
   fieldLabel: {
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
@@ -200,23 +192,20 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.secondaryText,
   },
   nameInput: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 20,
-    lineHeight: 24,
-    color: c.primaryText,
-    padding: 0,
-    margin: 0,
+    ...centeredInputText({
+      fontFamily: 'Rubik-Medium',
+      fontSize: 20,
+      lineHeight: 24,
+      color: c.primaryText,
+    }),
   },
   textInput: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    lineHeight: 24,
-    color: c.primaryText,
-    padding: 0,
-    margin: 0,
-  },
-  textInputCentered: {
-    minHeight: 24,
+    ...centeredInputText({
+      fontFamily: 'Rubik-Regular',
+      fontSize: 16,
+      lineHeight: 24,
+      color: c.primaryText,
+    }),
   },
   selectRow: {
     flexDirection: 'row',

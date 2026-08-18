@@ -16,6 +16,7 @@ import { HealthKeyboardAvoidingView } from '@/components/health/HealthKeyboardFo
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
 import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
+import { centeredInputText } from '@/constants/textField';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_NAME_STEP } from '@/constants/petOnboarding';
 import { getPetOnboardingScale } from '@/utils/petOnboardingScale';
@@ -149,7 +150,6 @@ export default function PetNameOnboardingScreen() {
                     width: '100%',
                     height: PET_NAME_STEP.inputHeight,
                     borderRadius: PET_NAME_STEP.inputRadius,
-                    fontSize: 16,
                   },
                 ]}
                 value={name}
@@ -163,6 +163,7 @@ export default function PetNameOnboardingScreen() {
                 textContentType="name"
                 returnKeyType="next"
                 textAlign="left"
+                textAlignVertical="center"
                 onSubmitEditing={handleContinue}
               />
             </View>
@@ -251,14 +252,18 @@ const makeStyles = (c: ThemeColors) =>
       alignSelf: 'stretch',
     },
     input: {
-      fontFamily: 'Rubik-Regular',
-      color: c.primaryText,
-      borderWidth: 1,
-      borderColor: c.border,
-      backgroundColor: c.surface,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      textAlign: 'left',
+      ...centeredInputText({
+        fontFamily: 'Rubik-Regular',
+        fontSize: 16,
+        lineHeight: 20,
+        color: c.primaryText,
+        borderWidth: 1,
+        borderColor: c.border,
+        backgroundColor: c.surface,
+        paddingHorizontal: 16,
+        height: undefined,
+        textAlign: 'left',
+      }),
     },
     footer: {
       alignItems: 'center',

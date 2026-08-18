@@ -2,7 +2,6 @@ import type { Reminder } from '@/types/api';
 import {
   formatHourMinute,
   isIsoDateBefore,
-  isReminderDateTimeInPast,
   minReminderDateIso,
   parseHourMinute,
 } from '@/utils/calendar';
@@ -61,9 +60,7 @@ export function isBeforeMinReminderDate(nextDate: string): boolean {
 }
 
 export function isReminderScheduleInPast(nextDate: string, nextTime?: string | null): boolean {
-  if (isBeforeMinReminderDate(nextDate)) return true;
-  if (!nextTime) return false;
-  return isReminderDateTimeInPast(nextDate, normalizeTime(nextTime));
+  return isBeforeMinReminderDate(nextDate);
 }
 
 export function needsStatusPrompt(reminder: Reminder): boolean {

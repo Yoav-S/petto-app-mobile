@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { centeredInputText } from '@/constants/textField';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
@@ -216,6 +217,7 @@ export default function AddVaccineScreen() {
               placeholderTextColor={colors.secondaryText}
               autoFocus
               returnKeyType="next"
+              textAlignVertical="center"
             />
           </View>
 
@@ -379,11 +381,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     elevation: 2,
   },
   nameInput: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    color: c.primaryText,
-    padding: 0,
-    margin: 0,
+    ...centeredInputText({
+      fontFamily: 'Rubik-Regular',
+      fontSize: 16,
+      lineHeight: 20,
+      color: c.primaryText,
+    }),
   },
   dateRow: {
     flexDirection: 'row',

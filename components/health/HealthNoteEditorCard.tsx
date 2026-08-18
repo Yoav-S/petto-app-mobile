@@ -168,6 +168,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.primaryText,
     padding: 0,
     minHeight: 40,
+    includeFontPadding: false,
+    textAlignVertical: 'top',
   },
   reminderRow: {
     flexDirection: isRTL ? 'row-reverse' : 'row',
