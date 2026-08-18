@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -78,6 +78,9 @@ interface ReminderFormBodyProps {
   stickyFooter?: React.ReactNode;
   /** Extra scroll padding when a sticky footer is present. */
   scrollPaddingBottom?: number;
+  /** Pin footer (delete) to the bottom; only scroll on short screens. */
+  pinFooterToBottom?: boolean;
+  footerBottomInset?: number;
 }
 
 export default function ReminderFormBody({
@@ -103,26 +106,37 @@ export default function ReminderFormBody({
   footer,
   stickyFooter,
   scrollPaddingBottom = 32,
+  pinFooterToBottom = false,
+  footerBottomInset = 32,
 }: ReminderFormBodyProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const showNoteLabel = noteFocused || note.trim().length > 0;
+  const [viewportH, setViewportH] = useState(0);
+  const [contentH, setContentH] = useState(0);
+  const needsScroll = !pinFooterToBottom || contentH > viewportH + 1;
 
   return (
     <>
       <HealthKeyboardAvoidingView>
         <ScrollView
+          style={styles.flex}
           contentContainerStyle={[
             styles.content,
             {
               paddingTop: layout.formTop,
-              paddingBottom: scrollPaddingBottom,
+              paddingBottom: pinFooterToBottom ? footerBottomInset : scrollPaddingBottom,
               gap: layout.formGap,
               alignItems: 'center',
+              flexGrow: 1,
             },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          scrollEnabled={needsScroll}
+          bounces={needsScroll}
+          onLayout={(e) => setViewportH(e.nativeEvent.layout.height)}
+          onContentSizeChange={(_w, h) => setContentH(h)}
         >
           <View
             style={[
@@ -196,7 +210,7 @@ export default function ReminderFormBody({
               activeOpacity={0.6}
             >
               <View style={styles.scheduleLeft}>
-                <Ionicons name="calendar-outline" size={18} color={colors.primaryText} />
+                <Ionicons name="calendar-outline" size={20} color={colors.primaryText} />
                 <Text style={styles.scheduleLabel}>{t('reminders.field_date')}</Text>
               </View>
               <Text style={[styles.scheduleValue, !date && styles.placeholder]}>
@@ -204,13 +218,15 @@ export default function ReminderFormBody({
               </Text>
             </TouchableOpacity>
 
+            <View style={styles.scheduleDivider} />
+
             <TouchableOpacity
               style={[styles.scheduleRow, { minHeight: layout.rowHeight }]}
               onPress={() => onSheetChange('time')}
               activeOpacity={0.6}
             >
               <View style={styles.scheduleLeft}>
-                <Ionicons name="time-outline" size={18} color={colors.primaryText} />
+                <Ionicons name="time-outline" size={20} color={colors.primaryText} />
                 <Text style={styles.scheduleLabel}>{t('reminders.field_time')}</Text>
               </View>
               <Text style={[styles.scheduleValue, !time && styles.placeholder]}>
@@ -218,13 +234,15 @@ export default function ReminderFormBody({
               </Text>
             </TouchableOpacity>
 
+            <View style={styles.scheduleDivider} />
+
             <TouchableOpacity
               style={[styles.scheduleRow, { minHeight: layout.rowHeight }]}
               onPress={() => onSheetChange('repeat')}
               activeOpacity={0.6}
             >
               <View style={styles.scheduleLeft}>
-                <Ionicons name="repeat-outline" size={18} color={colors.primaryText} />
+                <Ionicons name="repeat-outline" size={20} color={colors.primaryText} />
                 <Text style={styles.scheduleLabel}>{t('reminders.field_repeat')}</Text>
               </View>
               <Text style={styles.scheduleValue}>{repeatToggleLabel(repeat)}</Text>
@@ -267,6 +285,7 @@ export default function ReminderFormBody({
             </View>
           </View>
 
+          {pinFooterToBottom ? <View style={styles.footerSpacer} /> : null}
           {footer}
         </ScrollView>
         {stickyFooter}
@@ -380,8 +399,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   content: { paddingHorizontal: 0 },
   card: { backgroundColor: c.surface },
   nameInput: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
+    fontFamily: 'Rubik-Medium',
+    fontSize: 20,
+    lineHeight: 24,
     color: c.primaryText,
     padding: 0,
     margin: 0,
@@ -412,14 +432,21 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     gap: 6,
   },
   scheduleLabel: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
+    fontFamily: 'Rubik-Medium',
+    fontSize: 20,
+    lineHeight: 24,
     color: c.primaryText,
   },
   scheduleValue: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
+    fontFamily: 'Rubik-Medium',
+    fontSize: 20,
+    lineHeight: 24,
     color: c.primaryText,
+  },
+  scheduleDivider: {
+    height: 1,
+    width: '100%',
+    backgroundColor: c.border,
   },
   placeholder: { color: c.secondaryText },
   noteInner: { width: '100%' },
@@ -465,5 +492,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     color: c.secondaryText,
+  },
+  footerSpacer: {
+    flexGrow: 1,
+    minHeight: 24,
+    width: '100%',
   },
 });

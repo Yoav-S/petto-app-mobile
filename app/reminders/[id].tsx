@@ -18,7 +18,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import ReminderFormBody, { ReminderAutosaveStatus } from '@/components/reminders/ReminderFormBody';
 import {
   hasDuplicateInList,
-  isBeforeMinReminderDate,
+  isReminderScheduleInPast,
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
 import { categoryLabel } from '@/components/pickers/CategoryPickerSheet';
@@ -38,6 +38,7 @@ import {
   type ReminderCategory,
 } from '@/utils/reminderCategory';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { DESIGN_HEIGHT } from '@/constants/layout';
 
 type AutosaveState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -50,7 +51,8 @@ export default function EditReminderScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { activePetId } = useActivePet();
-  const { contentWidth } = useResponsiveLayout();
+  const { contentWidth, height } = useResponsiveLayout();
+  const deleteBottomPad = Math.max(24, Math.round(height * (58 / DESIGN_HEIGHT)));
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +74,7 @@ export default function EditReminderScreen() {
   const hydratedRef = useRef(false);
   const snapshotRef = useRef('');
   const originalDateRef = useRef<string | null>(null);
+  const originalTimeRef = useRef<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const layout = useMemo(
@@ -82,12 +85,12 @@ export default function EditReminderScreen() {
       cardRadius: 12,
       cardPadH: 16,
       cardPadV: 14,
-      nameHeight: 48,
+      nameHeight: 52,
       categoryHeight: 52,
-      scheduleHeight: 120,
+      scheduleHeight: 140,
       noteHeight: 78,
       innerGap: 8,
-      rowHeight: 20,
+      rowHeight: 24,
       footerHeight: 48,
     }),
     [contentWidth],
@@ -149,6 +152,7 @@ export default function EditReminderScreen() {
       setRepeat((reminder.repeat as RepeatOption) ?? 'off');
       setNote(reminder.note ?? '');
       originalDateRef.current = reminder.date;
+      originalTimeRef.current = reminder.time;
       snapshotRef.current = JSON.stringify({
         title: reminder.title.trim(),
         date: reminder.date,
@@ -183,10 +187,12 @@ export default function EditReminderScreen() {
     [existingReminders, id, toast],
   );
 
-  const warnBeforeMinDate = useCallback((nextDate: string) => {
-    // Allow keeping the originally scheduled date (e.g. today's occurrence).
-    if (originalDateRef.current && nextDate === originalDateRef.current) return false;
-    if (!isBeforeMinReminderDate(nextDate)) return false;
+  const warnPastSchedule = useCallback((nextDate: string, nextTime?: string | null) => {
+    const sameOriginalSlot =
+      originalDateRef.current === nextDate &&
+      (nextTime == null || originalTimeRef.current === nextTime);
+    if (sameOriginalSlot) return false;
+    if (!isReminderScheduleInPast(nextDate, nextTime)) return false;
     toast.showError(t('reminders.past_datetime'));
     return true;
   }, [toast]);
@@ -220,7 +226,7 @@ export default function EditReminderScreen() {
       setAutosaveState('error');
       return;
     }
-    if (warnBeforeMinDate(date)) {
+    if (warnPastSchedule(date, time)) {
       setAutosaveState('error');
       return;
     }
@@ -250,7 +256,7 @@ export default function EditReminderScreen() {
     note,
     loadExistingReminders,
     warnDuplicate,
-    warnBeforeMinDate,
+    warnPastSchedule,
     buildSnapshot,
     toast,
   ]);
@@ -272,14 +278,22 @@ export default function EditReminderScreen() {
   }, [title, date, time, repeat, note, buildSnapshot, persist]);
 
   const handleDateConfirm = (iso: string) => {
-    if (warnBeforeMinDate(iso)) return;
+    if (warnPastSchedule(iso, null)) return;
     if (time && warnDuplicate(iso, time)) return;
+    if (time && isReminderScheduleInPast(iso, time)) {
+      toast.showError(t('reminders.past_datetime'));
+      setDate(iso);
+      setTime(null);
+      setSheet(null);
+      return;
+    }
     setDate(iso);
     setSheet(null);
   };
 
   const handleTimeConfirm = (value: string) => {
     if (!date) return;
+    if (warnPastSchedule(date, value)) return;
     if (warnDuplicate(date, value)) return;
     setTime(value);
     setSheet(null);
@@ -351,6 +365,8 @@ export default function EditReminderScreen() {
         onDateConfirm={handleDateConfirm}
         onTimeConfirm={handleTimeConfirm}
         onRepeatSelect={setRepeat}
+        pinFooterToBottom
+        footerBottomInset={deleteBottomPad}
         footer={
           <View>
             <ReminderAutosaveStatus layout={layout} state={autosaveState} />
@@ -391,13 +407,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   deleteButton: {
-    marginTop: 24,
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   deleteText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
+    lineHeight: 18,
     color: c.error,
   },
 });

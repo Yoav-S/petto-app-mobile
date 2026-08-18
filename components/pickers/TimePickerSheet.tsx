@@ -7,6 +7,7 @@ import {
   FlatList,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Platform,
 } from 'react-native';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
-import { formatReminderClockTime, parseTime24, toTime24 } from '@/utils/calendar';
+import { formatHourMinute, parseHourMinute } from '@/utils/calendar';
 
 interface TimePickerSheetProps {
   visible: boolean;
@@ -24,51 +25,44 @@ interface TimePickerSheetProps {
   onConfirm: (time: string) => void;
 }
 
-const SHEET_HEIGHT = 474;
-const SHEET_RADIUS = 24;
 const ITEM_HEIGHT = 44;
 const VISIBLE_ROWS = 5;
-
-const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1);
+const WHEEL_HEIGHT = ITEM_HEIGHT * VISIBLE_ROWS;
+const SPACER = ((VISIBLE_ROWS - 1) / 2) * ITEM_HEIGHT;
+const HOURS_24 = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
-const PERIODS: Array<'am' | 'pm'> = ['am', 'pm'];
 
-function padMinute(n: number): string {
+function pad2(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-interface WheelColumnProps<T extends string | number> {
-  items: readonly T[];
+interface WheelColumnProps {
+  items: readonly number[];
   selectedIndex: number;
   onIndexChange: (index: number) => void;
   label: string;
-  wheelHeight: number;
   mountKey: number;
-  formatItem?: (item: T) => string;
 }
 
-function WheelColumn<T extends string | number>({
+function WheelColumn({
   items,
   selectedIndex,
   onIndexChange,
   label,
-  wheelHeight,
   mountKey,
-  formatItem,
-}: WheelColumnProps<T>) {
+}: WheelColumnProps) {
   const styles = useThemedStyles(makeStyles);
-  const listRef = useRef<FlatList<T>>(null);
-  const padding = ((VISIBLE_ROWS - 1) / 2) * ITEM_HEIGHT;
-  const scrollingRef = useRef(false);
+  const listRef = useRef<FlatList<number>>(null);
 
   useEffect(() => {
-    scrollingRef.current = false;
     requestAnimationFrame(() => {
       listRef.current?.scrollToOffset({
         offset: selectedIndex * ITEM_HEIGHT,
         animated: false,
       });
     });
+    // Only re-sync when the sheet opens, not on every snap.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mountKey]);
 
   const snapToIndex = useCallback(
@@ -78,52 +72,51 @@ function WheelColumn<T extends string | number>({
         offset: clamped * ITEM_HEIGHT,
         animated: true,
       });
-      if (clamped !== selectedIndex) {
-        onIndexChange(clamped);
-      }
+      if (clamped !== selectedIndex) onIndexChange(clamped);
     },
     [items.length, onIndexChange, selectedIndex],
   );
 
   const handleScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      scrollingRef.current = false;
-      const offsetY = event.nativeEvent.contentOffset.y;
-      const index = Math.round(offsetY / ITEM_HEIGHT);
+      const index = Math.round(event.nativeEvent.contentOffset.y / ITEM_HEIGHT);
       snapToIndex(index);
     },
     [snapToIndex],
   );
 
   const renderItem = useCallback(
-    ({ item, index }: { item: T; index: number }) => {
+    ({ item, index }: { item: number; index: number }) => {
       const isActive = index === selectedIndex;
-      const labelText = formatItem ? formatItem(item) : String(item);
       return (
         <View style={styles.cell}>
-          <Text style={[styles.cellText, isActive && styles.cellTextActive]}>{labelText}</Text>
+          <Text
+            style={[styles.cellText, isActive && styles.cellTextActive]}
+            allowFontScaling={false}
+          >
+            {pad2(item)}
+          </Text>
         </View>
       );
     },
-    [formatItem, selectedIndex],
+    [selectedIndex, styles.cell, styles.cellText, styles.cellTextActive],
   );
 
   return (
-    <View style={[styles.column, { height: wheelHeight }]}>
+    <View style={styles.column}>
       <Text style={styles.columnLabel}>{label}</Text>
-      <View style={[styles.wheelWrap, { height: wheelHeight - 24 }]}>
+      <View style={styles.wheelWrap}>
         <FlatList
           ref={listRef}
-          data={items as T[]}
-          keyExtractor={(item, index) => `${String(item)}-${index}`}
+          data={items as number[]}
+          keyExtractor={(item) => String(item)}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
           snapToInterval={ITEM_HEIGHT}
+          snapToAlignment="start"
           decelerationRate="fast"
           nestedScrollEnabled
-          onScrollBeginDrag={() => {
-            scrollingRef.current = true;
-          }}
+          disableIntervalMomentum
           onMomentumScrollEnd={handleScrollEnd}
           onScrollEndDrag={(event) => {
             if (!event.nativeEvent.velocity || Math.abs(event.nativeEvent.velocity.y) < 0.1) {
@@ -136,7 +129,8 @@ function WheelColumn<T extends string | number>({
             index,
           })}
           extraData={selectedIndex}
-          contentContainerStyle={{ paddingVertical: padding }}
+          ListHeaderComponent={<View style={{ height: SPACER }} />}
+          ListFooterComponent={<View style={{ height: SPACER }} />}
         />
         <View style={styles.selectionBand} pointerEvents="none" />
         <View style={[styles.fade, styles.fadeTop]} pointerEvents="none" />
@@ -151,225 +145,179 @@ export default function TimePickerSheet({ visible, value, onClose, onConfirm }: 
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
 
-  const initial = parseTime24(value);
-  const [hourIndex, setHourIndex] = useState(initial.hour12 - 1);
+  const initial = parseHourMinute(value);
+  const [hourIndex, setHourIndex] = useState(initial.hour);
   const [minuteIndex, setMinuteIndex] = useState(initial.minute);
-  const [periodIndex, setPeriodIndex] = useState(initial.isPm ? 1 : 0);
   const [mountKey, setMountKey] = useState(0);
 
   useEffect(() => {
     if (!visible) return;
-    const parsed = parseTime24(value);
-    setHourIndex(parsed.hour12 - 1);
+    const parsed = parseHourMinute(value);
+    setHourIndex(parsed.hour);
     setMinuteIndex(parsed.minute);
-    setPeriodIndex(parsed.isPm ? 1 : 0);
     setMountKey((k) => k + 1);
   }, [visible, value]);
 
-  const layout = useMemo(
-    () => ({
-      sheetHeight: SHEET_HEIGHT + insets.bottom,
-      radius: SHEET_RADIUS,
-      padH: 20,
-      padTop: 20,
-      wheelHeight: ITEM_HEIGHT * VISIBLE_ROWS,
-      buttonHeight: 48,
-      buttonRadius: 12,
-    }),
-    [insets.bottom],
-  );
-
-  const preview = formatReminderClockTime(
-    toTime24(HOURS_12[hourIndex] ?? 8, minuteIndex, periodIndex === 1),
-  );
+  const preview = formatHourMinute(hourIndex, minuteIndex);
 
   const handleConfirm = () => {
-    const hour12 = HOURS_12[hourIndex] ?? 8;
-    onConfirm(toTime24(hour12, minuteIndex, periodIndex === 1));
+    onConfirm(formatHourMinute(hourIndex, minuteIndex));
     onClose();
   };
 
   return (
     <BottomSheetModal visible={visible} onClose={onClose}>
-        <View
-          style={[
-            styles.sheet,
-            {
-              height: layout.sheetHeight,
-              paddingBottom: insets.bottom + 16,
-              borderTopLeftRadius: layout.radius,
-              borderTopRightRadius: layout.radius,
-              paddingHorizontal: layout.padH,
-              paddingTop: layout.padTop,
-            },
-          ]}
-        >
-          <View style={styles.header}>
-            <View style={styles.headerSpacer} />
-            <Text style={styles.title}>{t('pickers.time_title')}</Text>
-            <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
-              <Ionicons name="close" size={20} color={colors.primaryText} />
-            </Pressable>
-          </View>
-
-          <Text style={styles.preview}>{preview}</Text>
-
-          <View style={styles.columns}>
-            <WheelColumn
-              items={HOURS_12}
-              selectedIndex={hourIndex}
-              onIndexChange={setHourIndex}
-              label={t('pickers.hours')}
-              wheelHeight={layout.wheelHeight}
-              mountKey={mountKey}
-            />
-            <WheelColumn
-              items={MINUTES}
-              selectedIndex={minuteIndex}
-              onIndexChange={setMinuteIndex}
-              label={t('pickers.minutes')}
-              wheelHeight={layout.wheelHeight}
-              mountKey={mountKey + 1}
-              formatItem={padMinute}
-            />
-            <WheelColumn
-              items={PERIODS}
-              selectedIndex={periodIndex}
-              onIndexChange={setPeriodIndex}
-              label={t('pickers.period')}
-              wheelHeight={layout.wheelHeight}
-              mountKey={mountKey + 2}
-              formatItem={(period) => t(`pickers.${period}`)}
-            />
-          </View>
-
-          <Pressable
-            style={[
-              styles.doneButton,
-              {
-                height: layout.buttonHeight,
-                borderRadius: layout.buttonRadius,
-              },
-            ]}
-            onPress={handleConfirm}
-          >
-            <Text style={styles.doneText}>{t('pickers.done')}</Text>
+      <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <View style={styles.header}>
+          <View style={styles.headerSpacer} />
+          <Text style={styles.title}>{t('pickers.time_title')}</Text>
+          <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
+            <Ionicons name="close" size={20} color={colors.primaryText} />
           </Pressable>
         </View>
+
+        <Text style={styles.preview}>{preview}</Text>
+
+        <View style={styles.columns}>
+          <WheelColumn
+            items={HOURS_24}
+            selectedIndex={hourIndex}
+            onIndexChange={setHourIndex}
+            label={t('pickers.hours')}
+            mountKey={mountKey}
+          />
+          <WheelColumn
+            items={MINUTES}
+            selectedIndex={minuteIndex}
+            onIndexChange={setMinuteIndex}
+            label={t('pickers.minutes')}
+            mountKey={mountKey + 1}
+          />
+        </View>
+
+        <Pressable style={styles.doneButton} onPress={handleConfirm}>
+          <Text style={styles.doneText}>{t('pickers.done')}</Text>
+        </Pressable>
+      </View>
     </BottomSheetModal>
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: c.surface,
-    justifyContent: 'space-between',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  headerSpacer: { width: 32 },
-  title: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 20,
-    color: c.primaryText,
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: c.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  preview: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 18,
-    color: c.primaryText,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  columns: {
-    flexDirection: 'row',
-    gap: 8,
-    flex: 1,
-    alignItems: 'center',
-  },
-  column: {
-    flex: 1,
-  },
-  columnLabel: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 13,
-    color: c.secondaryText,
-    textAlign: 'center',
-    marginBottom: 8,
-    height: 16,
-  },
-  wheelWrap: {
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  cell: {
-    height: ITEM_HEIGHT,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cellText: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 20,
-    color: c.disabled,
-  },
-  cellTextActive: {
-    color: c.primaryText,
-    fontFamily: 'Rubik-Medium',
-    fontSize: 22,
-  },
-  selectionBand: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: '50%',
-    marginTop: -(ITEM_HEIGHT / 2),
-    height: ITEM_HEIGHT,
-    borderRadius: 12,
-    backgroundColor: 'rgba(31, 41, 55, 0.06)',
-    borderWidth: 1,
-    borderColor: c.border,
-  },
-  fade: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: ITEM_HEIGHT * 1.5,
-  },
-  fadeTop: {
-    top: 0,
-    backgroundColor: c.surface,
-    opacity: 0.85,
-  },
-  fadeBottom: {
-    bottom: 0,
-    backgroundColor: c.surface,
-    opacity: 0.85,
-  },
-  doneButton: {
-    backgroundColor: c.brand,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-  },
-  doneText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: c.button.primaryText,
-  },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    sheet: {
+      backgroundColor: c.surface,
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      gap: 12,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    headerSpacer: { width: 32 },
+    title: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 20,
+      lineHeight: 24,
+      color: c.primaryText,
+    },
+    closeButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: c.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    preview: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 18,
+      lineHeight: 22,
+      color: c.primaryText,
+      textAlign: 'center',
+    },
+    columns: {
+      flexDirection: 'row',
+      gap: 12,
+      alignItems: 'flex-start',
+    },
+    column: {
+      flex: 1,
+    },
+    columnLabel: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 13,
+      lineHeight: 16,
+      color: c.secondaryText,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    wheelWrap: {
+      height: WHEEL_HEIGHT,
+      overflow: 'hidden',
+      position: 'relative',
+    },
+    cell: {
+      height: ITEM_HEIGHT,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cellText: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 20,
+      lineHeight: 24,
+      color: c.disabled,
+      textAlign: 'center',
+      includeFontPadding: false,
+      ...(Platform.OS === 'android' ? { textAlignVertical: 'center' as const } : {}),
+    },
+    cellTextActive: {
+      color: c.primaryText,
+      fontFamily: 'Rubik-Medium',
+      fontSize: 22,
+      lineHeight: 26,
+    },
+    selectionBand: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: SPACER,
+      height: ITEM_HEIGHT,
+      borderRadius: 12,
+      backgroundColor: 'rgba(31, 41, 55, 0.06)',
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    fade: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      height: ITEM_HEIGHT * 1.5,
+    },
+    fadeTop: {
+      top: 0,
+      backgroundColor: c.surface,
+      opacity: 0.72,
+    },
+    fadeBottom: {
+      bottom: 0,
+      backgroundColor: c.surface,
+      opacity: 0.72,
+    },
+    doneButton: {
+      height: 48,
+      borderRadius: 12,
+      backgroundColor: c.brand,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 4,
+    },
+    doneText: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 16,
+      lineHeight: 20,
+      color: c.button.primaryText,
+    },
+  });

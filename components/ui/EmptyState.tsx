@@ -8,6 +8,8 @@ interface EmptyStateProps {
   subtitle: string;
   actionTitle?: string;
   onAction?: () => void;
+  /** Compact Figma CTA (124×48, 14/18). Default is the larger list action. */
+  actionCompact?: boolean;
   /** Scaled top offset (px) — skips vertical centering when set. */
   topOffset?: number;
   /** Gap between title, subtitle, and action. */
@@ -19,6 +21,7 @@ export default function EmptyState({
   subtitle,
   actionTitle,
   onAction,
+  actionCompact = false,
   topOffset,
   contentGap,
 }: EmptyStateProps) {
@@ -36,8 +39,14 @@ export default function EmptyState({
       <Text style={styles.subtitle}>{subtitle}</Text>
       
       {actionTitle && onAction && (
-        <TouchableOpacity style={styles.button} onPress={onAction} activeOpacity={0.8}>
-          <Text style={styles.buttonText}>{actionTitle}</Text>
+        <TouchableOpacity
+          style={[styles.button, actionCompact && styles.buttonCompact]}
+          onPress={onAction}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.buttonText, actionCompact && styles.buttonTextCompact]}>
+            {actionTitle}
+          </Text>
         </TouchableOpacity>
       )}
     </View>
@@ -50,7 +59,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: Spacing.xl,
-    paddingTop: 120,
   },
   containerOffset: {
     flex: 0,
@@ -74,11 +82,23 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 12,
-    marginTop: Spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonCompact: {
+    minWidth: 124,
+    height: 48,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
   buttonText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     color: c.button.primaryText,
+  },
+  buttonTextCompact: {
+    fontSize: 14,
+    lineHeight: 18,
+    color: '#F6F7F9',
   },
 });

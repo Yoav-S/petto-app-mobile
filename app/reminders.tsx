@@ -251,20 +251,18 @@ export default function RemindersScreen() {
     router.push('/reminders/add' as never);
   }, [router]);
 
-  const addReminderAction = {
-    actionTitle: t('reminders.add'),
-    onAction: () => {
-      void goAddReminder();
-    },
-  };
-
   const renderEmptyState = () => {
     if (!hasAnyReminders) {
       return (
         <EmptyState
           title={t('reminders.empty_all_title')}
           subtitle={t('reminders.empty_all_subtitle')}
-          {...addReminderAction}
+          actionTitle={t('reminders.add')}
+          actionCompact
+          contentGap={20}
+          onAction={() => {
+            void goAddReminder();
+          }}
         />
       );
     }
@@ -344,19 +342,21 @@ export default function RemindersScreen() {
         />
       )}
 
-      <SpeedDialFab
-        items={[
-          {
-            key: 'add',
-            label: t('reminders.add'),
-            icon: HOME_CATEGORY_ICONS.reminders,
-            onPress: () => {
-              void goAddReminder();
+      {hasAnyReminders ? (
+        <SpeedDialFab
+          items={[
+            {
+              key: 'add',
+              label: t('reminders.add'),
+              icon: HOME_CATEGORY_ICONS.reminders,
+              onPress: () => {
+                void goAddReminder();
+              },
             },
-          },
-        ]}
-        accessibilityLabel={t('reminders.add')}
-      />
+          ]}
+          accessibilityLabel={t('reminders.add')}
+        />
+      ) : null}
 
       <ReminderActionSheet
         visible={actionSheetVisible}

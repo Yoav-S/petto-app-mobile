@@ -76,6 +76,7 @@ const makeStyles = (c: ThemeColors) =>
       flex: 1,
       fontFamily: 'Rubik-Regular',
       fontSize: 24,
+      lineHeight: 28,
       color: c.primaryText,
       textAlign: 'center',
     },

@@ -64,15 +64,34 @@ export function todayIsoDate(): string {
   return toIsoDate(new Date());
 }
 
-/** Earliest selectable date for new reminders (tomorrow). */
+/** Earliest selectable date for new reminders (today). */
 export function minReminderDateIso(): string {
-  return addDaysToIsoDate(todayIsoDate(), 1);
+  return todayIsoDate();
 }
 
 export interface Time12Parts {
   hour12: number;
   minute: number;
   isPm: boolean;
+}
+
+/** Parse stored "HH:MM" (24h) into hour/minute. Defaults to 08:00. */
+export function parseHourMinute(value?: string | null): { hour: number; minute: number } {
+  if (value) {
+    const [h, m] = value.split(':').map(Number);
+    if (Number.isFinite(h) && Number.isFinite(m)) {
+      return {
+        hour: Math.min(23, Math.max(0, Math.trunc(h))),
+        minute: Math.min(59, Math.max(0, Math.trunc(m))),
+      };
+    }
+  }
+  return { hour: 8, minute: 0 };
+}
+
+/** Format 24h hour/minute as stored "HH:MM". */
+export function formatHourMinute(hour: number, minute: number): string {
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
 
 /** Parse "HH:MM" (24h) into 12-hour parts. Defaults to 8:00 AM. */

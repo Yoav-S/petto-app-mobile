@@ -12,7 +12,7 @@ import HealthKeyboardFooter, {
 } from '@/components/health/HealthKeyboardFooter';
 import {
   hasDuplicateInList,
-  isBeforeMinReminderDate,
+  isReminderScheduleInPast,
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
 import { categoryLabel } from '@/components/pickers/CategoryPickerSheet';
@@ -55,12 +55,12 @@ export default function AddReminderScreen() {
       cardRadius: 12,
       cardPadH: 16,
       cardPadV: 14,
-      nameHeight: 48,
+      nameHeight: 52,
       categoryHeight: 52,
-      scheduleHeight: 120,
+      scheduleHeight: 140,
       noteHeight: 78,
       innerGap: 8,
-      rowHeight: 20,
+      rowHeight: 24,
       footerHeight: 48,
     }),
     [contentWidth],
@@ -95,8 +95,8 @@ export default function AddReminderScreen() {
     [existingReminders, toast],
   );
 
-  const warnBeforeMinDate = useCallback((nextDate: string) => {
-    if (!isBeforeMinReminderDate(nextDate)) return false;
+  const warnPastSchedule = useCallback((nextDate: string, nextTime?: string | null) => {
+    if (!isReminderScheduleInPast(nextDate, nextTime)) return false;
     toast.showError(t('reminders.past_datetime'));
     return true;
   }, [toast]);
@@ -127,7 +127,7 @@ export default function AddReminderScreen() {
     if (!canSave || !activePetId || !date || !time) return;
     const latest = await loadExistingReminders();
     if (warnDuplicate(date, time, latest)) return;
-    if (warnBeforeMinDate(date)) return;
+    if (warnPastSchedule(date, time)) return;
 
     try {
       setSubmitting(true);
@@ -157,14 +157,22 @@ export default function AddReminderScreen() {
   };
 
   const handleDateConfirm = (iso: string) => {
-    if (warnBeforeMinDate(iso)) return;
+    if (warnPastSchedule(iso, null)) return;
     if (time && warnDuplicate(iso, time)) return;
+    if (time && isReminderScheduleInPast(iso, time)) {
+      toast.showError(t('reminders.past_datetime'));
+      setDate(iso);
+      setTime(null);
+      setSheet(null);
+      return;
+    }
     setDate(iso);
     setSheet(null);
   };
 
   const handleTimeConfirm = (value: string) => {
     if (!date) return;
+    if (warnPastSchedule(date, value)) return;
     if (warnDuplicate(date, value)) return;
     setTime(value);
     setSheet(null);

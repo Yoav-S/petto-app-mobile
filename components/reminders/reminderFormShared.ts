@@ -1,5 +1,11 @@
 import type { Reminder } from '@/types/api';
-import { formatReminderClockTime, isIsoDateBefore, minReminderDateIso } from '@/utils/calendar';
+import {
+  formatHourMinute,
+  isIsoDateBefore,
+  isReminderDateTimeInPast,
+  minReminderDateIso,
+  parseHourMinute,
+} from '@/utils/calendar';
 import { t } from '@/i18n';
 import type { RepeatOption } from '@/services/reminders';
 
@@ -23,7 +29,8 @@ export function normalizeTime(time: string): string {
 }
 
 export function formatTimeDisplay(time: string): string {
-  return formatReminderClockTime(normalizeTime(time));
+  const { hour, minute } = parseHourMinute(normalizeTime(time));
+  return formatHourMinute(hour, minute);
 }
 
 export function isActiveReminderStatus(status: string): boolean {
@@ -51,6 +58,12 @@ export function hasDuplicateInList(
 
 export function isBeforeMinReminderDate(nextDate: string): boolean {
   return isIsoDateBefore(nextDate, minReminderDateIso());
+}
+
+export function isReminderScheduleInPast(nextDate: string, nextTime?: string | null): boolean {
+  if (isBeforeMinReminderDate(nextDate)) return true;
+  if (!nextTime) return false;
+  return isReminderDateTimeInPast(nextDate, normalizeTime(nextTime));
 }
 
 export function needsStatusPrompt(reminder: Reminder): boolean {
