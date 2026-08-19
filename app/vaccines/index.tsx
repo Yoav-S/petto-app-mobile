@@ -12,11 +12,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import VaccineScreenHeader, { getVaccineHeaderContentOffset } from '@/components/vaccines/VaccineScreenHeader';
-import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
+import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import EmptyState from '@/components/ui/EmptyState';
 import { t } from '@/i18n';
@@ -144,8 +143,11 @@ export default function VaccinesScreen() {
           <EmptyState
             title={t('vaccines.empty_title')}
             subtitle={t('vaccines.empty_subtitle')}
+            actionTitle={t('vaccines.add')}
+            actionCompact
             topOffset={emptyTop}
             contentGap={emptyGap}
+            onAction={() => router.push('/vaccines/add' as never)}
           />
         }
         contentContainerStyle={[styles.listContent, items.length === 0 && styles.listContentEmpty]}
@@ -157,18 +159,21 @@ export default function VaccinesScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
-      <VaccineScreenHeader
-        title={t('vaccines.list_title')}
-        right={
-          <HeaderIconButton
-            onPress={() => router.push('/vaccines/add' as never)}
-            accessibilityLabel={t('vaccines.add')}
-          >
-            <Ionicons name="add" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
-          </HeaderIconButton>
-        }
-      />
+      <VaccineScreenHeader title={t('vaccines.list_title')} />
       {renderContent()}
+      {items.length > 0 && !loading && !error ? (
+        <SpeedDialFab
+          items={[
+            {
+              key: 'add-vaccine',
+              label: t('vaccines.add'),
+              icon: HOME_CATEGORY_ICONS.vaccines,
+              onPress: () => router.push('/vaccines/add' as never),
+            },
+          ]}
+          accessibilityLabel={t('vaccines.add')}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

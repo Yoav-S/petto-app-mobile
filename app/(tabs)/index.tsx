@@ -329,7 +329,7 @@ export default function HomeScreen() {
           <FABMenu
             open={fabOpen}
             onOpenChange={setFabOpen}
-            onVaccinePress={() => router.push('/vaccines' as never)}
+            onVaccinePress={() => router.push('/vaccines/add' as never)}
             onHealthPress={() => router.push('/topics/add' as never)}
             onReminderPress={() => router.push('/reminders' as never)}
           />
