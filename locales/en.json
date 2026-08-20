@@ -1,4 +1,4 @@
-﻿{
+{
   "home": {
     "switch": "Switch",
     "switch_title": "Switch pet",
@@ -162,14 +162,48 @@
     "upgrade": "Upgrade"
   },
   "legal": {
-    "privacy_intro": "Ragly (\u201cwe\u201d, \u201cour\u201d, or \u201cus\u201d) respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, and protect information when you use the Ragly mobile application.",
-    "privacy_section1_title": "Information We Collect",
-    "privacy_section1_body": "When using Ragly, we may collect the following information:\nAccount Information\nEmail address\nAuthentication information\nPet Information\nPet names\nBreed, age, weight, sex, and other profile details\nVaccination records\nHealth information and notes\nReminder data\nUploaded photos and documents\nUsage Information\nApp activity and interactions\nDevice information\nCrash reports and diagnostics\nNotification preferences",
-    "terms_intro": "Welcome to Ragly. These Terms of Service (\u201cTerms\u201d) govern your use of the Ragly mobile application and related services (\u201cService\u201d).\nBy using Ragly, you agree to these Terms.",
-    "terms_section1_title": "Use of the Service",
-    "terms_section1_body": "You may use Ragly only for lawful personal purposes related to caring for your pets.\nYou agree not to:\nMisuse the Service or interfere with its normal operation\nAttempt to access accounts or data that do not belong to you\nCopy, modify, or reverse engineer any part of the app\nUse the Service in a way that violates applicable laws or third-party rights\nWe may update, suspend, or change features of the Service at any time.\nContinued use of Ragly after changes means you accept the updated Terms.",
-    "terms_section2_title": "Accounts",
-    "terms_section2_body": "To use certain features, you may need to create an account.\nYou are responsible for:\nMaintaining the security of your account\nKeeping your login credentials confidential\nAll activity that occurs under your account\nYou agree to provide accurate information when creating and managing your account."
+    "privacy_intro": "Ragly (\u201cwe\u201d, \u201cour\u201d, or \u201cus\u201d) is a pet-care organization app operated by the Ragly team based in Israel. This Privacy Policy explains what information we collect, how we use it, and the choices you have when you use the Ragly mobile application and related services.",
+    "privacy_s1_title": "1. Information we collect",
+    "privacy_s1_body": "Depending on how you use Ragly, we may collect:\nAccount information \u2014 email address and authentication data (for example one-time codes and sign-in tokens).\nPet and care records you choose to enter \u2014 pet name, breed, age, weight, sex, vaccinations, health notes, reminders, and related details. These are personal notes you enter; they are not clinic medical records and are not used to diagnose or treat animals.\nPhotos and files you upload \u2014 for example pet photos or vaccination proof images.\nDevice and app information \u2014 push notification tokens, timezone, notification preferences, basic device/app diagnostics, and crash-related data needed to keep the Service reliable.\nAnalytics data \u2014 limited app usage events via Firebase Analytics (for example feature use and stability) to improve the product.\nPurchase information \u2014 if you subscribe, purchase status and entitlement data via our payment partners. We do not store your full payment card number.",
+    "privacy_s2_title": "2. How we use information",
+    "privacy_s2_body": "We use information to:\nCreate and secure your account\nProvide app features (profiles, records, reminders, notifications)\nSend verification emails and support replies\nDeliver push notifications for reminders you set (when enabled)\nProcess subscriptions and restore purchases\nImprove reliability, security, and customer support\nComply with legal obligations\nWe do not sell your personal information.",
+    "privacy_s3_title": "3. Service providers / third parties",
+    "privacy_s3_body": "We use trusted providers to operate Ragly. They process data only to provide their services to us:\nGoogle Firebase \u2014 authentication, analytics/diagnostics, and file storage\nMongoDB Atlas \u2014 application database\nResend \u2014 transactional email (for example OTP codes)\nExpo \u2014 app delivery and push notification routing\nRevenueCat / Google Play / Apple \u2014 subscription management (where applicable)\nCloud hosting providers \u2014 running our API (for example Google Cloud)",
+    "privacy_s4_title": "4. Push notifications",
+    "privacy_s4_body": "If you allow notifications, we store a device push token and your timezone so we can send reminder alerts you schedule. You can turn notifications off in Ragly Settings and in your device system settings at any time.",
+    "privacy_s5_title": "5. Data retention and deletion",
+    "privacy_s5_body": "We keep your information while your account is active and as needed to provide the Service. If you delete your account (in Settings or by emailing support@ragly.cloud), we delete or anonymize associated personal data within 30 days, unless we must keep limited records for legal, security, or accounting reasons (for example subscription receipts handled by Apple or Google).",
+    "privacy_s6_title": "6. Your choices and rights",
+    "privacy_s6_body": "Depending on where you live, you may have rights to access, update, or delete your personal data. You can:\nAccess or update information in the app where available\nControl notification preferences in Settings\nRequest account or data deletion via support@ragly.cloud or in-app account deletion where available\nWe will respond to verified requests within a reasonable time.",
+    "privacy_s7_title": "7. Children's privacy",
+    "privacy_s7_body": "Ragly is not directed to children under 13 (or the minimum age required in your country). We do not knowingly collect personal information from children. If you believe a child provided us personal data, contact support@ragly.cloud and we will take appropriate steps.",
+    "privacy_s8_title": "8. Security",
+    "privacy_s8_body": "We use industry-standard safeguards appropriate to the nature of the data (including encrypted transport and access controls). No method of transmission or storage is 100% secure.",
+    "privacy_s9_title": "9. International processing",
+    "privacy_s9_body": "Your information may be processed in countries where we or our providers operate, including outside Israel. We take steps designed to protect personal data in line with this policy.",
+    "privacy_s10_title": "10. Changes",
+    "privacy_s10_body": "We may update this Privacy Policy from time to time. The \"Last updated\" date will change when we do. Continued use of Ragly after an update means you accept the revised policy.",
+    "privacy_s11_title": "11. Contact",
+    "privacy_s11_body": "Ragly team (Israel)\nEmail: support@ragly.cloud\nWebsite: https://ragly.cloud",
+    "terms_intro": "Welcome to Ragly. These Terms of Service (\u201cTerms\u201d) govern your use of the Ragly mobile application and related services (\u201cService\u201d), operated by the Ragly team based in Israel. By using Ragly, you agree to these Terms.",
+    "terms_s1_title": "1. Use of the Service",
+    "terms_s1_body": "You may use Ragly only for lawful personal purposes related to caring for your pets. Ragly is a personal record-keeping and reminder tool. It is not a substitute for professional veterinary advice, diagnosis, or treatment. Always seek the advice of a qualified veterinarian with any questions about your pet\u2019s health.\nYou agree not to:\nMisuse the Service or interfere with its normal operation\nAttempt to access accounts or data that do not belong to you\nCopy, modify, or reverse engineer any part of the app\nUse the Service in a way that violates applicable laws or third-party rights\nWe may update, suspend, or change features of the Service at any time.",
+    "terms_s2_title": "2. Accounts",
+    "terms_s2_body": "To use certain features, you may need an account. You are responsible for maintaining account security, keeping login details confidential, and all activity under your account. Provide accurate information when creating and managing your account.",
+    "terms_s3_title": "3. Your content",
+    "terms_s3_body": "You retain ownership of the pet information, notes, and photos you upload. You grant us a limited license to host and process that content only as needed to provide the Service.",
+    "terms_s4_title": "4. Subscriptions",
+    "terms_s4_body": "Some features may require a paid subscription (for example Ragly Premium). Prices are shown in the app at the time of purchase. Billing, renewals, and cancellations for mobile purchases are handled by Google Play or the App Store under their terms. Subscriptions may auto-renew unless you cancel in the store account used for the purchase before the renewal date. Refunds are handled by Apple or Google according to their policies. We do not store your full payment card number.",
+    "terms_s5_title": "5. Disclaimer",
+    "terms_s5_body": "The Service is provided \u201cas is\u201d and \u201cas available.\u201d To the maximum extent permitted by law, we disclaim warranties of merchantability, fitness for a particular purpose, and non-infringement. We do not warrant that reminders will always be delivered on time or that stored records are complete or error-free.",
+    "terms_s6_title": "6. Limitation of liability",
+    "terms_s6_body": "To the maximum extent permitted by law, Ragly and its operators are not liable for indirect, incidental, special, consequential, or punitive damages, or any loss of data, profits, or health outcomes arising from your use of the Service.",
+    "terms_s7_title": "7. Governing law",
+    "terms_s7_body": "These Terms are governed by the laws of the State of Israel, without regard to conflict-of-law rules. Courts in Israel shall have exclusive jurisdiction, unless mandatory consumer laws in your country require otherwise.",
+    "terms_s8_title": "8. Changes",
+    "terms_s8_body": "We may update these Terms from time to time. Continued use after updates means you accept the revised Terms.",
+    "terms_s9_title": "9. Contact",
+    "terms_s9_body": "Questions about these Terms: support@ragly.cloud\nWebsite: https://ragly.cloud"
   },
   "pickers": {
     "time_title": "Choose time",
@@ -382,8 +416,7 @@
     "privacy": "Privacy Policy",
     "terms_screen_title": "Terms & Privacy",
     "terms_agree": "I agree to the Terms and Privacy Policy",
-    "terms_link_a11y": "Open Terms and Privacy Policy",
-    "terms_body": "Welcome to Ragly. This is temporary placeholder text for our Terms of Service and Privacy Policy.\n\nBy using Ragly, you agree to store pet health information you choose to add, including vaccinations, reminders, and medical records.\n\nWe process your email address for passwordless sign-in and may send verification codes. We do not sell your personal data.\n\nYou can request deletion of your account and data by contacting support. Content in this app is for your personal pet-care records and is not a substitute for professional veterinary advice.\n\nThese terms may be updated before launch. Continued use after updates means you accept the revised terms."
+    "terms_link_a11y": "Open Terms and Privacy Policy"
   },
   "auth": {
     "code_resent": "A new code was sent. Previous codes no longer work.",

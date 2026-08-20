@@ -1,4 +1,4 @@
-﻿{
+{
   "home": {
     "switch": "Schimbă",
     "switch_title": "Schimbă animalul",
@@ -162,14 +162,48 @@
     "notif_topic_reminders": "Memento-uri pe subiecte"
   },
   "legal": {
-    "privacy_intro": "Ragly („noi”, „al nostru”) îți respectă confidențialitatea și se angajează să îți protejeze informațiile personale. Această Politică de confidențialitate explică modul în care colectăm, folosim și protejăm informațiile atunci când folosești aplicația mobilă Ragly.",
-    "privacy_section1_title": "Informațiile pe care le colectăm",
-    "privacy_section1_body": "Când folosești Ragly, este posibil să colectăm următoarele informații:\nInformații despre cont\nAdresă de e-mail\nInformații de autentificare\nInformații despre animal\nNumele animalelor\nRasă, vârstă, greutate, sex și alte detalii de profil\nÎnregistrări de vaccinare\nInformații și note de sănătate\nDate despre memento-uri\nFotografii și documente încărcate\nInformații de utilizare\nActivitate și interacțiuni în aplicație\nInformații despre dispozitiv\nRapoarte de eroare și diagnosticare\nPreferințe de notificare",
-    "terms_intro": "Bine ai venit la Ragly. Acești Termeni și condiții („Termeni”) reglementează utilizarea aplicației mobile Ragly și a serviciilor conexe („Serviciul”).\nFolosind Ragly, ești de acord cu acești Termeni.",
-    "terms_section1_title": "Utilizarea serviciului",
-    "terms_section1_body": "Poți folosi Ragly doar în scopuri personale legale legate de îngrijirea animalelor tale.\nEști de acord să nu:\nFolosești abuziv Serviciul sau să îi interferi cu funcționarea normală\nÎncerci să accesezi conturi sau date care nu îți aparțin\nCopiezi, modifici sau faci inginerie inversă a oricărei părți din aplicație\nFolosești Serviciul într-un mod care încalcă legile aplicabile sau drepturile terților\nPutem actualiza, suspenda sau modifica funcțiile Serviciului în orice moment.\nContinuarea utilizării Ragly după modificări înseamnă că accepți Termenii actualizați.",
-    "terms_section2_title": "Conturi",
-    "terms_section2_body": "Pentru a folosi anumite funcții, este posibil să fie nevoie să creezi un cont.\nEști responsabil pentru:\nMenținerea securității contului tău\nPăstrarea confidențialității datelor tale de autentificare\nToate activitățile care au loc în contul tău\nEști de acord să furnizezi informații corecte la crearea și gestionarea contului tău."
+    "privacy_intro": "Ragly („noi”, „al nostru”) este o aplicație de organizare a îngrijirii animalelor, operată de echipa Ragly din Israel. Această Politică de confidențialitate explică ce informații colectăm, cum le folosim și ce opțiuni ai când folosești aplicația mobilă Ragly și serviciile conexe.",
+    "privacy_s1_title": "1. Informațiile pe care le colectăm",
+    "privacy_s1_body": "În funcție de cum folosești Ragly, putem colecta:\nInformații despre cont — adresă de e-mail și date de autentificare (de exemplu coduri unice și token-uri de conectare).\nÎnregistrări de îngrijire pe care le introduci — numele animalului, rasă, vârstă, greutate, sex, vaccinări, note de sănătate, memento-uri și detalii aferente. Acestea sunt note personale pe care le introduci; nu sunt fișe medicale de clinică și nu sunt folosite pentru diagnostic sau tratament.\nFotografii și fișiere pe care le încarci — de exemplu poze cu animalul sau dovezi de vaccinare.\nInformații despre dispozitiv și aplicație — token-uri push, fus orar, preferințe de notificare, diagnostic de bază și date despre crash-uri pentru fiabilitatea Serviciului.\nDate de analiză — evenimente limitate de utilizare prin Firebase Analytics pentru îmbunătățirea produsului.\nInformații de cumpărare — dacă te abonezi, statusul achiziției și drepturile prin partenerii de plată. Nu stocăm numărul complet al cardului tău.",
+    "privacy_s2_title": "2. Cum folosim informațiile",
+    "privacy_s2_body": "Folosim informațiile pentru a:\nCrea și securiza contul tău\nOferi funcțiile aplicației (profiluri, înregistrări, memento-uri, notificări)\nTrimite e-mailuri de verificare și răspunsuri de asistență\nLivra notificări push pentru memento-urile pe care le setezi (când sunt activate)\nProcesa abonamentele și restaura achizițiile\nÎmbunătăți fiabilitatea, securitatea și asistența\nRespecta obligațiile legale\nNu vindem informațiile tale personale.",
+    "privacy_s3_title": "3. Furnizori de servicii / terți",
+    "privacy_s3_body": "Folosim furnizori de încredere pentru a opera Ragly. Ei prelucrează date doar pentru a ne oferi serviciile lor:\nGoogle Firebase — autentificare, analiză/diagnostic și stocare fișiere\nMongoDB Atlas — baza de date a aplicației\nResend — e-mail tranzacțional (de exemplu coduri OTP)\nExpo — livrarea aplicației și rutarea notificărilor push\nRevenueCat / Google Play / Apple — gestionarea abonamentelor (unde e cazul)\nFurnizori cloud — rularea API-ului nostru (de exemplu Google Cloud)",
+    "privacy_s4_title": "4. Notificări push",
+    "privacy_s4_body": "Dacă permiți notificările, stocăm un token push al dispozitivului și fusul tău orar ca să trimitem alerte pentru memento-urile programate. Poți dezactiva notificările în Setările Ragly și în setările sistemului dispozitivului oricând.",
+    "privacy_s5_title": "5. Păstrarea și ștergerea datelor",
+    "privacy_s5_body": "Păstrăm informațiile tale cât timp contul este activ și cât e necesar pentru a oferi Serviciul. Dacă ștergi contul (în Setări sau la support@ragly.cloud), ștergem sau anonimizăm datele personale asociate în 30 de zile, cu excepția cazurilor în care trebuie să păstrăm înregistrări limitate din motive legale, de securitate sau contabile (de exemplu chitanțe de abonament prin Apple sau Google).",
+    "privacy_s6_title": "6. Opțiunile și drepturile tale",
+    "privacy_s6_body": "În funcție de locul în care locuiești, poți avea drepturi de a accesa, actualiza sau șterge datele personale. Poți:\nAccesa sau actualiza informații în aplicație unde este disponibil\nControla preferințele de notificare în Setări\nSolicita ștergerea contului sau a datelor la support@ragly.cloud sau prin ștergerea contului din aplicație unde este disponibil\nVom răspunde cererilor verificate într-un termen rezonabil.",
+    "privacy_s7_title": "7. Confidențialitatea copiilor",
+    "privacy_s7_body": "Ragly nu se adresează copiilor sub 13 ani (sau vârsta minimă cerută în țara ta). Nu colectăm cu bună știință date personale de la copii. Dacă crezi că un copil ne-a furnizat date, contactează support@ragly.cloud și vom lua măsuri adecvate.",
+    "privacy_s8_title": "8. Securitate",
+    "privacy_s8_body": "Folosim măsuri standard din industrie, adecvate naturii datelor (inclusiv transport criptat și controale de acces). Nicio metodă de transmitere sau stocare nu este 100% sigură.",
+    "privacy_s9_title": "9. Prelucrare internațională",
+    "privacy_s9_body": "Informațiile tale pot fi prelucrate în țări unde noi sau furnizorii noștri operăm, inclusiv în afara Israelului. Luăm măsuri menite să protejeze datele personale conform acestei politici.",
+    "privacy_s10_title": "10. Modificări",
+    "privacy_s10_body": "Putem actualiza această Politică de confidențialitate din când în când. Data „Ultima actualizare” se va schimba când o facem. Continuarea utilizării Ragly după o actualizare înseamnă că accepți politica revizuită.",
+    "privacy_s11_title": "11. Contact",
+    "privacy_s11_body": "Echipa Ragly (Israel)\nE-mail: support@ragly.cloud\nSite: https://ragly.cloud",
+    "terms_intro": "Bine ai venit la Ragly. Acești Termeni și condiții („Termeni”) reglementează utilizarea aplicației mobile Ragly și a serviciilor conexe („Serviciul”), operate de echipa Ragly din Israel. Folosind Ragly, ești de acord cu acești Termeni.",
+    "terms_s1_title": "1. Utilizarea Serviciului",
+    "terms_s1_body": "Poți folosi Ragly doar în scopuri personale legale legate de îngrijirea animalelor tale. Ragly este un instrument de evidență personală și memento-uri. Nu înlocuiește sfatul, diagnosticul sau tratamentul unui medic veterinar. Cere întotdeauna sfatul unui veterinar calificat pentru orice întrebare despre sănătatea animalului.\nEști de acord să nu:\nFolosești abuziv Serviciul sau să îi interferi cu funcționarea normală\nÎncerci să accesezi conturi sau date care nu îți aparțin\nCopiezi, modifici sau faci inginerie inversă a oricărei părți din aplicație\nFolosești Serviciul într-un mod care încalcă legile sau drepturile terților\nPutem actualiza, suspenda sau modifica funcțiile Serviciului în orice moment.",
+    "terms_s2_title": "2. Conturi",
+    "terms_s2_body": "Pentru anumite funcții poate fi nevoie de un cont. Ești responsabil pentru securitatea contului, confidențialitatea datelor de autentificare și toate activitățile din cont. Furnizează informații corecte la crearea și gestionarea contului.",
+    "terms_s3_title": "3. Conținutul tău",
+    "terms_s3_body": "Păstrezi proprietatea asupra informațiilor despre animal, notelor și fotografiilor pe care le încarci. Ne acorzi o licență limitată pentru a găzdui și prelucra acel conținut doar cât e necesar pentru a oferi Serviciul.",
+    "terms_s4_title": "4. Abonamente",
+    "terms_s4_body": "Unele funcții pot necesita un abonament plătit (de exemplu Ragly Premium). Prețurile apar în aplicație la momentul achiziției. Facturarea, reînnoirile și anulările pentru achizițiile mobile sunt gestionate de Google Play sau App Store conform termenilor lor. Abonamentele se pot reînnoi automat dacă nu anulezi din contul magazinului înainte de data reînnoirii. Rambursările sunt gestionate de Apple sau Google conform politicilor lor. Nu stocăm numărul complet al cardului tău.",
+    "terms_s5_title": "5. Declarație de exonerare",
+    "terms_s5_body": "Serviciul este oferit „ca atare” și „conform disponibilității”. În măsura maximă permisă de lege, excludem garanțiile de vandabilitate, adecvare pentru un scop anume și neîncălcare. Nu garantăm că memento-urile vor fi livrate întotdeauna la timp sau că înregistrările stocate sunt complete sau fără erori.",
+    "terms_s6_title": "6. Limitarea răspunderii",
+    "terms_s6_body": "În măsura maximă permisă de lege, Ragly și operatorii săi nu răspund pentru daune indirecte, incidentale, speciale, consecutive sau punitive, ori pentru pierderi de date, profituri sau consecințe asupra sănătății rezultate din utilizarea Serviciului.",
+    "terms_s7_title": "7. Legea aplicabilă",
+    "terms_s7_body": "Acești Termeni sunt guvernați de legile Statului Israel, fără a ține cont de normele privind conflictul de legi. Instanțele din Israel au competență exclusivă, cu excepția cazului în care legile obligatorii de protecție a consumatorilor din țara ta cer altfel.",
+    "terms_s8_title": "8. Modificări",
+    "terms_s8_body": "Putem actualiza acești Termeni din când în când. Continuarea utilizării după actualizări înseamnă că accepți Termenii revizuiți.",
+    "terms_s9_title": "9. Contact",
+    "terms_s9_body": "Întrebări despre acești Termeni: support@ragly.cloud\nSite: https://ragly.cloud"
   },
   "pickers": {
     "time_title": "Alege ora",
@@ -320,8 +354,7 @@
     "privacy": "Politica de confidențialitate",
     "terms_screen_title": "Termeni și confidențialitate",
     "terms_agree": "Sunt de acord cu Termenii și Politica de confidențialitate",
-    "terms_link_a11y": "Deschide Termenii și Politica de confidențialitate",
-    "terms_body": "Bine ai venit la Ragly. Acesta este un text temporar pentru Termenii și Condițiile și Politica noastră de confidențialitate.\n\nFolosind Ragly, ești de acord să stochezi informațiile de sănătate ale animalului pe care alegi să le adaugi, inclusiv vaccinări, memento-uri și înregistrări medicale.\n\nProcesăm adresa ta de e-mail pentru autentificarea fără parolă și putem trimite coduri de verificare. Nu vindem datele tale personale.\n\nPoți solicita ștergerea contului și a datelor tale contactând asistența. Conținutul din această aplicație este pentru înregistrările personale de îngrijire a animalului și nu înlocuiește sfatul unui medic veterinar.\n\nAcești termeni pot fi actualizați înainte de lansare. Utilizarea în continuare după actualizări înseamnă că accepți termenii revizuiți."
+    "terms_link_a11y": "Deschide Termenii și Politica de confidențialitate"
   },
   "auth": {
     "code_resent": "A fost trimis un cod nou. Codurile anterioare nu mai funcționează.",
