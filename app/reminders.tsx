@@ -271,7 +271,6 @@ export default function RemindersScreen() {
           subtitle={t('reminders.empty_all_subtitle')}
           actionTitle={t('reminders.add')}
           actionCompact
-          contentGap={20}
           onAction={() => {
             void goAddReminder();
           }}
@@ -341,6 +340,15 @@ export default function RemindersScreen() {
               title={item.title}
               subtitle={reminderSubtitle(item)}
               timeOrDate={reminderTimeOrDate(item, activeTab)}
+              showCheckMark={
+                activeTab === 'Today' ||
+                (activeTab === 'Recent' && item.status === 'completed')
+              }
+              onCheckPress={
+                activeTab === 'Today'
+                  ? () => handleReminderPress(item)
+                  : undefined
+              }
               onPress={
                 activeTab === 'Recent' ? undefined : () => handleReminderPress(item)
               }

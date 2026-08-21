@@ -161,7 +161,15 @@ export function ProfilePillField({
               accessibilityRole="button"
               accessibilityState={{ selected }}
             >
-              <Text style={[styles.pillText, selected ? styles.pillTextSelected : styles.pillTextUnselected]}>
+              <Text
+                style={[
+                  styles.pillText,
+                  selected ? styles.pillTextSelected : styles.pillTextUnselected,
+                ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
                 {option.label}
               </Text>
             </TouchableOpacity>
@@ -172,96 +180,101 @@ export function ProfilePillField({
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  card: {
-    width: '100%',
-    backgroundColor: c.surface,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-  },
-  inner: {
-    gap: 6,
-    width: '100%',
-  },
-  fieldLabel: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: c.secondaryText,
-  },
-  nameInput: {
-    ...centeredInputText({
-      fontFamily: 'Rubik-Medium',
-      fontSize: 20,
-      lineHeight: 24,
-      color: c.primaryText,
-    }),
-  },
-  textInput: {
-    ...centeredInputText({
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      width: '100%',
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      justifyContent: 'center',
+    },
+    inner: {
+      gap: 6,
+      width: '100%',
+    },
+    fieldLabel: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 14,
+      lineHeight: 20,
+      color: c.secondaryText,
+    },
+    nameInput: {
+      ...centeredInputText({
+        fontFamily: 'Rubik-Medium',
+        fontSize: 20,
+        lineHeight: 24,
+        color: c.primaryText,
+      }),
+    },
+    textInput: {
+      ...centeredInputText({
+        fontFamily: 'Rubik-Regular',
+        fontSize: 16,
+        lineHeight: 24,
+        color: c.primaryText,
+      }),
+    },
+    selectRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    selectTextWrap: {
+      flex: 1,
+    },
+    selectValue: {
       fontFamily: 'Rubik-Regular',
       fontSize: 16,
       lineHeight: 24,
       color: c.primaryText,
-    }),
-  },
-  selectRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  selectTextWrap: {
-    flex: 1,
-  },
-  selectValue: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    lineHeight: 24,
-    color: c.primaryText,
-  },
-  selectPlaceholder: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    lineHeight: 24,
-    color: c.secondaryText,
-  },
-  pillRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 10,
-  },
-  pill: {
-    width: 87,
-    height: 36,
-    borderRadius: 12,
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pillSelected: {
-    backgroundColor: c.brand,
-    shadowColor: '#1E1E1E',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  pillUnselected: {
-    backgroundColor: c.inactiveControl,
-  },
-  pillText: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  pillTextSelected: {
-    fontFamily: 'Rubik-Medium',
-    color: c.button.primaryText,
-  },
-  pillTextUnselected: {
-    color: c.primaryText,
-  },
-});
+    },
+    selectPlaceholder: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 16,
+      lineHeight: 24,
+      color: c.secondaryText,
+    },
+    pillRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      marginTop: 10,
+      width: '100%',
+    },
+    pill: {
+      flex: 1,
+      minWidth: 0,
+      height: 36,
+      borderRadius: 12,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pillSelected: {
+      backgroundColor: c.brand,
+      shadowColor: '#1E1E1E',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.04,
+      shadowRadius: 10,
+      elevation: 2,
+    },
+    pillUnselected: {
+      backgroundColor: c.inactiveControl,
+    },
+    pillText: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 16,
+      lineHeight: 20,
+      textAlign: 'center',
+    },
+    pillTextSelected: {
+      fontFamily: 'Rubik-Medium',
+      color: c.button.primaryText,
+    },
+    pillTextUnselected: {
+      color: c.primaryText,
+    },
+  });

@@ -11,6 +11,7 @@ import HealthKeyboardFooter, {
   healthKeyboardScrollPadding,
 } from '@/components/health/HealthKeyboardFooter';
 import {
+  clampReminderTimeForDate,
   hasDuplicateInList,
   isReminderScheduleInPast,
   type ReminderSheet,
@@ -40,7 +41,9 @@ export default function AddReminderScreen() {
   const [category, setCategory] = useState<ReminderCategory>('general');
   const [categoryManual, setCategoryManual] = useState(false);
   const [date, setDate] = useState<string | null>(() => todayIsoDate());
-  const [time, setTime] = useState<string | null>('13:00');
+  const [time, setTime] = useState<string | null>(() =>
+    clampReminderTimeForDate(todayIsoDate(), null),
+  );
   const [repeat, setRepeat] = useState<RepeatOption>('off');
   const [note, setNote] = useState('');
   const [noteFocused, setNoteFocused] = useState(false);
@@ -159,16 +162,19 @@ export default function AddReminderScreen() {
 
   const handleDateConfirm = (iso: string) => {
     if (warnPastSchedule(iso, null)) return;
-    if (time && warnDuplicate(iso, time)) return;
+    const nextTime = clampReminderTimeForDate(iso, time);
+    if (nextTime && warnDuplicate(iso, nextTime)) return;
     setDate(iso);
+    setTime(nextTime);
     setSheet(null);
   };
 
   const handleTimeConfirm = (value: string) => {
     if (!date) return;
-    if (warnPastSchedule(date, value)) return;
-    if (warnDuplicate(date, value)) return;
-    setTime(value);
+    const clamped = clampReminderTimeForDate(date, value) ?? value;
+    if (warnPastSchedule(date, clamped)) return;
+    if (warnDuplicate(date, clamped)) return;
+    setTime(clamped);
     setSheet(null);
   };
 

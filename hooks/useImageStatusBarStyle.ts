@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Image as ReactNativeImage, type ImageSourcePropType } from 'react-native';
 import type { ImageSource } from 'expo-image';
 import type { SystemBarContentStyle } from '@/context/SystemBarsContext';
+import { statusBarStyleForHex } from '@/utils/statusBarContrast';
 
 function resolveImageUri(source: ImageSource | { uri: string }): string | null {
   if (typeof source === 'string') return source;
@@ -15,27 +16,6 @@ function resolveImageUri(source: ImageSource | { uri: string }): string | null {
     return source.uri ?? null;
   }
   return ReactNativeImage.resolveAssetSource(source as ImageSourcePropType)?.uri ?? null;
-}
-
-function hexLuminance(hex: string): number | null {
-  const normalized = hex.trim().replace('#', '');
-  if (!/^[0-9a-f]{6}$/i.test(normalized)) return null;
-
-  const channels = [0, 2, 4].map((offset) => {
-    const value = Number.parseInt(normalized.slice(offset, offset + 2), 16) / 255;
-    return value <= 0.04045
-      ? value / 12.92
-      : Math.pow((value + 0.055) / 1.055, 2.4);
-  });
-
-  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
-}
-
-function styleForBackground(color: string, fallback: SystemBarContentStyle) {
-  const luminance = hexLuminance(color);
-  if (luminance == null) return fallback;
-  // Dark icons on bright imagery; light icons on dark imagery.
-  return luminance > 0.42 ? 'dark' : 'light';
 }
 
 /**
@@ -52,9 +32,11 @@ export function useImageStatusBarStyle(
     let active = true;
     const uri = resolveImageUri(source);
     setStyle(fallback);
-    if (!uri) return () => {
-      active = false;
-    };
+    if (!uri) {
+      return () => {
+        active = false;
+      };
+    }
 
     void import('react-native-image-colors')
       .then(({ getColors }) =>
@@ -73,7 +55,7 @@ export function useImageStatusBarStyle(
             : result.platform === 'android'
               ? result.average
               : result.dominant;
-        setStyle(styleForBackground(color, fallback));
+        setStyle(statusBarStyleForHex(color, fallback));
       })
       .catch(() => {
         // Theme contrast remains the safe fallback when analysis is unavailable.

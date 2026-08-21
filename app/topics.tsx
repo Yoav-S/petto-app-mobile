@@ -198,7 +198,6 @@ export default function HealthScreen() {
           subtitle={t('topics.empty_all_subtitle')}
           actionTitle={t('topics.add_note')}
           actionCompact
-          contentGap={20}
           onAction={() => router.push('/topics/add' as never)}
         />
       );
@@ -209,7 +208,6 @@ export default function HealthScreen() {
         <EmptyState
           title={t('topics.empty_active_only_title')}
           subtitle={t('topics.empty_active_only_subtitle')}
-          contentGap={8}
         />
       );
     }
@@ -219,7 +217,6 @@ export default function HealthScreen() {
         <EmptyState
           title={t('topics.empty_resolved_with_active_title')}
           subtitle={t('topics.empty_resolved_with_active_subtitle')}
-          contentGap={8}
         />
       );
     }
@@ -228,7 +225,6 @@ export default function HealthScreen() {
       <EmptyState
         title={t('topics.empty_resolved_title')}
         subtitle={t('topics.empty_resolved_subtitle')}
-        contentGap={8}
       />
     );
   };

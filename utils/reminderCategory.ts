@@ -1,4 +1,5 @@
 import type { ImageSourcePropType } from 'react-native';
+import { t } from '@/i18n';
 
 export type ReminderCategory =
   | 'general'
@@ -132,6 +133,10 @@ const CATEGORY_KEYWORDS: Record<Exclude<ReminderCategory, 'general'>, string[]> 
     'exam',
     'bath',
     'vet',
+    'תור',
+    'приём',
+    'прием',
+    'programare',
   ],
   observation: [
     'water intake',
@@ -213,7 +218,13 @@ function normalizeTitle(title: string): string {
 
 /** Word-boundary-ish match so "ear" does not hit "hear" / "year". */
 function titleHasKeyword(normalizedTitle: string, keyword: string): boolean {
-  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const normalizedKeyword = keyword.toLowerCase().trim();
+  if (!normalizedKeyword) return false;
+  // Non-Latin labels (HE/RU/RO): substring match is enough.
+  if (/[^a-z0-9\s\-']/i.test(normalizedKeyword)) {
+    return normalizedTitle.includes(normalizedKeyword);
+  }
+  const escaped = normalizedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const pattern = new RegExp(`(?:^|[^a-z0-9])${escaped}(?:[^a-z0-9]|$)`, 'i');
   return pattern.test(normalizedTitle);
 }
@@ -221,6 +232,13 @@ function titleHasKeyword(normalizedTitle: string, keyword: string): boolean {
 export function resolveReminderCategory(title: string | null | undefined): ReminderCategory {
   const normalized = normalizeTitle(title ?? '');
   if (!normalized) return 'general';
+
+  // Exact match against the localized category label (fixes HE/RU/RO appointment titles).
+  for (const category of REMINDER_CATEGORIES) {
+    if (normalized === normalizeTitle(t(`reminders.category_${category}`))) {
+      return category;
+    }
+  }
 
   for (const category of MATCH_ORDER) {
     for (const keyword of CATEGORY_KEYWORDS[category]) {

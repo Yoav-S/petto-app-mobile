@@ -42,10 +42,30 @@ import {
 } from '@/components/profile/ProfileFormFields';
 import HeaderIconButton, {
   HEADER_ICON_BTN,
-  HEADER_ICON_BTN_SHADOW,
 } from '@/components/ui/HeaderIconButton';
 import { defaultPetPhotoSource } from '@/utils/petPhotoSource';
 import PetPhotoImage from '@/components/ui/PetPhotoImage';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+
+const PHOTO_DESIGN = { size: 128, radius: 22 } as const;
+const PHOTO_EDIT_BTN = {
+  size: 24,
+  radius: 6,
+  padding: 4,
+  top: 92,
+  left: 92,
+  borderWidth: 1,
+  iconSize: 13.33,
+  iconStroke: 1,
+} as const;
+const SAVE_DESIGN = {
+  width: 335,
+  height: 48,
+  radius: 12,
+  padV: 12,
+  padH: 16,
+  gap: 10,
+} as const;
 
 function trimOrNull(value: string): string | null {
   const trimmed = value.trim();
@@ -61,6 +81,24 @@ export default function EditProfileScreen() {
   const toast = useToast();
   const { activePetId } = useActivePet();
   const headerTopPadding = useHeaderTopPadding();
+  const { contentWidth, width: screenWidth } = useResponsiveLayout();
+
+  /** Keep 128×128 / r22 shape; only shrink on narrow screens. */
+  const photoSize = Math.round(
+    Math.min(PHOTO_DESIGN.size, contentWidth * (PHOTO_DESIGN.size / SAVE_DESIGN.width)),
+  );
+  const photoRadius = Math.round(PHOTO_DESIGN.radius * (photoSize / PHOTO_DESIGN.size));
+  const photoEditScale = photoSize / PHOTO_DESIGN.size;
+  const photoEditTop = Math.round(PHOTO_EDIT_BTN.top * photoEditScale);
+  const photoEditLeft = Math.round(PHOTO_EDIT_BTN.left * photoEditScale);
+  const photoEditSize = Math.max(20, Math.round(PHOTO_EDIT_BTN.size * photoEditScale));
+  const photoEditRadius = Math.max(4, Math.round(PHOTO_EDIT_BTN.radius * photoEditScale));
+  const photoEditPad = Math.max(3, Math.round(PHOTO_EDIT_BTN.padding * photoEditScale));
+  const photoEditIcon = Math.max(11, PHOTO_EDIT_BTN.iconSize * photoEditScale);
+
+  /** Figma 335×48 on the 375 frame; fluid narrower on small phones. */
+  const saveWidth = Math.min(SAVE_DESIGN.width, contentWidth);
+  const pagePad = Math.max(16, Math.round((screenWidth - contentWidth) / 2));
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -275,19 +313,32 @@ export default function EditProfileScreen() {
         <View style={styles.flex}>
           <ScrollView
             style={styles.flex}
-            contentContainerStyle={[styles.content, { paddingBottom: 24 }]}
+            contentContainerStyle={[
+              styles.content,
+              { paddingHorizontal: pagePad, paddingBottom: 24 },
+            ]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.photoWrap}>
+            <View style={[styles.photoWrap, { width: photoSize, height: photoSize }]}>
               <PetPhotoImage
                 source={photoUri ? { uri: photoUri } : defaultPetPhotoSource(petType)}
-                style={styles.photo}
+                style={[styles.photo, { width: photoSize, height: photoSize, borderRadius: photoRadius }]}
                 contentFit="cover"
                 accessibilityLabel={t('profile.edit.change_photo')}
               />
               <TouchableOpacity
-                style={styles.photoEditBtn}
+                style={[
+                  styles.photoEditBtn,
+                  {
+                    top: photoEditTop,
+                    left: photoEditLeft,
+                    width: photoEditSize,
+                    height: photoEditSize,
+                    borderRadius: photoEditRadius,
+                    padding: photoEditPad,
+                  },
+                ]}
                 onPress={() => {
                   setDateSheetVisible(false);
                   setPhotoSheetVisible(true);
@@ -296,11 +347,15 @@ export default function EditProfileScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={t('profile.edit.change_photo')}
               >
-                <Pencil size={14} color={colors.primaryText} strokeWidth={2} />
+                <Pencil
+                  size={photoEditIcon}
+                  color={colors.primaryText}
+                  strokeWidth={PHOTO_EDIT_BTN.iconStroke}
+                />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.fields}>
+            <View style={[styles.fields, { width: contentWidth, alignSelf: 'center' }]}>
               <ProfileNameField value={name} onChangeText={setName} />
 
               <ProfilePillField
@@ -361,9 +416,28 @@ export default function EditProfileScreen() {
             </View>
           </ScrollView>
 
-          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 10) + 8 }]}>
+          <View
+            style={[
+              styles.footer,
+              {
+                paddingHorizontal: pagePad,
+                paddingBottom: Math.max(insets.bottom, 10) + 8,
+              },
+            ]}
+          >
             <Pressable
-              style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+              style={[
+                styles.saveBtn,
+                {
+                  width: saveWidth,
+                  height: SAVE_DESIGN.height,
+                  borderRadius: SAVE_DESIGN.radius,
+                  paddingVertical: SAVE_DESIGN.padV,
+                  paddingHorizontal: SAVE_DESIGN.padH,
+                  gap: SAVE_DESIGN.gap,
+                },
+                saving && styles.saveBtnDisabled,
+              ]}
               onPress={handleSave}
               disabled={saving}
               accessibilityRole="button"
@@ -375,7 +449,6 @@ export default function EditProfileScreen() {
               )}
             </Pressable>
           </View>
-
           {keyboardOffset > 0 ? (
             <View
               pointerEvents="box-none"
@@ -455,33 +528,24 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.secondaryText,
   },
   content: {
-    paddingHorizontal: 20,
     paddingTop: 22,
+    alignItems: 'center',
   },
   photoWrap: {
-    width: 128,
-    height: 128,
     alignSelf: 'center',
     marginBottom: 24,
   },
   photo: {
-    width: 128,
-    height: 128,
-    borderRadius: 64,
     backgroundColor: '#E8E2D8',
   },
   photoEditBtn: {
     position: 'absolute',
-    top: 92,
-    left: 92,
-    width: HEADER_ICON_BTN.size,
-    height: HEADER_ICON_BTN.size,
-    borderRadius: HEADER_ICON_BTN.radius,
-    padding: HEADER_ICON_BTN.padding,
+    borderWidth: PHOTO_EDIT_BTN.borderWidth,
+    borderColor: c.border,
     backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    ...HEADER_ICON_BTN_SHADOW,
+    gap: 10,
   },
   fields: {
     gap: 16,
@@ -500,7 +564,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   footer: {
     paddingTop: 12,
-    paddingHorizontal: 20,
+    alignItems: 'center',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     backgroundColor: c.panel,
@@ -511,11 +575,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     elevation: 6,
   },
   saveBtn: {
-    height: 48,
-    borderRadius: 12,
     backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
   },
   saveBtnDisabled: {
     opacity: 0.6,
@@ -523,6 +586,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   saveText: {
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
+    lineHeight: 24,
     color: c.button.primaryText,
   },
 });

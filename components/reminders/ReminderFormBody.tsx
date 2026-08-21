@@ -27,10 +27,11 @@ import type { RepeatOption } from '@/services/reminders';
 import {
   CARD_SHADOW,
   formatTimeDisplay,
+  nowReminderTime,
   repeatToggleLabel,
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
-import { formatDisplayDate } from '@/utils/calendar';
+import { formatDisplayDate, isIsoDateToday } from '@/utils/calendar';
 import { centeredInputText } from '@/constants/textField';
 import {
   reminderCategoryIconFor,
@@ -111,32 +112,17 @@ export default function ReminderFormBody({
 }: ReminderFormBodyProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const [viewportH, setViewportH] = useState(0);
-  const [contentH, setContentH] = useState(0);
-  const needsScroll = !pinFooterToBottom || contentH > viewportH + 1;
+  const [bodyH, setBodyH] = useState(0);
+  const [formH, setFormH] = useState(0);
+  const footerEstimate = footer ? layout.footerHeight + 24 : 0;
+  const needsScroll =
+    !pinFooterToBottom ||
+    (bodyH > 0 && formH > 0 && formH + footerEstimate + footerBottomInset > bodyH + 1);
 
-  return (
-    <>
-      <HealthKeyboardAvoidingView>
-        <ScrollView
-          style={styles.flex}
-          contentContainerStyle={[
-            styles.content,
-            {
-              paddingTop: layout.formTop,
-              paddingBottom: pinFooterToBottom ? footerBottomInset : scrollPaddingBottom,
-              gap: layout.formGap,
-              alignItems: 'center',
-              flexGrow: 1,
-            },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          scrollEnabled={needsScroll}
-          bounces={needsScroll}
-          onLayout={(e) => setViewportH(e.nativeEvent.layout.height)}
-          onContentSizeChange={(_w, h) => setContentH(h)}
-        >
+  const timeMin = date && isIsoDateToday(date) ? nowReminderTime() : null;
+
+  const formFields = (
+    <View onLayout={(e) => setFormH(e.nativeEvent.layout.height)} style={{ gap: layout.formGap, alignItems: 'center', width: '100%' }}>
           <View
             style={[
               styles.card,
@@ -280,10 +266,50 @@ export default function ReminderFormBody({
               />
             </View>
           </View>
+    </View>
+  );
 
-          {pinFooterToBottom ? <View style={styles.footerSpacer} /> : null}
-          {footer}
-        </ScrollView>
+  return (
+    <>
+      <HealthKeyboardAvoidingView>
+        <View style={styles.flex} onLayout={(e) => setBodyH(e.nativeEvent.layout.height)}>
+          {needsScroll || !pinFooterToBottom ? (
+            <ScrollView
+              style={styles.flex}
+              contentContainerStyle={[
+                styles.content,
+                {
+                  paddingTop: layout.formTop,
+                  paddingBottom: pinFooterToBottom ? footerBottomInset : scrollPaddingBottom,
+                  gap: layout.formGap,
+                  alignItems: 'center',
+                },
+              ]}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              bounces={needsScroll}
+            >
+              {formFields}
+              {footer ? <View style={{ marginTop: layout.formGap }}>{footer}</View> : null}
+            </ScrollView>
+          ) : (
+            <View
+              style={[
+                styles.content,
+                styles.fitBody,
+                {
+                  paddingTop: layout.formTop,
+                  paddingBottom: footerBottomInset,
+                  alignItems: 'center',
+                },
+              ]}
+            >
+              {formFields}
+              <View style={styles.footerSpacer} />
+              {footer}
+            </View>
+          )}
+        </View>
         {stickyFooter}
       </HealthKeyboardAvoidingView>
 
@@ -296,6 +322,7 @@ export default function ReminderFormBody({
       <TimePickerSheet
         visible={sheet === 'time'}
         value={time}
+        minTime={timeMin}
         onClose={() => onSheetChange(null)}
         onConfirm={onTimeConfirm}
       />
@@ -490,8 +517,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.secondaryText,
   },
   footerSpacer: {
-    flexGrow: 1,
-    minHeight: 24,
+    flex: 1,
+    minHeight: 16,
     width: '100%',
+  },
+  fitBody: {
+    flex: 1,
   },
 });

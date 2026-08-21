@@ -17,6 +17,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import ReminderFormBody, { ReminderAutosaveStatus } from '@/components/reminders/ReminderFormBody';
 import {
+  clampReminderTimeForDate,
   hasDuplicateInList,
   isReminderScheduleInPast,
   type ReminderSheet,
@@ -38,11 +39,11 @@ import {
   type ReminderCategory,
 } from '@/utils/reminderCategory';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { DESIGN_HEIGHT } from '@/constants/layout';
 
 type AutosaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 const AUTOSAVE_MS = 700;
+const DELETE_BOTTOM_GAP = 16;
 
 export default function EditReminderScreen() {
   const colors = useColors();
@@ -51,8 +52,8 @@ export default function EditReminderScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { activePetId } = useActivePet();
-  const { contentWidth, height } = useResponsiveLayout();
-  const deleteBottomPad = Math.max(24, Math.round(height * (58 / DESIGN_HEIGHT)));
+  const { contentWidth } = useResponsiveLayout();
+  const deleteBottomPad = DELETE_BOTTOM_GAP;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -279,16 +280,19 @@ export default function EditReminderScreen() {
 
   const handleDateConfirm = (iso: string) => {
     if (warnPastSchedule(iso, null)) return;
-    if (time && warnDuplicate(iso, time)) return;
+    const nextTime = clampReminderTimeForDate(iso, time);
+    if (nextTime && warnDuplicate(iso, nextTime)) return;
     setDate(iso);
+    setTime(nextTime);
     setSheet(null);
   };
 
   const handleTimeConfirm = (value: string) => {
     if (!date) return;
-    if (warnPastSchedule(date, value)) return;
-    if (warnDuplicate(date, value)) return;
-    setTime(value);
+    const clamped = clampReminderTimeForDate(date, value) ?? value;
+    if (warnPastSchedule(date, clamped)) return;
+    if (warnDuplicate(date, clamped)) return;
+    setTime(clamped);
     setSheet(null);
   };
 

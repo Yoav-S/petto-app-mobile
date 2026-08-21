@@ -21,6 +21,8 @@ interface TimePickerSheetProps {
   visible: boolean;
   /** Initial time as "HH:MM" (24h). */
   value?: string | null;
+  /** Earliest selectable time "HH:MM" (e.g. now when date is today). */
+  minTime?: string | null;
   onClose: () => void;
   onConfirm: (time: string) => void;
 }
@@ -152,12 +154,29 @@ function WheelColumn({
   );
 }
 
-export default function TimePickerSheet({ visible, value, onClose, onConfirm }: TimePickerSheetProps) {
+export default function TimePickerSheet({
+  visible,
+  value,
+  minTime,
+  onClose,
+  onConfirm,
+}: TimePickerSheetProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
 
-  const initial = parseHourMinute(value);
+  const clampToMin = useCallback(
+    (hour: number, minute: number) => {
+      const candidate = formatHourMinute(hour, minute);
+      if (!minTime) return { hour, minute, time: candidate };
+      if (candidate >= minTime) return { hour, minute, time: candidate };
+      const parsed = parseHourMinute(minTime);
+      return { hour: parsed.hour, minute: parsed.minute, time: minTime };
+    },
+    [minTime],
+  );
+
+  const initial = clampToMin(parseHourMinute(value).hour, parseHourMinute(value).minute);
   const [hourIndex, setHourIndex] = useState(initial.hour);
   const [minuteIndex, setMinuteIndex] = useState(initial.minute);
   const [mountKey, setMountKey] = useState(0);
@@ -165,15 +184,17 @@ export default function TimePickerSheet({ visible, value, onClose, onConfirm }: 
   useEffect(() => {
     if (!visible) return;
     const parsed = parseHourMinute(value);
-    setHourIndex(parsed.hour);
-    setMinuteIndex(parsed.minute);
+    const clamped = clampToMin(parsed.hour, parsed.minute);
+    setHourIndex(clamped.hour);
+    setMinuteIndex(clamped.minute);
     setMountKey((k) => k + 1);
-  }, [visible, value]);
+  }, [visible, value, clampToMin]);
 
   const preview = formatHourMinute(hourIndex, minuteIndex);
 
   const handleConfirm = () => {
-    onConfirm(formatHourMinute(hourIndex, minuteIndex));
+    const clamped = clampToMin(hourIndex, minuteIndex);
+    onConfirm(clamped.time);
     onClose();
   };
 

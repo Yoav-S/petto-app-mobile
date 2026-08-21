@@ -1,13 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
-import { useThemedStyles } from '@/context/ThemeContext';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 interface ReminderListItemProps {
   title: string;
   subtitle: string;
   timeOrDate: string;
   onPress?: () => void;
+  /** Green check on the right (Today done affordance / completed Recent). */
+  showCheckMark?: boolean;
+  onCheckPress?: () => void;
 }
 
 export default function ReminderListItem({
@@ -15,7 +19,10 @@ export default function ReminderListItem({
   subtitle,
   timeOrDate,
   onPress,
+  showCheckMark = false,
+  onCheckPress,
 }: ReminderListItemProps) {
+  const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const lines = timeOrDate.split('\n').filter(Boolean);
 
@@ -41,6 +48,18 @@ export default function ReminderListItem({
             </Text>
           ))}
         </View>
+        {showCheckMark ? (
+          <TouchableOpacity
+            style={styles.checkBtn}
+            onPress={() => onCheckPress?.()}
+            hitSlop={8}
+            activeOpacity={0.7}
+            disabled={!onCheckPress}
+            accessibilityRole="button"
+          >
+            <Ionicons name="checkmark-circle" size={28} color={colors.success} />
+          </TouchableOpacity>
+        ) : null}
       </View>
     </TouchableOpacity>
   );
@@ -67,13 +86,16 @@ const makeStyles = (c: ThemeColors) =>
     contentContainer: {
       flex: 1,
       flexDirection: 'row',
+      alignItems: 'center',
       justifyContent: 'space-between',
       padding: Spacing.lg,
+      gap: 10,
     },
     leftContent: {
       flex: 1,
       justifyContent: 'center',
-      paddingRight: Spacing.md,
+      paddingRight: Spacing.sm,
+      minWidth: 0,
     },
     title: {
       fontFamily: 'Rubik-Medium',
@@ -99,5 +121,10 @@ const makeStyles = (c: ThemeColors) =>
     primaryTime: {
       color: c.primaryText,
       marginBottom: 2,
+    },
+    checkBtn: {
+      marginLeft: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
   });

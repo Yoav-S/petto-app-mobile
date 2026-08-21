@@ -6,7 +6,6 @@ import {
   Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WelcomePhotoMarquee } from '@/components/auth/WelcomePhotoMarquee';
 import RaglyWordmark, { RAGLY_WORDMARK } from '@/components/brand/RaglyWordmark';
@@ -14,6 +13,7 @@ import { setTermsAccepted } from '@/services/onboarding';
 import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles, useTheme } from '@/context/ThemeContext';
+import { useThemedStatusBar } from '@/context/SystemBarsContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 const LOGO = RAGLY_WORDMARK;
@@ -27,6 +27,7 @@ const CARD = {
 export default function OnboardingWelcomeScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
+  useThemedStatusBar();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
@@ -79,7 +80,6 @@ export default function OnboardingWelcomeScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
       <WelcomePhotoMarquee />
       {/* Soft shade over the collage only — does not change global theme tokens. */}
       <View

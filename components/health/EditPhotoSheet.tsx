@@ -1,5 +1,6 @@
 ﻿import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
@@ -26,9 +27,17 @@ export default function EditPhotoSheet({
 }: EditPhotoSheetProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
+  const insets = useSafeAreaInsets();
+
   return (
     <BottomSheetModal visible={visible} onClose={onClose}>
-        <View style={[styles.sheet, onRemove ? styles.sheetWithRemove : null]}>
+        <View
+          style={[
+            styles.sheet,
+            onRemove ? styles.sheetWithRemove : null,
+            { paddingBottom: insets.bottom + Spacing.lg },
+          ]}
+        >
           <View style={styles.header}>
             <View style={styles.headerSpacer} />
             <Text style={styles.title}>
@@ -95,7 +104,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderTopRightRadius: Radius.xl,
     paddingHorizontal: Spacing.lg,
     paddingTop: 24,
-    paddingBottom: 24,
     shadowColor: '#1E1E1E',
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.08,

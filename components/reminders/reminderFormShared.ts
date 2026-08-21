@@ -2,8 +2,12 @@ import type { Reminder } from '@/types/api';
 import {
   formatHourMinute,
   isIsoDateBefore,
+  isIsoDateToday,
+  isReminderDateTimeInPast,
   minReminderDateIso,
   parseHourMinute,
+  soonestValidReminderTime,
+  todayIsoDate,
 } from '@/utils/calendar';
 import { t } from '@/i18n';
 import type { RepeatOption } from '@/services/reminders';
@@ -30,6 +34,27 @@ export function normalizeTime(time: string): string {
 export function formatTimeDisplay(time: string): string {
   const { hour, minute } = parseHourMinute(normalizeTime(time));
   return formatHourMinute(hour, minute);
+}
+
+/** Current clock time as HH:MM (seconds cleared). */
+export function nowReminderTime(): string {
+  const now = new Date();
+  return formatHourMinute(now.getHours(), now.getMinutes());
+}
+
+/**
+ * When the selected date is today, bump time up to "now" (or the soonest
+ * valid minute) so the user cannot schedule earlier than the current clock.
+ */
+export function clampReminderTimeForDate(
+  nextDate: string,
+  nextTime: string | null | undefined,
+): string | null {
+  if (!isIsoDateToday(nextDate)) return nextTime ? normalizeTime(nextTime) : null;
+  const soonest = soonestValidReminderTime(nextDate) ?? nowReminderTime();
+  if (!nextTime) return soonest;
+  const normalized = normalizeTime(nextTime);
+  return isReminderDateTimeInPast(nextDate, normalized) ? soonest : normalized;
 }
 
 export function isActiveReminderStatus(status: string): boolean {
@@ -59,13 +84,18 @@ export function isBeforeMinReminderDate(nextDate: string): boolean {
   return isIsoDateBefore(nextDate, minReminderDateIso());
 }
 
+/**
+ * Past calendar days are always invalid.
+ * Today + time: reject times earlier than the current clock.
+ */
 export function isReminderScheduleInPast(nextDate: string, nextTime?: string | null): boolean {
-  return isBeforeMinReminderDate(nextDate);
+  if (isBeforeMinReminderDate(nextDate)) return true;
+  if (!nextTime) return false;
+  if (nextDate > todayIsoDate()) return false;
+  return isReminderDateTimeInPast(nextDate, normalizeTime(nextTime));
 }
 
 export function needsStatusPrompt(reminder: Reminder): boolean {
-  // Only auto-prompt for today's notified fire. Old auto-"missed" leftovers
-  // used to reappear on every login; the dispatcher catch-up clears those.
   if (!reminder.notified_at) return false;
   return reminder.status === 'today';
 }
@@ -77,4 +107,3 @@ export function formatSheetClockTime(time: string): string {
   if (!h || !m) return time;
   return `${Number(h)}:${m}`;
 }
-

@@ -24,8 +24,7 @@ import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDateLong } from '@/utils/calendar';
 import { useVaccinationsQuery } from '@/hooks/useCachedQueries';
 
-const EMPTY_TOP = 304;
-const EMPTY_GAP = 20;
+const EMPTY_TOP = 305;
 
 function VaccineThumbnail({ uri }: { uri?: string | null }) {
   const styles = useThemedStyles(makeStyles);
@@ -46,7 +45,6 @@ export default function VaccinesScreen() {
   const { activePetId } = useActivePet();
   const headerOffset = getVaccineHeaderContentOffset(812);
   const emptyTop = Math.max(Spacing.lg, EMPTY_TOP - headerOffset);
-  const emptyGap = EMPTY_GAP;
 
   const query = useVaccinationsQuery(activePetId);
   const items = query.data ?? [];
@@ -130,7 +128,6 @@ export default function VaccinesScreen() {
             actionTitle={t('vaccines.add')}
             actionCompact
             topOffset={emptyTop}
-            contentGap={emptyGap}
             onAction={() => router.push('/vaccines/add' as never)}
           />
         }

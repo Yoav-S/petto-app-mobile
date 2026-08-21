@@ -34,14 +34,17 @@ import { updateVaccination, deleteVaccination } from '@/services/vaccines';
 import { uploadImage } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import { addYearsToIsoDate, formatDisplayDate, isIsoDateAfter, parseIsoDate, todayIsoDate } from '@/utils/calendar';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { DESIGN_HEIGHT } from '@/constants/layout';
 import { useVaccinationQuery } from '@/hooks/useCachedQueries';
 import { queryClient } from '@/services/queryClient';
 import { queryKeys } from '@/services/queryKeys';
 import type { Vaccination } from '@/types/api';
 
 type PickerTarget = 'date' | 'next' | null;
+
+/** Delete label row height estimate for fit check. */
+const DELETE_ROW_H = 42;
+/** Small gap above the home indicator / screen bottom. */
+const DELETE_BOTTOM_GAP = 16;
 
 export default function VaccineDetailsScreen() {
   const router = useRouter();
@@ -50,8 +53,8 @@ export default function VaccineDetailsScreen() {
   const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { activePetId } = useActivePet();
-  const { height } = useResponsiveLayout();
-  const deleteBottomPad = Math.max(24, Math.round(height * (58 / DESIGN_HEIGHT)));
+  /** Gap under delete; SafeAreaView already handles the home indicator. */
+  const deleteBottomPad = DELETE_BOTTOM_GAP;
 
   const [vaccine, setVaccine] = useState<Vaccination | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -62,9 +65,12 @@ export default function VaccineDetailsScreen() {
   const [uploading, setUploading] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
-  const [viewportH, setViewportH] = useState(0);
-  const [contentH, setContentH] = useState(0);
-  const needsScroll = contentH > viewportH + 1;
+  const [bodyH, setBodyH] = useState(0);
+  const [formH, setFormH] = useState(0);
+
+  /** Only scroll when the form + delete row cannot fit the viewport. */
+  const needsScroll =
+    bodyH > 0 && formH > 0 && formH + DELETE_ROW_H + deleteBottomPad > bodyH + 1;
 
   const query = useVaccinationQuery(activePetId, id);
   const loading = query.isLoading && !query.data && !vaccine;
@@ -181,6 +187,123 @@ export default function VaccineDetailsScreen() {
     );
   }
 
+  const formFields = (
+    <View
+      onLayout={(e) => setFormH(e.nativeEvent.layout.height)}
+    >
+      {/* Name */}
+      <View style={[styles.card, styles.nameCard]}>
+        <TextInput
+          style={styles.nameInput}
+          value={name}
+          onChangeText={setName}
+          onBlur={handleNameBlur}
+          placeholder={t('vaccines.field_name')}
+          placeholderTextColor={colors.secondaryText}
+          returnKeyType="done"
+          textAlignVertical="center"
+        />
+      </View>
+
+      {/* Dates */}
+      <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.dateRow}
+          onPress={() => {
+            setViewerVisible(false);
+            setDeleteVisible(false);
+            setPicker('date');
+          }}
+          activeOpacity={0.6}
+        >
+          <Text style={styles.dateRowLabel}>{t('vaccines.vaccinated_on')}</Text>
+          <Text style={styles.dateRowValue}>{formatDisplayDate(vaccine.date)}</Text>
+        </TouchableOpacity>
+        <View style={styles.divider} />
+        <TouchableOpacity
+          style={styles.dateRow}
+          onPress={() => {
+            setViewerVisible(false);
+            setDeleteVisible(false);
+            setPicker('next');
+          }}
+          activeOpacity={0.6}
+        >
+          <Text style={styles.dateRowLabel}>{t('vaccines.valid_until')}</Text>
+          <Text style={[styles.dateRowValue, !vaccine.next_date && styles.dateRowPlaceholder]}>
+            {vaccine.next_date
+              ? formatDisplayDate(vaccine.next_date)
+              : t('vaccines.field_next_placeholder')}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Proof photo */}
+      <View style={styles.card}>
+        <Text style={styles.sectionLabel}>{t('vaccines.proof_photo')}</Text>
+        {vaccine.photo_url ? (
+          <View style={styles.photoWrap}>
+            <TouchableOpacity activeOpacity={0.9} onPress={pickImage} style={styles.photoTouchable}>
+              <Image source={{ uri: vaccine.photo_url }} style={styles.photo} contentFit="cover" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.expandButton}
+              onPress={() => {
+                setPicker(null);
+                setDeleteVisible(false);
+                setViewerVisible(true);
+              }}
+              hitSlop={8}
+            >
+              <Ionicons name="expand-outline" size={18} color={colors.primaryText} />
+            </TouchableOpacity>
+            {uploading ? (
+              <View style={styles.photoOverlay}>
+                <ActivityIndicator color={colors.surface} />
+              </View>
+            ) : null}
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.photoPlaceholder} onPress={pickImage} activeOpacity={0.7}>
+            {uploading ? (
+              <ActivityIndicator color={colors.secondaryText} />
+            ) : (
+              <>
+                <Image
+                  source={HOME_CATEGORY_ICONS.vaccines}
+                  style={styles.defaultPhoto}
+                  contentFit="contain"
+                />
+                <Text style={styles.photoPlaceholderText}>{t('vaccines.add_photo')}</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <VaccineClinicField
+        value={clinic}
+        onChangeText={setClinic}
+        onBlur={handleClinicBlur}
+        style={styles.clinicCard}
+      />
+    </View>
+  );
+
+  const deleteButton = (
+    <TouchableOpacity
+      style={styles.deleteButton}
+      onPress={() => {
+        setPicker(null);
+        setViewerVisible(false);
+        setDeleteVisible(true);
+      }}
+      activeOpacity={0.7}
+    >
+      <Text style={styles.deleteText}>{t('vaccines.delete')}</Text>
+    </TouchableOpacity>
+  );
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
       <ScreenHeader title={t('vaccines.list_title')} />
@@ -189,127 +312,29 @@ export default function VaccineDetailsScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView
+        <View
           style={styles.flex}
-          contentContainerStyle={[styles.content, { paddingBottom: deleteBottomPad }]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          scrollEnabled={needsScroll}
-          bounces={needsScroll}
-          onLayout={(e) => setViewportH(e.nativeEvent.layout.height)}
-          onContentSizeChange={(_w, h) => setContentH(h)}
+          onLayout={(e) => setBodyH(e.nativeEvent.layout.height)}
         >
-          <View>
-          {/* Name */}
-          <View style={[styles.card, styles.nameCard]}>
-            <TextInput
-              style={styles.nameInput}
-              value={name}
-              onChangeText={setName}
-              onBlur={handleNameBlur}
-              placeholder={t('vaccines.field_name')}
-              placeholderTextColor={colors.secondaryText}
-              returnKeyType="done"
-              textAlignVertical="center"
-            />
-          </View>
-
-          {/* Dates */}
-          <View style={styles.card}>
-            <TouchableOpacity
-              style={styles.dateRow}
-              onPress={() => {
-                setViewerVisible(false);
-                setDeleteVisible(false);
-                setPicker('date');
-              }}
-              activeOpacity={0.6}
+          {needsScroll ? (
+            <ScrollView
+              style={styles.flex}
+              contentContainerStyle={[styles.content, { paddingBottom: deleteBottomPad }]}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              bounces
             >
-              <Text style={styles.dateRowLabel}>{t('vaccines.vaccinated_on')}</Text>
-              <Text style={styles.dateRowValue}>{formatDisplayDate(vaccine.date)}</Text>
-            </TouchableOpacity>
-            <View style={styles.divider} />
-            <TouchableOpacity
-              style={styles.dateRow}
-              onPress={() => {
-                setViewerVisible(false);
-                setDeleteVisible(false);
-                setPicker('next');
-              }}
-              activeOpacity={0.6}
-            >
-              <Text style={styles.dateRowLabel}>{t('vaccines.valid_until')}</Text>
-              <Text style={[styles.dateRowValue, !vaccine.next_date && styles.dateRowPlaceholder]}>
-                {vaccine.next_date ? formatDisplayDate(vaccine.next_date) : t('vaccines.field_next_placeholder')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Proof photo */}
-          <View style={styles.card}>
-            <Text style={styles.sectionLabel}>{t('vaccines.proof_photo')}</Text>
-            {vaccine.photo_url ? (
-              <View style={styles.photoWrap}>
-                <TouchableOpacity activeOpacity={0.9} onPress={pickImage} style={styles.photoTouchable}>
-                  <Image source={{ uri: vaccine.photo_url }} style={styles.photo} contentFit="cover" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.expandButton}
-                  onPress={() => {
-                    setPicker(null);
-                    setDeleteVisible(false);
-                    setViewerVisible(true);
-                  }}
-                  hitSlop={8}
-                >
-                  <Ionicons name="expand-outline" size={18} color={colors.primaryText} />
-                </TouchableOpacity>
-                {uploading ? (
-                  <View style={styles.photoOverlay}>
-                    <ActivityIndicator color={colors.surface} />
-                  </View>
-                ) : null}
-              </View>
-            ) : (
-              <TouchableOpacity style={styles.photoPlaceholder} onPress={pickImage} activeOpacity={0.7}>
-                {uploading ? (
-                  <ActivityIndicator color={colors.secondaryText} />
-                ) : (
-                  <>
-                    <Image
-                      source={HOME_CATEGORY_ICONS.vaccines}
-                      style={styles.defaultPhoto}
-                      contentFit="contain"
-                    />
-                    <Text style={styles.photoPlaceholderText}>{t('vaccines.add_photo')}</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <VaccineClinicField
-            value={clinic}
-            onChangeText={setClinic}
-            onBlur={handleClinicBlur}
-            style={styles.clinicCard}
-          />
-          </View>
-
-          <View style={styles.deleteSpacer} />
-
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => {
-              setPicker(null);
-              setViewerVisible(false);
-              setDeleteVisible(true);
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.deleteText}>{t('vaccines.delete')}</Text>
-          </TouchableOpacity>
-        </ScrollView>
+              {formFields}
+              <View style={styles.deleteAfterForm}>{deleteButton}</View>
+            </ScrollView>
+          ) : (
+            <View style={[styles.content, styles.fitBody]}>
+              {formFields}
+              <View style={styles.deletePinned} />
+              <View style={{ paddingBottom: deleteBottomPad }}>{deleteButton}</View>
+            </View>
+          )}
+        </View>
       </KeyboardAvoidingView>
 
       <BirthDatePickerSheet
@@ -378,9 +403,18 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    flexGrow: 1,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
+  },
+  fitBody: {
+    flex: 1,
+  },
+  deletePinned: {
+    flex: 1,
+    minHeight: 8,
+  },
+  deleteAfterForm: {
+    marginTop: Spacing.lg,
   },
   card: {
     backgroundColor: c.surface,
@@ -495,10 +529,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
-  },
-  deleteSpacer: {
-    flexGrow: 1,
-    minHeight: 24,
   },
   deleteButton: {
     alignItems: 'center',
