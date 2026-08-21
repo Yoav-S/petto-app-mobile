@@ -146,7 +146,7 @@
     "restore_purchases": "שחזר רכישות",
     "manage_subscription": "נהל מנוי",
     "manage_subscription_body": "כדי לבטל או לשנות את התוכנית, נהל אותה ב-App Store או ב-Google Play.",
-    "purchase_unavailable": "רכישות עדיין לא זמינות. השלם את הגדרת App Store / Play / RevenueCat והשתמש ב-development build (לא Expo Go).",
+    "purchase_unavailable": "רכישות עדיין לא זמינות. נסה שוב מאוחר יותר.",
     "purchase_cancelled": "הרכישה בוטלה.",
     "purchase_success": "אתה ב-Ragly Premium!",
     "purchase_success_title": "הכול מוכן!",
@@ -345,8 +345,8 @@
     "load_failed": "לא ניתן לטעון נתונים. נסה שוב."
   },
   "onboarding": {
-    "title": "בית לחיית המחמד שלך",
-    "subtitle": "הכל על חיית המחמד שלך, מאורגן יפה במקום אחד.",
+    "title": "תמיד לצידך",
+    "subtitle": "הכל על חיית המחמד שלך,\nמאורגן יפה במקום אחד.",
     "continue": "המשך",
     "legal_prefix": "בהמשך אתה מסכים ל",
     "legal_and": "ו",

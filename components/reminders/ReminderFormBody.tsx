@@ -345,7 +345,10 @@ export function ReminderSaveButton({
         },
         !canSave && styles.saveButtonDisabled,
       ]}
-      onPress={onPress}
+      onPress={() => {
+        Keyboard.dismiss();
+        onPress();
+      }}
       disabled={!canSave}
       activeOpacity={0.85}
     >

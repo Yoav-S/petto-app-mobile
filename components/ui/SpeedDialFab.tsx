@@ -28,7 +28,7 @@ export const ADD_FAB = {
   radius: 16,
   padding: 16,
   iconSize: 24,
-  right: 20,
+  right: 22,
   bottom: 38,
   menuGap: 12,
   menuItemH: 40,

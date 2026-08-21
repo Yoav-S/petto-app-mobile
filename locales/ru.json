@@ -146,7 +146,7 @@
     "restore_purchases": "Восстановить покупки",
     "manage_subscription": "Управление подпиской",
     "manage_subscription_body": "Чтобы отменить или изменить план, управляйте им в App Store или Google Play.",
-    "purchase_unavailable": "Покупки пока недоступны. Завершите настройку App Store / Play / RevenueCat и используйте development build (не Expo Go).",
+    "purchase_unavailable": "Покупки пока недоступны. Попробуйте позже.",
     "purchase_cancelled": "Покупка отменена.",
     "purchase_success": "Вы на Ragly Premium!",
     "purchase_success_title": "Всё готово!",
@@ -345,8 +345,8 @@
     "load_failed": "Не удалось загрузить данные. Потяните для обновления или нажмите «Повторить»."
   },
   "onboarding": {
-    "title": "Дом для вашего питомца",
-    "subtitle": "Всё о питомце — красиво организовано в одном месте.",
+    "title": "Всегда рядом",
+    "subtitle": "Всё о вашем питомце,\nкрасиво организовано в одном месте.",
     "continue": "Продолжить",
     "legal_prefix": "Продолжая, вы соглашаетесь с нашими",
     "legal_and": "и",

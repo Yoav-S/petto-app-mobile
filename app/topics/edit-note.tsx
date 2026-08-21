@@ -218,6 +218,7 @@ export default function EditNoteScreen() {
   }, [loading, notFound, open]);
 
   const handleSave = async () => {
+    Keyboard.dismiss();
     if (!activePetId || !recordId || !noteId || !noteText.trim()) return;
     try {
       setSaving(true);

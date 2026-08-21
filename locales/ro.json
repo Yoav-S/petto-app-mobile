@@ -146,7 +146,7 @@
     "restore_purchases": "Restaurează achizițiile",
     "manage_subscription": "Gestionează abonamentul",
     "manage_subscription_body": "Pentru a anula sau schimba planul, gestionează-l în App Store sau Google Play.",
-    "purchase_unavailable": "Achizițiile nu sunt încă disponibile. Finalizează configurarea App Store / Play / RevenueCat, apoi folosește un development build (nu Expo Go).",
+    "purchase_unavailable": "Achizițiile nu sunt încă disponibile. Încearcă din nou mai târziu.",
     "purchase_cancelled": "Achiziție anulată.",
     "purchase_success": "Ești pe Ragly Premium!",
     "purchase_success_title": "Totul e gata!",
@@ -345,8 +345,8 @@
     "load_failed": "Datele nu au putut fi încărcate. Trage pentru a reîmprospăta sau apasă Reîncearcă."
   },
   "onboarding": {
-    "title": "O casă pentru animalul tău",
-    "subtitle": "Totul despre animalul tău, frumos organizat într-un singur loc.",
+    "title": "Mereu alături",
+    "subtitle": "Totul despre animalul tău,\nfrumos organizat într-un singur loc.",
     "continue": "Continuă",
     "legal_prefix": "Continuând, ești de acord cu",
     "legal_and": "și",

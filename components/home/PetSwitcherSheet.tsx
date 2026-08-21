@@ -38,58 +38,60 @@ export default function PetSwitcherSheet({
 
   return (
     <BottomSheetModal visible={visible} onClose={onClose}>
-        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{t('home.pets_title')}</Text>
-            <HeaderIconButton
-              style={styles.closeBtn}
-              onPress={onClose}
-              accessibilityLabel={t('common.cancel')}
-            >
-              <Ionicons name="close" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
-            </HeaderIconButton>
-          </View>
-
-          <View style={styles.listBlock}>
-            <ScrollView
-              style={styles.scroll}
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={pets.length > 3}
-              bounces={pets.length > 3}
-            >
-              {pets.map((pet) => (
-                <PetSwitcherRow
-                  key={pet.id}
-                  pet={pet}
-                  selected={pet.id === activePetId}
-                  onPress={() => onSelectPet(pet.id)}
-                />
-              ))}
-            </ScrollView>
-
-            <View style={styles.divider} />
-            <AddPetRow onPress={onAddPet} />
-          </View>
+      <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{t('home.pets_title')}</Text>
+          <HeaderIconButton
+            style={styles.closeBtn}
+            onPress={onClose}
+            accessibilityLabel={t('common.cancel')}
+          >
+            <Ionicons name="close" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
+          </HeaderIconButton>
         </View>
+
+        <View style={styles.listBlock}>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={pets.length > 3}
+            bounces={pets.length > 3}
+          >
+            {pets.map((pet) => (
+              <PetSwitcherRow
+                key={pet.id}
+                pet={pet}
+                selected={pet.id === activePetId}
+                onPress={() => onSelectPet(pet.id)}
+              />
+            ))}
+          </ScrollView>
+
+          <View style={styles.divider} />
+          <AddPetRow onPress={onAddPet} />
+        </View>
+      </View>
     </BottomSheetModal>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    overlay: {
-      flex: 1,
-      backgroundColor: c.overlay,
-      justifyContent: 'flex-end',
-    },
     sheet: {
-      backgroundColor: c.surface,
+      // Light: #F6F7F9 (panel). Dark twin: #111315.
+      backgroundColor: c.panel,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       minHeight: 366,
       maxHeight: '78%',
       paddingTop: 32,
       paddingHorizontal: 20,
+      // 0px -3px 8px #1E1E1E14
+      shadowColor: '#1E1E1E',
+      shadowOffset: { width: 0, height: -3 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 8,
     },
     header: {
       height: 32,
@@ -108,6 +110,13 @@ const makeStyles = (c: ThemeColors) =>
     closeBtn: {
       position: 'absolute',
       right: 0,
+      // Light close: #FFFFFF + 0px 4px 20px #2D2D2A14 (surface + soft shadow).
+      backgroundColor: c.surface,
+      shadowColor: '#2D2D2A',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 20,
+      elevation: 3,
     },
     listBlock: {
       gap: 16,
@@ -129,4 +138,3 @@ const makeStyles = (c: ThemeColors) =>
       alignSelf: 'center',
     },
   });
-

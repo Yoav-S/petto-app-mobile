@@ -2,6 +2,7 @@ import { Alert, Linking, Platform } from 'react-native';
 import { Router } from 'expo-router';
 import { apiGet } from '@/services/api';
 import { listReminders } from '@/services/reminders';
+import { waitForBottomSheetsToSettle } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 import type { Pet, UserProfile, UserSubscription } from '@/types/api';
 
@@ -50,6 +51,7 @@ export async function countActiveReminders(pets: Pet[]): Promise<number> {
 export function showUpgradeAlert(
   router: Router,
   kind: 'pet' | 'reminder',
+  options?: { onBeforeNavigate?: () => void },
 ): void {
   const title =
     kind === 'pet' ? t('settings.limit_pet_title') : t('settings.limit_reminder_title');
@@ -60,7 +62,10 @@ export function showUpgradeAlert(
     { text: t('common.cancel'), style: 'cancel' },
     {
       text: t('settings.upgrade'),
-      onPress: () => router.push('/settings/subscription' as never),
+      onPress: () => {
+        options?.onBeforeNavigate?.();
+        router.push('/settings/subscription' as never);
+      },
     },
   ]);
 }
@@ -80,21 +85,34 @@ export async function openManageSubscriptions(): Promise<void> {
 /**
  * Returns false if the user is at the free pet limit (and shows upgrade alert).
  * Premium / under limit → true.
+ *
+ * Call after closing any parent bottom sheet so Upgrade navigation does not
+ * leave a half-dismissed modal underneath.
  */
-export async function guardAddPet(router: Router, petCount: number): Promise<boolean> {
+export async function guardAddPet(
+  router: Router,
+  petCount: number,
+  options?: { onBeforeNavigate?: () => void },
+): Promise<boolean> {
   if (petCount < FREE_MAX_PETS) return true;
   if (await fetchIsPremium()) return true;
-  showUpgradeAlert(router, 'pet');
+  await waitForBottomSheetsToSettle();
+  showUpgradeAlert(router, 'pet', options);
   return false;
 }
 
 /**
  * Returns false if the user is at the free reminder limit.
  */
-export async function guardAddReminder(router: Router, pets: Pet[]): Promise<boolean> {
+export async function guardAddReminder(
+  router: Router,
+  pets: Pet[],
+  options?: { onBeforeNavigate?: () => void },
+): Promise<boolean> {
   if (await fetchIsPremium()) return true;
   const active = await countActiveReminders(pets);
   if (active < FREE_MAX_ACTIVE_REMINDERS) return true;
-  showUpgradeAlert(router, 'reminder');
+  await waitForBottomSheetsToSettle();
+  showUpgradeAlert(router, 'reminder', options);
   return false;
 }

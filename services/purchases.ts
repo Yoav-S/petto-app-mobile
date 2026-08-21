@@ -265,15 +265,49 @@ export async function purchasePremium(): Promise<PurchaseResult> {
   } catch (error: unknown) {
     const code =
       error && typeof error === 'object' && 'code' in error
-        ? (error as { code: string }).code
+        ? String((error as { code: string | number }).code)
         : null;
-    if (code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
+    if (
+      code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR ||
+      code === String(PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR)
+    ) {
       return { status: 'cancelled' };
     }
-    const message =
-      error instanceof Error ? error.message : t('errors.generic');
-    return { status: 'error', message };
+    // Store / billing / config issues → clean message (never dump RevenueCat internals).
+    if (isStoreUnavailableError(code, error)) {
+      return { status: 'unavailable', message: t('settings.purchase_unavailable') };
+    }
+    return { status: 'error', message: t('errors.generic') };
   }
+}
+
+function isStoreUnavailableError(code: string | null, error: unknown): boolean {
+  const unavailableCodes = new Set<string>([
+    String(PURCHASES_ERROR_CODE.PURCHASE_NOT_ALLOWED_ERROR),
+    String(PURCHASES_ERROR_CODE.STORE_PROBLEM_ERROR),
+    String(PURCHASES_ERROR_CODE.PRODUCT_NOT_AVAILABLE_FOR_PURCHASE_ERROR),
+    String(PURCHASES_ERROR_CODE.PRODUCT_ALREADY_PURCHASED_ERROR),
+    String(PURCHASES_ERROR_CODE.CONFIGURATION_ERROR),
+    String(PURCHASES_ERROR_CODE.UNSUPPORTED_ERROR),
+    String(PURCHASES_ERROR_CODE.NETWORK_ERROR),
+  ]);
+  if (code && unavailableCodes.has(code)) return true;
+  const raw =
+    error instanceof Error
+      ? error.message
+      : typeof error === 'object' && error && 'message' in error
+        ? String((error as { message: unknown }).message)
+        : String(error ?? '');
+  const lower = raw.toLowerCase();
+  return (
+    lower.includes('revenuecat') ||
+    lower.includes('storekit') ||
+    lower.includes('billing') ||
+    lower.includes('product') ||
+    lower.includes('offering') ||
+    lower.includes('not available') ||
+    lower.includes('configuration')
+  );
 }
 
 export async function restorePremium(): Promise<PurchaseResult> {
@@ -285,9 +319,10 @@ export async function restorePremium(): Promise<PurchaseResult> {
     const premium = Boolean(customerInfo.entitlements.active[PREMIUM_ENTITLEMENT]);
     return { status: 'success', premium };
   } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : t('errors.generic');
-    return { status: 'error', message };
+    if (isStoreUnavailableError(null, error)) {
+      return { status: 'unavailable', message: t('settings.purchase_unavailable') };
+    }
+    return { status: 'error', message: t('errors.generic') };
   }
 }
 

@@ -81,6 +81,14 @@ export default function OnboardingWelcomeScreen() {
     <View style={styles.root}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <WelcomePhotoMarquee />
+      {/* Soft shade over the collage only — does not change global theme tokens. */}
+      <View
+        pointerEvents="none"
+        style={[
+          styles.welcomeShade,
+          { backgroundColor: isDark ? 'rgba(0,0,0,0.02)' : 'rgba(0,0,0,0.02)' },
+        ]}
+      />
 
       {/* Bottom-docked so the card floats above the home indicator on every phone. */}
       <View
@@ -196,6 +204,10 @@ const makeStyles = (c: ThemeColors) =>
     root: {
       flex: 1,
       backgroundColor: c.background,
+    },
+    welcomeShade: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 1,
     },
     cardDock: {
       position: 'absolute',

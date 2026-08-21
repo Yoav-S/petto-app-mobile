@@ -222,8 +222,11 @@ export default function HomeScreen() {
   }, [fetchData, authLoading]);
 
   // Refresh cards when returning from a create/edit flow.
+  // Also reset switcher / FAB so Upgrade → Subscription → Back never leaves a stuck sheet.
   useFocusEffect(
     useCallback(() => {
+      setSwitchVisible(false);
+      setFabOpen(false);
       if (authLoading) return;
       fetchData();
     }, [fetchData, authLoading]),
@@ -243,8 +246,9 @@ export default function HomeScreen() {
   };
 
   const handleAddPet = async () => {
-    if (!(await guardAddPet(router, pets.length))) return;
+    // Always dismiss the switcher first so Upgrade / Add never stacks under a live sheet.
     setSwitchVisible(false);
+    if (!(await guardAddPet(router, pets.length))) return;
     router.push('/pets/add' as never);
   };
 

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
@@ -94,6 +95,11 @@ export default function HealthKeyboardFooter({
     [insets.bottom],
   );
 
+  const handlePress = () => {
+    Keyboard.dismiss();
+    onPress();
+  };
+
   if (!fullWidth) {
     return (
       <View
@@ -116,7 +122,7 @@ export default function HealthKeyboardFooter({
             },
             disabled && styles.buttonDisabled,
           ]}
-          onPress={onPress}
+          onPress={handlePress}
           disabled={disabled || loading}
           activeOpacity={0.85}
         >
@@ -153,7 +159,7 @@ export default function HealthKeyboardFooter({
           },
           disabled && styles.buttonDisabled,
         ]}
-        onPress={onPress}
+        onPress={handlePress}
         disabled={disabled || loading}
         activeOpacity={0.85}
       >
