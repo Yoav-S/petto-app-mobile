@@ -196,7 +196,7 @@ export default function HealthScreen() {
         <EmptyState
           title={t('topics.empty_all_title')}
           subtitle={t('topics.empty_all_subtitle')}
-          actionTitle={t('topics.add_first_note')}
+          actionTitle={t('topics.add_note')}
           actionCompact
           contentGap={20}
           onAction={() => router.push('/topics/add' as never)}
