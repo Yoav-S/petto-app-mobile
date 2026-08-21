@@ -22,10 +22,7 @@ import { needsStatusPrompt } from '@/components/reminders/reminderFormShared';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import {
-  listReminders,
-  updateReminderStatus,
-} from '@/services/reminders';
+import { updateReminderStatus } from '@/services/reminders';
 import { repeatLabel } from '@/components/pickers/RepeatPickerSheet';
 import { getErrorMessage } from '@/services/errors';
 import {
@@ -34,9 +31,10 @@ import {
   todayIsoDate,
 } from '@/utils/calendar';
 import { guardAddReminder } from '@/services/subscription';
-import { apiGet } from '@/services/api';
-import type { Pet, Reminder } from '@/types/api';
+import { listPets } from '@/services/pets';
+import type { Reminder } from '@/types/api';
 import type { RepeatOption } from '@/services/reminders';
+import { useRemindersQuery } from '@/hooks/useCachedQueries';
 
 const TABS = ['Today', 'Upcoming', 'Recent'] as const;
 type TabName = (typeof TABS)[number];
@@ -100,15 +98,38 @@ export default function RemindersScreen() {
   }>();
 
   const [activeTab, setActiveTab] = useState<TabName>('Today');
-  const [listsByTab, setListsByTab] = useState<Record<TabName, Reminder[]>>(EMPTY_LISTS);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const [promptQueue, setPromptQueue] = useState<Reminder[]>([]);
   const [promptTotal, setPromptTotal] = useState(0);
   const sessionSkipRef = useRef(false);
   const autoPromptCheckedRef = useRef(false);
+
+  const todayQuery = useRemindersQuery(activePetId, 'today');
+  const upcomingQuery = useRemindersQuery(activePetId, 'upcoming');
+  const recentQuery = useRemindersQuery(activePetId, 'recent');
+
+  const listsByTab = useMemo(
+    () => ({
+      Today: todayQuery.data ?? EMPTY_LISTS.Today,
+      Upcoming: upcomingQuery.data ?? EMPTY_LISTS.Upcoming,
+      Recent: recentQuery.data ?? EMPTY_LISTS.Recent,
+    }),
+    [todayQuery.data, upcomingQuery.data, recentQuery.data],
+  );
+
+  const loading =
+    (todayQuery.isLoading && !todayQuery.data) ||
+    (upcomingQuery.isLoading && !upcomingQuery.data) ||
+    (recentQuery.isLoading && !recentQuery.data);
+
+  const error = todayQuery.error
+    ? getErrorMessage(todayQuery.error)
+    : upcomingQuery.error
+      ? getErrorMessage(upcomingQuery.error)
+      : recentQuery.error
+        ? getErrorMessage(recentQuery.error)
+        : null;
 
   const items = listsByTab[activeTab];
   const selectedReminder = promptQueue[0] ?? null;
@@ -133,29 +154,17 @@ export default function RemindersScreen() {
     }
   }, [params.deletedId, toast]);
 
-  const fetchData = useCallback(async () => {
-    if (!activePetId) {
-      setListsByTab(EMPTY_LISTS);
-      setLoading(false);
-      return { today: [] as Reminder[], recent: [] as Reminder[] };
-    }
-    try {
-      setError(null);
-      const [today, upcoming, recent] = await Promise.all([
-        listReminders(activePetId, 'today'),
-        listReminders(activePetId, 'upcoming'),
-        listReminders(activePetId, 'recent'),
-      ]);
-      setListsByTab({ Today: today, Upcoming: upcoming, Recent: recent });
-      return { today, recent };
-    } catch (err) {
-      setError(getErrorMessage(err));
-      return { today: [] as Reminder[], recent: [] as Reminder[] };
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [activePetId]);
+  const refetchAll = useCallback(async () => {
+    const [todayRes, , recentRes] = await Promise.all([
+      todayQuery.refetch(),
+      upcomingQuery.refetch(),
+      recentQuery.refetch(),
+    ]);
+    return {
+      today: todayRes.data ?? ([] as Reminder[]),
+      recent: recentRes.data ?? ([] as Reminder[]),
+    };
+  }, [todayQuery.refetch, upcomingQuery.refetch, recentQuery.refetch]);
 
   const openPromptQueue = useCallback(
     (today: Reminder[], recent: Reminder[], focusId?: string | null, force = false) => {
@@ -184,17 +193,20 @@ export default function RemindersScreen() {
   useFocusEffect(
     useCallback(() => {
       autoPromptCheckedRef.current = false;
-      setLoading(true);
-      fetchData().then(({ today, recent }) => {
+      void refetchAll().then(({ today, recent }) => {
         maybeAutoPromptStatus(today, recent);
       });
-    }, [fetchData, maybeAutoPromptStatus]),
+    }, [refetchAll, maybeAutoPromptStatus]),
   );
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    fetchData();
-  }, [fetchData]);
+    try {
+      await refetchAll();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchAll]);
 
   const closeActionSheet = useCallback(() => {
     // X dismisses the rest of the queue for this session; next cold open / force
@@ -235,7 +247,7 @@ export default function RemindersScreen() {
     try {
       await updateReminderStatus(activePetId, reminder.id, status);
       advanceOrCloseQueue();
-      fetchData();
+      void refetchAll();
     } catch {
       /* keep list as-is; a transient error shouldn't block the UI */
     }
@@ -243,7 +255,7 @@ export default function RemindersScreen() {
 
   const goAddReminder = useCallback(async () => {
     try {
-      const pets = await apiGet<Pet[]>('/pets');
+      const pets = await listPets();
       if (!(await guardAddReminder(router, pets))) return;
     } catch {
       // If the pre-check fails, still allow navigation — server enforces.
@@ -316,8 +328,7 @@ export default function RemindersScreen() {
             subtitle={error}
             actionTitle={t('common.retry')}
             onAction={() => {
-              setLoading(true);
-              fetchData();
+              void refetchAll();
             }}
           />
         </View>

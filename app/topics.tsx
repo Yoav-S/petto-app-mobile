@@ -25,9 +25,12 @@ import HealthListItem, {
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import { listRecords, deleteRecord, enrichRecordsWithLatestNoteReminders } from '@/services/health';
+import { deleteRecord } from '@/services/health';
 import { getErrorMessage } from '@/services/errors';
 import type { MedicalRecord } from '@/types/api';
+import { useRecordsQuery } from '@/hooks/useCachedQueries';
+import { queryClient, invalidateRecords } from '@/services/queryClient';
+import { queryKeys } from '@/services/queryKeys';
 
 const TABS = ['Active', 'Resolved'] as const;
 type TabName = (typeof TABS)[number];
@@ -46,16 +49,33 @@ export default function HealthScreen() {
   const { deletedNote } = useLocalSearchParams();
 
   const [activeTab, setActiveTab] = useState<TabName>('Active');
-  const [listsByTab, setListsByTab] = useState<Record<TabName, MedicalRecord[]>>(EMPTY_LISTS);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [scrollY, setScrollY] = useState(0);
   const [listHeight, setListHeight] = useState(0);
   const cardHeight = HEALTH_LIST_CARD_HEIGHT;
   const itemGap = HEALTH_LIST_ITEM_GAP;
   const fadeZone = cardHeight * 0.89;
+
+  const activeQuery = useRecordsQuery(activePetId, 'active', { enrichReminders: true });
+  const resolvedQuery = useRecordsQuery(activePetId, 'resolved', { enrichReminders: true });
+
+  const listsByTab = useMemo(
+    () => ({
+      Active: activeQuery.data ?? EMPTY_LISTS.Active,
+      Resolved: resolvedQuery.data ?? EMPTY_LISTS.Resolved,
+    }),
+    [activeQuery.data, resolvedQuery.data],
+  );
+
+  const loading =
+    (activeQuery.isLoading && !activeQuery.data) ||
+    (resolvedQuery.isLoading && !resolvedQuery.data);
+  const error = activeQuery.error
+    ? getErrorMessage(activeQuery.error)
+    : resolvedQuery.error
+      ? getErrorMessage(resolvedQuery.error)
+      : null;
 
   const getItemFadeIntensity = useCallback(
     (index: number) => {
@@ -87,42 +107,24 @@ export default function HealthScreen() {
     }
   }, [deletedNote, toast]);
 
-  const fetchData = useCallback(async () => {
-    if (!activePetId) {
-      setListsByTab(EMPTY_LISTS);
-      setLoading(false);
-      return;
-    }
-    try {
-      setError(null);
-      const [active, resolved] = await Promise.all([
-        listRecords(activePetId, 'active'),
-        listRecords(activePetId, 'resolved'),
-      ]);
-      const [enrichedActive, enrichedResolved] = await Promise.all([
-        enrichRecordsWithLatestNoteReminders(activePetId, active),
-        enrichRecordsWithLatestNoteReminders(activePetId, resolved),
-      ]);
-      setListsByTab({ Active: enrichedActive, Resolved: enrichedResolved });
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [activePetId]);
+  const refetchAll = useCallback(async () => {
+    await Promise.all([activeQuery.refetch(), resolvedQuery.refetch()]);
+  }, [activeQuery.refetch, resolvedQuery.refetch]);
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
-      fetchData();
-    }, [fetchData]),
+      void refetchAll();
+    }, [refetchAll]),
   );
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    fetchData();
-  }, [fetchData]);
+    try {
+      await refetchAll();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchAll]);
 
   const handleDeleteRecord = (id: string) => {
     if (!activePetId) return;
@@ -153,33 +155,35 @@ export default function HealthScreen() {
     const restore = removed;
     const restoreTab = fromTab;
     const restoreIndex = fromIndex;
+    const statusKey = restoreTab === 'Active' ? 'active' : 'resolved';
+    const cacheKey = [...queryKeys.records.status(activePetId, statusKey), 'enriched'] as const;
 
-    setListsByTab((prev) => ({
-      ...prev,
-      [restoreTab]: prev[restoreTab].filter((r) => r.id !== id),
-    }));
+    queryClient.setQueryData<MedicalRecord[]>(cacheKey, (prev) =>
+      (prev ?? []).filter((r) => r.id !== id),
+    );
 
     toast.showUndo({
       message: t('topics.record_deleted'),
       aboveFab: true,
       onUndo: () => {
-        setListsByTab((prev) => {
-          const list = [...prev[restoreTab]];
+        queryClient.setQueryData<MedicalRecord[]>(cacheKey, (prev) => {
+          const list = [...(prev ?? [])];
           const insertAt = Math.min(restoreIndex, list.length);
           list.splice(insertAt, 0, restore);
-          return { ...prev, [restoreTab]: list };
+          return list;
         });
       },
       onCommit: async () => {
         try {
           await deleteRecord(activePetId, id);
         } catch (err) {
-          setListsByTab((prev) => {
-            const list = [...prev[restoreTab]];
+          queryClient.setQueryData<MedicalRecord[]>(cacheKey, (prev) => {
+            const list = [...(prev ?? [])];
             const insertAt = Math.min(restoreIndex, list.length);
             list.splice(insertAt, 0, restore);
-            return { ...prev, [restoreTab]: list };
+            return list;
           });
+          invalidateRecords(activePetId);
           toast.showError(getErrorMessage(err), { aboveFab: true });
         }
       },
@@ -253,8 +257,7 @@ export default function HealthScreen() {
             subtitle={error}
             actionTitle={t('common.retry')}
             onAction={() => {
-              setLoading(true);
-              fetchData();
+              void refetchAll();
             }}
           />
         </View>

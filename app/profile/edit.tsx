@@ -20,7 +20,6 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import { apiGet } from '@/services/api';
 import {
   KeyboardDismissDoneChip,
   useKeyboardBottomOffset,
@@ -29,6 +28,7 @@ import { updatePet, deletePet } from '@/services/pets';
 import { uploadPetPhoto } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import type { Pet } from '@/types/api';
+import { usePetsQuery } from '@/hooks/useCachedQueries';
 import { formatDisplayDateLong, parseIsoDate } from '@/utils/calendar';
 import { useHeaderTopPadding } from '@/utils/headerLayout';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
@@ -83,6 +83,8 @@ export default function EditProfileScreen() {
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
 
+  const petsQuery = usePetsQuery();
+
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
@@ -94,13 +96,12 @@ export default function EditProfileScreen() {
           }
           return;
         }
-        try {
-          const pets = await apiGet<Pet[]>('/pets');
-          if (cancelled) return;
+
+        const applyPet = (pets: Pet[]) => {
           const pet = pets.find((p) => p.id === activePetId);
           if (!pet) {
             setNotFound(true);
-            return;
+            return false;
           }
           setPetCount(pets.length);
           setName(pet.name ?? '');
@@ -115,8 +116,21 @@ export default function EditProfileScreen() {
           setPhotoUri(pet.photo_url ?? null);
           setPhotoChanged(false);
           setNotFound(false);
+          return true;
+        };
+
+        // Paint from cache immediately when available.
+        if (petsQuery.data?.length && applyPet(petsQuery.data) && !cancelled) {
+          setLoading(false);
+        }
+
+        try {
+          const result = await petsQuery.refetch();
+          if (cancelled) return;
+          const pets = result.data ?? [];
+          if (!applyPet(pets)) setNotFound(true);
         } catch {
-          if (!cancelled) setNotFound(true);
+          if (!cancelled && !petsQuery.data?.length) setNotFound(true);
         } finally {
           if (!cancelled) setLoading(false);
         }
@@ -124,7 +138,7 @@ export default function EditProfileScreen() {
       return () => {
         cancelled = true;
       };
-    }, [activePetId]),
+    }, [activePetId, petsQuery.refetch]),
   );
 
   const pickImage = async (source: 'camera' | 'library') => {

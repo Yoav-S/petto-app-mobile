@@ -20,10 +20,9 @@ import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import EmptyState from '@/components/ui/EmptyState';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import { listVaccinations } from '@/services/vaccines';
 import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDateLong } from '@/utils/calendar';
-import type { Vaccination } from '@/types/api';
+import { useVaccinationsQuery } from '@/hooks/useCachedQueries';
 
 const EMPTY_TOP = 304;
 const EMPTY_GAP = 20;
@@ -49,40 +48,26 @@ export default function VaccinesScreen() {
   const emptyTop = Math.max(Spacing.lg, EMPTY_TOP - headerOffset);
   const emptyGap = EMPTY_GAP;
 
-  const [items, setItems] = useState<Vaccination[]>([]);
-  const [loading, setLoading] = useState(true);
+  const query = useVaccinationsQuery(activePetId);
+  const items = query.data ?? [];
+  const loading = query.isLoading && !query.data;
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    if (!activePetId) {
-      setItems([]);
-      setLoading(false);
-      return;
-    }
-    try {
-      setError(null);
-      const list = await listVaccinations(activePetId);
-      setItems(list);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [activePetId]);
+  const error = query.error ? getErrorMessage(query.error) : null;
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
-      fetchData();
-    }, [fetchData]),
+      void query.refetch();
+    }, [query.refetch]),
   );
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    fetchData();
-  }, [fetchData]);
+    try {
+      await query.refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [query.refetch]);
 
   const renderContent = () => {
     if (loading) {
@@ -93,7 +78,7 @@ export default function VaccinesScreen() {
       );
     }
 
-    if (error) {
+    if (error && !items.length) {
       return (
         <View style={styles.centered}>
           <EmptyState
@@ -101,8 +86,7 @@ export default function VaccinesScreen() {
             subtitle={error}
             actionTitle={t('common.retry')}
             onAction={() => {
-              setLoading(true);
-              fetchData();
+              void query.refetch();
             }}
           />
         </View>
@@ -152,7 +136,7 @@ export default function VaccinesScreen() {
         }
         contentContainerStyle={[styles.listContent, items.length === 0 && styles.listContentEmpty]}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />}
       />
     );
   };
@@ -161,7 +145,7 @@ export default function VaccinesScreen() {
     <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
       <VaccineScreenHeader title={t('vaccines.list_title')} />
       {renderContent()}
-      {items.length > 0 && !loading && !error ? (
+      {items.length > 0 && !loading && !(error && !items.length) ? (
         <SpeedDialFab
           items={[
             {
@@ -178,90 +162,91 @@ export default function VaccinesScreen() {
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: c.background,
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  listContent: {
-    paddingTop: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: 120,
-    flexGrow: 1,
-  },
-  listContentEmpty: {
-    flexGrow: 0,
-  },
-  card: {
-    backgroundColor: c.surface,
-    borderRadius: Radius.md,
-    marginBottom: Spacing.md,
-    width: '100%',
-    maxWidth: '100%',
-    alignSelf: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: Spacing.lg,
-    gap: 10,
-    height: 100,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  thumb: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-    backgroundColor: c.background,
-  },
-  thumbPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: c.category.vaccinesBg,
-  },
-  thumbIcon: {
-    width: 28,
-    height: 28,
-  },
-  cardBody: {
-    flex: 1,
-    minWidth: 0,
-    height: 72,
-    gap: Spacing.md,
-  },
-  cardTitle: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    lineHeight: 20,
-    color: c.primaryText,
-  },
-  datesRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  dateCol: {
-    flex: 1,
-  },
-  dateColRight: {
-    alignItems: 'flex-end',
-  },
-  dateLabel: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 13,
-    color: c.secondaryText,
-    marginBottom: 2,
-  },
-  dateValue: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: c.primaryText,
-  },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    centered: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    listContent: {
+      paddingTop: Spacing.md,
+      paddingHorizontal: Spacing.lg,
+      paddingBottom: 120,
+      flexGrow: 1,
+    },
+    listContentEmpty: {
+      flexGrow: 0,
+    },
+    card: {
+      backgroundColor: c.surface,
+      borderRadius: Radius.md,
+      marginBottom: Spacing.md,
+      width: '100%',
+      maxWidth: '100%',
+      alignSelf: 'center',
+      paddingVertical: 14,
+      paddingHorizontal: Spacing.lg,
+      gap: 10,
+      height: 100,
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    thumb: {
+      width: 48,
+      height: 48,
+      borderRadius: 10,
+      backgroundColor: c.background,
+    },
+    thumbPlaceholder: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.category.vaccinesBg,
+    },
+    thumbIcon: {
+      width: 28,
+      height: 28,
+    },
+    cardBody: {
+      flex: 1,
+      minWidth: 0,
+      height: 72,
+      gap: Spacing.md,
+    },
+    cardTitle: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 16,
+      lineHeight: 20,
+      color: c.primaryText,
+    },
+    datesRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    dateCol: {
+      flex: 1,
+    },
+    dateColRight: {
+      alignItems: 'flex-end',
+    },
+    dateLabel: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 13,
+      color: c.secondaryText,
+      marginBottom: 2,
+    },
+    dateValue: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 14,
+      color: c.primaryText,
+    },
+  });

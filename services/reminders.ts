@@ -1,5 +1,6 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/services/api';
 import type { Reminder } from '@/types/api';
+import { invalidateReminders } from '@/services/queryClient';
 
 export type ReminderTab = 'today' | 'upcoming' | 'recent';
 export type ReminderStatus = 'completed' | 'missed';
@@ -34,26 +35,33 @@ export function getReminder(petId: string, id: string): Promise<Reminder> {
   return apiGet<Reminder>(`/pets/${petId}/reminders/${id}`);
 }
 
-export function createReminder(petId: string, input: CreateReminderInput): Promise<Reminder> {
-  return apiPost<Reminder>(`/pets/${petId}/reminders`, input);
+export async function createReminder(petId: string, input: CreateReminderInput): Promise<Reminder> {
+  const row = await apiPost<Reminder>(`/pets/${petId}/reminders`, input);
+  invalidateReminders(petId);
+  return row;
 }
 
-export function updateReminder(
+export async function updateReminder(
   petId: string,
   id: string,
   patch: UpdateReminderInput,
 ): Promise<Reminder> {
-  return apiPatch<Reminder>(`/pets/${petId}/reminders/${id}`, patch);
+  const row = await apiPatch<Reminder>(`/pets/${petId}/reminders/${id}`, patch);
+  invalidateReminders(petId);
+  return row;
 }
 
-export function updateReminderStatus(
+export async function updateReminderStatus(
   petId: string,
   id: string,
   status: ReminderStatus,
 ): Promise<Reminder> {
-  return apiPatch<Reminder>(`/pets/${petId}/reminders/${id}/status`, { status });
+  const row = await apiPatch<Reminder>(`/pets/${petId}/reminders/${id}/status`, { status });
+  invalidateReminders(petId);
+  return row;
 }
 
-export function deleteReminder(petId: string, id: string): Promise<void> {
-  return apiDelete(`/pets/${petId}/reminders/${id}`);
+export async function deleteReminder(petId: string, id: string): Promise<void> {
+  await apiDelete(`/pets/${petId}/reminders/${id}`);
+  invalidateReminders(petId);
 }

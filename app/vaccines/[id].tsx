@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -30,12 +30,15 @@ import VaccineClinicField from '@/components/vaccines/VaccineClinicField';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import { getVaccination, updateVaccination, deleteVaccination } from '@/services/vaccines';
+import { updateVaccination, deleteVaccination } from '@/services/vaccines';
 import { uploadImage } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import { addYearsToIsoDate, formatDisplayDate, isIsoDateAfter, parseIsoDate, todayIsoDate } from '@/utils/calendar';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { DESIGN_HEIGHT } from '@/constants/layout';
+import { useVaccinationQuery } from '@/hooks/useCachedQueries';
+import { queryClient } from '@/services/queryClient';
+import { queryKeys } from '@/services/queryKeys';
 import type { Vaccination } from '@/types/api';
 
 type PickerTarget = 'date' | 'next' | null;
@@ -51,7 +54,6 @@ export default function VaccineDetailsScreen() {
   const deleteBottomPad = Math.max(24, Math.round(height * (58 / DESIGN_HEIGHT)));
 
   const [vaccine, setVaccine] = useState<Vaccination | null>(null);
-  const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   const [name, setName] = useState('');
@@ -64,30 +66,25 @@ export default function VaccineDetailsScreen() {
   const [contentH, setContentH] = useState(0);
   const needsScroll = contentH > viewportH + 1;
 
-  const fetchData = useCallback(async () => {
-    if (!activePetId || !id) {
-      setNotFound(true);
-      setLoading(false);
-      return;
-    }
-    try {
-      const data = await getVaccination(activePetId, id);
-      setVaccine(data);
-      setName(data.name);
-      setClinic(data.vet_clinic ?? '');
-    } catch {
-      setNotFound(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [activePetId, id]);
+  const query = useVaccinationQuery(activePetId, id);
+  const loading = query.isLoading && !query.data && !vaccine;
+
+  useEffect(() => {
+    if (!query.data) return;
+    setVaccine(query.data);
+    setName(query.data.name);
+    setClinic(query.data.vet_clinic ?? '');
+    setNotFound(false);
+  }, [query.data]);
+
+  useEffect(() => {
+    if (query.isError && !query.data) setNotFound(true);
+  }, [query.isError, query.data]);
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
-      setNotFound(false);
-      fetchData();
-    }, [fetchData]),
+      void query.refetch();
+    }, [query.refetch]),
   );
 
   const save = useCallback(
@@ -98,12 +95,13 @@ export default function VaccineDetailsScreen() {
       try {
         const updated = await updateVaccination(activePetId, id, patch);
         setVaccine(updated);
+        queryClient.setQueryData(queryKeys.vaccinations.detail(activePetId, id), updated);
       } catch (err) {
         toast.showError(getErrorMessage(err));
-        fetchData();
+        void query.refetch();
       }
     },
-    [activePetId, id, fetchData, toast],
+    [activePetId, id, query.refetch, toast],
   );
 
   const handleNameBlur = () => {

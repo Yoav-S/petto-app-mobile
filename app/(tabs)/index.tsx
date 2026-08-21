@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -7,14 +7,18 @@ import { useActivePet } from '@/store/petStore';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useThemedStyles } from '@/context/ThemeContext';
-import { apiGet } from '@/services/api';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
 import { guardAddPet } from '@/services/subscription';
-import type { Pet, Vaccination, Reminder, MedicalRecord } from '@/types/api';
-import { enrichRecordsWithLatestNoteReminders } from '@/services/health';
+import type { MedicalRecord, Reminder } from '@/types/api';
 import { isIsoDateToday, normalizeToDatePart, todayIsoDate, truncateHealthDescription } from '@/utils/calendar';
+import {
+  usePetsQuery,
+  useVaccinationsQuery,
+  useRemindersQuery,
+  useRecordsQuery,
+} from '@/hooks/useCachedQueries';
 
 import PetHeader from '@/components/home/PetHeader';
 import VaccinesCard from '@/components/home/VaccinesCard';
@@ -38,7 +42,6 @@ function healthRecordToReminder(record: MedicalRecord): HomeReminder | null {
   const date = normalizeToDatePart(record.linked_reminder_date ?? undefined);
   const time = record.linked_reminder_time?.trim();
   if (!date || !time) return null;
-  // Skip reminders whose date has already passed (health-linked only).
   if (date < todayIsoDate()) return null;
   return {
     title: record.title,
@@ -116,120 +119,114 @@ export default function HomeScreen() {
   const { user, isLoading: authLoading, syncError, retryBackendSync, isSyncing, signOut } = useAuth();
   const { activePetId, setActivePetId } = useActivePet();
 
-  const [pet, setPet] = useState<Pet | null>(null);
-  const [pets, setPets] = useState<Pet[]>([]);
-  const [latestVaccine, setLatestVaccine] = useState<Vaccination | null>(null);
-  const [nextReminder, setNextReminder] = useState<{
-    title: string;
-    scheduled_at: string;
-    status: 'today' | 'scheduled' | 'missed' | 'completed';
-  } | null>(null);
-  const [upcomingCount, setUpcomingCount] = useState(0);
-  const [latestRecord, setLatestRecord] = useState<{
-    type: string;
-    description?: string;
-    date: string;
-    reminder_date?: string;
-    reminder_time?: string;
-  } | null>(null);
-
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
   const [fabOpen, setFabOpen] = useState(false);
   const [switchVisible, setSwitchVisible] = useState(false);
   const [panelMode, setPanelMode] = useState<'home' | 'profile'>('home');
 
-  const fetchData = useCallback(async () => {
-    if (!user) {
-      setFetchError(null);
-      setLoading(false);
-      return;
-    }
+  const petsQuery = usePetsQuery(Boolean(user) && !authLoading);
+  const pets = petsQuery.data ?? [];
 
-    try {
-      setLoading(true);
-      setFetchError(null);
-
-      const petList = await apiGet<Pet[]>('/pets');
-      setPets(petList);
-
-      if (petList.length === 0) {
-        setPet(null);
-        setLatestVaccine(null);
-        setNextReminder(null);
-        setUpcomingCount(0);
-        setLatestRecord(null);
-        return;
-      }
-
-      const currentPetId =
-        activePetId && petList.some((p) => p.id === activePetId) ? activePetId : petList[0].id;
-
-      if (currentPetId !== activePetId) {
-        await setActivePetId(currentPetId);
-      }
-
-      const currentPet = petList.find((p) => p.id === currentPetId) ?? petList[0];
-      setPet(currentPet);
-
-      const [vaccinations, todayReminders, upcomingReminders, records] = await Promise.all([
-        apiGet<Vaccination[]>(`/pets/${currentPetId}/vaccinations`),
-        apiGet<Reminder[]>(`/pets/${currentPetId}/reminders?tab=today`),
-        apiGet<Reminder[]>(`/pets/${currentPetId}/reminders?tab=upcoming`),
-        apiGet<MedicalRecord[]>(`/pets/${currentPetId}/medical-records?status=active`),
-      ]);
-
-      const enrichedRecords = await enrichRecordsWithLatestNoteReminders(currentPetId, records);
-
-      setLatestVaccine(vaccinations[0] ?? null);
-
-      const { next, count } = pickNextReminder(todayReminders, upcomingReminders, enrichedRecords);
-      if (next) {
-        setNextReminder({
-          title: next.title,
-          scheduled_at: next.scheduled_at,
-          status: next.status,
-        });
-      } else {
-        setNextReminder(null);
-      }
-
-      setUpcomingCount(count);
-
-      const record = pickLatestHealthRecord(enrichedRecords);
-      if (record) {
-        setLatestRecord({
-          type: record.title,
-          description: truncateHealthDescription(record.description) || undefined,
-          date: record.created_at,
-          reminder_date: record.linked_reminder_date ?? undefined,
-          reminder_time: record.linked_reminder_time ?? undefined,
-        });
-      } else {
-        setLatestRecord(null);
-      }
-    } catch (error) {
-      console.error('Error fetching home data:', error);
-      setFetchError(getErrorMessage(error));
-    } finally {
-      setLoading(false);
-    }
-  }, [activePetId, setActivePetId, user]);
+  const resolvedPetId = useMemo(() => {
+    if (!pets.length) return null;
+    if (activePetId && pets.some((p) => p.id === activePetId)) return activePetId;
+    return pets[0].id;
+  }, [activePetId, pets]);
 
   useEffect(() => {
-    if (authLoading) return;
-    fetchData();
-  }, [fetchData, authLoading]);
+    if (resolvedPetId && resolvedPetId !== activePetId) {
+      void setActivePetId(resolvedPetId);
+    }
+  }, [resolvedPetId, activePetId, setActivePetId]);
 
-  // Refresh cards when returning from a create/edit flow.
-  // Also reset switcher / FAB so Upgrade → Subscription → Back never leaves a stuck sheet.
+  const pet = useMemo(
+    () => (resolvedPetId ? pets.find((p) => p.id === resolvedPetId) ?? pets[0] ?? null : null),
+    [pets, resolvedPetId],
+  );
+
+  const vaccinesQuery = useVaccinationsQuery(resolvedPetId);
+  const todayQuery = useRemindersQuery(resolvedPetId, 'today');
+  const upcomingQuery = useRemindersQuery(resolvedPetId, 'upcoming');
+  const recordsQuery = useRecordsQuery(resolvedPetId, 'active', { enrichReminders: true });
+
+  const latestVaccine = vaccinesQuery.data?.[0] ?? null;
+  const { nextReminder, upcomingCount, latestRecord } = useMemo(() => {
+    const today = todayQuery.data ?? [];
+    const upcoming = upcomingQuery.data ?? [];
+    const records = recordsQuery.data ?? [];
+    const { next, count } = pickNextReminder(today, upcoming, records);
+    const record = pickLatestHealthRecord(records);
+    return {
+      nextReminder: next
+        ? {
+            title: next.title,
+            scheduled_at: next.scheduled_at,
+            status: next.status as 'today' | 'scheduled' | 'missed' | 'completed',
+          }
+        : null,
+      upcomingCount: count,
+      latestRecord: record
+        ? {
+            type: record.title,
+            description: truncateHealthDescription(record.description) || undefined,
+            date: record.created_at,
+            reminder_date: record.linked_reminder_date ?? undefined,
+            reminder_time: record.linked_reminder_time ?? undefined,
+          }
+        : null,
+    };
+  }, [todayQuery.data, upcomingQuery.data, recordsQuery.data]);
+
+  const domainFetching =
+    Boolean(resolvedPetId) &&
+    (vaccinesQuery.isFetching ||
+      todayQuery.isFetching ||
+      upcomingQuery.isFetching ||
+      recordsQuery.isFetching);
+
+  const hasCachedHome =
+    petsQuery.isSuccess ||
+    Boolean(vaccinesQuery.data) ||
+    Boolean(todayQuery.data) ||
+    Boolean(recordsQuery.data);
+
+  /** Only block UI on first load with no cache — otherwise show stale data. */
+  const loading =
+    authLoading ||
+    (petsQuery.isLoading && !petsQuery.data) ||
+    (Boolean(resolvedPetId) && !hasCachedHome && domainFetching);
+
+  const fetchError = petsQuery.error
+    ? getErrorMessage(petsQuery.error)
+    : vaccinesQuery.error
+      ? getErrorMessage(vaccinesQuery.error)
+      : todayQuery.error
+        ? getErrorMessage(todayQuery.error)
+        : recordsQuery.error
+          ? getErrorMessage(recordsQuery.error)
+          : null;
+
+  const refetchHome = useCallback(() => {
+    void petsQuery.refetch();
+    void vaccinesQuery.refetch();
+    void todayQuery.refetch();
+    void upcomingQuery.refetch();
+    void recordsQuery.refetch();
+  }, [
+    petsQuery.refetch,
+    vaccinesQuery.refetch,
+    todayQuery.refetch,
+    upcomingQuery.refetch,
+    recordsQuery.refetch,
+  ]);
+
   useFocusEffect(
     useCallback(() => {
       setSwitchVisible(false);
       setFabOpen(false);
-      if (authLoading) return;
-      fetchData();
-    }, [fetchData, authLoading]),
+      if (authLoading || !user) return;
+      // Background refresh — cache paints instantly.
+      refetchHome();
+    }, [authLoading, user, refetchHome]),
   );
 
   const effectiveMode = pet ? panelMode : 'home';
@@ -246,7 +243,6 @@ export default function HomeScreen() {
   };
 
   const handleAddPet = async () => {
-    // Always dismiss the switcher first so Upgrade / Add never stacks under a live sheet.
     setSwitchVisible(false);
     if (!(await guardAddPet(router, pets.length))) return;
     router.push('/pets/add' as never);
@@ -262,7 +258,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 onPress={() => {
                   if (syncError) retryBackendSync();
-                  else fetchData();
+                  else refetchHome();
                 }}
                 disabled={isSyncing}
               >
@@ -356,54 +352,55 @@ export default function HomeScreen() {
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: c.panel,
-  },
-  screen: {
-    flex: 1,
-    overflow: 'visible',
-    position: 'relative',
-  },
-  homeFrame: {
-    flex: 1,
-    position: 'relative',
-    width: '100%',
-    overflow: 'visible',
-  },
-  errorBanner: {
-    marginHorizontal: Spacing.lg,
-    marginTop: Spacing.sm,
-    padding: Spacing.md,
-    backgroundColor: c.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: c.border,
-  },
-  errorBannerText: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 13,
-    color: c.secondaryText,
-    marginBottom: 4,
-  },
-  errorBannerAction: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 14,
-    color: c.primaryText,
-  },
-  cardsGrid: {
-    alignSelf: 'center',
-    gap: Spacing.sm,
-    overflow: 'visible',
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  healthWrap: {
-    position: 'relative',
-    overflow: 'visible',
-    zIndex: 50,
-  },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: c.panel,
+    },
+    screen: {
+      flex: 1,
+      overflow: 'visible',
+      position: 'relative',
+    },
+    homeFrame: {
+      flex: 1,
+      position: 'relative',
+      width: '100%',
+      overflow: 'visible',
+    },
+    errorBanner: {
+      marginHorizontal: Spacing.lg,
+      marginTop: Spacing.sm,
+      padding: Spacing.md,
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    errorBannerText: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 13,
+      color: c.secondaryText,
+      marginBottom: 4,
+    },
+    errorBannerAction: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 14,
+      color: c.primaryText,
+    },
+    cardsGrid: {
+      alignSelf: 'center',
+      gap: Spacing.sm,
+      overflow: 'visible',
+    },
+    row: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    healthWrap: {
+      position: 'relative',
+      overflow: 'visible',
+      zIndex: 50,
+    },
+  });

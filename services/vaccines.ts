@@ -1,5 +1,6 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/services/api';
 import type { Vaccination } from '@/types/api';
+import { invalidateVaccinations } from '@/services/queryClient';
 
 export interface CreateVaccinationInput {
   name: string;
@@ -16,25 +17,30 @@ export function listVaccinations(petId: string): Promise<Vaccination[]> {
   return apiGet<Vaccination[]>(`/pets/${petId}/vaccinations`);
 }
 
-export function createVaccination(
+export async function createVaccination(
   petId: string,
   input: CreateVaccinationInput,
 ): Promise<Vaccination> {
-  return apiPost<Vaccination>(`/pets/${petId}/vaccinations`, input);
+  const row = await apiPost<Vaccination>(`/pets/${petId}/vaccinations`, input);
+  invalidateVaccinations(petId);
+  return row;
 }
 
 export function getVaccination(petId: string, id: string): Promise<Vaccination> {
   return apiGet<Vaccination>(`/pets/${petId}/vaccinations/${id}`);
 }
 
-export function updateVaccination(
+export async function updateVaccination(
   petId: string,
   id: string,
   patch: UpdateVaccinationInput,
 ): Promise<Vaccination> {
-  return apiPatch<Vaccination>(`/pets/${petId}/vaccinations/${id}`, patch);
+  const row = await apiPatch<Vaccination>(`/pets/${petId}/vaccinations/${id}`, patch);
+  invalidateVaccinations(petId);
+  return row;
 }
 
-export function deleteVaccination(petId: string, id: string): Promise<void> {
-  return apiDelete(`/pets/${petId}/vaccinations/${id}`);
+export async function deleteVaccination(petId: string, id: string): Promise<void> {
+  await apiDelete(`/pets/${petId}/vaccinations/${id}`);
+  invalidateVaccinations(petId);
 }

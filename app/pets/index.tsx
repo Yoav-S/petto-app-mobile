@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,10 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
-import { apiGet } from '@/services/api';
 import { getErrorMessage } from '@/services/errors';
 import { guardAddPet } from '@/services/subscription';
 import { useActivePet } from '@/store/petStore';
-import type { Pet } from '@/types/api';
+import { usePetsQuery } from '@/hooks/useCachedQueries';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import { AddPetRow, PetSwitcherRow } from '@/components/home/PetSwitcherRows';
 
@@ -26,27 +25,15 @@ export default function PetsListScreen() {
   const router = useRouter();
   const { activePetId, setActivePetId } = useActivePet();
 
-  const [pets, setPets] = useState<Pet[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const list = await apiGet<Pet[]>('/pets');
-      setPets(list);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const query = usePetsQuery();
+  const pets = query.data ?? [];
+  const loading = query.isLoading && !query.data;
+  const error = query.error ? getErrorMessage(query.error) : null;
 
   useFocusEffect(
     useCallback(() => {
-      void load();
-    }, [load]),
+      void query.refetch();
+    }, [query.refetch]),
   );
 
   const handleSelect = async (petId: string) => {
@@ -69,10 +56,10 @@ export default function PetsListScreen() {
         <View style={styles.centered}>
           <ActivityIndicator color={colors.brand} />
         </View>
-      ) : error ? (
+      ) : error && !pets.length ? (
         <View style={styles.centered}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={() => void load()}>
+          <TouchableOpacity onPress={() => void query.refetch()}>
             <Text style={styles.retry}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>

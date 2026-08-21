@@ -14,6 +14,7 @@ import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { LocaleProvider, useLocale } from '@/context/LocaleContext';
 import { ToastProvider } from '@/context/ToastContext';
+import QueryProvider from '@/context/QueryProvider';
 import { PetStoreProvider } from '@/store/petStore';
 import { PetOnboardingDraftProvider, usePetOnboardingDraft } from '@/store/petOnboardingDraft';
 import { useReminderNotificationRouting } from '@/hooks/useReminderNotificationRouting';
@@ -213,11 +214,13 @@ export default function RootLayout() {
     <ThemeProvider>
       <LocaleProvider>
         <AuthProvider>
-          <PetStoreProvider>
-            <PetOnboardingDraftProvider>
-              <ThemedApp />
-            </PetOnboardingDraftProvider>
-          </PetStoreProvider>
+          <QueryProvider>
+            <PetStoreProvider>
+              <PetOnboardingDraftProvider>
+                <ThemedApp />
+              </PetOnboardingDraftProvider>
+            </PetStoreProvider>
+          </QueryProvider>
         </AuthProvider>
       </LocaleProvider>
     </ThemeProvider>

@@ -6,6 +6,7 @@ import { syncUserWithBackend } from '@/services/auth';
 import { loginPurchases, logoutPurchases } from '@/services/purchases';
 import { registerForPushNotifications } from '@/services/notifications';
 import { clearOnboardingComplete, getOnboardingComplete } from '@/services/onboarding';
+import { clearQueryCache } from '@/services/queryClient';
 import { getErrorMessage } from '@/services/errors';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
@@ -221,7 +222,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      const uid = auth.currentUser?.uid ?? null;
       await logoutPurchases();
+      await clearQueryCache(uid);
       await firebaseSignOut(auth);
       await clearOnboardingComplete();
       setHasPets(null);
