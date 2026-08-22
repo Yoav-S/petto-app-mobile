@@ -27,7 +27,11 @@ import { getErrorMessage } from '@/services/errors';
 import HealthReminderLine from '@/components/health/HealthReminderLine';
 import HealthNoteIconRow from '@/components/health/HealthNoteIconRow';
 import { normalizeRouteParam } from '@/utils/routeParams';
-import type { MedicalRecordDetail } from '@/types/api';
+import {
+  formatNoteSectionDateLabel,
+  getNoteLocalDateKey,
+} from '@/utils/calendar';
+import type { MedicalRecordDetail, HealthNote } from '@/types/api';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 const DESIGN_FOOTER_PAD_TOP = 12;
@@ -36,6 +40,10 @@ const DESIGN_FOOTER_RADIUS = 24;
 const DESIGN_SAVE_BUTTON_HEIGHT = 48;
 const DESIGN_FOOTER_MIN_BOTTOM = 10;
 const DESIGN_FOOTER_SAFE_GAP = 8;
+
+type NoteListItem =
+  | { type: 'header'; key: string; label: string; isFirst: boolean }
+  | { type: 'note'; note: HealthNote };
 
 export default function HealthDetailsScreen() {
   const colors = useColors();
@@ -155,6 +163,31 @@ export default function HealthDetailsScreen() {
     [recordId, router],
   );
 
+  const noteListItems = useMemo((): NoteListItem[] => {
+    const notes = record?.notes ?? [];
+    const items: NoteListItem[] = [];
+    let lastDateKey = '';
+
+    for (const note of notes) {
+      const dateKey = getNoteLocalDateKey(note.created_at);
+      if (dateKey && dateKey !== lastDateKey) {
+        items.push({
+          type: 'header',
+          key: `header-${dateKey}`,
+          label: formatNoteSectionDateLabel(note.created_at, {
+            today: t('common.today'),
+            yesterday: t('common.yesterday'),
+          }),
+          isFirst: items.length === 0,
+        });
+        lastDateKey = dateKey;
+      }
+      items.push({ type: 'note', note });
+    }
+
+    return items;
+  }, [record?.notes]);
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
@@ -183,6 +216,7 @@ export default function HealthDetailsScreen() {
   }
 
   const isActive = record.status === 'active';
+
   const menuButton = (
     <HeaderIconButton
       onPress={() => setMenuVisible(true)}
@@ -207,71 +241,69 @@ export default function HealthDetailsScreen() {
           {(record.notes ?? []).length === 0 ? (
             <Text style={styles.emptyNotes}>{t('topics.no_notes_yet')}</Text>
           ) : (
-            (record.notes ?? []).map((note) => (
-              <View key={note.id} style={styles.noteCard}>
-                {note.photo_url && !failedPhotoIds[note.id] ? (
-                  <TouchableOpacity
-                    style={styles.noteImageWrap}
-                    activeOpacity={0.85}
-                    onPress={() => openNote(note.id, 'photo')}
+            noteListItems.map((item) => {
+              if (item.type === 'header') {
+                return (
+                  <Text
+                    key={item.key}
+                    style={[
+                      styles.dateHeader,
+                      item.isFirst ? styles.dateHeaderFirst : null,
+                    ]}
                   >
-                    <Image
-                      source={{ uri: note.photo_url }}
-                      style={styles.noteImage}
-                      contentFit="cover"
-                      cachePolicy="memory-disk"
-                      recyclingKey={note.id}
-                      onError={() =>
-                        setFailedPhotoIds((prev) => ({ ...prev, [note.id]: true }))
-                      }
-                    />
-                  </TouchableOpacity>
-                ) : null}
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => openNote(note.id, 'focus')}
-                >
-                  <Text style={styles.noteText}>{note.text}</Text>
-                </TouchableOpacity>
-                {note.linked_reminder_date || note.linked_reminder_time ? (
+                    {item.label}
+                  </Text>
+                );
+              }
+
+              const note = item.note;
+              return (
+                <View key={note.id} style={styles.noteCard}>
+                  {note.photo_url && !failedPhotoIds[note.id] ? (
+                    <TouchableOpacity
+                      style={styles.noteImageWrap}
+                      activeOpacity={0.85}
+                      onPress={() => openNote(note.id, 'photo')}
+                    >
+                      <Image
+                        source={{ uri: note.photo_url }}
+                        style={styles.noteImage}
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
+                        recyclingKey={note.id}
+                        onError={() =>
+                          setFailedPhotoIds((prev) => ({ ...prev, [note.id]: true }))
+                        }
+                      />
+                    </TouchableOpacity>
+                  ) : null}
                   <TouchableOpacity
-                    style={styles.reminderRow}
                     activeOpacity={0.7}
-                    onPress={() => openNote(note.id, 'reminder')}
+                    onPress={() => openNote(note.id, 'focus')}
                   >
-                    <HealthReminderLine
-                      date={note.linked_reminder_date}
-                      time={note.linked_reminder_time}
-                    />
+                    <Text style={styles.noteText}>{note.text}</Text>
                   </TouchableOpacity>
-                ) : null}
-                <HealthNoteIconRow
-                  onPhotoPress={() => openNote(note.id, 'photo')}
-                  onReminderPress={() => openNote(note.id, 'reminder')}
-                />
-              </View>
-            ))
+                  {note.linked_reminder_date || note.linked_reminder_time ? (
+                    <TouchableOpacity
+                      style={styles.reminderRow}
+                      activeOpacity={0.7}
+                      onPress={() => openNote(note.id, 'reminder')}
+                    >
+                      <HealthReminderLine
+                        date={note.linked_reminder_date}
+                        time={note.linked_reminder_time}
+                      />
+                    </TouchableOpacity>
+                  ) : null}
+                  <HealthNoteIconRow
+                    onPhotoPress={() => openNote(note.id, 'photo')}
+                    onReminderPress={() => openNote(note.id, 'reminder')}
+                  />
+                </View>
+              );
+            })
           )}
         </ScrollView>
-        <View style={styles.topFade} pointerEvents="none">
-          {[0, 0.18, 0.36, 0.55, 0.75, 1].map((stop, index, stops) => {
-            const nextStop = stops[index + 1] ?? 1;
-            return (
-              <View
-                key={stop}
-                style={[
-                  styles.topFadeBand,
-                  {
-                    top: `${stop * 100}%`,
-                    height: `${(nextStop - stop) * 100}%`,
-                    backgroundColor: colors.background,
-                    opacity: 1 - stop,
-                  },
-                ]}
-              />
-            );
-          })}
-        </View>
       </View>
 
       <View
@@ -358,20 +390,17 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   listArea: {
     flex: 1,
-    position: 'relative',
   },
-  topFade: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 56,
-    overflow: 'hidden',
+  dateHeader: {
+    fontFamily: 'Rubik-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: c.secondaryText,
+    marginTop: 16,
+    marginBottom: 10,
   },
-  topFadeBand: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
+  dateHeaderFirst: {
+    marginTop: 0,
   },
   emptyNotes: {
     fontFamily: 'Rubik-Regular',

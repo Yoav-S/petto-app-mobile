@@ -80,7 +80,7 @@ export default function HealthScreen() {
   const getItemFadeIntensity = useCallback(
     (index: number) => {
       if (listHeight <= 0) return 0;
-      const listPaddingTop = 8;
+      const listPaddingTop = 14;
       const itemBottom =
         listPaddingTop + (index + 1) * cardHeight + index * itemGap - scrollY;
       if (itemBottom <= listHeight) return 0;
@@ -239,7 +239,7 @@ export default function HealthScreen() {
         onTabChange={(tab) => setActiveTab(tab as TabName)}
         getLabel={(tab) => t(`topics.tab_${tab.toLowerCase()}`)}
         width={220}
-        style={{ marginTop: 20 }}
+        style={{ marginTop: 20, marginBottom: 6 }}
       />
 
       {loading ? (
@@ -339,7 +339,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingTop: 8,
+    paddingTop: 14,
     paddingBottom: 120,
     flexGrow: 1,
   },

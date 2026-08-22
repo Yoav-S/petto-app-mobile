@@ -359,7 +359,7 @@
     "not_found_subtitle": "This topic may have been deleted",
     "mark_resolved": "Mark resolved",
     "resolve_confirm_title": "Mark as resolved?",
-    "resolve_confirm_body": "This topic will move to the Resolved tab.",
+    "resolve_confirm_body": "You won't be able to add new records until you reopen this topic.",
     "condition_title": "Condition",
     "condition_title_placeholder": "e.g. Skin allergy",
     "note_placeholder": "What's changed?",

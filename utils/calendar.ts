@@ -425,7 +425,31 @@ export function formatHealthCreatedLabel(
   return `${labels.createdPrefix} ${day}.${month}.${year}`;
 }
 
-export const MONTH_KEYS = [
+/** Local calendar day key (YYYY-MM-DD) for grouping notes. */
+export function getNoteLocalDateKey(isoDateTime: string | null | undefined): string {
+  const created = parseApiDateTime(isoDateTime);
+  if (!created) return '';
+  return toIsoDate(created);
+}
+
+/** Note timeline section header: Today, Yesterday, or DD.MM.YYYY. */
+export function formatNoteSectionDateLabel(
+  isoDateTime: string | null | undefined,
+  labels: { today: string; yesterday: string },
+): string {
+  if (!isoDateTime) return '';
+  const created = parseApiDateTime(isoDateTime);
+  if (!created) return '';
+
+  const now = new Date();
+  const diffDays = Math.floor(
+    (startOfLocalDay(now).getTime() - startOfLocalDay(created).getTime()) / DAY_MS,
+  );
+
+  if (diffDays <= 0) return labels.today;
+  if (diffDays === 1) return labels.yesterday;
+  return formatDisplayDateLong(created);
+}
   'jan',
   'feb',
   'mar',

@@ -359,6 +359,7 @@ export default function EditProfileScreen() {
               <ProfileNameField value={name} onChangeText={setName} />
 
               <ProfilePillField
+                layout="sex"
                 label={t('profile.sex')}
                 value={sex}
                 onChange={setSex}

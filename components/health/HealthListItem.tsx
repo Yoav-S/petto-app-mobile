@@ -78,13 +78,9 @@ export default function HealthListItem({
   const padH = 16;
   const innerGap = 12;
   const textGap = 6;
-  const titleSize = 16;
-  const titleLine = 20;
-  const subtitleSize = 14;
-  const subtitleLine = 20;
-  const metaSize = 14;
-  const metaLine = 20;
   const innerWidth = cardWidth - padH * 2;
+  const textBlockHeight = 66;
+  const createdHeight = 16;
 
   const createdLabel = formatHealthCreatedLabel(createdAt, {
     today: t('common.today'),
@@ -119,54 +115,53 @@ export default function HealthListItem({
           styles.inner,
           {
             width: innerWidth,
+            minHeight: hasSubtitle ? textBlockHeight + innerGap + createdHeight : undefined,
             gap: innerGap,
-            justifyContent: hasSubtitle ? 'space-between' : 'flex-start',
           },
         ]}
       >
-        <View style={[styles.topRow, { width: innerWidth }]}>
-          <Text
-            style={[
-              styles.title,
-              { fontSize: titleSize, lineHeight: titleLine, maxWidth: innerWidth - 28 },
-            ]}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {title}
-          </Text>
-          {hasReminder ? (
-            <TouchableOpacity
-              onPress={onReminderPress}
-              hitSlop={8}
-              activeOpacity={0.7}
-              disabled={!onReminderPress}
-              style={styles.reminderIconBtn}
-            >
-              <Ionicons name="notifications-outline" size={16} color={colors.secondaryText} />
-            </TouchableOpacity>
-          ) : (
-            <View style={{ width: 16 }} />
-          )}
-        </View>
-
-        {hasSubtitle ? (
-          <View style={[styles.textBlock, { width: innerWidth, gap: textGap }]}>
+        <View
+          style={[
+            styles.textBlock,
+            {
+              width: innerWidth,
+              minHeight: hasSubtitle ? textBlockHeight : undefined,
+              gap: textGap,
+            },
+          ]}
+        >
+          <View style={[styles.titleRow, { width: innerWidth }]}>
             <Text
-              style={[styles.subtitle, { fontSize: subtitleSize, lineHeight: subtitleLine }]}
-              numberOfLines={2}
+              style={[styles.title, { maxWidth: innerWidth - 28 }]}
+              numberOfLines={1}
               ellipsizeMode="tail"
             >
+              {title}
+            </Text>
+            {hasReminder ? (
+              <TouchableOpacity
+                onPress={onReminderPress}
+                hitSlop={8}
+                activeOpacity={0.7}
+                disabled={!onReminderPress}
+                style={styles.reminderIconBtn}
+              >
+                <Ionicons name="notifications-outline" size={16} color={colors.secondaryText} />
+              </TouchableOpacity>
+            ) : (
+              <View style={{ width: 16 }} />
+            )}
+          </View>
+
+          {hasSubtitle ? (
+            <Text style={styles.subtitle} numberOfLines={2} ellipsizeMode="tail">
               {subtitle}
             </Text>
-          </View>
-        ) : null}
+          ) : null}
+        </View>
 
         {createdLabel ? (
-          <Text
-            style={[styles.createdMeta, { fontSize: metaSize, lineHeight: metaLine }]}
-            numberOfLines={1}
-          >
+          <Text style={styles.createdMeta} numberOfLines={1}>
             {createdLabel}
           </Text>
         ) : null}
@@ -193,15 +188,17 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   inner: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
   },
-  topRow: {
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
   },
   title: {
     fontFamily: 'Rubik-Medium',
+    fontSize: 16,
+    lineHeight: 20,
     color: c.primaryText,
     flex: 1,
   },
@@ -216,10 +213,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   subtitle: {
     fontFamily: 'Rubik-Regular',
+    fontSize: 14,
+    lineHeight: 20,
     color: c.primaryText,
   },
   createdMeta: {
     fontFamily: 'Rubik-Regular',
+    fontSize: 12,
+    lineHeight: 16,
     color: c.secondaryText,
     flexShrink: 0,
   },

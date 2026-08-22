@@ -51,13 +51,16 @@ export default function TopicActionsSheet({
         <View style={styles.body}>
           <View style={[styles.menuContainer, !canResolve && styles.menuContainerCompact]}>
             {canResolve ? (
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => runAfterClose(onMarkResolved)}
-                accessibilityRole="button"
-              >
-                <Text style={styles.menuItemText}>{t('topics.mark_resolved')}</Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => runAfterClose(onMarkResolved)}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.menuItemText}>{t('topics.mark_resolved')}</Text>
+                </TouchableOpacity>
+                <View style={styles.menuDivider} />
+              </>
             ) : null}
             <TouchableOpacity
               style={styles.menuItem}
@@ -66,6 +69,7 @@ export default function TopicActionsSheet({
             >
               <Text style={styles.menuItemText}>{t('topics.edit_topic')}</Text>
             </TouchableOpacity>
+            <View style={styles.menuDivider} />
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => runAfterClose(onRemoveTopic)}
@@ -131,7 +135,6 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.surface,
       borderRadius: Radius.lg,
       padding: 16,
-      gap: 10,
       justifyContent: 'center',
       shadowColor: '#1F1F1F',
       shadowOffset: { width: 0, height: 3 },
@@ -141,6 +144,13 @@ const makeStyles = (c: ThemeColors) =>
     },
     menuContainerCompact: {
       minHeight: 96,
+    },
+    menuDivider: {
+      width: 303,
+      height: 0,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+      alignSelf: 'center',
     },
     menuItem: {
       minHeight: 28,

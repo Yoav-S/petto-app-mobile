@@ -258,6 +258,7 @@ export default function AddPetScreen() {
 
           <View style={{ width: layout.cardWidth }}>
             <ProfilePillField
+              layout="sex"
               label={t('profile.sex')}
               value={sex}
               onChange={setSex}

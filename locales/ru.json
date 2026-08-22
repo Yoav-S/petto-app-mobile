@@ -458,7 +458,7 @@
     "not_found_subtitle": "Возможно, эта тема была удалена",
     "mark_resolved": "Отметить решённым",
     "resolve_confirm_title": "Отметить как решённое?",
-    "resolve_confirm_body": "Тема переместится во вкладку Решённые.",
+    "resolve_confirm_body": "Вы не сможете добавлять новые записи, пока не откроете эту тему снова.",
     "condition_title": "Состояние",
     "condition_title_placeholder": "напр. Кожная аллергия",
     "note_placeholder": "Что изменилось?",

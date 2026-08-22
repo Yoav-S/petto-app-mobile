@@ -139,23 +139,37 @@ export function ProfilePillField({
   options,
   value,
   onChange,
+  layout = 'default',
 }: {
   label: string;
   options: PillOption[];
   value: string | null;
   onChange: (value: string) => void;
+  /** Figma sex row: 170×36, gap 16; male 67×36, female 87×36, pill padding 12. */
+  layout?: 'default' | 'sex';
 }) {
   const styles = useThemedStyles(makeStyles);
   return (
     <CardShell minHeight={90}>
       <Text style={styles.fieldLabel}>{label}</Text>
-      <View style={styles.pillRow}>
+      <View style={[styles.pillRow, layout === 'sex' && styles.pillRowSex]}>
         {options.map((option) => {
           const selected = value === option.value;
+          const pillSizeStyle =
+            layout === 'sex'
+              ? option.value === 'male'
+                ? styles.pillSexMale
+                : option.value === 'female'
+                  ? styles.pillSexFemale
+                  : styles.pillDefault
+              : styles.pillDefault;
           return (
             <TouchableOpacity
               key={option.value}
-              style={[styles.pill, selected ? styles.pillSelected : styles.pillUnselected]}
+              style={[
+                pillSizeStyle,
+                selected ? styles.pillSelected : styles.pillUnselected,
+              ]}
               onPress={() => onChange(option.value)}
               activeOpacity={0.8}
               accessibilityRole="button"
@@ -167,8 +181,6 @@ export function ProfilePillField({
                   selected ? styles.pillTextSelected : styles.pillTextUnselected,
                 ]}
                 numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.85}
               >
                 {option.label}
               </Text>
@@ -241,11 +253,32 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: 'center',
       gap: 12,
       marginTop: 10,
-      width: '100%',
     },
-    pill: {
-      flex: 1,
-      minWidth: 0,
+    pillRowSex: {
+      width: 170,
+      height: 36,
+      gap: 16,
+    },
+    pillDefault: {
+      width: 87,
+      height: 36,
+      borderRadius: 12,
+      paddingVertical: 6,
+      paddingHorizontal: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pillSexMale: {
+      width: 67,
+      height: 36,
+      borderRadius: 12,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pillSexFemale: {
+      width: 87,
       height: 36,
       borderRadius: 12,
       paddingVertical: 6,
