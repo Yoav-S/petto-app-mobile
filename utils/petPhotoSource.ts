@@ -1,4 +1,5 @@
 import type { ImageSource } from 'expo-image';
+import { Image } from 'expo-image';
 
 const DEFAULT_DOG = require('@/assets/images/onboarding/no-pet-images-default.jpg') as ImageSource;
 const DEFAULT_CAT =
@@ -32,6 +33,16 @@ export function petPhotoRecyclingKey(
 ): string {
   if (!pet?.id) return 'empty';
   return `${pet.id}:${pet.photo_url ?? 'default'}`;
+}
+
+/** Warm expo-image cache so cover photos paint immediately after a URL change. */
+export async function prefetchPetPhoto(url: string | null | undefined): Promise<void> {
+  if (!url || !/^https?:\/\//i.test(url)) return;
+  try {
+    await Image.prefetch(url);
+  } catch {
+    // Non-fatal — onLoad still resolves once the network fetch completes.
+  }
 }
 
 export function onboardingDefaultDogSource(): ImageSource {

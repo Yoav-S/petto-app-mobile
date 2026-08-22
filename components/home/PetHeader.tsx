@@ -19,7 +19,7 @@ import {
   type SystemBarContentStyle,
 } from '@/context/SystemBarsContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { petPhotoRecyclingKey, petPhotoSource } from '@/utils/petPhotoSource';
+import { petPhotoRecyclingKey, petPhotoSource, prefetchPetPhoto } from '@/utils/petPhotoSource';
 import PetPhotoImage from '@/components/ui/PetPhotoImage';
 import HeaderIconButton, {
   HEADER_ICON_BTN,
@@ -96,6 +96,10 @@ export default function PetHeader({
     () => petPhotoSource(pet),
     [pet?.id, pet?.photo_url, pet?.type],
   );
+
+  useEffect(() => {
+    void prefetchPetPhoto(pet?.photo_url);
+  }, [pet?.photo_url]);
   const themeBarStyle: SystemBarContentStyle = isDark ? 'light' : 'dark';
   const imageBarStyle = useImageStatusBarStyle(coverSource, themeBarStyle);
   useStatusBarOverride(loading ? themeBarStyle : pet ? imageBarStyle : 'dark');

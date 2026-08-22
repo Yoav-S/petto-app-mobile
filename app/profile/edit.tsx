@@ -24,8 +24,9 @@ import {
   KeyboardDismissDoneChip,
   useKeyboardBottomOffset,
 } from '@/components/ui/GlobalKeyboardDoneButton';
-import { updatePet, deletePet } from '@/services/pets';
+import { patchPetInCache, updatePet, deletePet } from '@/services/pets';
 import { uploadPetPhoto } from '@/services/storage';
+import { prefetchPetPhoto } from '@/utils/petPhotoSource';
 import { getErrorMessage } from '@/services/errors';
 import type { Pet } from '@/types/api';
 import { usePetsQuery } from '@/hooks/useCachedQueries';
@@ -236,7 +237,16 @@ export default function EditProfileScreen() {
       setSaving(true);
       let photoUrl: string | null | undefined;
       if (photoChanged) {
+        if (photoUri) {
+          patchPetInCache(activePetId, { photo_url: photoUri });
+        }
         photoUrl = photoUri ? await uploadPetPhoto(photoUri) : null;
+        if (photoUrl) {
+          patchPetInCache(activePetId, { photo_url: photoUrl });
+          await prefetchPetPhoto(photoUrl);
+        } else if (photoUri === null) {
+          patchPetInCache(activePetId, { photo_url: null });
+        }
       }
 
       const weightValue = weight.trim() ? Number(weight.trim().replace(',', '.')) : null;

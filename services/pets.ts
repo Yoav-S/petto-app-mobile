@@ -2,13 +2,14 @@ import { apiGet, apiPost, apiPatch, apiDelete } from '@/services/api';
 import type { Pet } from '@/types/api';
 import { queryKeys } from '@/services/queryKeys';
 import {
-  invalidatePets,
   invalidatePetDomain,
   invalidateProfile,
   queryClient,
 } from '@/services/queryClient';
+import { prefetchPetPhoto } from '@/utils/petPhotoSource';
 
 function upsertPetInCache(pet: Pet): void {
+  void queryClient.cancelQueries({ queryKey: queryKeys.pets.all });
   queryClient.setQueryData<Pet[]>(queryKeys.pets.all, (old) => {
     if (!old?.length) return [pet];
     const idx = old.findIndex((p) => p.id === pet.id);
@@ -19,11 +20,26 @@ function upsertPetInCache(pet: Pet): void {
   });
 }
 
+function patchPetInCache(petId: string, patch: Partial<Pet>): void {
+  void queryClient.cancelQueries({ queryKey: queryKeys.pets.all });
+  queryClient.setQueryData<Pet[]>(queryKeys.pets.all, (old) => {
+    if (!old?.length) return old;
+    const idx = old.findIndex((p) => p.id === petId);
+    if (idx < 0) return old;
+    const next = [...old];
+    next[idx] = { ...next[idx], ...patch };
+    return next;
+  });
+}
+
 function removePetFromCache(petId: string): void {
+  void queryClient.cancelQueries({ queryKey: queryKeys.pets.all });
   queryClient.setQueryData<Pet[]>(queryKeys.pets.all, (old) =>
     old?.filter((p) => p.id !== petId) ?? [],
   );
 }
+
+export { upsertPetInCache, patchPetInCache };
 
 export interface CreatePetInput {
   name: string;
@@ -56,7 +72,7 @@ export function listPets(): Promise<Pet[]> {
 export async function createPet(input: CreatePetInput): Promise<Pet> {
   const pet = await apiPost<Pet>('/pets', input);
   upsertPetInCache(pet);
-  invalidatePets();
+  await prefetchPetPhoto(pet.photo_url);
   invalidateProfile();
   return pet;
 }
@@ -64,15 +80,15 @@ export async function createPet(input: CreatePetInput): Promise<Pet> {
 export async function updatePet(petId: string, patch: UpdatePetInput): Promise<Pet> {
   const pet = await apiPatch<Pet>(`/pets/${petId}`, patch);
   upsertPetInCache(pet);
-  invalidatePets();
-  invalidatePetDomain(petId);
+  if (patch.photo_url !== undefined) {
+    await prefetchPetPhoto(pet.photo_url);
+  }
   return pet;
 }
 
 export async function deletePet(petId: string): Promise<void> {
   await apiDelete(`/pets/${petId}`);
   removePetFromCache(petId);
-  invalidatePets();
   invalidatePetDomain(petId);
   invalidateProfile();
 }

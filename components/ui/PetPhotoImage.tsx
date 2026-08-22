@@ -60,12 +60,32 @@ export default function PetPhotoImage({
   const styles = useThemedStyles(makeStyles);
   const key = sourceKey(source);
   const remote = isRemoteUri(source);
+  const imageKey = recyclingKey ?? key;
   const [imageLoaded, setImageLoaded] = useState(!remote);
   const fadeAnim = useRef(new Animated.Value(0.45)).current;
 
   useEffect(() => {
-    setImageLoaded(!isRemoteUri(source));
-  }, [key]);
+    let cancelled = false;
+    if (!remote) {
+      setImageLoaded(true);
+      return;
+    }
+    const uri =
+      typeof source === 'object' && source && 'uri' in source && typeof source.uri === 'string'
+        ? source.uri
+        : null;
+    if (!uri) {
+      setImageLoaded(true);
+      return;
+    }
+    setImageLoaded(false);
+    void Image.prefetch(uri).finally(() => {
+      if (!cancelled) setImageLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [imageKey, remote, source]);
 
   const waiting = forceLoading || (Boolean(source) && remote && !imageLoaded);
 
@@ -98,11 +118,12 @@ export default function PetPhotoImage({
     <View style={[styles.host, style, { overflow: 'hidden' }]}>
       {!forceLoading && source ? (
         <Image
-          key={recyclingKey ?? key}
+          key={imageKey}
           source={source}
           style={styles.image}
           contentFit={contentFit}
           accessibilityLabel={accessibilityLabel}
+          priority="high"
           onLoad={() => setImageLoaded(true)}
           onError={() => setImageLoaded(true)}
           transition={remote ? 180 : 0}

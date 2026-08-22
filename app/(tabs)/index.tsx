@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 import { guardAddPet } from '@/services/subscription';
 import type { MedicalRecord, Reminder } from '@/types/api';
 import { isIsoDateToday, normalizeToDatePart, todayIsoDate, truncateHealthDescription } from '@/utils/calendar';
+import { prefetchPetPhoto } from '@/utils/petPhotoSource';
 import {
   usePetsQuery,
   useVaccinationsQuery,
@@ -206,13 +207,11 @@ export default function HomeScreen() {
           : null;
 
   const refetchHome = useCallback(() => {
-    void petsQuery.refetch();
     void vaccinesQuery.refetch();
     void todayQuery.refetch();
     void upcomingQuery.refetch();
     void recordsQuery.refetch();
   }, [
-    petsQuery.refetch,
     vaccinesQuery.refetch,
     todayQuery.refetch,
     upcomingQuery.refetch,
@@ -238,6 +237,8 @@ export default function HomeScreen() {
   const handleSelectPet = async (petId: string) => {
     setSwitchVisible(false);
     if (petId !== activePetId) {
+      const nextPet = pets.find((p) => p.id === petId);
+      void prefetchPetPhoto(nextPet?.photo_url);
       await setActivePetId(petId);
     }
   };
