@@ -5,7 +5,7 @@ import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import type { Pet } from '@/types/api';
-import { petPhotoSource } from '@/utils/petPhotoSource';
+import { petPhotoRecyclingKey, petPhotoSource } from '@/utils/petPhotoSource';
 import PetPhotoImage from '@/components/ui/PetPhotoImage';
 
 export function petTypeLabel(type: string): string {
@@ -33,7 +33,7 @@ export function PetSwitcherRow({ pet, selected, onPress }: PetSwitcherRowProps) 
     >
       <View style={styles.left}>
         <PetPhotoImage
-          recyclingKey={pet.id}
+          recyclingKey={petPhotoRecyclingKey(pet)}
           source={petPhotoSource(pet)}
           style={styles.avatar}
           contentFit="cover"

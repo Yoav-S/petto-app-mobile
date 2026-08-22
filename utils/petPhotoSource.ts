@@ -26,6 +26,14 @@ export function petPhotoSource(pet: PetPhotoLike | null | undefined): ImageSourc
   return defaultPetPhotoSource(pet?.type);
 }
 
+/** Bust expo-image slot when the photo URL changes for the same pet. */
+export function petPhotoRecyclingKey(
+  pet: (PetPhotoLike & { id?: string }) | null | undefined,
+): string {
+  if (!pet?.id) return 'empty';
+  return `${pet.id}:${pet.photo_url ?? 'default'}`;
+}
+
 export function onboardingDefaultDogSource(): ImageSource {
   return DEFAULT_DOG;
 }

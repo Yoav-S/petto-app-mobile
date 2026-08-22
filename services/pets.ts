@@ -1,6 +1,29 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/services/api';
 import type { Pet } from '@/types/api';
-import { invalidatePets, invalidatePetDomain, invalidateProfile } from '@/services/queryClient';
+import { queryKeys } from '@/services/queryKeys';
+import {
+  invalidatePets,
+  invalidatePetDomain,
+  invalidateProfile,
+  queryClient,
+} from '@/services/queryClient';
+
+function upsertPetInCache(pet: Pet): void {
+  queryClient.setQueryData<Pet[]>(queryKeys.pets.all, (old) => {
+    if (!old?.length) return [pet];
+    const idx = old.findIndex((p) => p.id === pet.id);
+    if (idx < 0) return [...old, pet];
+    const next = [...old];
+    next[idx] = pet;
+    return next;
+  });
+}
+
+function removePetFromCache(petId: string): void {
+  queryClient.setQueryData<Pet[]>(queryKeys.pets.all, (old) =>
+    old?.filter((p) => p.id !== petId) ?? [],
+  );
+}
 
 export interface CreatePetInput {
   name: string;
@@ -32,6 +55,7 @@ export function listPets(): Promise<Pet[]> {
 
 export async function createPet(input: CreatePetInput): Promise<Pet> {
   const pet = await apiPost<Pet>('/pets', input);
+  upsertPetInCache(pet);
   invalidatePets();
   invalidateProfile();
   return pet;
@@ -39,6 +63,7 @@ export async function createPet(input: CreatePetInput): Promise<Pet> {
 
 export async function updatePet(petId: string, patch: UpdatePetInput): Promise<Pet> {
   const pet = await apiPatch<Pet>(`/pets/${petId}`, patch);
+  upsertPetInCache(pet);
   invalidatePets();
   invalidatePetDomain(petId);
   return pet;
@@ -46,6 +71,7 @@ export async function updatePet(petId: string, patch: UpdatePetInput): Promise<P
 
 export async function deletePet(petId: string): Promise<void> {
   await apiDelete(`/pets/${petId}`);
+  removePetFromCache(petId);
   invalidatePets();
   invalidatePetDomain(petId);
   invalidateProfile();

@@ -19,7 +19,7 @@ import {
   type SystemBarContentStyle,
 } from '@/context/SystemBarsContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { petPhotoSource } from '@/utils/petPhotoSource';
+import { petPhotoRecyclingKey, petPhotoSource } from '@/utils/petPhotoSource';
 import PetPhotoImage from '@/components/ui/PetPhotoImage';
 import HeaderIconButton, {
   HEADER_ICON_BTN,
@@ -92,7 +92,10 @@ export default function PetHeader({
   const panelOverlap = Math.round((DESIGN_COVER_HEIGHT - DESIGN_PANEL_TOP) * structuralScale);
   const panelRadius = Math.round(DESIGN_PANEL_RADIUS * structuralScale);
   const nameBlockWidth = Math.min(screenWidth - 40, contentWidth);
-  const coverSource = useMemo(() => petPhotoSource(pet), [pet]);
+  const coverSource = useMemo(
+    () => petPhotoSource(pet),
+    [pet?.id, pet?.photo_url, pet?.type],
+  );
   const themeBarStyle: SystemBarContentStyle = isDark ? 'light' : 'dark';
   const imageBarStyle = useImageStatusBarStyle(coverSource, themeBarStyle);
   useStatusBarOverride(loading ? themeBarStyle : pet ? imageBarStyle : 'dark');
@@ -134,7 +137,7 @@ export default function PetHeader({
             <PetPhotoImage forceLoading style={styles.coverImage} />
           ) : pet ? (
             <PetPhotoImage
-              recyclingKey={pet.id}
+              recyclingKey={petPhotoRecyclingKey(pet)}
               source={coverSource}
               style={styles.coverImage}
               contentFit="cover"
