@@ -358,6 +358,8 @@
     "not_found_title": "Topic not found",
     "not_found_subtitle": "This topic may have been deleted",
     "mark_resolved": "Mark resolved",
+    "reopen_topic": "Reopen topic",
+    "resolved_banner": "Resolved",
     "resolve_confirm_title": "Mark as resolved?",
     "resolve_confirm_body": "You won't be able to add new records until you reopen this topic.",
     "condition_title": "Condition",

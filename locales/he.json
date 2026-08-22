@@ -457,6 +457,8 @@
     "not_found_title": "הנושא לא נמצא",
     "not_found_subtitle": "ייתכן שהנושא נמחק",
     "mark_resolved": "סמן כנפתר",
+    "reopen_topic": "פתח מחדש את הנושא",
+    "resolved_banner": "נפתר",
     "resolve_confirm_title": "לסמן כנפתר?",
     "resolve_confirm_body": "לא תוכל להוסיף רשומות חדשות עד שתפתח מחדש את הנושא הזה.",
     "condition_title": "מצב",

@@ -450,6 +450,8 @@ export function formatNoteSectionDateLabel(
   if (diffDays === 1) return labels.yesterday;
   return formatDisplayDateLong(created);
 }
+
+export const MONTH_KEYS = [
   'jan',
   'feb',
   'mar',

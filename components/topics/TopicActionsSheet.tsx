@@ -12,18 +12,20 @@ import { t } from '@/i18n';
 
 interface TopicActionsSheetProps {
   visible: boolean;
-  canResolve?: boolean;
+  isResolved?: boolean;
   onClose: () => void;
-  onMarkResolved: () => void;
+  onMarkResolved?: () => void;
+  onReopen?: () => void;
   onEditTopic: () => void;
   onRemoveTopic: () => void;
 }
 
 export default function TopicActionsSheet({
   visible,
-  canResolve = true,
+  isResolved = false,
   onClose,
   onMarkResolved,
+  onReopen,
   onEditTopic,
   onRemoveTopic,
 }: TopicActionsSheetProps) {
@@ -49,19 +51,30 @@ export default function TopicActionsSheet({
         </View>
 
         <View style={styles.body}>
-          <View style={[styles.menuContainer, !canResolve && styles.menuContainerCompact]}>
-            {canResolve ? (
+          <View style={styles.menuContainer}>
+            {isResolved ? (
               <>
                 <TouchableOpacity
                   style={styles.menuItem}
-                  onPress={() => runAfterClose(onMarkResolved)}
+                  onPress={() => runAfterClose(() => onReopen?.())}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.menuItemText}>{t('topics.reopen_topic')}</Text>
+                </TouchableOpacity>
+                <View style={styles.menuDivider} />
+              </>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => runAfterClose(() => onMarkResolved?.())}
                   accessibilityRole="button"
                 >
                   <Text style={styles.menuItemText}>{t('topics.mark_resolved')}</Text>
                 </TouchableOpacity>
                 <View style={styles.menuDivider} />
               </>
-            ) : null}
+            )}
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => runAfterClose(onEditTopic)}

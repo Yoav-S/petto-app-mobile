@@ -457,6 +457,8 @@
     "not_found_title": "Тема не найдена",
     "not_found_subtitle": "Возможно, эта тема была удалена",
     "mark_resolved": "Отметить решённым",
+    "reopen_topic": "Открыть тему снова",
+    "resolved_banner": "Решено",
     "resolve_confirm_title": "Отметить как решённое?",
     "resolve_confirm_body": "Вы не сможете добавлять новые записи, пока не откроете эту тему снова.",
     "condition_title": "Состояние",

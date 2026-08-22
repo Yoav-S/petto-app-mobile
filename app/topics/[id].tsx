@@ -13,7 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
-import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useColors, useTheme, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
@@ -22,7 +22,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import TopicActionsSheet from '@/components/topics/TopicActionsSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import { getRecord, resolveRecord, deleteRecord } from '@/services/health';
+import { getRecord, resolveRecord, reopenRecord, deleteRecord } from '@/services/health';
 import { getErrorMessage } from '@/services/errors';
 import HealthReminderLine from '@/components/health/HealthReminderLine';
 import HealthNoteIconRow from '@/components/health/HealthNoteIconRow';
@@ -38,6 +38,7 @@ const DESIGN_FOOTER_PAD_TOP = 12;
 const DESIGN_FOOTER_PAD_H = 20;
 const DESIGN_FOOTER_RADIUS = 24;
 const DESIGN_SAVE_BUTTON_HEIGHT = 48;
+const DESIGN_RESOLVED_BAR_HEIGHT = 48;
 const DESIGN_FOOTER_MIN_BOTTOM = 10;
 const DESIGN_FOOTER_SAFE_GAP = 8;
 
@@ -47,6 +48,7 @@ type NoteListItem =
 
 export default function HealthDetailsScreen() {
   const colors = useColors();
+  const { isDark } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const router = useRouter();
@@ -57,21 +59,25 @@ export default function HealthDetailsScreen() {
   const { contentWidth } = useResponsiveLayout();
 
   const footerLayout = useMemo(
-    () => ({
-      padH: DESIGN_FOOTER_PAD_H,
-      padTop: DESIGN_FOOTER_PAD_TOP,
-      padBottom:
-        Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM) + DESIGN_FOOTER_SAFE_GAP,
-      buttonWidth: contentWidth,
-      buttonHeight: DESIGN_SAVE_BUTTON_HEIGHT,
-      buttonRadius: 12,
-      footerRadius: DESIGN_FOOTER_RADIUS,
-      scrollPadBottom:
-        DESIGN_FOOTER_PAD_TOP + DESIGN_SAVE_BUTTON_HEIGHT +
-        Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM) +
-        DESIGN_FOOTER_SAFE_GAP +
-        16,
-    }),
+    () => {
+      const padBottom =
+        Math.max(insets.bottom, DESIGN_FOOTER_MIN_BOTTOM) + DESIGN_FOOTER_SAFE_GAP;
+      return {
+        padH: DESIGN_FOOTER_PAD_H,
+        padTop: DESIGN_FOOTER_PAD_TOP,
+        padBottom,
+        buttonWidth: contentWidth,
+        buttonHeight: DESIGN_SAVE_BUTTON_HEIGHT,
+        buttonRadius: 12,
+        footerRadius: DESIGN_FOOTER_RADIUS,
+        resolvedBarWidth: contentWidth,
+        resolvedBarHeight: DESIGN_RESOLVED_BAR_HEIGHT,
+        activeScrollPadBottom:
+          DESIGN_FOOTER_PAD_TOP + DESIGN_SAVE_BUTTON_HEIGHT + padBottom + 16,
+        resolvedScrollPadBottom:
+          DESIGN_FOOTER_PAD_TOP + DESIGN_RESOLVED_BAR_HEIGHT + padBottom + 16,
+      };
+    },
     [contentWidth, insets.bottom],
   );
 
@@ -83,6 +89,7 @@ export default function HealthDetailsScreen() {
   const [resolveVisible, setResolveVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
   const [resolving, setResolving] = useState(false);
+  const [reopening, setReopening] = useState(false);
   const recordRef = useRef<MedicalRecordDetail | null>(null);
   recordRef.current = record;
 
@@ -124,13 +131,29 @@ export default function HealthDetailsScreen() {
     setResolving(true);
     try {
       await resolveRecord(activePetId, recordId);
+      const detail = await getRecord(activePetId, recordId);
+      setRecord(detail);
       setResolveVisible(false);
-      router.back();
     } catch (err) {
       toast.showError(getErrorMessage(err));
+    } finally {
       setResolving(false);
     }
-  }, [activePetId, recordId, resolving, router, toast]);
+  }, [activePetId, recordId, resolving, toast]);
+
+  const handleReopen = useCallback(async () => {
+    if (!activePetId || !recordId || reopening) return;
+    setReopening(true);
+    try {
+      await reopenRecord(activePetId, recordId);
+      const detail = await getRecord(activePetId, recordId);
+      setRecord(detail);
+    } catch (err) {
+      toast.showError(getErrorMessage(err));
+    } finally {
+      setReopening(false);
+    }
+  }, [activePetId, recordId, reopening, toast]);
 
   const handleDeleteRecord = useCallback(() => {
     if (!activePetId || !recordId) return;
@@ -234,7 +257,11 @@ export default function HealthDetailsScreen() {
         <ScrollView
           contentContainerStyle={[
             styles.content,
-            { paddingBottom: footerLayout.scrollPadBottom },
+            {
+              paddingBottom: isActive
+                ? footerLayout.activeScrollPadBottom
+                : footerLayout.resolvedScrollPadBottom,
+            },
           ]}
           showsVerticalScrollIndicator={false}
         >
@@ -306,41 +333,70 @@ export default function HealthDetailsScreen() {
         </ScrollView>
       </View>
 
-      <View
-        style={[
-          styles.footer,
-          {
-            paddingTop: footerLayout.padTop,
-            paddingHorizontal: footerLayout.padH,
-            paddingBottom: footerLayout.padBottom,
-            borderTopLeftRadius: footerLayout.footerRadius,
-            borderTopRightRadius: footerLayout.footerRadius,
-          },
-        ]}
-      >
-        <TouchableOpacity
+      {isActive ? (
+        <View
           style={[
-            styles.addButton,
+            styles.footer,
             {
-              width: footerLayout.buttonWidth,
-              height: footerLayout.buttonHeight,
-              borderRadius: footerLayout.buttonRadius,
+              paddingTop: footerLayout.padTop,
+              paddingHorizontal: footerLayout.padH,
+              paddingBottom: footerLayout.padBottom,
+              borderTopLeftRadius: footerLayout.footerRadius,
+              borderTopRightRadius: footerLayout.footerRadius,
             },
           ]}
-          activeOpacity={0.85}
-          onPress={() =>
-            router.push({ pathname: '/topics/add-note', params: { recordId: record.id } } as never)
-          }
         >
-          <Text style={styles.addText}>{t('topics.add_note')}</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={[
+              styles.addButton,
+              {
+                width: footerLayout.buttonWidth,
+                height: footerLayout.buttonHeight,
+                borderRadius: footerLayout.buttonRadius,
+              },
+            ]}
+            activeOpacity={0.85}
+            onPress={() =>
+              router.push({ pathname: '/topics/add-note', params: { recordId: record.id } } as never)
+            }
+          >
+            <Text style={styles.addText}>{t('topics.add_note')}</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View
+          style={[
+            styles.resolvedFooter,
+            {
+              paddingTop: footerLayout.padTop,
+              paddingHorizontal: footerLayout.padH,
+              paddingBottom: footerLayout.padBottom,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.resolvedBar,
+              {
+                width: footerLayout.resolvedBarWidth,
+                height: footerLayout.resolvedBarHeight,
+                backgroundColor: isDark ? colors.inactiveControl : '#1F2937',
+              },
+            ]}
+          >
+            <Text style={styles.resolvedBarText}>{t('topics.resolved_banner')}</Text>
+          </View>
+        </View>
+      )}
 
       <TopicActionsSheet
         visible={menuVisible}
-        canResolve={isActive}
+        isResolved={!isActive}
         onClose={() => setMenuVisible(false)}
         onMarkResolved={() => setResolveVisible(true)}
+        onReopen={() => {
+          void handleReopen();
+        }}
         onEditTopic={() =>
           router.push({ pathname: '/topics/add', params: { id: record.id } } as never)
         }
@@ -351,7 +407,7 @@ export default function HealthDetailsScreen() {
         visible={resolveVisible}
         title={t('topics.resolve_confirm_title')}
         message={t('topics.resolve_confirm_body')}
-        confirmText={t('topics.mark_resolved')}
+        confirmText={t('topics.tab_resolved')}
         cancelText={t('common.cancel')}
         variant="primary"
         onCancel={() => {
@@ -462,6 +518,34 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: c.surface,
+    textAlign: 'center',
+  },
+  resolvedFooter: {
+    width: '100%',
+    backgroundColor: c.panel,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    shadowColor: '#1E1E1E',
+    shadowOffset: { width: 0, height: -1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  resolvedBar: {
+    opacity: 0.8,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resolvedBarText: {
+    width: '100%',
+    maxWidth: 303,
+    fontFamily: 'Rubik-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#FFFFFF',
     textAlign: 'center',
   },
 });

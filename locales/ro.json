@@ -456,6 +456,8 @@
     "not_found_title": "Subiect negăsit",
     "not_found_subtitle": "Acest subiect poate fi fost șters",
     "mark_resolved": "Marchează rezolvat",
+    "reopen_topic": "Redeschide subiectul",
+    "resolved_banner": "Rezolvat",
     "resolve_confirm_title": "Marchezi ca rezolvat?",
     "resolve_confirm_body": "Nu vei putea adăuga înregistrări noi până când redeschizi acest subiect.",
     "condition_title": "Afecțiune",

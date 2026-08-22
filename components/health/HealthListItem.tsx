@@ -96,6 +96,7 @@ export default function HealthListItem({
         {
           width: cardWidth,
           height: hasSubtitle ? cardHeight : undefined,
+          maxHeight: hasSubtitle ? cardHeight : undefined,
           minHeight: hasSubtitle ? cardHeight : 80,
           paddingTop: padV,
           paddingBottom: padV,
@@ -115,7 +116,8 @@ export default function HealthListItem({
           styles.inner,
           {
             width: innerWidth,
-            minHeight: hasSubtitle ? textBlockHeight + innerGap + createdHeight : undefined,
+            height: hasSubtitle ? textBlockHeight + innerGap + createdHeight : undefined,
+            maxHeight: hasSubtitle ? textBlockHeight + innerGap + createdHeight : undefined,
             gap: innerGap,
           },
         ]}
@@ -125,7 +127,8 @@ export default function HealthListItem({
             styles.textBlock,
             {
               width: innerWidth,
-              minHeight: hasSubtitle ? textBlockHeight : undefined,
+              height: hasSubtitle ? textBlockHeight : undefined,
+              maxHeight: hasSubtitle ? textBlockHeight : undefined,
               gap: textGap,
             },
           ]}
@@ -154,14 +157,18 @@ export default function HealthListItem({
           </View>
 
           {hasSubtitle ? (
-            <Text style={styles.subtitle} numberOfLines={2} ellipsizeMode="tail">
+            <Text
+              style={styles.subtitle}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
               {subtitle}
             </Text>
           ) : null}
         </View>
 
         {createdLabel ? (
-          <Text style={styles.createdMeta} numberOfLines={1}>
+          <Text style={styles.createdMeta} numberOfLines={1} ellipsizeMode="tail">
             {createdLabel}
           </Text>
         ) : null}
@@ -189,11 +196,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   inner: {
     flex: 1,
     justifyContent: 'flex-start',
+    overflow: 'hidden',
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
+    flexShrink: 0,
   },
   title: {
     fontFamily: 'Rubik-Medium',
@@ -209,6 +218,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   textBlock: {
     flexShrink: 1,
     minHeight: 0,
+    overflow: 'hidden',
     justifyContent: 'flex-start',
   },
   subtitle: {
@@ -216,6 +226,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: c.primaryText,
+    flexShrink: 1,
   },
   createdMeta: {
     fontFamily: 'Rubik-Regular',

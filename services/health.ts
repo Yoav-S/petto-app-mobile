@@ -48,6 +48,14 @@ export async function resolveRecord(petId: string, id: string): Promise<MedicalR
   return row;
 }
 
+export async function reopenRecord(petId: string, id: string): Promise<MedicalRecord> {
+  const row = await apiPatch<MedicalRecord>(`/pets/${petId}/medical-records/${id}/status`, {
+    status: 'active',
+  });
+  invalidateRecords(petId);
+  return row;
+}
+
 export async function deleteRecord(petId: string, id: string): Promise<void> {
   await apiDelete(`/pets/${petId}/medical-records/${id}`);
   invalidateRecords(petId);
