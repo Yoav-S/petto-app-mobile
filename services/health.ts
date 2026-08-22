@@ -2,6 +2,13 @@ import { apiGet, apiPost, apiPut, apiPatch, apiDelete } from '@/services/api';
 import { getReminder } from '@/services/reminders';
 import type { MedicalRecord, MedicalRecordDetail, HealthNote } from '@/types/api';
 import { invalidateRecords, invalidateReminders } from '@/services/queryClient';
+import {
+  buildCursorQuery,
+  buildCursorQueryWithBase,
+  type CursorListParams,
+} from '@/utils/cursorPagination';
+
+export type { CursorListParams };
 
 export type RecordStatus = 'active' | 'resolved';
 
@@ -13,8 +20,39 @@ export interface CreateNoteInput {
 
 export type UpdateNoteInput = Partial<CreateNoteInput>;
 
-export function listRecords(petId: string, status: RecordStatus): Promise<MedicalRecord[]> {
-  return apiGet<MedicalRecord[]>(`/pets/${petId}/medical-records?status=${status}`);
+export function listRecords(
+  petId: string,
+  status: RecordStatus,
+  params?: CursorListParams,
+): Promise<MedicalRecord[]> {
+  return apiGet<MedicalRecord[]>(
+    `/pets/${petId}/medical-records${buildCursorQueryWithBase({ status }, params)}`,
+  );
+}
+
+export function getRecord(
+  petId: string,
+  id: string,
+  params?: { notes_limit?: number },
+): Promise<MedicalRecordDetail> {
+  const search = new URLSearchParams();
+  if (params?.notes_limit != null) {
+    search.set('notes_limit', String(params.notes_limit));
+  }
+  const qs = search.toString();
+  return apiGet<MedicalRecordDetail>(
+    `/pets/${petId}/medical-records/${id}${qs ? `?${qs}` : ''}`,
+  );
+}
+
+export function listRecordNotes(
+  petId: string,
+  recordId: string,
+  params?: CursorListParams,
+): Promise<HealthNote[]> {
+  return apiGet<HealthNote[]>(
+    `/pets/${petId}/medical-records/${recordId}/notes${buildCursorQuery(params)}`,
+  );
 }
 
 export async function createRecord(
@@ -34,10 +72,6 @@ export async function updateRecord(
   const row = await apiPatch<MedicalRecord>(`/pets/${petId}/medical-records/${id}`, input);
   invalidateRecords(petId);
   return row;
-}
-
-export function getRecord(petId: string, id: string): Promise<MedicalRecordDetail> {
-  return apiGet<MedicalRecordDetail>(`/pets/${petId}/medical-records/${id}`);
 }
 
 export async function resolveRecord(petId: string, id: string): Promise<MedicalRecord> {

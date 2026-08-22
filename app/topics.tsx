@@ -9,7 +9,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
@@ -23,22 +22,19 @@ import HealthListItem, {
   healthRecordSubtitle,
 } from '@/components/health/HealthListItem';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import ListLoadMoreFooter from '@/components/ui/ListLoadMoreFooter';
+import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
+import { LIST_FAB_SCROLL_PADDING } from '@/constants/pagination';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import { deleteRecord } from '@/services/health';
+import { deleteRecord, listRecords } from '@/services/health';
 import { getErrorMessage } from '@/services/errors';
 import type { MedicalRecord } from '@/types/api';
-import { useRecordsQuery } from '@/hooks/useCachedQueries';
-import { queryClient, invalidateRecords } from '@/services/queryClient';
-import { queryKeys } from '@/services/queryKeys';
+import { useCursorPagination } from '@/hooks/useCursorPagination';
+import { invalidateRecords } from '@/services/queryClient';
 
 const TABS = ['Active', 'Resolved'] as const;
 type TabName = (typeof TABS)[number];
-
-const EMPTY_LISTS: Record<TabName, MedicalRecord[]> = {
-  Active: [],
-  Resolved: [],
-};
 
 export default function HealthScreen() {
   const colors = useColors();
@@ -57,25 +53,53 @@ export default function HealthScreen() {
   const itemGap = HEALTH_LIST_ITEM_GAP;
   const fadeZone = cardHeight * 0.89;
 
-  const activeQuery = useRecordsQuery(activePetId, 'active', { enrichReminders: true });
-  const resolvedQuery = useRecordsQuery(activePetId, 'resolved', { enrichReminders: true });
+  const fetchActivePage = useCallback(
+    async (params: { limit: number; cursor?: string }) => {
+      if (!activePetId) return [];
+      return listRecords(activePetId, 'active', params);
+    },
+    [activePetId],
+  );
+
+  const fetchResolvedPage = useCallback(
+    async (params: { limit: number; cursor?: string }) => {
+      if (!activePetId) return [];
+      return listRecords(activePetId, 'resolved', params);
+    },
+    [activePetId],
+  );
+
+  const activePagination = useCursorPagination<MedicalRecord>({
+    fetchPage: fetchActivePage,
+    enabled: Boolean(activePetId),
+    resetKey: activePetId,
+  });
+
+  const resolvedPagination = useCursorPagination<MedicalRecord>({
+    fetchPage: fetchResolvedPage,
+    enabled: Boolean(activePetId) && activeTab === 'Resolved',
+    resetKey: activePetId,
+  });
+
+  const currentPagination = activeTab === 'Active' ? activePagination : resolvedPagination;
+  const {
+    items,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    loadMore,
+    refresh,
+    setItems,
+  } = currentPagination;
 
   const listsByTab = useMemo(
     () => ({
-      Active: activeQuery.data ?? EMPTY_LISTS.Active,
-      Resolved: resolvedQuery.data ?? EMPTY_LISTS.Resolved,
+      Active: activePagination.items,
+      Resolved: resolvedPagination.items,
     }),
-    [activeQuery.data, resolvedQuery.data],
+    [activePagination.items, resolvedPagination.items],
   );
-
-  const loading =
-    (activeQuery.isLoading && !activeQuery.data) ||
-    (resolvedQuery.isLoading && !resolvedQuery.data);
-  const error = activeQuery.error
-    ? getErrorMessage(activeQuery.error)
-    : resolvedQuery.error
-      ? getErrorMessage(resolvedQuery.error)
-      : null;
 
   const getItemFadeIntensity = useCallback(
     (index: number) => {
@@ -88,8 +112,6 @@ export default function HealthScreen() {
     },
     [cardHeight, fadeZone, itemGap, listHeight, scrollY],
   );
-
-  const items = listsByTab[activeTab];
 
   const tabPresence = useMemo(
     () => ({
@@ -108,14 +130,8 @@ export default function HealthScreen() {
   }, [deletedNote, toast]);
 
   const refetchAll = useCallback(async () => {
-    await Promise.all([activeQuery.refetch(), resolvedQuery.refetch()]);
-  }, [activeQuery.refetch, resolvedQuery.refetch]);
-
-  useFocusEffect(
-    useCallback(() => {
-      void refetchAll();
-    }, [refetchAll]),
-  );
+    await Promise.all([activePagination.refresh(), resolvedPagination.refresh()]);
+  }, [activePagination.refresh, resolvedPagination.refresh]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -125,6 +141,17 @@ export default function HealthScreen() {
       setRefreshing(false);
     }
   }, [refetchAll]);
+
+  const setTabItems = useCallback(
+    (tab: TabName, updater: (prev: MedicalRecord[]) => MedicalRecord[]) => {
+      if (tab === 'Active') {
+        activePagination.setItems(updater);
+      } else {
+        resolvedPagination.setItems(updater);
+      }
+    },
+    [activePagination.setItems, resolvedPagination.setItems],
+  );
 
   const handleDeleteRecord = (id: string) => {
     if (!activePetId) return;
@@ -155,19 +182,15 @@ export default function HealthScreen() {
     const restore = removed;
     const restoreTab = fromTab;
     const restoreIndex = fromIndex;
-    const statusKey = restoreTab === 'Active' ? 'active' : 'resolved';
-    const cacheKey = [...queryKeys.records.status(activePetId, statusKey), 'enriched'] as const;
 
-    queryClient.setQueryData<MedicalRecord[]>(cacheKey, (prev) =>
-      (prev ?? []).filter((r) => r.id !== id),
-    );
+    setTabItems(fromTab, (prev) => prev.filter((r) => r.id !== id));
 
     toast.showUndo({
       message: t('topics.record_deleted'),
       aboveFab: true,
       onUndo: () => {
-        queryClient.setQueryData<MedicalRecord[]>(cacheKey, (prev) => {
-          const list = [...(prev ?? [])];
+        setTabItems(restoreTab, (prev) => {
+          const list = [...prev];
           const insertAt = Math.min(restoreIndex, list.length);
           list.splice(insertAt, 0, restore);
           return list;
@@ -177,8 +200,8 @@ export default function HealthScreen() {
         try {
           await deleteRecord(activePetId, id);
         } catch (err) {
-          queryClient.setQueryData<MedicalRecord[]>(cacheKey, (prev) => {
-            const list = [...(prev ?? [])];
+          setTabItems(restoreTab, (prev) => {
+            const list = [...prev];
             const insertAt = Math.min(restoreIndex, list.length);
             list.splice(insertAt, 0, restore);
             return list;
@@ -292,8 +315,18 @@ export default function HealthScreen() {
               />
             )}
             ListEmptyComponent={renderEmptyState}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[
+              styles.listContent,
+              items.length === 0 ? styles.listContentEmpty : null,
+            ]}
             showsVerticalScrollIndicator={false}
+            onEndReached={() => {
+              void loadMore();
+            }}
+            onEndReachedThreshold={0.35}
+            ListFooterComponent={
+              <ListLoadMoreFooter loading={loadingMore} hasMore={hasMore} />
+            }
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           />
         </View>
@@ -321,6 +354,8 @@ export default function HealthScreen() {
         onConfirm={confirmDeleteRecord}
         onCancel={() => setDeleteTargetId(null)}
       />
+
+      <ListFetchBlocker visible={loadingMore} />
     </SafeAreaView>
   );
 }
@@ -340,7 +375,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   listContent: {
     paddingTop: 14,
-    paddingBottom: 120,
+    paddingBottom: LIST_FAB_SCROLL_PADDING,
+  },
+  listContentEmpty: {
     flexGrow: 1,
   },
 });

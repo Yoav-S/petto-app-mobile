@@ -34,16 +34,14 @@ import { guardAddReminder } from '@/services/subscription';
 import { listPets } from '@/services/pets';
 import type { Reminder } from '@/types/api';
 import type { RepeatOption } from '@/services/reminders';
-import { useRemindersQuery } from '@/hooks/useCachedQueries';
+import { listReminders } from '@/services/reminders';
+import { useCursorPagination } from '@/hooks/useCursorPagination';
+import ListLoadMoreFooter from '@/components/ui/ListLoadMoreFooter';
+import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
+import { LIST_FAB_SCROLL_PADDING, LIST_PAGE_SIZE } from '@/constants/pagination';
 
 const TABS = ['Today', 'Upcoming', 'Recent'] as const;
 type TabName = (typeof TABS)[number];
-
-const EMPTY_LISTS: Record<TabName, Reminder[]> = {
-  Today: [],
-  Upcoming: [],
-  Recent: [],
-};
 
 function reminderSubtitle(item: Reminder): string {
   if (item.note) return item.note;
@@ -105,33 +103,56 @@ export default function RemindersScreen() {
   const sessionSkipRef = useRef(false);
   const autoPromptCheckedRef = useRef(false);
 
-  const todayQuery = useRemindersQuery(activePetId, 'today');
-  const upcomingQuery = useRemindersQuery(activePetId, 'upcoming');
-  const recentQuery = useRemindersQuery(activePetId, 'recent');
+  const todayPagination = useCursorPagination<Reminder>({
+    fetchPage: useCallback(
+      (params) => (activePetId ? listReminders(activePetId, 'today', params) : Promise.resolve([])),
+      [activePetId],
+    ),
+    enabled: Boolean(activePetId),
+    resetKey: activePetId,
+  });
+  const upcomingPagination = useCursorPagination<Reminder>({
+    fetchPage: useCallback(
+      (params) => (activePetId ? listReminders(activePetId, 'upcoming', params) : Promise.resolve([])),
+      [activePetId],
+    ),
+    enabled: Boolean(activePetId),
+    resetKey: activePetId,
+  });
+  const recentPagination = useCursorPagination<Reminder>({
+    fetchPage: useCallback(
+      (params) => (activePetId ? listReminders(activePetId, 'recent', params) : Promise.resolve([])),
+      [activePetId],
+    ),
+    enabled: Boolean(activePetId),
+    resetKey: activePetId,
+  });
+
+  const paginationByTab = {
+    Today: todayPagination,
+    Upcoming: upcomingPagination,
+    Recent: recentPagination,
+  } as const;
+
+  const currentPagination = paginationByTab[activeTab];
+  const {
+    items,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    loadMore,
+    refresh,
+  } = currentPagination;
 
   const listsByTab = useMemo(
     () => ({
-      Today: todayQuery.data ?? EMPTY_LISTS.Today,
-      Upcoming: upcomingQuery.data ?? EMPTY_LISTS.Upcoming,
-      Recent: recentQuery.data ?? EMPTY_LISTS.Recent,
+      Today: todayPagination.items,
+      Upcoming: upcomingPagination.items,
+      Recent: recentPagination.items,
     }),
-    [todayQuery.data, upcomingQuery.data, recentQuery.data],
+    [todayPagination.items, upcomingPagination.items, recentPagination.items],
   );
-
-  const loading =
-    (todayQuery.isLoading && !todayQuery.data) ||
-    (upcomingQuery.isLoading && !upcomingQuery.data) ||
-    (recentQuery.isLoading && !recentQuery.data);
-
-  const error = todayQuery.error
-    ? getErrorMessage(todayQuery.error)
-    : upcomingQuery.error
-      ? getErrorMessage(upcomingQuery.error)
-      : recentQuery.error
-        ? getErrorMessage(recentQuery.error)
-        : null;
-
-  const items = listsByTab[activeTab];
   const selectedReminder = promptQueue[0] ?? null;
   const actionSheetVisible = selectedReminder != null;
   const promptPosition =
@@ -155,16 +176,20 @@ export default function RemindersScreen() {
   }, [params.deletedId, toast]);
 
   const refetchAll = useCallback(async () => {
-    const [todayRes, , recentRes] = await Promise.all([
-      todayQuery.refetch(),
-      upcomingQuery.refetch(),
-      recentQuery.refetch(),
+    await Promise.all([
+      todayPagination.refresh(),
+      upcomingPagination.refresh(),
+      recentPagination.refresh(),
     ]);
-    return {
-      today: todayRes.data ?? ([] as Reminder[]),
-      recent: recentRes.data ?? ([] as Reminder[]),
-    };
-  }, [todayQuery.refetch, upcomingQuery.refetch, recentQuery.refetch]);
+    if (!activePetId) {
+      return { today: [] as Reminder[], recent: [] as Reminder[] };
+    }
+    const [today, recent] = await Promise.all([
+      listReminders(activePetId, 'today', { limit: LIST_PAGE_SIZE }),
+      listReminders(activePetId, 'recent', { limit: LIST_PAGE_SIZE }),
+    ]);
+    return { today, recent };
+  }, [activePetId, recentPagination.refresh, todayPagination.refresh, upcomingPagination.refresh]);
 
   const openPromptQueue = useCallback(
     (today: Reminder[], recent: Reminder[], focusId?: string | null, force = false) => {
@@ -355,8 +380,18 @@ export default function RemindersScreen() {
             />
           )}
           ListEmptyComponent={renderEmptyState}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            items.length === 0 ? styles.listContentEmpty : null,
+          ]}
           showsVerticalScrollIndicator={false}
+          onEndReached={() => {
+            void loadMore();
+          }}
+          onEndReachedThreshold={0.35}
+          ListFooterComponent={
+            <ListLoadMoreFooter loading={loadingMore} hasMore={hasMore} />
+          }
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         />
       )}
@@ -393,6 +428,8 @@ export default function RemindersScreen() {
           void handleStatus('missed');
         }}
       />
+
+      <ListFetchBlocker visible={loadingMore} />
     </SafeAreaView>
   );
 }
@@ -411,7 +448,9 @@ const makeStyles = (c: ThemeColors) =>
     listContent: {
       paddingTop: 16,
       paddingHorizontal: 16,
-      paddingBottom: 120,
+      paddingBottom: LIST_FAB_SCROLL_PADDING,
+    },
+    listContentEmpty: {
       flexGrow: 1,
     },
   });

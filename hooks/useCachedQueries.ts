@@ -103,11 +103,8 @@ export function usePrefetchPetDomain() {
       queryFn: () => listReminders(petId, 'upcoming'),
     });
     void qc.prefetchQuery({
-      queryKey: [...queryKeys.records.status(petId, 'active'), 'enriched'],
-      queryFn: async () => {
-        const list = await listRecords(petId, 'active');
-        return enrichRecordsWithLatestNoteReminders(petId, list);
-      },
+      queryKey: queryKeys.records.status(petId, 'active'),
+      queryFn: () => listRecords(petId, 'active'),
     });
   };
 }

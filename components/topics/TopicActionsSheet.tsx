@@ -6,7 +6,7 @@ import BottomSheetModal, {
   waitForBottomSheetsToSettle,
 } from '@/components/ui/BottomSheetModal';
 import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
-import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useTheme, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 
@@ -52,46 +52,48 @@ export default function TopicActionsSheet({
 
         <View style={styles.body}>
           <View style={styles.menuContainer}>
-            {isResolved ? (
-              <>
-                <TouchableOpacity
-                  style={styles.menuItem}
-                  onPress={() => runAfterClose(() => onReopen?.())}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.menuItemText}>{t('topics.reopen_topic')}</Text>
-                </TouchableOpacity>
-                <View style={styles.menuDivider} />
-              </>
-            ) : (
-              <>
-                <TouchableOpacity
-                  style={styles.menuItem}
-                  onPress={() => runAfterClose(() => onMarkResolved?.())}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.menuItemText}>{t('topics.mark_resolved')}</Text>
-                </TouchableOpacity>
-                <View style={styles.menuDivider} />
-              </>
-            )}
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => runAfterClose(onEditTopic)}
-              accessibilityRole="button"
-            >
-              <Text style={styles.menuItemText}>{t('topics.edit_topic')}</Text>
-            </TouchableOpacity>
-            <View style={styles.menuDivider} />
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => runAfterClose(onRemoveTopic)}
-              accessibilityRole="button"
-            >
-              <Text style={[styles.menuItemText, styles.removeText]}>
-                {t('topics.remove_topic')}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.menuList}>
+              {isResolved ? (
+                <>
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => runAfterClose(() => onReopen?.())}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.menuItemText}>{t('topics.reopen_topic')}</Text>
+                  </TouchableOpacity>
+                  <View style={styles.menuDivider} />
+                </>
+              ) : (
+                <>
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => runAfterClose(() => onMarkResolved?.())}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.menuItemText}>{t('topics.mark_resolved')}</Text>
+                  </TouchableOpacity>
+                  <View style={styles.menuDivider} />
+                </>
+              )}
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => runAfterClose(onEditTopic)}
+                accessibilityRole="button"
+              >
+                <Text style={styles.menuItemText}>{t('topics.edit_topic')}</Text>
+              </TouchableOpacity>
+              <View style={styles.menuDivider} />
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => runAfterClose(onRemoveTopic)}
+                accessibilityRole="button"
+              >
+                <Text style={[styles.menuItemText, styles.removeText]}>
+                  {t('topics.remove_topic')}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.cancelWrap}>
@@ -144,10 +146,12 @@ const makeStyles = (c: ThemeColors) =>
       gap: 22,
     },
     menuContainer: {
-      minHeight: 136,
+      width: '100%',
+      height: 136,
       backgroundColor: c.surface,
-      borderRadius: Radius.lg,
+      borderRadius: 12,
       padding: 16,
+      alignItems: 'center',
       justifyContent: 'center',
       shadowColor: '#1F1F1F',
       shadowOffset: { width: 0, height: 3 },
@@ -155,8 +159,11 @@ const makeStyles = (c: ThemeColors) =>
       shadowRadius: 8,
       elevation: 2,
     },
-    menuContainerCompact: {
-      minHeight: 96,
+    menuList: {
+      width: 303,
+      minHeight: 104,
+      gap: 8,
+      justifyContent: 'center',
     },
     menuDivider: {
       width: 303,
@@ -166,7 +173,7 @@ const makeStyles = (c: ThemeColors) =>
       alignSelf: 'center',
     },
     menuItem: {
-      minHeight: 28,
+      height: 24,
       alignItems: 'center',
       justifyContent: 'center',
     },

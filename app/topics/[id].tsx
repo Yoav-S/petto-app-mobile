@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
@@ -19,10 +19,19 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import ListLoadMoreFooter from '@/components/ui/ListLoadMoreFooter';
+import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
 import TopicActionsSheet from '@/components/topics/TopicActionsSheet';
+import { LIST_PAGE_SIZE, LIST_SCROLL_END_GAP } from '@/constants/pagination';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import { getRecord, resolveRecord, reopenRecord, deleteRecord } from '@/services/health';
+import {
+  getRecord,
+  listRecordNotes,
+  resolveRecord,
+  reopenRecord,
+  deleteRecord,
+} from '@/services/health';
 import { getErrorMessage } from '@/services/errors';
 import HealthReminderLine from '@/components/health/HealthReminderLine';
 import HealthNoteIconRow from '@/components/health/HealthNoteIconRow';
@@ -72,16 +81,17 @@ export default function HealthDetailsScreen() {
         footerRadius: DESIGN_FOOTER_RADIUS,
         resolvedBarWidth: contentWidth,
         resolvedBarHeight: DESIGN_RESOLVED_BAR_HEIGHT,
-        activeScrollPadBottom:
-          DESIGN_FOOTER_PAD_TOP + DESIGN_SAVE_BUTTON_HEIGHT + padBottom + 16,
-        resolvedScrollPadBottom:
-          DESIGN_FOOTER_PAD_TOP + DESIGN_RESOLVED_BAR_HEIGHT + padBottom + 16,
       };
     },
     [contentWidth, insets.bottom],
   );
 
   const [record, setRecord] = useState<MedicalRecordDetail | null>(null);
+  const [notes, setNotes] = useState<HealthNote[]>([]);
+  const [notesHasMore, setNotesHasMore] = useState(false);
+  const [notesLoadingMore, setNotesLoadingMore] = useState(false);
+  const notesCursorRef = useRef<string | null>(null);
+  const notesLoadingMoreRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [failedPhotoIds, setFailedPhotoIds] = useState<Record<string, true>>({});
@@ -92,6 +102,32 @@ export default function HealthDetailsScreen() {
   const [reopening, setReopening] = useState(false);
   const recordRef = useRef<MedicalRecordDetail | null>(null);
   recordRef.current = record;
+
+  const applyNotesPage = useCallback((page: HealthNote[], append: boolean) => {
+    setNotes((prev) => (append ? [...prev, ...page] : page));
+    const nextCursor = page.length > 0 ? page[page.length - 1].id : null;
+    notesCursorRef.current = nextCursor;
+    setNotesHasMore(page.length === LIST_PAGE_SIZE);
+  }, []);
+
+  const loadMoreNotes = useCallback(async () => {
+    if (!activePetId || !recordId || notesLoadingMoreRef.current || !notesHasMore) return;
+    if (!notesCursorRef.current) return;
+    notesLoadingMoreRef.current = true;
+    setNotesLoadingMore(true);
+    try {
+      const page = await listRecordNotes(activePetId, recordId, {
+        limit: LIST_PAGE_SIZE,
+        cursor: notesCursorRef.current,
+      });
+      applyNotesPage(page, true);
+    } catch (err) {
+      toast.showError(getErrorMessage(err));
+    } finally {
+      notesLoadingMoreRef.current = false;
+      setNotesLoadingMore(false);
+    }
+  }, [activePetId, applyNotesPage, notesHasMore, recordId, toast]);
 
   useFocusEffect(
     useCallback(() => {
@@ -111,8 +147,13 @@ export default function HealthDetailsScreen() {
 
         try {
           if (!cancelled) setError(null);
-          const detail = await getRecord(activePetId, recordId);
-          if (!cancelled) setRecord(detail);
+          const detail = await getRecord(activePetId, recordId, {
+            notes_limit: LIST_PAGE_SIZE,
+          });
+          if (!cancelled) {
+            setRecord(detail);
+            applyNotesPage(detail.notes ?? [], false);
+          }
         } catch (err) {
           if (!cancelled) setError(getErrorMessage(err));
         } finally {
@@ -123,7 +164,7 @@ export default function HealthDetailsScreen() {
       return () => {
         cancelled = true;
       };
-    }, [activePetId, recordId]),
+    }, [activePetId, applyNotesPage, recordId]),
   );
 
   const handleResolve = useCallback(async () => {
@@ -131,29 +172,31 @@ export default function HealthDetailsScreen() {
     setResolving(true);
     try {
       await resolveRecord(activePetId, recordId);
-      const detail = await getRecord(activePetId, recordId);
+      const detail = await getRecord(activePetId, recordId, { notes_limit: LIST_PAGE_SIZE });
       setRecord(detail);
+      applyNotesPage(detail.notes ?? [], false);
       setResolveVisible(false);
     } catch (err) {
       toast.showError(getErrorMessage(err));
     } finally {
       setResolving(false);
     }
-  }, [activePetId, recordId, resolving, toast]);
+  }, [activePetId, applyNotesPage, recordId, resolving, toast]);
 
   const handleReopen = useCallback(async () => {
     if (!activePetId || !recordId || reopening) return;
     setReopening(true);
     try {
       await reopenRecord(activePetId, recordId);
-      const detail = await getRecord(activePetId, recordId);
+      const detail = await getRecord(activePetId, recordId, { notes_limit: LIST_PAGE_SIZE });
       setRecord(detail);
+      applyNotesPage(detail.notes ?? [], false);
     } catch (err) {
       toast.showError(getErrorMessage(err));
     } finally {
       setReopening(false);
     }
-  }, [activePetId, recordId, reopening, toast]);
+  }, [activePetId, applyNotesPage, recordId, reopening, toast]);
 
   const handleDeleteRecord = useCallback(() => {
     if (!activePetId || !recordId) return;
@@ -187,7 +230,6 @@ export default function HealthDetailsScreen() {
   );
 
   const noteListItems = useMemo((): NoteListItem[] => {
-    const notes = record?.notes ?? [];
     const items: NoteListItem[] = [];
     let lastDateKey = '';
 
@@ -209,7 +251,70 @@ export default function HealthDetailsScreen() {
     }
 
     return items;
-  }, [record?.notes]);
+  }, [notes]);
+
+  const listBlocked = notesLoadingMore || resolving || reopening;
+
+  const renderNoteItem = useCallback(
+    ({ item }: { item: NoteListItem }) => {
+      if (item.type === 'header') {
+        return (
+          <Text
+            style={[
+              styles.dateHeader,
+              item.isFirst ? styles.dateHeaderFirst : null,
+            ]}
+          >
+            {item.label}
+          </Text>
+        );
+      }
+
+      const note = item.note;
+      return (
+        <View style={styles.noteCard}>
+          {note.photo_url && !failedPhotoIds[note.id] ? (
+            <TouchableOpacity
+              style={styles.noteImageWrap}
+              activeOpacity={0.85}
+              onPress={() => openNote(note.id, 'photo')}
+            >
+              <Image
+                source={{ uri: note.photo_url }}
+                style={styles.noteImage}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                recyclingKey={note.id}
+                onError={() =>
+                  setFailedPhotoIds((prev) => ({ ...prev, [note.id]: true }))
+                }
+              />
+            </TouchableOpacity>
+          ) : null}
+          <TouchableOpacity activeOpacity={0.7} onPress={() => openNote(note.id, 'focus')}>
+            <Text style={styles.noteText}>{note.text}</Text>
+          </TouchableOpacity>
+          {note.linked_reminder_date || note.linked_reminder_time ? (
+            <TouchableOpacity
+              style={styles.reminderRow}
+              activeOpacity={0.7}
+              onPress={() => openNote(note.id, 'reminder')}
+            >
+              <HealthReminderLine
+                date={note.linked_reminder_date}
+                time={note.linked_reminder_time}
+              />
+            </TouchableOpacity>
+          ) : null}
+          <HealthNoteIconRow
+            onPhotoPress={() => openNote(note.id, 'photo')}
+            onReminderPress={() => openNote(note.id, 'reminder')}
+          />
+        </View>
+      );
+    },
+    [failedPhotoIds, openNote, styles],
+  );
 
   if (loading) {
     return (
@@ -251,86 +356,33 @@ export default function HealthDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <ScreenHeader title={record.title} right={menuButton} />
+      <View style={styles.headerShell}>
+        <ScreenHeader title={record.title} right={menuButton} />
+      </View>
 
       <View style={styles.listArea}>
-        <ScrollView
+        <FlatList
+          data={noteListItems}
+          keyExtractor={(item) => (item.type === 'header' ? item.key : item.note.id)}
+          renderItem={renderNoteItem}
+          style={styles.scrollView}
           contentContainerStyle={[
             styles.content,
-            {
-              paddingBottom: isActive
-                ? footerLayout.activeScrollPadBottom
-                : footerLayout.resolvedScrollPadBottom,
-            },
+            noteListItems.length === 0 ? styles.contentEmpty : null,
+            { paddingBottom: LIST_SCROLL_END_GAP },
           ]}
           showsVerticalScrollIndicator={false}
-        >
-          {(record.notes ?? []).length === 0 ? (
-            <Text style={styles.emptyNotes}>{t('topics.no_notes_yet')}</Text>
-          ) : (
-            noteListItems.map((item) => {
-              if (item.type === 'header') {
-                return (
-                  <Text
-                    key={item.key}
-                    style={[
-                      styles.dateHeader,
-                      item.isFirst ? styles.dateHeaderFirst : null,
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                );
-              }
-
-              const note = item.note;
-              return (
-                <View key={note.id} style={styles.noteCard}>
-                  {note.photo_url && !failedPhotoIds[note.id] ? (
-                    <TouchableOpacity
-                      style={styles.noteImageWrap}
-                      activeOpacity={0.85}
-                      onPress={() => openNote(note.id, 'photo')}
-                    >
-                      <Image
-                        source={{ uri: note.photo_url }}
-                        style={styles.noteImage}
-                        contentFit="cover"
-                        cachePolicy="memory-disk"
-                        recyclingKey={note.id}
-                        onError={() =>
-                          setFailedPhotoIds((prev) => ({ ...prev, [note.id]: true }))
-                        }
-                      />
-                    </TouchableOpacity>
-                  ) : null}
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => openNote(note.id, 'focus')}
-                  >
-                    <Text style={styles.noteText}>{note.text}</Text>
-                  </TouchableOpacity>
-                  {note.linked_reminder_date || note.linked_reminder_time ? (
-                    <TouchableOpacity
-                      style={styles.reminderRow}
-                      activeOpacity={0.7}
-                      onPress={() => openNote(note.id, 'reminder')}
-                    >
-                      <HealthReminderLine
-                        date={note.linked_reminder_date}
-                        time={note.linked_reminder_time}
-                      />
-                    </TouchableOpacity>
-                  ) : null}
-                  <HealthNoteIconRow
-                    onPhotoPress={() => openNote(note.id, 'photo')}
-                    onReminderPress={() => openNote(note.id, 'reminder')}
-                  />
-                </View>
-              );
-            })
-          )}
-        </ScrollView>
+          onEndReached={() => {
+            void loadMoreNotes();
+          }}
+          onEndReachedThreshold={0.35}
+          ListEmptyComponent={
+            !loading ? <Text style={styles.emptyNotes}>{t('topics.no_notes_yet')}</Text> : null
+          }
+          ListFooterComponent={
+            <ListLoadMoreFooter loading={notesLoadingMore} hasMore={notesHasMore} />
+          }
+        />
       </View>
 
       {isActive ? (
@@ -426,6 +478,8 @@ export default function HealthDetailsScreen() {
         onConfirm={handleDeleteRecord}
         onCancel={() => setDeleteVisible(false)}
       />
+
+      <ListFetchBlocker visible={listBlocked} />
     </SafeAreaView>
   );
 }
@@ -442,9 +496,30 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: 24,
+    paddingTop: DESIGN_FOOTER_RADIUS + 10,
+  },
+  contentEmpty: {
+    flexGrow: 1,
+  },
+  headerShell: {
+    backgroundColor: c.panel,
+    borderBottomLeftRadius: DESIGN_FOOTER_RADIUS,
+    borderBottomRightRadius: DESIGN_FOOTER_RADIUS,
+    paddingBottom: 16,
+    zIndex: 2,
+    overflow: 'hidden',
+    shadowColor: '#1E1E1E',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 6,
   },
   listArea: {
+    flex: 1,
+    marginTop: -DESIGN_FOOTER_RADIUS,
+    zIndex: 1,
+  },
+  scrollView: {
     flex: 1,
   },
   dateHeader: {
@@ -456,7 +531,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     marginBottom: 10,
   },
   dateHeaderFirst: {
-    marginTop: 0,
+    marginTop: 10,
   },
   emptyNotes: {
     fontFamily: 'Rubik-Regular',

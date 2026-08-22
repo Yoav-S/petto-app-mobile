@@ -1,6 +1,9 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/services/api';
 import type { Reminder } from '@/types/api';
 import { invalidateReminders } from '@/services/queryClient';
+import { buildCursorQueryWithBase, type CursorListParams } from '@/utils/cursorPagination';
+
+export type { CursorListParams };
 
 export type ReminderTab = 'today' | 'upcoming' | 'recent';
 export type ReminderStatus = 'completed' | 'missed';
@@ -27,8 +30,14 @@ export interface CreateReminderInput {
 
 export type UpdateReminderInput = Partial<CreateReminderInput>;
 
-export function listReminders(petId: string, tab: ReminderTab): Promise<Reminder[]> {
-  return apiGet<Reminder[]>(`/pets/${petId}/reminders?tab=${tab}`);
+export function listReminders(
+  petId: string,
+  tab: ReminderTab,
+  params?: CursorListParams,
+): Promise<Reminder[]> {
+  return apiGet<Reminder[]>(
+    `/pets/${petId}/reminders${buildCursorQueryWithBase({ tab }, params)}`,
+  );
 }
 
 export function getReminder(petId: string, id: string): Promise<Reminder> {

@@ -1,6 +1,9 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/services/api';
 import type { Vaccination } from '@/types/api';
 import { invalidateVaccinations } from '@/services/queryClient';
+import { buildCursorQuery, type CursorListParams } from '@/utils/cursorPagination';
+
+export type { CursorListParams };
 
 export interface CreateVaccinationInput {
   name: string;
@@ -13,8 +16,11 @@ export interface CreateVaccinationInput {
 
 export type UpdateVaccinationInput = Partial<CreateVaccinationInput>;
 
-export function listVaccinations(petId: string): Promise<Vaccination[]> {
-  return apiGet<Vaccination[]>(`/pets/${petId}/vaccinations`);
+export function listVaccinations(
+  petId: string,
+  params?: CursorListParams,
+): Promise<Vaccination[]> {
+  return apiGet<Vaccination[]>(`/pets/${petId}/vaccinations${buildCursorQuery(params)}`);
 }
 
 export async function createVaccination(

@@ -18,11 +18,16 @@ import VaccineScreenHeader, { getVaccineHeaderContentOffset } from '@/components
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import EmptyState from '@/components/ui/EmptyState';
+import ListLoadMoreFooter from '@/components/ui/ListLoadMoreFooter';
+import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
+import { LIST_FAB_SCROLL_PADDING } from '@/constants/pagination';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDateLong } from '@/utils/calendar';
-import { useVaccinationsQuery } from '@/hooks/useCachedQueries';
+import { listVaccinations } from '@/services/vaccines';
+import { useCursorPagination } from '@/hooks/useCursorPagination';
+import type { Vaccination } from '@/types/api';
 
 const EMPTY_TOP = 305;
 
@@ -46,26 +51,44 @@ export default function VaccinesScreen() {
   const headerOffset = getVaccineHeaderContentOffset(812);
   const emptyTop = Math.max(Spacing.lg, EMPTY_TOP - headerOffset);
 
-  const query = useVaccinationsQuery(activePetId);
-  const items = query.data ?? [];
-  const loading = query.isLoading && !query.data;
+  const fetchPage = useCallback(
+    async (params: { limit: number; cursor?: string }) => {
+      if (!activePetId) return [];
+      return listVaccinations(activePetId, params);
+    },
+    [activePetId],
+  );
+
+  const {
+    items,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    loadMore,
+    refresh,
+  } = useCursorPagination<Vaccination>({
+    fetchPage,
+    enabled: Boolean(activePetId),
+    resetKey: activePetId,
+  });
+
   const [refreshing, setRefreshing] = useState(false);
-  const error = query.error ? getErrorMessage(query.error) : null;
 
   useFocusEffect(
     useCallback(() => {
-      void query.refetch();
-    }, [query.refetch]),
+      void refresh();
+    }, [refresh]),
   );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await query.refetch();
+      await refresh();
     } finally {
       setRefreshing(false);
     }
-  }, [query.refetch]);
+  }, [refresh]);
 
   const renderContent = () => {
     if (loading) {
@@ -84,7 +107,7 @@ export default function VaccinesScreen() {
             subtitle={error}
             actionTitle={t('common.retry')}
             onAction={() => {
-              void query.refetch();
+              void refresh();
             }}
           />
         </View>
@@ -131,8 +154,18 @@ export default function VaccinesScreen() {
             onAction={() => router.push('/vaccines/add' as never)}
           />
         }
-        contentContainerStyle={[styles.listContent, items.length === 0 && styles.listContentEmpty]}
+        contentContainerStyle={[
+          styles.listContent,
+          items.length === 0 ? styles.listContentEmpty : null,
+        ]}
         showsVerticalScrollIndicator={false}
+        onEndReached={() => {
+          void loadMore();
+        }}
+        onEndReachedThreshold={0.35}
+        ListFooterComponent={
+          <ListLoadMoreFooter loading={loadingMore} hasMore={hasMore} />
+        }
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />}
       />
     );
@@ -155,6 +188,7 @@ export default function VaccinesScreen() {
           accessibilityLabel={t('vaccines.add')}
         />
       ) : null}
+      <ListFetchBlocker visible={loadingMore} />
     </SafeAreaView>
   );
 }
@@ -173,11 +207,10 @@ const makeStyles = (c: ThemeColors) =>
     listContent: {
       paddingTop: Spacing.md,
       paddingHorizontal: Spacing.lg,
-      paddingBottom: 120,
-      flexGrow: 1,
+      paddingBottom: LIST_FAB_SCROLL_PADDING,
     },
     listContentEmpty: {
-      flexGrow: 0,
+      flexGrow: 1,
     },
     card: {
       backgroundColor: c.surface,

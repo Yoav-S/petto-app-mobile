@@ -146,7 +146,7 @@ export default function HomeScreen() {
   const vaccinesQuery = useVaccinationsQuery(resolvedPetId);
   const todayQuery = useRemindersQuery(resolvedPetId, 'today');
   const upcomingQuery = useRemindersQuery(resolvedPetId, 'upcoming');
-  const recordsQuery = useRecordsQuery(resolvedPetId, 'active', { enrichReminders: true });
+  const recordsQuery = useRecordsQuery(resolvedPetId, 'active');
 
   const latestVaccine = vaccinesQuery.data?.[0] ?? null;
   const { nextReminder, upcomingCount, latestRecord } = useMemo(() => {
@@ -252,23 +252,6 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <View style={styles.screen}>
         <View style={styles.homeFrame}>
-          {(syncError || fetchError) && (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorBannerText}>{syncError ?? fetchError}</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  if (syncError) retryBackendSync();
-                  else refetchHome();
-                }}
-                disabled={isSyncing}
-              >
-                <Text style={styles.errorBannerAction}>
-                  {isSyncing ? t('common.loading') : t('common.retry')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
           <PetHeader
             pet={pet}
             petCount={pets.length}
@@ -323,6 +306,25 @@ export default function HomeScreen() {
               </View>
             )}
           </PetHeader>
+
+          {(syncError || fetchError) ? (
+            <View style={styles.errorBanner} pointerEvents="box-none">
+              <View style={styles.errorBannerCard}>
+                <Text style={styles.errorBannerText}>{syncError ?? fetchError}</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (syncError) retryBackendSync();
+                    else refetchHome();
+                  }}
+                  disabled={isSyncing}
+                >
+                  <Text style={styles.errorBannerAction}>
+                    {isSyncing ? t('common.loading') : t('common.retry')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : null}
         </View>
 
         {pet && effectiveMode !== 'profile' ? (
@@ -370,13 +372,24 @@ const makeStyles = (c: ThemeColors) =>
       overflow: 'visible',
     },
     errorBanner: {
-      marginHorizontal: Spacing.lg,
-      marginTop: Spacing.sm,
+      position: 'absolute',
+      top: Spacing.sm,
+      left: Spacing.lg,
+      right: Spacing.lg,
+      zIndex: 100,
+      elevation: 8,
+    },
+    errorBannerCard: {
       padding: Spacing.md,
       backgroundColor: c.surface,
       borderRadius: 12,
       borderWidth: 1,
       borderColor: c.border,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.12,
+      shadowRadius: 6,
+      elevation: 4,
     },
     errorBannerText: {
       fontFamily: 'Rubik-Regular',
