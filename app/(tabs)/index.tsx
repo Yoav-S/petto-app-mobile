@@ -10,7 +10,7 @@ import { useThemedStyles } from '@/context/ThemeContext';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
-import { guardAddPet } from '@/services/subscription';
+import { guardAddPet, guardAddReminder } from '@/services/subscription';
 import type { MedicalRecord, Reminder } from '@/types/api';
 import { isIsoDateToday, normalizeToDatePart, todayIsoDate, truncateHealthDescription } from '@/utils/calendar';
 import { prefetchPetPhoto } from '@/utils/petPhotoSource';
@@ -334,7 +334,12 @@ export default function HomeScreen() {
             onOpenChange={setFabOpen}
             onVaccinePress={() => router.push('/vaccines/add' as never)}
             onHealthPress={() => router.push('/topics/add' as never)}
-            onReminderPress={() => router.push('/reminders' as never)}
+            onReminderPress={() => {
+              void (async () => {
+                if (!(await guardAddReminder(router, pets))) return;
+                router.push('/reminders/add' as never);
+              })();
+            }}
           />
         ) : null}
       </View>

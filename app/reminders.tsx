@@ -20,10 +20,10 @@ import ReminderListItem from '@/components/reminders/ReminderListItem';
 import ReminderActionSheet from '@/components/reminders/ReminderActionSheet';
 import { needsStatusPrompt } from '@/components/reminders/reminderFormShared';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
+import { categoryLabel } from '@/components/pickers/CategoryPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { updateReminderStatus } from '@/services/reminders';
-import { repeatLabel } from '@/components/pickers/RepeatPickerSheet';
 import { getErrorMessage } from '@/services/errors';
 import {
   addDaysToIsoDate,
@@ -33,8 +33,11 @@ import {
 import { guardAddReminder } from '@/services/subscription';
 import { listPets } from '@/services/pets';
 import type { Reminder } from '@/types/api';
-import type { RepeatOption } from '@/services/reminders';
 import { listReminders } from '@/services/reminders';
+import {
+  resolveReminderCategory,
+  type ReminderCategory,
+} from '@/utils/reminderCategory';
 import { useCursorPagination } from '@/hooks/useCursorPagination';
 import ListLoadMoreFooter from '@/components/ui/ListLoadMoreFooter';
 import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
@@ -43,10 +46,8 @@ import { LIST_FAB_SCROLL_PADDING, LIST_PAGE_SIZE } from '@/constants/pagination'
 const TABS = ['Today', 'Upcoming', 'Recent'] as const;
 type TabName = (typeof TABS)[number];
 
-function reminderSubtitle(item: Reminder): string {
-  if (item.note) return item.note;
-  if (item.repeat && item.repeat !== 'off') return repeatLabel(item.repeat as RepeatOption);
-  return '';
+function reminderCategory(item: Reminder): ReminderCategory {
+  return (item.category as ReminderCategory | undefined) ?? resolveReminderCategory(item.title);
 }
 
 function reminderRelativeDate(date: string): string {
@@ -55,12 +56,6 @@ function reminderRelativeDate(date: string): string {
   if (date === addDaysToIsoDate(today, -1)) return t('common.yesterday');
   if (date === addDaysToIsoDate(today, 1)) return t('common.tomorrow');
   return formatDisplayDate(date);
-}
-
-function reminderTimeOrDate(item: Reminder, tab: TabName): string {
-  if (tab === 'Today') return item.time;
-  // Recent / Upcoming: time on top, relative date under (Yesterday / Tomorrow / date).
-  return `${item.time}\n${reminderRelativeDate(item.date)}`;
 }
 
 function reminderDateLabel(date: string): string {
@@ -258,6 +253,10 @@ export default function RemindersScreen() {
         router.push(`/reminders/${item.id}` as never);
         return;
       }
+      if (activeTab === 'Recent') {
+        router.push(`/reminders/${item.id}` as never);
+        return;
+      }
       if (activeTab === 'Today') {
         sessionSkipRef.current = false;
         openPromptQueue([item], [], item.id, true);
@@ -304,29 +303,29 @@ export default function RemindersScreen() {
     }
 
     if (activeTab === 'Today') {
-      let subtitle = t('reminders.empty_today_only_subtitle');
-      if (tabPresence.upcoming) {
-        subtitle = t('reminders.empty_today_only_subtitle_upcoming');
-      } else if (tabPresence.recent) {
-        subtitle = t('reminders.empty_today_only_subtitle_recent');
-      }
       return (
-        <EmptyState title={t('reminders.empty_today_only_title')} subtitle={subtitle} />
+        <EmptyState
+          title={t('reminders.empty_today_only_title')}
+          subtitle={t('reminders.empty_today_only_subtitle')}
+        />
       );
     }
 
     if (activeTab === 'Upcoming') {
-      const subtitle = tabPresence.today
-        ? t('reminders.empty_upcoming_with_today_subtitle')
-        : t('reminders.empty_upcoming_subtitle');
-      return <EmptyState title={t('reminders.empty_upcoming_title')} subtitle={subtitle} />;
+      return (
+        <EmptyState
+          title={t('reminders.empty_upcoming_title')}
+          subtitle={t('reminders.empty_upcoming_subtitle')}
+        />
+      );
     }
 
-    const subtitle =
-      tabPresence.today || tabPresence.upcoming
-        ? t('reminders.empty_recent_with_scheduled_subtitle')
-        : t('reminders.empty_recent_subtitle');
-    return <EmptyState title={t('reminders.empty_recent_title')} subtitle={subtitle} />;
+    return (
+      <EmptyState
+        title={t('reminders.empty_recent_title')}
+        subtitle={t('reminders.empty_recent_subtitle')}
+      />
+    );
   };
 
   return (
@@ -360,25 +359,27 @@ export default function RemindersScreen() {
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <ReminderListItem
-              title={item.title}
-              subtitle={reminderSubtitle(item)}
-              timeOrDate={reminderTimeOrDate(item, activeTab)}
-              showCheckMark={
-                activeTab === 'Today' ||
-                (activeTab === 'Recent' && item.status === 'completed')
-              }
-              onCheckPress={
-                activeTab === 'Today'
-                  ? () => handleReminderPress(item)
-                  : undefined
-              }
-              onPress={
-                activeTab === 'Recent' ? undefined : () => handleReminderPress(item)
-              }
-            />
-          )}
+          renderItem={({ item }) => {
+            const category = reminderCategory(item);
+            return (
+              <ReminderListItem
+                category={categoryLabel(category)}
+                title={item.title}
+                time={item.time}
+                dayLabel={
+                  activeTab === 'Today' ? undefined : reminderRelativeDate(item.date)
+                }
+                showCheckMark={activeTab === 'Today'}
+                showCompletedBar={
+                  activeTab === 'Recent' && item.status === 'completed'
+                }
+                onCheckPress={
+                  activeTab === 'Today' ? () => handleReminderPress(item) : undefined
+                }
+                onPress={() => handleReminderPress(item)}
+              />
+            );
+          }}
           ListEmptyComponent={renderEmptyState}
           contentContainerStyle={[
             styles.listContent,
@@ -415,7 +416,8 @@ export default function RemindersScreen() {
       <ReminderActionSheet
         visible={actionSheetVisible}
         title={selectedReminder?.title}
-        subtitle={selectedReminder ? reminderSubtitle(selectedReminder) : undefined}
+        subtitle={selectedReminder?.note ?? undefined}
+        category={selectedReminder ? reminderCategory(selectedReminder) : undefined}
         time={selectedReminder?.time}
         dateLabel={selectedReminder ? reminderDateLabel(selectedReminder.date) : undefined}
         currentIndex={promptPosition}

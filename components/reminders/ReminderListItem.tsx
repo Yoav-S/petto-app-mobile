@@ -1,30 +1,38 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { Radius, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 interface ReminderListItemProps {
+  /** Top-left label (category). */
+  category: string;
+  /** Bottom-left reminder name. */
   title: string;
-  subtitle: string;
-  timeOrDate: string;
+  /** Top-right time. */
+  time: string;
+  /** Bottom-right day label (Today / Yesterday / date). */
+  dayLabel?: string;
   onPress?: () => void;
-  /** Green check on the right (Today done affordance / completed Recent). */
+  /** Green check on the right (Today done affordance). */
   showCheckMark?: boolean;
   onCheckPress?: () => void;
+  /** Completed recent: green bar on the left. */
+  showCompletedBar?: boolean;
 }
 
 export default function ReminderListItem({
+  category,
   title,
-  subtitle,
-  timeOrDate,
+  time,
+  dayLabel,
   onPress,
   showCheckMark = false,
   onCheckPress,
+  showCompletedBar = false,
 }: ReminderListItemProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const lines = timeOrDate.split('\n').filter(Boolean);
 
   return (
     <TouchableOpacity
@@ -33,20 +41,27 @@ export default function ReminderListItem({
       activeOpacity={0.7}
       disabled={!onPress}
     >
-      <View style={styles.contentContainer}>
-        <View style={styles.leftContent}>
-          <Text style={styles.title}>{title}</Text>
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-        </View>
-        <View style={styles.rightContent}>
-          {lines.map((line, index) => (
-            <Text
-              key={`${line}-${index}`}
-              style={[styles.timeOrDate, index === 0 && lines.length > 1 ? styles.primaryTime : null]}
-            >
-              {line}
+      {showCompletedBar ? <View style={styles.completedBar} /> : null}
+      <View style={styles.content}>
+        <View style={styles.rows}>
+          <View style={styles.row}>
+            <Text style={styles.category} numberOfLines={1}>
+              {category}
             </Text>
-          ))}
+            <Text style={styles.time} numberOfLines={1}>
+              {time}
+            </Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.title} numberOfLines={1}>
+              {title}
+            </Text>
+            {dayLabel ? (
+              <Text style={styles.day} numberOfLines={1}>
+                {dayLabel}
+              </Text>
+            ) : null}
+          </View>
         </View>
         {showCheckMark ? (
           <TouchableOpacity
@@ -70,60 +85,78 @@ const makeStyles = (c: ThemeColors) =>
     card: {
       backgroundColor: c.surface,
       borderRadius: Radius.lg,
-      marginBottom: Spacing.lg,
+      marginBottom: 16,
       width: '100%',
       maxWidth: '100%',
       alignSelf: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 4,
-      elevation: 2,
+      shadowColor: '#2D2D2A',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.04,
+      shadowRadius: 20,
+      elevation: 3,
       flexDirection: 'row',
       overflow: 'hidden',
-      minHeight: 72,
+      minHeight: 76,
     },
-    contentContainer: {
+    completedBar: {
+      width: 4,
+      alignSelf: 'stretch',
+      borderRadius: 2,
+      backgroundColor: c.success,
+    },
+    content: {
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: Spacing.lg,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
       gap: 10,
     },
-    leftContent: {
+    rows: {
       flex: 1,
-      justifyContent: 'center',
-      paddingRight: Spacing.sm,
+      gap: 6,
       minWidth: 0,
     },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 8,
+      minHeight: 20,
+    },
+    category: {
+      flex: 1,
+      fontFamily: 'Rubik-Regular',
+      fontSize: 14,
+      lineHeight: 20,
+      color: c.secondaryText,
+      minWidth: 0,
+    },
+    time: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 14,
+      lineHeight: 20,
+      color: c.primaryText,
+      textAlign: 'right',
+      flexShrink: 0,
+    },
     title: {
+      flex: 1,
       fontFamily: 'Rubik-Medium',
       fontSize: 16,
+      lineHeight: 20,
       color: c.primaryText,
-      marginBottom: 4,
+      minWidth: 0,
     },
-    subtitle: {
+    day: {
       fontFamily: 'Rubik-Regular',
       fontSize: 14,
-      color: c.secondaryText,
-    },
-    rightContent: {
-      justifyContent: 'center',
-      alignItems: 'flex-end',
-    },
-    timeOrDate: {
-      fontFamily: 'Rubik-Regular',
-      fontSize: 14,
+      lineHeight: 20,
       color: c.secondaryText,
       textAlign: 'right',
-    },
-    primaryTime: {
-      color: c.primaryText,
-      marginBottom: 2,
+      flexShrink: 0,
     },
     checkBtn: {
-      marginLeft: 4,
       alignItems: 'center',
       justifyContent: 'center',
     },

@@ -101,10 +101,10 @@ export default function SpeedDialFab({
   const close = () => setOpen(false);
   const toggle = () => setOpen(!open);
 
-  /** Room for longest localized label (e.g. Reminder / Напоминания / Memento-uri). */
+  /** Tight chip width from the longest label — stay compact on all locales. */
   const minMenuWidth = useMemo(() => {
-    const longest = Math.max(...items.map((it) => it.label.length), 8);
-    return Math.max(132, longest * 9.5 + ADD_FAB.menuIcon + 10 + 36);
+    const longest = Math.max(...items.map((it) => it.label.length), 6);
+    return Math.max(96, Math.ceil(longest * 7.2 + ADD_FAB.menuIcon + 10 + 24));
   }, [items]);
 
   return (
@@ -206,10 +206,10 @@ const makeStyles = (c: ThemeColors) =>
     menuItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 10,
-      paddingVertical: 10,
-      paddingLeft: 14,
-      paddingRight: 18,
+      gap: 8,
+      paddingVertical: 8,
+      paddingLeft: 12,
+      paddingRight: 12,
       borderRadius: 12,
       backgroundColor: c.surface,
       shadowColor: '#1F1F1F',
@@ -220,11 +220,10 @@ const makeStyles = (c: ThemeColors) =>
     },
     menuLabel: {
       fontFamily: 'Rubik-Medium',
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: 13,
+      lineHeight: 18,
       color: c.primaryText,
       flexShrink: 0,
-      paddingRight: 2,
     },
     btn: {
       backgroundColor: c.brand,

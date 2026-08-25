@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -74,6 +74,8 @@ interface ReminderFormBodyProps {
   onTimeConfirm: (value: string) => void;
   onRepeatSelect: (value: RepeatOption) => void;
   autoFocus?: boolean;
+  /** Disable all field edits (view completed/missed reminder). */
+  readOnly?: boolean;
   /** Inline content at the end of the scroll (e.g. delete / autosave). */
   footer?: React.ReactNode;
   /** Sticky bottom save bar (outside the scroll), like add-note. */
@@ -104,6 +106,7 @@ export default function ReminderFormBody({
   onTimeConfirm,
   onRepeatSelect,
   autoFocus = false,
+  readOnly = false,
   footer,
   stickyFooter,
   scrollPaddingBottom = 32,
@@ -112,17 +115,15 @@ export default function ReminderFormBody({
 }: ReminderFormBodyProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const [bodyH, setBodyH] = useState(0);
-  const [formH, setFormH] = useState(0);
-  const footerEstimate = footer ? layout.footerHeight + 24 : 0;
-  const needsScroll =
-    !pinFooterToBottom ||
-    (bodyH > 0 && formH > 0 && formH + footerEstimate + footerBottomInset > bodyH + 1);
 
   const timeMin = date && isIsoDateToday(date) ? nowReminderTime() : null;
+  const openSheet = (next: ReminderSheet) => {
+    if (readOnly) return;
+    onSheetChange(next);
+  };
 
   const formFields = (
-    <View onLayout={(e) => setFormH(e.nativeEvent.layout.height)} style={{ gap: layout.formGap, alignItems: 'center', width: '100%' }}>
+    <View style={{ gap: layout.formGap, alignItems: 'center', width: '100%' }}>
           <View
             style={[
               styles.card,
@@ -143,7 +144,8 @@ export default function ReminderFormBody({
               onChangeText={onTitleChange}
               placeholder={t('reminders.field_name_placeholder')}
               placeholderTextColor={colors.secondaryText}
-              autoFocus={autoFocus}
+              autoFocus={autoFocus && !readOnly}
+              editable={!readOnly}
               returnKeyType="next"
               textAlignVertical="center"
             />
@@ -162,8 +164,9 @@ export default function ReminderFormBody({
                 gap: 10,
               },
             ]}
-            onPress={() => onSheetChange('category')}
+            onPress={() => openSheet('category')}
             activeOpacity={0.6}
+            disabled={readOnly}
           >
             <Image
               source={reminderCategoryIconFor(category)}
@@ -173,7 +176,9 @@ export default function ReminderFormBody({
             <Text style={styles.categoryLabel} numberOfLines={1}>
               {categoryLabel(category)}
             </Text>
-            <Ionicons name="chevron-down" size={18} color={colors.secondaryText} />
+            {!readOnly ? (
+              <Ionicons name="chevron-down" size={18} color={colors.secondaryText} />
+            ) : null}
           </TouchableOpacity>
 
           <View
@@ -192,8 +197,9 @@ export default function ReminderFormBody({
           >
             <TouchableOpacity
               style={[styles.scheduleRow, { minHeight: layout.rowHeight }]}
-              onPress={() => onSheetChange('date')}
+              onPress={() => openSheet('date')}
               activeOpacity={0.6}
+              disabled={readOnly}
             >
               <View style={styles.scheduleLeft}>
                 <Ionicons name="calendar-outline" size={20} color={colors.primaryText} />
@@ -208,8 +214,9 @@ export default function ReminderFormBody({
 
             <TouchableOpacity
               style={[styles.scheduleRow, { minHeight: layout.rowHeight }]}
-              onPress={() => onSheetChange('time')}
+              onPress={() => openSheet('time')}
               activeOpacity={0.6}
+              disabled={readOnly}
             >
               <View style={styles.scheduleLeft}>
                 <Ionicons name="time-outline" size={20} color={colors.primaryText} />
@@ -224,14 +231,15 @@ export default function ReminderFormBody({
 
             <TouchableOpacity
               style={[styles.scheduleRow, { minHeight: layout.rowHeight }]}
-              onPress={() => onSheetChange('repeat')}
+              onPress={() => openSheet('repeat')}
               activeOpacity={0.6}
+              disabled={readOnly}
             >
               <View style={styles.scheduleLeft}>
                 <Ionicons name="repeat-outline" size={20} color={colors.primaryText} />
                 <Text style={styles.scheduleLabel}>{t('reminders.field_repeat')}</Text>
               </View>
-              <Text style={styles.scheduleValue}>{repeatToggleLabel(repeat)}</Text>
+              <Text style={styles.scheduleRepeatValue}>{repeatToggleLabel(repeat)}</Text>
             </TouchableOpacity>
           </View>
 
@@ -260,6 +268,7 @@ export default function ReminderFormBody({
                 placeholder={t('reminders.field_note_placeholder')}
                 placeholderTextColor={colors.secondaryText}
                 multiline
+                editable={!readOnly}
                 textAlignVertical="top"
                 returnKeyType="done"
                 onSubmitEditing={() => Keyboard.dismiss()}
@@ -272,78 +281,73 @@ export default function ReminderFormBody({
   return (
     <>
       <HealthKeyboardAvoidingView>
-        <View style={styles.flex} onLayout={(e) => setBodyH(e.nativeEvent.layout.height)}>
-          {needsScroll || !pinFooterToBottom ? (
-            <ScrollView
-              style={styles.flex}
-              contentContainerStyle={[
-                styles.content,
-                {
-                  paddingTop: layout.formTop,
-                  paddingBottom: pinFooterToBottom ? footerBottomInset : scrollPaddingBottom,
-                  gap: layout.formGap,
-                  alignItems: 'center',
-                },
-              ]}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-              bounces={needsScroll}
-            >
-              {formFields}
-              {footer ? <View style={{ marginTop: layout.formGap }}>{footer}</View> : null}
-            </ScrollView>
-          ) : (
-            <View
-              style={[
-                styles.content,
-                styles.fitBody,
-                {
-                  paddingTop: layout.formTop,
-                  paddingBottom: footerBottomInset,
-                  alignItems: 'center',
-                },
-              ]}
-            >
-              {formFields}
-              <View style={styles.footerSpacer} />
-              {footer}
-            </View>
-          )}
+        <View style={styles.flex}>
+          <ScrollView
+            style={styles.flex}
+            contentContainerStyle={[
+              styles.content,
+              {
+                paddingTop: layout.formTop,
+                paddingBottom: pinFooterToBottom ? footerBottomInset : scrollPaddingBottom,
+                gap: layout.formGap,
+                alignItems: 'center',
+                flexGrow: pinFooterToBottom ? 1 : undefined,
+              },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+            bounces
+          >
+            {formFields}
+            {footer ? (
+              <>
+                {pinFooterToBottom ? <View style={styles.footerSpacer} /> : null}
+                <View style={pinFooterToBottom ? undefined : { marginTop: layout.formGap }}>
+                  {footer}
+                </View>
+              </>
+            ) : null}
+          </ScrollView>
         </View>
         {stickyFooter}
       </HealthKeyboardAvoidingView>
 
-      <ReminderCalendarPickerSheet
-        visible={sheet === 'date'}
-        value={date}
-        onClose={() => onSheetChange(null)}
-        onConfirm={onDateConfirm}
-      />
-      <TimePickerSheet
-        visible={sheet === 'time'}
-        value={time}
-        minTime={timeMin}
-        onClose={() => onSheetChange(null)}
-        onConfirm={onTimeConfirm}
-      />
-      <RepeatPickerSheet
-        visible={sheet === 'repeat'}
-        value={repeat}
-        onClose={() => onSheetChange(null)}
-        onSelect={(value) => {
-          onRepeatSelect(value);
-          onSheetChange(null);
-        }}
-      />
-      <CategoryPickerSheet
-        visible={sheet === 'category'}
-        value={category}
-        onClose={() => onSheetChange(null)}
-        onSelect={(value) => {
-          onCategorySelect(value);
-          onSheetChange(null);
-        }}
-      />
+      {!readOnly ? (
+        <>
+          <ReminderCalendarPickerSheet
+            visible={sheet === 'date'}
+            value={date}
+            onClose={() => onSheetChange(null)}
+            onConfirm={onDateConfirm}
+          />
+          <TimePickerSheet
+            visible={sheet === 'time'}
+            value={time}
+            minTime={timeMin}
+            onClose={() => onSheetChange(null)}
+            onConfirm={onTimeConfirm}
+          />
+          <RepeatPickerSheet
+            visible={sheet === 'repeat'}
+            value={repeat}
+            onClose={() => onSheetChange(null)}
+            onSelect={(value) => {
+              onRepeatSelect(value);
+              onSheetChange(null);
+            }}
+          />
+          <CategoryPickerSheet
+            visible={sheet === 'category'}
+            value={category}
+            onClose={() => onSheetChange(null)}
+            onSelect={(value) => {
+              onCategorySelect(value);
+              onSheetChange(null);
+            }}
+          />
+        </>
+      ) : null}
     </>
   );
 }
@@ -459,15 +463,21 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   scheduleLabel: {
     fontFamily: 'Rubik-Medium',
-    fontSize: 20,
-    lineHeight: 24,
+    fontSize: 16,
+    lineHeight: 20,
     color: c.primaryText,
   },
   scheduleValue: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 20,
-    lineHeight: 24,
+    fontFamily: 'Rubik-Regular',
+    fontSize: 14,
+    lineHeight: 20,
     color: c.primaryText,
+  },
+  scheduleRepeatValue: {
+    fontFamily: 'Rubik-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: c.secondaryText,
   },
   scheduleDivider: {
     height: 1,
@@ -517,11 +527,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.secondaryText,
   },
   footerSpacer: {
-    flex: 1,
+    flexGrow: 1,
     minHeight: 16,
     width: '100%',
-  },
-  fitBody: {
-    flex: 1,
   },
 });

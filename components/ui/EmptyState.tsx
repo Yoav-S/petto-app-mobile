@@ -57,15 +57,10 @@ export default function EmptyState({
         ]}
       >
         <View style={[styles.textStack, { width: textWidth }]}>
-          <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.9}>
+          <Text style={styles.title} numberOfLines={2}>
             {title}
           </Text>
-          <Text
-            style={styles.subtitle}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.85}
-          >
+          <Text style={styles.subtitle} numberOfLines={3}>
             {subtitle}
           </Text>
         </View>

@@ -26,6 +26,7 @@ export interface CreateReminderInput {
   time: string;
   repeat: RepeatOption;
   note?: string | null;
+  category?: string | null;
 }
 
 export type UpdateReminderInput = Partial<CreateReminderInput>;

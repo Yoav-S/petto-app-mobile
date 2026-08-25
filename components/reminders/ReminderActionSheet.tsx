@@ -14,13 +14,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
-import { reminderCategoryIcon } from '@/utils/reminderCategory';
+import {
+  reminderCategoryIcon,
+  reminderCategoryIconFor,
+  type ReminderCategory,
+} from '@/utils/reminderCategory';
 import { formatSheetClockTime } from '@/components/reminders/reminderFormShared';
 
 interface ReminderActionSheetProps {
   visible: boolean;
   title?: string;
   subtitle?: string;
+  category?: ReminderCategory;
   time?: string;
   /** Relative/absolute date label under the subtitle (Today / Yesterday / Apr 21). */
   dateLabel?: string;
@@ -35,6 +40,7 @@ export default function ReminderActionSheet({
   visible,
   title,
   subtitle,
+  category,
   time,
   dateLabel,
   currentIndex,
@@ -56,6 +62,9 @@ export default function ReminderActionSheet({
     currentIndex !== undefined && totalCount !== undefined && totalCount > 1;
   const clock = time ? formatSheetClockTime(time) : '';
   const hasSubtitle = Boolean(subtitle?.trim());
+  const iconSource = category
+    ? reminderCategoryIconFor(category)
+    : reminderCategoryIcon(title);
 
   return (
     <BottomSheetModal visible={visible} onClose={onClose}>
@@ -93,7 +102,7 @@ export default function ReminderActionSheet({
               <View style={styles.topSection}>
                 <View style={styles.iconWrap}>
                   <Image
-                    source={reminderCategoryIcon(title)}
+                    source={iconSource}
                     style={styles.icon}
                     resizeMode="contain"
                   />

@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { t } from '@/i18n';
 import {
   REMINDER_CATEGORIES,
@@ -32,38 +33,56 @@ export default function CategoryPickerSheet({
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
+  const { contentWidth } = useResponsiveLayout();
 
   return (
     <BottomSheetModal visible={visible} onClose={onClose}>
-      <View style={[styles.sheet, { paddingBottom: insets.bottom + Spacing.lg }]}>
+      <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) + Spacing.md }]}>
         <View style={styles.header}>
           <View style={styles.headerSpacer} />
-          <Text style={styles.title}>{t('reminders.category_title')}</Text>
+          <Text style={styles.title} numberOfLines={1}>
+            {t('reminders.category_title')}
+          </Text>
           <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
             <Ionicons name="close" size={20} color={colors.primaryText} />
           </Pressable>
         </View>
 
-        <View style={styles.list}>
-          {REMINDER_CATEGORIES.map((option, index) => {
-            const isActive = option === value;
-            return (
-              <Pressable key={option} style={styles.row} onPress={() => onSelect(option)}>
-                <View style={styles.rowLeft}>
-                  <Image
-                    source={reminderCategoryIconFor(option)}
-                    style={styles.rowIcon}
-                    resizeMode="contain"
-                  />
-                  <Text style={styles.rowText}>{categoryLabel(option)}</Text>
-                </View>
-                {isActive ? (
-                  <Ionicons name="checkmark" size={20} color={colors.primaryText} />
-                ) : null}
-                {index < REMINDER_CATEGORIES.length - 1 ? <View style={styles.divider} /> : null}
-              </Pressable>
-            );
-          })}
+        <View style={styles.body}>
+          <View style={[styles.optionsCard, { width: contentWidth }]}>
+            {REMINDER_CATEGORIES.map((option, index) => {
+              const isActive = option === value;
+              return (
+                <Pressable
+                  key={option}
+                  style={styles.row}
+                  onPress={() => onSelect(option)}
+                >
+                  <View style={styles.rowLeft}>
+                    <Image
+                      source={reminderCategoryIconFor(option)}
+                      style={styles.rowIcon}
+                      resizeMode="contain"
+                    />
+                    <Text style={styles.rowText}>{categoryLabel(option)}</Text>
+                  </View>
+                  {isActive ? (
+                    <Ionicons name="checkmark" size={20} color={colors.primaryText} />
+                  ) : null}
+                  {index < REMINDER_CATEGORIES.length - 1 ? (
+                    <View style={styles.divider} />
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <Pressable
+            style={[styles.cancelButton, { width: contentWidth }]}
+            onPress={onClose}
+          >
+            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+          </Pressable>
         </View>
       </View>
     </BottomSheetModal>
@@ -73,41 +92,59 @@ export default function CategoryPickerSheet({
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     sheet: {
-      backgroundColor: c.surface,
+      backgroundColor: c.background,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
-      paddingHorizontal: Spacing.lg,
-      paddingTop: Spacing.lg,
+      paddingHorizontal: 20,
+      paddingTop: 32,
+      shadowColor: '#1E1E1E',
+      shadowOffset: { width: 0, height: -3 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 12,
     },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: Spacing.md,
+      marginBottom: 22,
+      minHeight: 32,
     },
     headerSpacer: { width: 32 },
     title: {
       flex: 1,
       textAlign: 'center',
       fontFamily: 'Rubik-Medium',
-      fontSize: 16,
+      fontSize: 20,
+      lineHeight: 24,
       color: c.primaryText,
     },
     closeButton: {
       width: 32,
       height: 32,
+      borderRadius: 16,
+      backgroundColor: c.surface,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    list: {
+    body: {
+      gap: 22,
+      alignItems: 'center',
+    },
+    optionsCard: {
       borderRadius: Radius.lg,
       backgroundColor: c.surface,
-      overflow: 'hidden',
+      padding: 16,
+      gap: 10,
+      shadowColor: '#1F1F1F',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 4,
     },
     row: {
-      minHeight: 52,
-      paddingVertical: 14,
-      paddingHorizontal: 4,
+      minHeight: 40,
+      paddingVertical: 8,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -136,5 +173,25 @@ const makeStyles = (c: ThemeColors) =>
       bottom: 0,
       height: StyleSheet.hairlineWidth,
       backgroundColor: c.border,
+    },
+    cancelButton: {
+      height: 48,
+      borderRadius: Radius.lg,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      backgroundColor: c.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#2D2D2A',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 20,
+      elevation: 3,
+    },
+    cancelText: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 16,
+      lineHeight: 20,
+      color: c.primaryText,
     },
   });

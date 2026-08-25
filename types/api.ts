@@ -62,6 +62,7 @@ export interface Reminder {
   repeat: string;
   status: string;
   note?: string | null;
+  category?: string | null;
   notified_at?: string | null;
 }
 

@@ -7,7 +7,6 @@ import React, {
   useState,
 } from 'react';
 import {
-  Dimensions,
   Keyboard,
   Platform,
   StyleSheet,
@@ -61,15 +60,8 @@ export function useKeyboardBottomOffset(): number {
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
     const onShow = (e: KeyboardEvent) => {
-      const winH = Dimensions.get('window').height;
-      const { height, screenY } = e.endCoordinates;
-      const gap = winH - screenY;
-      // Prefer layout gap when it looks like a real keyboard; else reported height.
-      if (Number.isFinite(gap) && gap > 40 && gap < winH * 0.95) {
-        setOffset(Math.round(gap));
-      } else {
-        setOffset(Math.round(height || 0));
-      }
+      const { height } = e.endCoordinates;
+      setOffset(Math.max(0, Math.round(height || 0)));
     };
     const onHide = () => setOffset(0);
 
@@ -98,7 +90,7 @@ export function KeyboardDismissDoneChip() {
         styles.row,
         {
           paddingHorizontal: DESIGN_TRAILING,
-          paddingVertical: 8,
+          paddingVertical: 4,
           alignItems: isRTL ? 'flex-start' : 'flex-end',
         },
       ]}

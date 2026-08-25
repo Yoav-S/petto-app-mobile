@@ -47,6 +47,7 @@ export function HealthKeyboardAvoidingView({ children }: HealthKeyboardAvoidingV
   const styles = useThemedStyles(makeStyles);
   const offset = useKeyboardBottomOffset();
   const { claim, release } = useKeyboardDoneClaim();
+  const doneRowHeight = FOOTER.doneButtonHeight + 8;
 
   useEffect(() => {
     claim();
@@ -54,13 +55,20 @@ export function HealthKeyboardAvoidingView({ children }: HealthKeyboardAvoidingV
   }, [claim, release]);
 
   return (
-    <View style={[styles.avoiding, offset > 0 ? { paddingBottom: offset } : null]}>
-      {children}
+    <View style={styles.avoiding}>
+      <View
+        style={[
+          styles.flexFill,
+          offset > 0 ? { paddingBottom: offset + doneRowHeight } : null,
+        ]}
+      >
+        {children}
+      </View>
       {offset > 0 ? (
         <View
           pointerEvents="box-none"
           collapsable={false}
-          style={[styles.keyboardDoneHost, { bottom: 0 }]}
+          style={[styles.keyboardDoneHost, { bottom: offset }]}
         >
           <KeyboardDismissDoneChip />
         </View>
@@ -175,6 +183,9 @@ export default function HealthKeyboardFooter({
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   avoiding: {
+    flex: 1,
+  },
+  flexFill: {
     flex: 1,
   },
   keyboardDoneHost: {
