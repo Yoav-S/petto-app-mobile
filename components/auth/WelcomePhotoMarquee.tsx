@@ -201,10 +201,10 @@ export function WelcomePhotoMarquee() {
 }
 
 function isSoftVeil(background: string): string {
-  // Slightly deeper than before so the welcome collage reads softer (~1–2%).
+  // Soft brand-tint veil; welcome screen also stacks a darker overlay above this.
   return background.toLowerCase() === '#f6f7f9'
-    ? 'rgba(246,247,249,0.22)'
-    : 'rgba(17,19,21,0.38)';
+    ? 'rgba(246,247,249,0.18)'
+    : 'rgba(17,19,21,0.32)';
 }
 
 const styles = StyleSheet.create({

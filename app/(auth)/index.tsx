@@ -81,12 +81,12 @@ export default function OnboardingWelcomeScreen() {
   return (
     <View style={styles.root}>
       <WelcomePhotoMarquee />
-      {/* Soft shade over the collage only — does not change global theme tokens. */}
+      {/* Darken collage under the card — soft veil between photos and UI. */}
       <View
         pointerEvents="none"
         style={[
           styles.welcomeShade,
-          { backgroundColor: isDark ? 'rgba(0,0,0,0.02)' : 'rgba(0,0,0,0.02)' },
+          { backgroundColor: isDark ? 'rgba(0,0,0,0.28)' : 'rgba(0,0,0,0.22)' },
         ]}
       />
 

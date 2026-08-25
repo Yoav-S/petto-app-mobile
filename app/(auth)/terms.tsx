@@ -7,7 +7,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { t, currentLocale } from '@/i18n';
 import { Spacing, type ThemeColors } from '@/constants/theme';
@@ -20,6 +20,10 @@ import {
 import type { LegalBlock } from '@/components/settings/LegalScreen';
 
 type Tab = 'terms' | 'privacy';
+
+const TOP_CHROME_RADIUS = 16;
+/** Space between tab chrome and scroll content so text slips under the bg, not the buttons. */
+const SCROLL_UNDER_MARGIN = 8;
 
 function formatUpdated(iso: string): string {
   const date = new Date(iso);
@@ -65,7 +69,9 @@ export default function TermsScreen() {
   const router = useRouter();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('terms');
+  const [chromeHeight, setChromeHeight] = useState(0);
 
   const blocks = useMemo(
     () => (tab === 'terms' ? termsOfServiceBlocks() : privacyPolicyBlocks()),
@@ -74,43 +80,57 @@ export default function TermsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.primaryText} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{t('onboarding.terms_screen_title')}</Text>
-        <View style={styles.backBtn} />
-      </View>
-
-      <View style={styles.tabs}>
-        <Pressable
-          style={[styles.tab, tab === 'terms' && styles.tabActive]}
-          onPress={() => setTab('terms')}
+      <View style={styles.body}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: chromeHeight + SCROLL_UNDER_MARGIN,
+              paddingBottom: Math.max(insets.bottom, Spacing.xl) + Spacing.xl,
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={[styles.tabText, tab === 'terms' && styles.tabTextActive]}>
-            {t('settings.terms')}
+          <Text style={styles.updated}>
+            {t('settings.last_updated')}: {formatUpdated(LEGAL_LAST_UPDATED_ISO)}
           </Text>
-        </Pressable>
-        <Pressable
-          style={[styles.tab, tab === 'privacy' && styles.tabActive]}
-          onPress={() => setTab('privacy')}
-        >
-          <Text style={[styles.tabText, tab === 'privacy' && styles.tabTextActive]}>
-            {t('settings.privacy')}
-          </Text>
-        </Pressable>
-      </View>
+          <Blocks blocks={blocks} styles={styles} />
+        </ScrollView>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.updated}>
-          {t('settings.last_updated')}: {formatUpdated(LEGAL_LAST_UPDATED_ISO)}
-        </Text>
-        <Blocks blocks={blocks} styles={styles} />
-      </ScrollView>
+        <View
+          style={styles.chrome}
+          onLayout={(e) => setChromeHeight(e.nativeEvent.layout.height)}
+          pointerEvents="box-none"
+        >
+          <View style={styles.header}>
+            <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+              <Ionicons name="chevron-back" size={24} color={colors.primaryText} />
+            </Pressable>
+            <Text style={styles.headerTitle}>{t('onboarding.terms_screen_title')}</Text>
+            <View style={styles.backBtn} />
+          </View>
+
+          <View style={styles.tabs}>
+            <Pressable
+              style={[styles.tab, tab === 'terms' && styles.tabActive]}
+              onPress={() => setTab('terms')}
+            >
+              <Text style={[styles.tabText, tab === 'terms' && styles.tabTextActive]}>
+                {t('settings.terms')}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.tab, tab === 'privacy' && styles.tabActive]}
+              onPress={() => setTab('privacy')}
+            >
+              <Text style={[styles.tabText, tab === 'privacy' && styles.tabTextActive]}>
+                {t('settings.privacy')}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -121,14 +141,33 @@ const makeStyles = (c: ThemeColors) =>
       flex: 1,
       backgroundColor: c.surface,
     },
+    body: {
+      flex: 1,
+      position: 'relative',
+    },
+    chrome: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 2,
+      backgroundColor: c.surface,
+      borderBottomLeftRadius: TOP_CHROME_RADIUS,
+      borderBottomRightRadius: TOP_CHROME_RADIUS,
+      paddingBottom: Spacing.sm,
+      // Soft lift so scrolling text disappears under the chrome, not into the tabs.
+      shadowColor: '#1E1E1E',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 10,
+      elevation: 4,
+    },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: Spacing.md,
       paddingVertical: Spacing.sm,
-      borderBottomWidth: 1,
-      borderBottomColor: c.border,
     },
     backBtn: {
       width: 40,
@@ -144,7 +183,7 @@ const makeStyles = (c: ThemeColors) =>
     tabs: {
       flexDirection: 'row',
       paddingHorizontal: Spacing.lg,
-      paddingTop: Spacing.md,
+      paddingTop: Spacing.xs,
       gap: 8,
     },
     tab: {
@@ -170,8 +209,7 @@ const makeStyles = (c: ThemeColors) =>
       flex: 1,
     },
     scrollContent: {
-      padding: Spacing.xl,
-      paddingBottom: Spacing.xl * 2,
+      paddingHorizontal: Spacing.xl,
       gap: 8,
     },
     updated: {

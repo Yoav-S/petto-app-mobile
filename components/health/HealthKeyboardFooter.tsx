@@ -54,13 +54,13 @@ export function HealthKeyboardAvoidingView({ children }: HealthKeyboardAvoidingV
   }, [claim, release]);
 
   return (
-    <View style={styles.avoiding}>
+    <View style={[styles.avoiding, offset > 0 ? { paddingBottom: offset } : null]}>
       {children}
       {offset > 0 ? (
         <View
           pointerEvents="box-none"
           collapsable={false}
-          style={[styles.keyboardDoneHost, { bottom: offset }]}
+          style={[styles.keyboardDoneHost, { bottom: 0 }]}
         >
           <KeyboardDismissDoneChip />
         </View>

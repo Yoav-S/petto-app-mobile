@@ -31,7 +31,8 @@
   "pets": {
     "add_title": "Add pet",
     "name_placeholder": "Name",
-    "add_photo": "Add photo"
+    "add_photo": "Add photo",
+    "type": "Type"
   },
   "fab": {
     "add": "Add",
@@ -136,7 +137,7 @@
     "last_updated": "Last updated",
     "current_plan": "Current plan",
     "plan_free": "Free",
-    "plan_premium": "Ragly Premium",
+    "plan_premium": "Premium",
     "plan_free_pets": "1 Pet profile",
     "plan_free_reminders": "Up to 10 active reminders",
     "plan_premium_price": "$2.99/month",
@@ -149,16 +150,16 @@
     "manage_subscription_body": "To cancel or change your plan, manage it in the App Store or Google Play.",
     "purchase_unavailable": "Purchases aren't available yet. Please try again later.",
     "purchase_cancelled": "Purchase cancelled.",
-    "purchase_success": "You're on Ragly Premium!",
+    "purchase_success": "You're on Premium!",
     "purchase_success_title": "You're all set!",
     "purchase_success_body": "Your premium plan is active. Here's what you unlocked:",
     "purchase_success_cta": "Continue",
     "restore_none": "No previous purchases found for this account.",
     "restore_success": "Purchases restored.",
     "limit_pet_title": "Upgrade to add pets",
-    "limit_pet_body": "Free includes 1 pet profile. Upgrade to Ragly Premium for unlimited pets.",
+    "limit_pet_body": "Free includes 1 pet profile. Upgrade to Premium for unlimited pets.",
     "limit_reminder_title": "Upgrade for more reminders",
-    "limit_reminder_body": "Free includes up to 10 active reminders. Upgrade to Ragly Premium for unlimited reminders.",
+    "limit_reminder_body": "Free includes up to 10 active reminders. Upgrade to Premium for unlimited reminders.",
     "upgrade": "Upgrade"
   },
   "legal": {
@@ -398,8 +399,8 @@
     "duplicate_reminder_datetime": "You already have a reminder at this date and time.",
     "reminder_datetime_in_past": "Choose a later time today, or a future date.",
     "cannot_delete_last_pet": "You need at least one pet. Add another pet before removing this one.",
-    "premium_required_pet": "Free includes 1 pet. Upgrade to Ragly Premium to add more.",
-    "premium_required_reminder": "Free includes up to 10 active reminders. Upgrade to Ragly Premium for unlimited reminders.",
+    "premium_required_pet": "Free includes 1 pet. Upgrade to Premium to add more.",
+    "premium_required_reminder": "Free includes up to 10 active reminders. Upgrade to Premium for unlimited reminders.",
     "vaccination_date_in_future": "Vaccinated on can't be a future date.",
     "vaccination_valid_until_before_date": "Valid until can't be earlier than the vaccinated on date.",
     "network_timeout": "The request timed out. Check your connection and try again.",

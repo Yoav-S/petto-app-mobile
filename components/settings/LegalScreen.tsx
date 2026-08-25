@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
@@ -17,6 +17,9 @@ interface LegalScreenProps {
   lastUpdatedISO: string;
   blocks: LegalBlock[];
 }
+
+const TOP_CHROME_RADIUS = 16;
+const SCROLL_UNDER_MARGIN = 8;
 
 function formatUpdated(iso: string): string {
   const date = new Date(iso);
@@ -52,17 +55,23 @@ function TextBlock({
 export default function LegalScreen({ title, lastUpdatedISO, blocks }: LegalScreenProps) {
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
+  const [chromeHeight, setChromeHeight] = useState(0);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <SettingsHeader title={title} />
-
-      <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-        <View style={styles.card}>
-          <ScrollView
-            contentContainerStyle={styles.inner}
-            showsVerticalScrollIndicator={false}
-          >
+      <View style={styles.body}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: chromeHeight + SCROLL_UNDER_MARGIN,
+              paddingBottom: Math.max(insets.bottom, 8) + 28,
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.card}>
             <Text style={styles.docTitle}>{title}</Text>
             <Text style={styles.updated}>
               {t('settings.last_updated')}: {formatUpdated(lastUpdatedISO)}
@@ -85,8 +94,15 @@ export default function LegalScreen({ title, lastUpdatedISO, blocks }: LegalScre
                 />
               );
             })}
-          </ScrollView>
+          </View>
+        </ScrollView>
 
+        <View
+          style={styles.chrome}
+          onLayout={(e) => setChromeHeight(e.nativeEvent.layout.height)}
+          pointerEvents="box-none"
+        >
+          <SettingsHeader title={title} />
         </View>
       </View>
     </SafeAreaView>
@@ -99,28 +115,41 @@ const makeStyles = (c: ThemeColors) =>
       flex: 1,
       backgroundColor: c.background,
     },
-    content: {
+    body: {
       flex: 1,
+      position: 'relative',
+    },
+    chrome: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 2,
+      backgroundColor: c.background,
+      borderBottomLeftRadius: TOP_CHROME_RADIUS,
+      borderBottomRightRadius: TOP_CHROME_RADIUS,
+      shadowColor: '#1E1E1E',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 10,
+      elevation: 4,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
       paddingHorizontal: 20,
-      paddingTop: 22,
     },
     card: {
-      flex: 1,
       backgroundColor: c.surface,
       borderRadius: 12,
       padding: 16,
-      overflow: 'hidden',
-      // box-shadow: 0px 4px 20px 0px #2D2D2A0A
+      gap: 12,
       shadowColor: '#2D2D2A',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.04,
       shadowRadius: 20,
       elevation: 2,
-    },
-    inner: {
-      gap: 12,
-      // Keep last lines near the fade / bottom edge.
-      paddingBottom: 28,
     },
     docTitle: {
       fontFamily: 'Rubik-Medium',

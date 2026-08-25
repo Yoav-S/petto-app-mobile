@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Pencil } from 'lucide-react-native';
-import { type ThemeColors } from '@/constants/theme';
+import { Radius, type ThemeColors } from '@/constants/theme';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
@@ -23,7 +23,9 @@ import { useActivePet } from '@/store/petStore';
 import {
   KeyboardDismissDoneChip,
   useKeyboardBottomOffset,
+  useKeyboardDoneClaim,
 } from '@/components/ui/GlobalKeyboardDoneButton';
+import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { patchPetInCache, updatePet, deletePet } from '@/services/pets';
 import { uploadPetPhoto } from '@/services/storage';
 import { prefetchPetPhoto } from '@/utils/petPhotoSource';
@@ -59,14 +61,8 @@ const PHOTO_EDIT_BTN = {
   iconSize: 13.33,
   iconStroke: 1,
 } as const;
-const SAVE_DESIGN = {
-  width: 335,
-  height: 48,
-  radius: 12,
-  padV: 12,
-  padH: 16,
-  gap: 10,
-} as const;
+/** Match HealthKeyboardFooter primary CTA — 48 tall, full content width. */
+const SAVE_BTN_HEIGHT = 48;
 
 function trimOrNull(value: string): string | null {
   const trimmed = value.trim();
@@ -77,16 +73,28 @@ export default function EditProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const keyboardOffset = useKeyboardBottomOffset();
+  const { claim, release } = useKeyboardDoneClaim();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const { activePetId } = useActivePet();
   const headerTopPadding = useHeaderTopPadding();
   const { contentWidth, width: screenWidth } = useResponsiveLayout();
+  const {
+    scrollRef,
+    paddingBottom: scrollPaddingBottom,
+    onScroll,
+    onInputFocus,
+  } = useKeyboardAwareScroll(24);
+
+  useEffect(() => {
+    claim();
+    return () => release();
+  }, [claim, release]);
 
   /** Keep 128×128 / r22 shape; only shrink on narrow screens. */
   const photoSize = Math.round(
-    Math.min(PHOTO_DESIGN.size, contentWidth * (PHOTO_DESIGN.size / SAVE_DESIGN.width)),
+    Math.min(PHOTO_DESIGN.size, contentWidth * (PHOTO_DESIGN.size / 335)),
   );
   const photoRadius = Math.round(PHOTO_DESIGN.radius * (photoSize / PHOTO_DESIGN.size));
   const photoEditScale = photoSize / PHOTO_DESIGN.size;
@@ -97,9 +105,8 @@ export default function EditProfileScreen() {
   const photoEditPad = Math.max(3, Math.round(PHOTO_EDIT_BTN.padding * photoEditScale));
   const photoEditIcon = Math.max(11, PHOTO_EDIT_BTN.iconSize * photoEditScale);
 
-  /** Figma 335×48 on the 375 frame; fluid narrower on small phones. */
-  const saveWidth = Math.min(SAVE_DESIGN.width, contentWidth);
   const pagePad = Math.max(16, Math.round((screenWidth - contentWidth) / 2));
+  const footerPadBottom = Math.max(insets.bottom, 10) + 8;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -320,15 +327,19 @@ export default function EditProfileScreen() {
           <Text style={styles.notFoundText}>{t('profile.edit.not_found')}</Text>
         </View>
       ) : (
-        <View style={styles.flex}>
+        <View style={[styles.flex, keyboardOffset > 0 ? { paddingBottom: keyboardOffset } : null]}>
           <ScrollView
+            ref={scrollRef}
             style={styles.flex}
             contentContainerStyle={[
               styles.content,
-              { paddingHorizontal: pagePad, paddingBottom: 24 },
+              { paddingHorizontal: pagePad, paddingBottom: scrollPaddingBottom },
             ]}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
             showsVerticalScrollIndicator={false}
+            onScroll={onScroll}
+            scrollEventThrottle={16}
           >
             <View style={[styles.photoWrap, { width: photoSize, height: photoSize }]}>
               <PetPhotoImage
@@ -366,7 +377,7 @@ export default function EditProfileScreen() {
             </View>
 
             <View style={[styles.fields, { width: contentWidth, alignSelf: 'center' }]}>
-              <ProfileNameField value={name} onChangeText={setName} />
+              <ProfileNameField value={name} onChangeText={setName} onFocus={onInputFocus} />
 
               <ProfilePillField
                 layout="sex"
@@ -389,15 +400,26 @@ export default function EditProfileScreen() {
                 showIcon={false}
               />
 
-              <ProfileTextField label={t('profile.breed')} value={breed} onChangeText={setBreed} />
+              <ProfileTextField
+                label={t('profile.breed')}
+                value={breed}
+                onChangeText={setBreed}
+                onFocus={onInputFocus}
+              />
 
-              <ProfileTextField label={t('profile.color')} value={color} onChangeText={setColor} />
+              <ProfileTextField
+                label={t('profile.color')}
+                value={color}
+                onChangeText={setColor}
+                onFocus={onInputFocus}
+              />
 
               <ProfileTextField
                 label={t('profile.weight_label')}
                 value={weight}
                 onChangeText={setWeight}
                 keyboardType="decimal-pad"
+                onFocus={onInputFocus}
               />
 
               <ProfilePillField
@@ -414,7 +436,9 @@ export default function EditProfileScreen() {
                 label={t('profile.chip_id')}
                 value={chipId}
                 onChangeText={setChipId}
-                autoCapitalize="characters"
+                keyboardType="number-pad"
+                autoCapitalize="none"
+                onFocus={onInputFocus}
               />
 
               <TouchableOpacity
@@ -432,7 +456,7 @@ export default function EditProfileScreen() {
               styles.footer,
               {
                 paddingHorizontal: pagePad,
-                paddingBottom: Math.max(insets.bottom, 10) + 8,
+                paddingBottom: footerPadBottom,
               },
             ]}
           >
@@ -440,12 +464,9 @@ export default function EditProfileScreen() {
               style={[
                 styles.saveBtn,
                 {
-                  width: saveWidth,
-                  height: SAVE_DESIGN.height,
-                  borderRadius: SAVE_DESIGN.radius,
-                  paddingVertical: SAVE_DESIGN.padV,
-                  paddingHorizontal: SAVE_DESIGN.padH,
-                  gap: SAVE_DESIGN.gap,
+                  width: contentWidth,
+                  height: SAVE_BTN_HEIGHT,
+                  borderRadius: Radius.md,
                 },
                 saving && styles.saveBtnDisabled,
               ]}
@@ -463,7 +484,7 @@ export default function EditProfileScreen() {
           {keyboardOffset > 0 ? (
             <View
               pointerEvents="box-none"
-              style={{ position: 'absolute', left: 0, right: 0, bottom: keyboardOffset, zIndex: 100 }}
+              style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 100 }}
             >
               <KeyboardDismissDoneChip />
             </View>

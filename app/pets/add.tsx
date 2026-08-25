@@ -6,6 +6,7 @@ import {
   TextInput,
   Alert,
   Pressable,
+  ScrollView,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,22 +20,24 @@ import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import { ProfilePillField, ProfileSelectField } from '@/components/profile/ProfileFormFields';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import EditPhotoSheet from '@/components/health/EditPhotoSheet';
-import {
-  OnboardingCat,
-  OnboardingDog,
-  OnboardingPhotoAdd,
-} from '@/components/brand/onboarding';
+import { OnboardingPhotoAdd } from '@/components/brand/onboarding';
 import HealthKeyboardFooter, {
   HealthKeyboardAvoidingView,
 } from '@/components/health/HealthKeyboardFooter';
+import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { t } from '@/i18n';
 import { createPet } from '@/services/pets';
 import { uploadPetPhoto } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
+import { guardAddPet } from '@/services/subscription';
+import { usePetsQuery } from '@/hooks/useCachedQueries';
 import { useActivePet } from '@/store/petStore';
 import { formatDisplayDate, parseIsoDate } from '@/utils/calendar';
 import type { PetType } from '@/store/petOnboardingDraft';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+
+const TYPE_DOG_EMOJI = require('@/assets/images/pets/type-dog.png');
+const TYPE_CAT_EMOJI = require('@/assets/images/pets/type-cat.png');
 
 const CARD_SHADOW = {
   shadowColor: '#2D2D2A',
@@ -44,13 +47,34 @@ const CARD_SHADOW = {
   elevation: 3,
 };
 
+const TYPE_CARD = {
+  height: 90,
+  radius: 12,
+  padV: 14,
+  padH: 16,
+  gap: 10,
+  optionsGap: 16,
+  dogW: 92,
+  catW: 88,
+  optionH: 36,
+  emoji: 20,
+} as const;
+
 export default function AddPetScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const router = useRouter();
   const { setActivePetId } = useActivePet();
+  const petsQuery = usePetsQuery();
+  const pets = petsQuery.data ?? [];
   const { contentWidth } = useResponsiveLayout();
+  const {
+    scrollRef,
+    paddingBottom: scrollPaddingBottom,
+    onScroll,
+    onInputFocus,
+  } = useKeyboardAwareScroll(12);
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -71,10 +95,6 @@ export default function AddPetScreen() {
       photoInset: 6,
       photoRadius: 22,
       inputHeight: 52,
-      typeRowWidth: Math.min(contentWidth, 304),
-      typeTileWidth: 144,
-      typeTileHeight: 110,
-      typeGap: 16,
     }),
     [contentWidth],
   );
@@ -109,6 +129,7 @@ export default function AddPetScreen() {
 
   const handleSave = async () => {
     if (!canSave || !petType) return;
+    if (!(await guardAddPet(router, pets.length))) return;
     try {
       setSubmitting(true);
       let photoUrl: string | null = null;
@@ -146,15 +167,22 @@ export default function AddPetScreen() {
       <VaccineScreenHeader title={t('pets.add_title')} icon="close" />
 
       <HealthKeyboardAvoidingView>
-        <View
-          style={[
+        <ScrollView
+          ref={scrollRef}
+          style={styles.flex}
+          contentContainerStyle={[
             styles.content,
             {
               paddingTop: layout.formTop,
-              paddingBottom: 12,
+              paddingBottom: scrollPaddingBottom,
               gap: layout.formGap,
             },
           ]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          showsVerticalScrollIndicator={false}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
         >
           <Pressable
             onPress={() => {
@@ -203,52 +231,71 @@ export default function AddPetScreen() {
             autoCapitalize="words"
             returnKeyType="done"
             textAlignVertical="center"
+            onFocus={onInputFocus}
           />
 
           <View
             style={[
-              styles.typeRow,
+              styles.typeCard,
+              CARD_SHADOW,
               {
-                width: layout.typeRowWidth,
-                height: layout.typeTileHeight,
-                gap: layout.typeGap,
+                width: layout.cardWidth,
+                minHeight: TYPE_CARD.height,
+                borderRadius: TYPE_CARD.radius,
+                paddingVertical: TYPE_CARD.padV,
+                paddingHorizontal: TYPE_CARD.padH,
+                gap: TYPE_CARD.gap,
               },
             ]}
           >
-            {(['dog', 'cat'] as const).map((type) => {
-              const selected = petType === type;
-              const PetIcon = type === 'dog' ? OnboardingDog : OnboardingCat;
-              const label = type === 'dog' ? t('petOnboarding.dog') : t('petOnboarding.cat');
-              return (
-                <Pressable
-                  key={type}
-                  onPress={() => setPetType(type)}
-                  style={[
-                    styles.typeTile,
-                    {
-                      width: layout.typeTileWidth,
-                      height: layout.typeTileHeight,
-                      borderColor: selected ? colors.brand : colors.border,
-                      borderWidth: selected ? 2 : 1,
-                    },
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  accessibilityLabel={label}
-                >
-                  <View style={styles.typeInner}>
-                    <PetIcon width={56} height={56} />
-                    <Text style={styles.typeLabel}>{label}</Text>
-                  </View>
-                </Pressable>
-              );
-            })}
+            <Text style={styles.typeLabel}>{t('pets.type')}</Text>
+            <View style={[styles.typeOptions, { gap: TYPE_CARD.optionsGap }]}>
+              {(['dog', 'cat'] as const).map((type) => {
+                const selected = petType === type;
+                const label = type === 'dog' ? t('petOnboarding.dog') : t('petOnboarding.cat');
+                const emoji = type === 'dog' ? TYPE_DOG_EMOJI : TYPE_CAT_EMOJI;
+                const width = type === 'dog' ? TYPE_CARD.dogW : TYPE_CARD.catW;
+                return (
+                  <Pressable
+                    key={type}
+                    onPress={() => setPetType(type)}
+                    style={[
+                      styles.typeOption,
+                      {
+                        minWidth: width,
+                        height: TYPE_CARD.optionH,
+                      },
+                      selected ? styles.typeOptionSelected : styles.typeOptionUnselected,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={label}
+                  >
+                    <Image
+                      source={emoji}
+                      style={{ width: TYPE_CARD.emoji, height: TYPE_CARD.emoji }}
+                      contentFit="contain"
+                    />
+                    <Text
+                      style={[
+                        styles.typeOptionText,
+                        selected ? styles.typeOptionTextSelected : styles.typeOptionTextUnselected,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
 
           <View style={{ width: layout.cardWidth }}>
             <ProfileSelectField
               label={t('profile.birth_date')}
               valueText={birthDate ? formatDisplayDate(birthDate) : null}
+              showIcon={false}
               onPress={() => {
                 setPhotoSheetVisible(false);
                 setBirthSheetVisible(true);
@@ -268,7 +315,7 @@ export default function AddPetScreen() {
               ]}
             />
           </View>
-        </View>
+        </ScrollView>
 
         <HealthKeyboardFooter
           label={t('home.add_pet')}
@@ -305,8 +352,10 @@ const makeStyles = (c: ThemeColors) =>
       flex: 1,
       backgroundColor: c.background,
     },
-    content: {
+    flex: {
       flex: 1,
+    },
+    content: {
       paddingHorizontal: 20,
       alignItems: 'center',
     },
@@ -321,33 +370,43 @@ const makeStyles = (c: ThemeColors) =>
         height: undefined,
       }),
     },
-    typeRow: {
+    typeCard: {
+      backgroundColor: c.surface,
+      justifyContent: 'center',
+    },
+    typeLabel: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 14,
+      lineHeight: 20,
+      color: c.secondaryText,
+    },
+    typeOptions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    typeOption: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
+      gap: 12,
+      borderRadius: 999,
+      paddingHorizontal: 12,
     },
-    typeTile: {
-      borderRadius: 16,
-      backgroundColor: c.surface,
-      paddingTop: 10,
-      paddingBottom: 16,
-      paddingHorizontal: 19,
-      alignItems: 'center',
-      justifyContent: 'center',
+    typeOptionSelected: {
+      backgroundColor: c.brand,
     },
-    typeInner: {
-      width: 106,
-      height: 84,
-      alignItems: 'center',
-      gap: 8,
+    typeOptionUnselected: {
+      backgroundColor: c.inactiveControl,
     },
-    typeLabel: {
-      width: 106,
-      height: 20,
+    typeOptionText: {
       fontFamily: 'Rubik-Medium',
-      fontSize: 16,
+      fontSize: 14,
       lineHeight: 20,
+    },
+    typeOptionTextSelected: {
+      color: c.button.primaryText,
+    },
+    typeOptionTextUnselected: {
       color: c.primaryText,
-      textAlign: 'center',
     },
   });

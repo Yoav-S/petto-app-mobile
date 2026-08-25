@@ -7,6 +7,8 @@ import {
   Pressable,
   TouchableOpacity,
   type KeyboardTypeOptions,
+  type NativeSyntheticEvent,
+  type TextInputFocusEventData,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
@@ -31,13 +33,17 @@ function CardShell({ minHeight, children }: CardShellProps) {
   return <View style={[styles.card, CARD_SHADOW, { minHeight }]}>{children}</View>;
 }
 
+type FocusHandler = (e: NativeSyntheticEvent<TextInputFocusEventData>) => void;
+
 /** Pet name — always present, Rubik Medium 20/24, no floating label. */
 export function ProfileNameField({
   value,
   onChangeText,
+  onFocus,
 }: {
   value: string;
   onChangeText: (text: string) => void;
+  onFocus?: FocusHandler;
 }) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -49,6 +55,7 @@ export function ProfileNameField({
         onChangeText={onChangeText}
         placeholderTextColor={colors.secondaryText}
         textAlignVertical="center"
+        onFocus={onFocus}
       />
     </CardShell>
   );
@@ -65,6 +72,7 @@ export function ProfileTextField({
   keyboardType,
   autoCapitalize = 'sentences',
   minHeight = 78,
+  onFocus,
 }: {
   label: string;
   value: string;
@@ -72,6 +80,7 @@ export function ProfileTextField({
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   minHeight?: number;
+  onFocus?: FocusHandler;
 }) {
   const styles = useThemedStyles(makeStyles);
 
@@ -86,6 +95,7 @@ export function ProfileTextField({
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
           textAlignVertical="center"
+          onFocus={onFocus}
         />
       </View>
     </CardShell>

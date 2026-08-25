@@ -21,6 +21,8 @@ import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { createReminder, listReminders, type RepeatOption } from '@/services/reminders';
 import { getErrorMessage } from '@/services/errors';
+import { guardAddReminder } from '@/services/subscription';
+import { usePetsQuery } from '@/hooks/useCachedQueries';
 import type { Reminder } from '@/types/api';
 import {
   resolveReminderCategory,
@@ -34,6 +36,8 @@ export default function AddReminderScreen() {
   const toast = useToast();
   const router = useRouter();
   const { activePetId } = useActivePet();
+  const petsQuery = usePetsQuery();
+  const pets = petsQuery.data ?? [];
   const insets = useSafeAreaInsets();
   const { contentWidth } = useResponsiveLayout();
 
@@ -129,6 +133,7 @@ export default function AddReminderScreen() {
 
   const handleSave = async () => {
     if (!canSave || !activePetId || !date || !time) return;
+    if (!(await guardAddReminder(router, pets))) return;
     const latest = await loadExistingReminders();
     if (warnDuplicate(date, time, latest)) return;
     if (warnPastSchedule(date, time)) return;
