@@ -18,7 +18,6 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import ReminderFormBody, { ReminderAutosaveStatus } from '@/components/reminders/ReminderFormBody';
 import {
   clampReminderTimeForDate,
-  hasDuplicateInList,
   isReminderScheduleInPast,
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
@@ -27,15 +26,14 @@ import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import {
   getReminder,
-  listReminders,
   updateReminder,
   deleteReminder,
   type RepeatOption,
 } from '@/services/reminders';
 import { getErrorMessage } from '@/services/errors';
-import type { Reminder } from '@/types/api';
 import {
   resolveReminderCategory,
+  REMINDER_CATEGORIES,
   type ReminderCategory,
 } from '@/utils/reminderCategory';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
@@ -44,6 +42,13 @@ type AutosaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 const AUTOSAVE_MS = 700;
 const DELETE_BOTTOM_GAP = 16;
+
+function parseCategory(value: string | null | undefined, title: string): ReminderCategory {
+  if (value && (REMINDER_CATEGORIES as string[]).includes(value)) {
+    return value as ReminderCategory;
+  }
+  return resolveReminderCategory(title);
+}
 
 export default function EditReminderScreen() {
   const colors = useColors();
@@ -58,6 +63,7 @@ export default function EditReminderScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [readOnly, setReadOnly] = useState(false);
 
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<ReminderCategory>('general');
@@ -69,7 +75,6 @@ export default function EditReminderScreen() {
   const [noteFocused, setNoteFocused] = useState(false);
   const [sheet, setSheet] = useState<ReminderSheet>(null);
   const [autosaveState, setAutosaveState] = useState<AutosaveState>('idle');
-  const [existingReminders, setExistingReminders] = useState<Reminder[]>([]);
   const [deleteVisible, setDeleteVisible] = useState(false);
 
   const hydratedRef = useRef(false);
@@ -88,10 +93,10 @@ export default function EditReminderScreen() {
       cardPadV: 14,
       nameHeight: 52,
       categoryHeight: 52,
-      scheduleHeight: 140,
+      scheduleHeight: 120,
       noteHeight: 78,
       innerGap: 8,
-      rowHeight: 24,
+      rowHeight: 20,
       footerHeight: 48,
     }),
     [contentWidth],
@@ -101,29 +106,14 @@ export default function EditReminderScreen() {
     () =>
       JSON.stringify({
         title: title.trim(),
+        category,
         date,
         time,
         repeat,
         note: note.trim(),
       }),
-    [title, date, time, repeat, note],
+    [title, category, date, time, repeat, note],
   );
-
-  const loadExistingReminders = useCallback(async (): Promise<Reminder[]> => {
-    if (!activePetId) return [];
-    try {
-      const [today, upcoming] = await Promise.all([
-        listReminders(activePetId, 'today'),
-        listReminders(activePetId, 'upcoming'),
-      ]);
-      const merged = [...today, ...upcoming];
-      setExistingReminders(merged);
-      return merged;
-    } catch {
-      setExistingReminders([]);
-      return [];
-    }
-  }, [activePetId]);
 
   const fetchData = useCallback(async () => {
     if (!activePetId || !id) {
@@ -133,21 +123,13 @@ export default function EditReminderScreen() {
     }
     try {
       setError(null);
-      const [reminder] = await Promise.all([
-        getReminder(activePetId, id),
-        loadExistingReminders(),
-      ]);
-
-      if (reminder.status !== 'scheduled') {
-        setNotFound(true);
-        setError(t('reminders.edit_not_allowed'));
-        setLoading(false);
-        return;
-      }
+      const reminder = await getReminder(activePetId, id);
+      const editable = reminder.status === 'scheduled' || reminder.status === 'today';
+      setReadOnly(!editable);
 
       setTitle(reminder.title);
-      setCategory(resolveReminderCategory(reminder.title));
-      setCategoryManual(false);
+      setCategory(parseCategory(reminder.category, reminder.title));
+      setCategoryManual(Boolean(reminder.category));
       setDate(reminder.date);
       setTime(reminder.time);
       setRepeat((reminder.repeat as RepeatOption) ?? 'off');
@@ -156,6 +138,7 @@ export default function EditReminderScreen() {
       originalTimeRef.current = reminder.time;
       snapshotRef.current = JSON.stringify({
         title: reminder.title.trim(),
+        category: parseCategory(reminder.category, reminder.title),
         date: reminder.date,
         time: reminder.time,
         repeat: reminder.repeat,
@@ -169,7 +152,7 @@ export default function EditReminderScreen() {
     } finally {
       setLoading(false);
     }
-  }, [activePetId, id, loadExistingReminders]);
+  }, [activePetId, id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -177,15 +160,6 @@ export default function EditReminderScreen() {
       setLoading(true);
       fetchData();
     }, [fetchData]),
-  );
-
-  const warnDuplicate = useCallback(
-    (nextDate: string, nextTime: string, list = existingReminders) => {
-      if (!hasDuplicateInList(list, nextDate, nextTime, id)) return false;
-      toast.showError(t('reminders.duplicate_datetime'));
-      return true;
-    },
-    [existingReminders, id, toast],
   );
 
   const warnPastSchedule = useCallback((nextDate: string, nextTime?: string | null) => {
@@ -219,14 +193,9 @@ export default function EditReminderScreen() {
   };
 
   const persist = useCallback(async () => {
-    if (!activePetId || !id || !hydratedRef.current) return;
+    if (!activePetId || !id || !hydratedRef.current || readOnly) return;
     if (!title.trim() || !date || !time) return;
 
-    const latest = await loadExistingReminders();
-    if (warnDuplicate(date, time, latest)) {
-      setAutosaveState('error');
-      return;
-    }
     if (warnPastSchedule(date, time)) {
       setAutosaveState('error');
       return;
@@ -240,6 +209,7 @@ export default function EditReminderScreen() {
         time,
         repeat,
         note: note.trim() || undefined,
+        category,
       });
       snapshotRef.current = buildSnapshot();
       setAutosaveState('saved');
@@ -250,20 +220,20 @@ export default function EditReminderScreen() {
   }, [
     activePetId,
     id,
+    readOnly,
     title,
     date,
     time,
     repeat,
     note,
-    loadExistingReminders,
-    warnDuplicate,
+    category,
     warnPastSchedule,
     buildSnapshot,
     toast,
   ]);
 
   useEffect(() => {
-    if (!hydratedRef.current) return;
+    if (!hydratedRef.current || readOnly) return;
     const nextSnapshot = buildSnapshot();
     if (nextSnapshot === snapshotRef.current) return;
     if (!title.trim() || !date || !time) return;
@@ -276,12 +246,11 @@ export default function EditReminderScreen() {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [title, date, time, repeat, note, buildSnapshot, persist]);
+  }, [title, date, time, repeat, note, category, buildSnapshot, persist, readOnly]);
 
   const handleDateConfirm = (iso: string) => {
     if (warnPastSchedule(iso, null)) return;
     const nextTime = clampReminderTimeForDate(iso, time);
-    if (nextTime && warnDuplicate(iso, nextTime)) return;
     setDate(iso);
     setTime(nextTime);
     setSheet(null);
@@ -291,7 +260,6 @@ export default function EditReminderScreen() {
     if (!date) return;
     const clamped = clampReminderTimeForDate(date, value) ?? value;
     if (warnPastSchedule(date, clamped)) return;
-    if (warnDuplicate(date, clamped)) return;
     setTime(clamped);
     setSheet(null);
   };
@@ -342,7 +310,10 @@ export default function EditReminderScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
-      <VaccineScreenHeader title={t('reminders.edit_title')} icon="close" />
+      <VaccineScreenHeader
+        title={readOnly ? t('reminders.detail_title') : t('reminders.edit_title')}
+        icon="close"
+      />
       <ReminderFormBody
         layout={layout}
         title={title}
@@ -362,22 +333,25 @@ export default function EditReminderScreen() {
         onDateConfirm={handleDateConfirm}
         onTimeConfirm={handleTimeConfirm}
         onRepeatSelect={setRepeat}
+        readOnly={readOnly}
         pinFooterToBottom
         footerBottomInset={deleteBottomPad}
         footer={
-          <View>
-            <ReminderAutosaveStatus layout={layout} state={autosaveState} />
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => {
-                setSheet(null);
-                setDeleteVisible(true);
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.deleteText}>{t('reminders.delete')}</Text>
-            </TouchableOpacity>
-          </View>
+          readOnly ? undefined : (
+            <View>
+              <ReminderAutosaveStatus layout={layout} state={autosaveState} />
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => {
+                  setSheet(null);
+                  setDeleteVisible(true);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.deleteText}>{t('reminders.delete')}</Text>
+              </TouchableOpacity>
+            </View>
+          )
         }
       />
 

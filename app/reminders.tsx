@@ -24,7 +24,6 @@ import { categoryLabel } from '@/components/pickers/CategoryPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { updateReminderStatus } from '@/services/reminders';
-import { getErrorMessage } from '@/services/errors';
 import {
   addDaysToIsoDate,
   formatDisplayDate,

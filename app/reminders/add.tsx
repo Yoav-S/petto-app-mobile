@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -12,18 +12,16 @@ import HealthKeyboardFooter, {
 } from '@/components/health/HealthKeyboardFooter';
 import {
   clampReminderTimeForDate,
-  hasDuplicateInList,
   isReminderScheduleInPast,
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
 import { categoryLabel } from '@/components/pickers/CategoryPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import { createReminder, listReminders, type RepeatOption } from '@/services/reminders';
+import { createReminder, type RepeatOption } from '@/services/reminders';
 import { getErrorMessage } from '@/services/errors';
 import { guardAddReminder } from '@/services/subscription';
 import { usePetsQuery } from '@/hooks/useCachedQueries';
-import type { Reminder } from '@/types/api';
 import {
   resolveReminderCategory,
   type ReminderCategory,
@@ -53,7 +51,6 @@ export default function AddReminderScreen() {
   const [noteFocused, setNoteFocused] = useState(false);
   const [sheet, setSheet] = useState<ReminderSheet>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [existingReminders, setExistingReminders] = useState<Reminder[]>([]);
 
   const layout = useMemo(
     () => ({
@@ -65,42 +62,13 @@ export default function AddReminderScreen() {
       cardPadV: 14,
       nameHeight: 52,
       categoryHeight: 52,
-      scheduleHeight: 140,
+      scheduleHeight: 120,
       noteHeight: 78,
       innerGap: 8,
-      rowHeight: 24,
+      rowHeight: 20,
       footerHeight: 48,
     }),
     [contentWidth],
-  );
-
-  const loadExistingReminders = useCallback(async (): Promise<Reminder[]> => {
-    if (!activePetId) return [];
-    try {
-      const [today, upcoming] = await Promise.all([
-        listReminders(activePetId, 'today'),
-        listReminders(activePetId, 'upcoming'),
-      ]);
-      const merged = [...today, ...upcoming];
-      setExistingReminders(merged);
-      return merged;
-    } catch {
-      setExistingReminders([]);
-      return [];
-    }
-  }, [activePetId]);
-
-  useEffect(() => {
-    loadExistingReminders();
-  }, [loadExistingReminders]);
-
-  const warnDuplicate = useCallback(
-    (nextDate: string, nextTime: string, list = existingReminders) => {
-      if (!hasDuplicateInList(list, nextDate, nextTime)) return false;
-      toast.showError(t('reminders.duplicate_datetime'));
-      return true;
-    },
-    [existingReminders, toast],
   );
 
   const warnPastSchedule = useCallback((nextDate: string, nextTime?: string | null) => {
@@ -134,8 +102,6 @@ export default function AddReminderScreen() {
   const handleSave = async () => {
     if (!canSave || !activePetId || !date || !time) return;
     if (!(await guardAddReminder(router, pets))) return;
-    const latest = await loadExistingReminders();
-    if (warnDuplicate(date, time, latest)) return;
     if (warnPastSchedule(date, time)) return;
 
     try {
@@ -146,6 +112,7 @@ export default function AddReminderScreen() {
         time,
         repeat,
         note: note.trim() || undefined,
+        category,
       });
       router.back();
     } catch (err) {
@@ -168,7 +135,6 @@ export default function AddReminderScreen() {
   const handleDateConfirm = (iso: string) => {
     if (warnPastSchedule(iso, null)) return;
     const nextTime = clampReminderTimeForDate(iso, time);
-    if (nextTime && warnDuplicate(iso, nextTime)) return;
     setDate(iso);
     setTime(nextTime);
     setSheet(null);
@@ -178,7 +144,6 @@ export default function AddReminderScreen() {
     if (!date) return;
     const clamped = clampReminderTimeForDate(date, value) ?? value;
     if (warnPastSchedule(date, clamped)) return;
-    if (warnDuplicate(date, clamped)) return;
     setTime(clamped);
     setSheet(null);
   };
