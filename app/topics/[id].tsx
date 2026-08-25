@@ -13,7 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
-import { useColors, useTheme, useThemedStyles } from '@/context/ThemeContext';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
@@ -47,7 +47,7 @@ const DESIGN_FOOTER_PAD_TOP = 12;
 const DESIGN_FOOTER_PAD_H = 20;
 const DESIGN_FOOTER_RADIUS = 24;
 const DESIGN_SAVE_BUTTON_HEIGHT = 48;
-const DESIGN_RESOLVED_BAR_HEIGHT = 48;
+const DESIGN_RESOLVED_TEXT_HEIGHT = 20;
 const DESIGN_FOOTER_MIN_BOTTOM = 10;
 const DESIGN_FOOTER_SAFE_GAP = 8;
 
@@ -57,7 +57,6 @@ type NoteListItem =
 
 export default function HealthDetailsScreen() {
   const colors = useColors();
-  const { isDark } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const router = useRouter();
@@ -79,8 +78,7 @@ export default function HealthDetailsScreen() {
         buttonHeight: DESIGN_SAVE_BUTTON_HEIGHT,
         buttonRadius: 12,
         footerRadius: DESIGN_FOOTER_RADIUS,
-        resolvedBarWidth: contentWidth,
-        resolvedBarHeight: DESIGN_RESOLVED_BAR_HEIGHT,
+        resolvedTextHeight: DESIGN_RESOLVED_TEXT_HEIGHT,
       };
     },
     [contentWidth, insets.bottom],
@@ -423,21 +421,19 @@ export default function HealthDetailsScreen() {
               paddingTop: footerLayout.padTop,
               paddingHorizontal: footerLayout.padH,
               paddingBottom: footerLayout.padBottom,
+              borderTopLeftRadius: footerLayout.footerRadius,
+              borderTopRightRadius: footerLayout.footerRadius,
             },
           ]}
         >
-          <View
+          <Text
             style={[
-              styles.resolvedBar,
-              {
-                width: footerLayout.resolvedBarWidth,
-                height: footerLayout.resolvedBarHeight,
-                backgroundColor: isDark ? colors.inactiveControl : '#1F2937',
-              },
+              styles.resolvedText,
+              { minHeight: footerLayout.resolvedTextHeight },
             ]}
           >
-            <Text style={styles.resolvedBarText}>{t('topics.resolved_banner')}</Text>
-          </View>
+            {t('topics.resolved_banner')}
+          </Text>
         </View>
       )}
 
@@ -606,21 +602,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
-  resolvedBar: {
-    opacity: 0.8,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  resolvedBarText: {
+  resolvedText: {
     width: '100%',
-    maxWidth: 303,
     fontFamily: 'Rubik-Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: '#FFFFFF',
+    color: c.primaryText,
     textAlign: 'center',
+    textAlignVertical: 'center',
   },
 });

@@ -11,12 +11,16 @@ import { Platform, type TextStyle } from 'react-native';
 export function centeredInputText(extra?: TextStyle): TextStyle {
   const fontSize = extra?.fontSize ?? 16;
   const lineHeight = extra?.lineHeight ?? fontSize;
+  const explicitHeight = extra?.height;
   return {
     paddingVertical: 0,
     paddingTop: 0,
     paddingBottom: 0,
     margin: 0,
-    height: extra?.height ?? lineHeight,
+    // Prefer minHeight so descenders (g, y, p) are not clipped when lineHeight is tight.
+    ...(explicitHeight === undefined
+      ? { minHeight: lineHeight }
+      : { height: explicitHeight }),
     textAlignVertical: 'center',
     includeFontPadding: false,
     ...(Platform.OS === 'android' ? { textAlignVertical: 'center' as const } : null),

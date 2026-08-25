@@ -52,7 +52,7 @@ export default function AddHealthScreen() {
       cardRadius: 12,
       cardPadH: 16,
       cardPadV: 14,
-      nameHeight: 48,
+      nameHeight: 52,
       descriptionHeight: 78,
       gap: 22,
     }),

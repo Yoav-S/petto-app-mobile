@@ -6,8 +6,9 @@ import BottomSheetModal, {
   waitForBottomSheetsToSettle,
 } from '@/components/ui/BottomSheetModal';
 import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
-import { Spacing, type ThemeColors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
 import { useColors, useTheme, useThemedStyles } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { t } from '@/i18n';
 
 interface TopicActionsSheetProps {
@@ -33,11 +34,37 @@ export default function TopicActionsSheet({
   const colors = useColors();
   const { isDark } = useTheme();
   const insets = useSafeAreaInsets();
+  const { contentWidth } = useResponsiveLayout();
 
   const runAfterClose = (action: () => void) => {
     onClose();
     void waitForBottomSheetsToSettle().then(action);
   };
+
+  const actions: { key: string; label: string; danger?: boolean; onPress: () => void }[] = [
+    isResolved
+      ? {
+          key: 'reopen',
+          label: t('topics.reopen_topic'),
+          onPress: () => runAfterClose(() => onReopen?.()),
+        }
+      : {
+          key: 'resolve',
+          label: t('topics.mark_resolved'),
+          onPress: () => runAfterClose(() => onMarkResolved?.()),
+        },
+    {
+      key: 'edit',
+      label: t('topics.edit_topic'),
+      onPress: () => runAfterClose(onEditTopic),
+    },
+    {
+      key: 'remove',
+      label: t('topics.remove_topic'),
+      danger: true,
+      onPress: () => runAfterClose(onRemoveTopic),
+    },
+  ];
 
   return (
     <BottomSheetModal visible={visible} onClose={onClose}>
@@ -51,53 +78,36 @@ export default function TopicActionsSheet({
         </View>
 
         <View style={styles.body}>
-          <View style={styles.menuContainer}>
-            <View style={styles.menuList}>
-              {isResolved ? (
-                <>
+          <View style={[styles.menuContainer, { width: contentWidth }]}>
+            <View style={[styles.menuList, { width: contentWidth - 32 }]}>
+              {actions.map((action, index) => (
+                <React.Fragment key={action.key}>
                   <TouchableOpacity
                     style={styles.menuItem}
-                    onPress={() => runAfterClose(() => onReopen?.())}
+                    onPress={action.onPress}
                     accessibilityRole="button"
                   >
-                    <Text style={styles.menuItemText}>{t('topics.reopen_topic')}</Text>
+                    <Text
+                      style={[
+                        styles.menuItemText,
+                        action.danger ? styles.removeText : null,
+                      ]}
+                    >
+                      {action.label}
+                    </Text>
                   </TouchableOpacity>
-                  <View style={styles.menuDivider} />
-                </>
-              ) : (
-                <>
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => runAfterClose(() => onMarkResolved?.())}
-                    accessibilityRole="button"
-                  >
-                    <Text style={styles.menuItemText}>{t('topics.mark_resolved')}</Text>
-                  </TouchableOpacity>
-                  <View style={styles.menuDivider} />
-                </>
-              )}
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => runAfterClose(onEditTopic)}
-                accessibilityRole="button"
-              >
-                <Text style={styles.menuItemText}>{t('topics.edit_topic')}</Text>
-              </TouchableOpacity>
-              <View style={styles.menuDivider} />
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => runAfterClose(onRemoveTopic)}
-                accessibilityRole="button"
-              >
-                <Text style={[styles.menuItemText, styles.removeText]}>
-                  {t('topics.remove_topic')}
-                </Text>
-              </TouchableOpacity>
+                  {index < actions.length - 1 ? <View style={styles.menuDivider} /> : null}
+                </React.Fragment>
+              ))}
             </View>
           </View>
 
           <View style={styles.cancelWrap}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose} activeOpacity={0.8}>
+            <TouchableOpacity
+              style={[styles.cancelButton, { width: contentWidth }]}
+              onPress={onClose}
+              activeOpacity={0.8}
+            >
               <Text style={[styles.cancelText, { color: isDark ? '#FFFFFF' : '#000000' }]}>
                 {t('common.cancel')}
               </Text>
@@ -116,7 +126,7 @@ const makeStyles = (c: ThemeColors) =>
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       paddingTop: 32,
-      paddingHorizontal: Spacing.lg,
+      paddingHorizontal: 20,
       shadowColor: '#1E1E1E',
       shadowOffset: { width: 0, height: -3 },
       shadowOpacity: 0.08,
@@ -144,13 +154,14 @@ const makeStyles = (c: ThemeColors) =>
     },
     body: {
       gap: 22,
+      alignItems: 'center',
     },
     menuContainer: {
-      width: '100%',
-      height: 136,
+      minHeight: 136,
       backgroundColor: c.surface,
       borderRadius: 12,
       padding: 16,
+      gap: 10,
       alignItems: 'center',
       justifyContent: 'center',
       shadowColor: '#1F1F1F',
@@ -160,17 +171,15 @@ const makeStyles = (c: ThemeColors) =>
       elevation: 2,
     },
     menuList: {
-      width: 303,
       minHeight: 104,
       gap: 8,
       justifyContent: 'center',
     },
     menuDivider: {
-      width: 303,
       height: 0,
-      borderBottomWidth: 1,
+      borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: c.border,
-      alignSelf: 'center',
+      alignSelf: 'stretch',
     },
     menuItem: {
       height: 24,
@@ -194,7 +203,6 @@ const makeStyles = (c: ThemeColors) =>
       gap: 2,
     },
     cancelButton: {
-      width: '100%',
       height: 48,
       borderRadius: 12,
       backgroundColor: c.surface,

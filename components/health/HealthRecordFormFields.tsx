@@ -227,16 +227,18 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   inner: {
-    gap: 6,
+    gap: 3,
     width: '100%',
   },
   nameInnerCentered: {
     width: '100%',
     justifyContent: 'center',
+    overflow: 'visible',
   },
   descriptionInner: {
     minHeight: 50,
     justifyContent: 'flex-start',
+    gap: 3,
   },
   floatingLabel: {
     fontFamily: 'Rubik-Regular',
@@ -248,8 +250,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     ...centeredInputText({
       fontFamily: 'Rubik-Medium',
       fontSize: 16,
-      lineHeight: 20,
+      lineHeight: 22,
       color: c.primaryText,
+      // Avoid clipping Rubik descenders (e.g. "g") on Android.
+      height: undefined,
+      minHeight: 22,
     }),
   },
   descriptionInput: {

@@ -66,7 +66,7 @@ const SHEET = {
   chipRadius: 12,
   settingsHeight: 120,
   settingsPadV: 14,
-  settingsPadH: 16,
+  settingsPadH: 0,
   settingsInnerGap: 8,
   settingsRowHeight: 20,
   buttonWidth: 335,
@@ -382,7 +382,7 @@ export default function ReminderPickerSheet({
                     style={[
                       styles.settingsBlock,
                       {
-                        height: layout.settingsHeight,
+                        minHeight: layout.settingsHeight,
                         borderRadius: layout.cardRadius,
                         paddingVertical: layout.settingsPadV,
                         paddingHorizontal: layout.settingsPadH,
@@ -395,7 +395,7 @@ export default function ReminderPickerSheet({
                         key={row.key}
                         style={[
                           styles.scheduleRow,
-                          { height: layout.settingsRowHeight },
+                          { minHeight: layout.settingsRowHeight },
                           index < scheduleRows.length - 1 && styles.scheduleRowDivider,
                         ]}
                         onPress={() => setSubSheet(row.key)}
@@ -410,7 +410,13 @@ export default function ReminderPickerSheet({
                           />
                           <Text style={styles.scheduleLabel}>{row.label}</Text>
                         </View>
-                        <Text style={styles.scheduleValue} numberOfLines={1}>
+                        <Text
+                          style={[
+                            styles.scheduleValue,
+                            row.key === 'repeat' ? styles.scheduleRepeatValue : null,
+                          ]}
+                          numberOfLines={1}
+                        >
                           {row.value}
                         </Text>
                       </TouchableOpacity>
@@ -549,10 +555,14 @@ const makeStyles = (c: ThemeColors) =>
       fontFamily: 'Rubik-Medium',
       fontSize: 16,
       color: c.primaryText,
+      textAlign: 'left',
+      alignSelf: 'flex-start',
+      width: '100%',
     },
     chipsContainer: {
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'flex-start',
       width: '100%',
     },
     chip: {
@@ -595,37 +605,44 @@ const makeStyles = (c: ThemeColors) =>
     },
     settingsBlock: {
       width: '100%',
-      justifyContent: 'center',
+      justifyContent: 'flex-start',
+      alignItems: 'stretch',
     },
     scheduleRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       width: '100%',
+      alignSelf: 'stretch',
     },
     scheduleLeft: {
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'flex-start',
       flexShrink: 1,
       minWidth: 0,
     },
     scheduleIcon: {
-      marginRight: 8,
+      marginRight: 6,
     },
     scheduleLabel: {
       fontFamily: 'Rubik-Medium',
       fontSize: 14,
       lineHeight: 20,
       color: c.primaryText,
+      textAlign: 'left',
     },
     scheduleValue: {
       fontFamily: 'Rubik-Regular',
       fontSize: 14,
       lineHeight: 20,
-      color: c.secondaryText,
+      color: c.primaryText,
       marginLeft: 8,
       flexShrink: 1,
       textAlign: 'right',
+    },
+    scheduleRepeatValue: {
+      color: c.secondaryText,
     },
     scheduleRowDivider: {
       borderBottomWidth: StyleSheet.hairlineWidth,

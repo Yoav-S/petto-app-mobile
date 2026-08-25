@@ -73,14 +73,12 @@ export default function HealthListItem({
   const colors = useColors();
   const { contentWidth } = useResponsiveLayout();
   const cardWidth = contentWidth;
-  const cardHeight = HEALTH_LIST_CARD_HEIGHT;
   const padV = 14;
   const padH = 16;
-  const innerGap = 12;
+  /** Gap between text block and created date — tight when description is short. */
+  const metaGap = 6;
   const textGap = 6;
   const innerWidth = cardWidth - padH * 2;
-  const textBlockHeight = 66;
-  const createdHeight = 16;
 
   const createdLabel = formatHealthCreatedLabel(createdAt, {
     today: t('common.today'),
@@ -95,9 +93,6 @@ export default function HealthListItem({
         styles.card,
         {
           width: cardWidth,
-          height: hasSubtitle ? cardHeight : undefined,
-          maxHeight: hasSubtitle ? cardHeight : undefined,
-          minHeight: hasSubtitle ? cardHeight : 80,
           paddingTop: padV,
           paddingBottom: padV,
           paddingHorizontal: padH,
@@ -116,9 +111,7 @@ export default function HealthListItem({
           styles.inner,
           {
             width: innerWidth,
-            height: hasSubtitle ? textBlockHeight + innerGap + createdHeight : undefined,
-            maxHeight: hasSubtitle ? textBlockHeight + innerGap + createdHeight : undefined,
-            gap: innerGap,
+            gap: metaGap,
           },
         ]}
       >
@@ -127,8 +120,6 @@ export default function HealthListItem({
             styles.textBlock,
             {
               width: innerWidth,
-              height: hasSubtitle ? textBlockHeight : undefined,
-              maxHeight: hasSubtitle ? textBlockHeight : undefined,
               gap: textGap,
             },
           ]}
@@ -194,7 +185,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     elevation: 3,
   },
   inner: {
-    flex: 1,
     justifyContent: 'flex-start',
     overflow: 'hidden',
   },
