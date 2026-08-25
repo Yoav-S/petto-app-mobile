@@ -9,7 +9,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
@@ -21,7 +23,7 @@ import HealthListItem, {
   HEALTH_LIST_ITEM_GAP,
   healthRecordSubtitle,
 } from '@/components/health/HealthListItem';
-import ConfirmModal from '@/components/ui/ConfirmModal';
+import SwipeToDeleteRow from '@/components/ui/SwipeToDeleteRow';
 import ListLoadMoreFooter from '@/components/ui/ListLoadMoreFooter';
 import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
 import { LIST_FAB_SCROLL_PADDING } from '@/constants/pagination';
@@ -46,7 +48,7 @@ export default function HealthScreen() {
 
   const [activeTab, setActiveTab] = useState<TabName>('Active');
   const [refreshing, setRefreshing] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [swipeOpenId, setSwipeOpenId] = useState<string | null>(null);
   const [scrollY, setScrollY] = useState(0);
   const [listHeight, setListHeight] = useState(0);
   const cardHeight = HEALTH_LIST_CARD_HEIGHT;
@@ -133,6 +135,12 @@ export default function HealthScreen() {
     await Promise.all([activePagination.refresh(), resolvedPagination.refresh()]);
   }, [activePagination.refresh, resolvedPagination.refresh]);
 
+  useFocusEffect(
+    useCallback(() => {
+      void refetchAll();
+    }, [refetchAll]),
+  );
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -155,13 +163,7 @@ export default function HealthScreen() {
 
   const handleDeleteRecord = (id: string) => {
     if (!activePetId) return;
-    setDeleteTargetId(id);
-  };
-
-  const confirmDeleteRecord = () => {
-    if (!activePetId || !deleteTargetId) return;
-    const id = deleteTargetId;
-    setDeleteTargetId(null);
+    setSwipeOpenId(null);
 
     let removed: MedicalRecord | null = null;
     let fromTab: TabName = 'Active';
@@ -291,28 +293,38 @@ export default function HealthScreen() {
             scrollEventThrottle={16}
             onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
             renderItem={({ item, index }) => (
-              <HealthListItem
-                title={item.title}
-                subtitle={healthRecordSubtitle(item.description)}
-                createdAt={item.created_at}
-                hasReminder={Boolean(item.linked_reminder_date || item.linked_reminder_time)}
-                fadeIntensity={getItemFadeIntensity(index)}
-                onPress={() => router.push(`/topics/${item.id}` as never)}
-                onLongPress={() => handleDeleteRecord(item.id)}
-                onReminderPress={
-                  item.latest_note_id
-                    ? () =>
-                        router.push({
-                          pathname: '/topics/edit-note',
-                          params: {
-                            recordId: item.id,
-                            noteId: item.latest_note_id!,
-                            open: 'reminder',
-                          },
-                        } as never)
-                    : undefined
-                }
-              />
+              <SwipeToDeleteRow
+                open={swipeOpenId === item.id}
+                onOpenChange={(open) => setSwipeOpenId(open ? item.id : null)}
+                onDelete={() => handleDeleteRecord(item.id)}
+              >
+                <HealthListItem
+                  title={item.title}
+                  subtitle={healthRecordSubtitle(item.description)}
+                  createdAt={item.created_at}
+                  hasReminder={Boolean(item.linked_reminder_date || item.linked_reminder_time)}
+                  fadeIntensity={getItemFadeIntensity(index)}
+                  onPress={() => {
+                    setSwipeOpenId(null);
+                    router.push(`/topics/${item.id}` as never);
+                  }}
+                  onReminderPress={
+                    item.latest_note_id
+                      ? () => {
+                          setSwipeOpenId(null);
+                          router.push({
+                            pathname: '/topics/edit-note',
+                            params: {
+                              recordId: item.id,
+                              noteId: item.latest_note_id!,
+                              open: 'reminder',
+                            },
+                          } as never);
+                        }
+                      : undefined
+                  }
+                />
+              </SwipeToDeleteRow>
             )}
             ListEmptyComponent={renderEmptyState}
             contentContainerStyle={[
@@ -346,15 +358,6 @@ export default function HealthScreen() {
         />
       ) : null}
 
-      <ConfirmModal
-        visible={deleteTargetId != null}
-        title={t('topics.delete_record_confirm_title')}
-        message={t('topics.delete_record_confirm_body')}
-        confirmText={t('common.delete')}
-        onConfirm={confirmDeleteRecord}
-        onCancel={() => setDeleteTargetId(null)}
-      />
-
       <ListFetchBlocker visible={loadingMore} />
     </SafeAreaView>
   );
@@ -375,6 +378,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   listContent: {
     paddingTop: 14,
+    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     paddingBottom: LIST_FAB_SCROLL_PADDING,
   },
   listContentEmpty: {

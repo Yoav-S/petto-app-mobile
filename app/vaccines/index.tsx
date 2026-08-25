@@ -13,11 +13,14 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader, { getVaccineHeaderContentOffset } from '@/components/vaccines/VaccineScreenHeader';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import EmptyState from '@/components/ui/EmptyState';
+import SwipeToDeleteRow from '@/components/ui/SwipeToDeleteRow';
 import ListLoadMoreFooter from '@/components/ui/ListLoadMoreFooter';
 import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
 import { LIST_FAB_SCROLL_PADDING } from '@/constants/pagination';
@@ -25,7 +28,8 @@ import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDateLong } from '@/utils/calendar';
-import { listVaccinations } from '@/services/vaccines';
+import { deleteVaccination, listVaccinations } from '@/services/vaccines';
+import { invalidateVaccinations } from '@/services/queryClient';
 import { useCursorPagination } from '@/hooks/useCursorPagination';
 import type { Vaccination } from '@/types/api';
 
@@ -67,6 +71,7 @@ export default function VaccinesScreen() {
     error,
     loadMore,
     refresh,
+    setItems,
   } = useCursorPagination<Vaccination>({
     fetchPage,
     enabled: Boolean(activePetId),
@@ -74,6 +79,8 @@ export default function VaccinesScreen() {
   });
 
   const [refreshing, setRefreshing] = useState(false);
+  const [swipeOpenId, setSwipeOpenId] = useState<string | null>(null);
+  const toast = useToast();
 
   useFocusEffect(
     useCallback(() => {
@@ -89,6 +96,42 @@ export default function VaccinesScreen() {
       setRefreshing(false);
     }
   }, [refresh]);
+
+  const handleDeleteVaccine = useCallback(
+    (id: string) => {
+      if (!activePetId) return;
+      setSwipeOpenId(null);
+      const idx = items.findIndex((v) => v.id === id);
+      if (idx < 0) return;
+      const restore = items[idx];
+      setItems((prev) => prev.filter((v) => v.id !== id));
+      toast.showUndo({
+        message: t('vaccines.deleted'),
+        aboveFab: true,
+        onUndo: () => {
+          setItems((prev) => {
+            const list = [...prev];
+            list.splice(Math.min(idx, list.length), 0, restore);
+            return list;
+          });
+        },
+        onCommit: async () => {
+          try {
+            await deleteVaccination(activePetId, id);
+          } catch (err) {
+            setItems((prev) => {
+              const list = [...prev];
+              list.splice(Math.min(idx, list.length), 0, restore);
+              return list;
+            });
+            invalidateVaccinations(activePetId);
+            toast.showError(getErrorMessage(err), { aboveFab: true });
+          }
+        },
+      });
+    },
+    [activePetId, items, setItems, toast],
+  );
 
   const renderContent = () => {
     if (loading) {
@@ -119,30 +162,39 @@ export default function VaccinesScreen() {
         data={items}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            activeOpacity={0.7}
-            onPress={() => router.push(`/vaccines/${item.id}` as never)}
+          <SwipeToDeleteRow
+            open={swipeOpenId === item.id}
+            onOpenChange={(open) => setSwipeOpenId(open ? item.id : null)}
+            onDelete={() => handleDeleteVaccine(item.id)}
           >
-            <VaccineThumbnail uri={item.photo_url} />
-            <View style={styles.cardBody}>
-              <Text style={styles.cardTitle} numberOfLines={1}>
-                {item.name}
-              </Text>
-              <View style={styles.datesRow}>
-                <View style={styles.dateCol}>
-                  <Text style={styles.dateLabel}>{t('vaccines.vaccinated_on')}</Text>
-                  <Text style={styles.dateValue}>{formatDisplayDateLong(item.date)}</Text>
-                </View>
-                {item.next_date ? (
-                  <View style={[styles.dateCol, styles.dateColRight]}>
-                    <Text style={styles.dateLabel}>{t('vaccines.valid_until')}</Text>
-                    <Text style={styles.dateValue}>{formatDisplayDateLong(item.next_date)}</Text>
+            <TouchableOpacity
+              style={styles.card}
+              activeOpacity={0.7}
+              onPress={() => {
+                setSwipeOpenId(null);
+                router.push(`/vaccines/${item.id}` as never);
+              }}
+            >
+              <VaccineThumbnail uri={item.photo_url} />
+              <View style={styles.cardBody}>
+                <Text style={styles.cardTitle} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <View style={styles.datesRow}>
+                  <View style={styles.dateCol}>
+                    <Text style={styles.dateLabel}>{t('vaccines.vaccinated_on')}</Text>
+                    <Text style={styles.dateValue}>{formatDisplayDateLong(item.date)}</Text>
                   </View>
-                ) : null}
+                  {item.next_date ? (
+                    <View style={[styles.dateCol, styles.dateColRight]}>
+                      <Text style={styles.dateLabel}>{t('vaccines.valid_until')}</Text>
+                      <Text style={styles.dateValue}>{formatDisplayDateLong(item.next_date)}</Text>
+                    </View>
+                  ) : null}
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </SwipeToDeleteRow>
         )}
         ListEmptyComponent={
           <EmptyState
@@ -206,7 +258,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     listContent: {
       paddingTop: Spacing.md,
-      paddingHorizontal: Spacing.lg,
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       paddingBottom: LIST_FAB_SCROLL_PADDING,
     },
     listContentEmpty: {
@@ -215,12 +267,12 @@ const makeStyles = (c: ThemeColors) =>
     card: {
       backgroundColor: c.surface,
       borderRadius: Radius.md,
-      marginBottom: Spacing.md,
+      marginBottom: 12,
       width: '100%',
       maxWidth: '100%',
       alignSelf: 'center',
       paddingVertical: 14,
-      paddingHorizontal: Spacing.lg,
+      paddingHorizontal: 16,
       gap: 10,
       height: 100,
       flexDirection: 'row',

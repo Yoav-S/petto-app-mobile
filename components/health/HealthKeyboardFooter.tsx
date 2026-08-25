@@ -4,25 +4,27 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
   Keyboard,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
-import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { type ThemeColors } from '@/constants/theme';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { useThemedStyles } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import {
   KeyboardDismissDoneChip,
   useKeyboardBottomOffset,
   useKeyboardDoneClaim,
 } from '@/components/ui/GlobalKeyboardDoneButton';
+import SavingOverlay from '@/components/ui/SavingOverlay';
 
 /** Figma sticky action bar — fixed metrics. */
 const FOOTER = {
   padTop: 12,
-  padH: 20,
+  padH: PAGE_HORIZONTAL_PADDING,
   radius: 24,
-  saveButtonHeight: 48,
+  saveButtonHeight: PRIMARY_BUTTON.height,
   minBottom: 10,
   safeGap: 8,
   doneButtonWidth: 100,
@@ -79,11 +81,11 @@ export function HealthKeyboardAvoidingView({ children }: HealthKeyboardAvoidingV
 
 export function healthKeyboardScrollPadding(_scaleY = 1, safeBottom = 0): number {
   const bottom = Math.max(safeBottom, FOOTER.minBottom) + FOOTER.safeGap;
-  return FOOTER.padTop + FOOTER.saveButtonHeight + bottom + Spacing.lg;
+  return FOOTER.padTop + FOOTER.saveButtonHeight + bottom + PAGE_HORIZONTAL_PADDING;
 }
 
 export function healthDoneScrollPadding(_scaleY = 1, safeBottom = 0): number {
-  return FOOTER.doneButtonHeight + Math.max(safeBottom, 0) + FOOTER.doneSafeGap + Spacing.lg;
+  return FOOTER.doneButtonHeight + Math.max(safeBottom, 0) + FOOTER.doneSafeGap + PAGE_HORIZONTAL_PADDING;
 }
 
 export default function HealthKeyboardFooter({
@@ -94,7 +96,6 @@ export default function HealthKeyboardFooter({
   fullWidth = true,
 }: HealthKeyboardFooterProps) {
   const styles = useThemedStyles(makeStyles);
-  const colors = useColors();
   const insets = useSafeAreaInsets();
   const { contentWidth } = useResponsiveLayout();
 
@@ -108,76 +109,79 @@ export default function HealthKeyboardFooter({
     onPress();
   };
 
+  const busy = disabled || loading;
+
   if (!fullWidth) {
     return (
+      <>
+        <SavingOverlay visible={loading} />
+        <View
+          style={[
+            styles.doneFooter,
+            {
+              paddingHorizontal: FOOTER.padH,
+              paddingTop: FOOTER.padTop,
+              paddingBottom: Math.max(insets.bottom, 0) + FOOTER.doneSafeGap,
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={[
+              styles.doneButton,
+              {
+                width: FOOTER.doneButtonWidth,
+                height: FOOTER.doneButtonHeight,
+                borderRadius: PRIMARY_BUTTON.borderRadius,
+              },
+              busy && styles.buttonDisabled,
+            ]}
+            onPress={handlePress}
+            disabled={busy}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.buttonText, busy && styles.buttonTextDisabled]}>{label}</Text>
+          </TouchableOpacity>
+        </View>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <SavingOverlay visible={loading} />
       <View
         style={[
-          styles.doneFooter,
+          styles.saveFooter,
           {
-            paddingHorizontal: FOOTER.padH,
             paddingTop: FOOTER.padTop,
-            paddingBottom: Math.max(insets.bottom, 0) + FOOTER.doneSafeGap,
+            paddingHorizontal: FOOTER.padH,
+            paddingBottom: footerPadBottom,
+            borderTopLeftRadius: FOOTER.radius,
+            borderTopRightRadius: FOOTER.radius,
           },
         ]}
       >
         <TouchableOpacity
           style={[
-            styles.doneButton,
+            styles.saveButton,
             {
-              width: FOOTER.doneButtonWidth,
-              height: FOOTER.doneButtonHeight,
-              borderRadius: Radius.md,
+              width: contentWidth,
+              height: FOOTER.saveButtonHeight,
+              borderRadius: PRIMARY_BUTTON.borderRadius,
+              paddingVertical: PRIMARY_BUTTON.paddingVertical,
+              paddingHorizontal: PRIMARY_BUTTON.paddingHorizontal,
+              gap: PRIMARY_BUTTON.gap,
             },
-            disabled && styles.buttonDisabled,
+            busy && styles.buttonDisabled,
           ]}
           onPress={handlePress}
-          disabled={disabled || loading}
+          disabled={busy}
           activeOpacity={0.85}
         >
-          {loading ? (
-            <ActivityIndicator color={colors.surface} />
-          ) : (
-            <Text style={[styles.buttonText, disabled && styles.buttonTextDisabled]}>{label}</Text>
-          )}
+          <Text style={[styles.buttonText, busy && styles.buttonTextDisabled]}>{label}</Text>
         </TouchableOpacity>
       </View>
-    );
-  }
-
-  return (
-    <View
-      style={[
-        styles.saveFooter,
-        {
-          paddingTop: FOOTER.padTop,
-          paddingHorizontal: FOOTER.padH,
-          paddingBottom: footerPadBottom,
-          borderTopLeftRadius: FOOTER.radius,
-          borderTopRightRadius: FOOTER.radius,
-        },
-      ]}
-    >
-      <TouchableOpacity
-        style={[
-          styles.saveButton,
-          {
-            width: contentWidth,
-            height: FOOTER.saveButtonHeight,
-            borderRadius: Radius.md,
-          },
-          disabled && styles.buttonDisabled,
-        ]}
-        onPress={handlePress}
-        disabled={disabled || loading}
-        activeOpacity={0.85}
-      >
-        {loading ? (
-          <ActivityIndicator color={colors.surface} />
-        ) : (
-          <Text style={[styles.buttonText, disabled && styles.buttonTextDisabled]}>{label}</Text>
-        )}
-      </TouchableOpacity>
-    </View>
+    </>
   );
 }
 

@@ -25,6 +25,8 @@ import {
   useKeyboardBottomOffset,
   useKeyboardDoneClaim,
 } from '@/components/ui/GlobalKeyboardDoneButton';
+import SavingOverlay from '@/components/ui/SavingOverlay';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { patchPetInCache, updatePet, deletePet } from '@/services/pets';
 import { uploadPetPhoto } from '@/services/storage';
@@ -465,8 +467,10 @@ export default function EditProfileScreen() {
                 styles.saveBtn,
                 {
                   width: contentWidth,
-                  height: SAVE_BTN_HEIGHT,
-                  borderRadius: Radius.md,
+                  height: PRIMARY_BUTTON.height,
+                  borderRadius: PRIMARY_BUTTON.borderRadius,
+                  paddingVertical: PRIMARY_BUTTON.paddingVertical,
+                  paddingHorizontal: PRIMARY_BUTTON.paddingHorizontal,
                 },
                 saving && styles.saveBtnDisabled,
               ]}
@@ -474,11 +478,7 @@ export default function EditProfileScreen() {
               disabled={saving}
               accessibilityRole="button"
             >
-              {saving ? (
-                <ActivityIndicator color={colors.surface} />
-              ) : (
-                <Text style={styles.saveText}>{t('common.save')}</Text>
-              )}
+              <Text style={styles.saveText}>{t('common.save')}</Text>
             </Pressable>
           </View>
           {keyboardOffset > 0 ? (
@@ -491,6 +491,8 @@ export default function EditProfileScreen() {
           ) : null}
         </View>
       )}
+
+      <SavingOverlay visible={saving} />
 
       <BirthDatePickerSheet
         visible={dateSheetVisible}

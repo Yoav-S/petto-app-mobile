@@ -11,6 +11,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { type ThemeColors } from '@/constants/theme';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -18,12 +19,15 @@ import SegmentedControl from '@/components/ui/SegmentedControl';
 import EmptyState from '@/components/ui/EmptyState';
 import ReminderListItem from '@/components/reminders/ReminderListItem';
 import ReminderActionSheet from '@/components/reminders/ReminderActionSheet';
+import SwipeToDeleteRow from '@/components/ui/SwipeToDeleteRow';
 import { needsStatusPrompt } from '@/components/reminders/reminderFormShared';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { categoryLabel } from '@/components/pickers/CategoryPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import { updateReminderStatus } from '@/services/reminders';
+import { deleteReminder, updateReminderStatus, listReminders } from '@/services/reminders';
+import { getErrorMessage } from '@/services/errors';
+import { invalidateReminders } from '@/services/queryClient';
 import {
   addDaysToIsoDate,
   formatDisplayDate,
@@ -32,7 +36,6 @@ import {
 import { guardAddReminder } from '@/services/subscription';
 import { listPets } from '@/services/pets';
 import type { Reminder } from '@/types/api';
-import { listReminders } from '@/services/reminders';
 import {
   resolveReminderCategory,
   type ReminderCategory,
@@ -91,6 +94,7 @@ export default function RemindersScreen() {
 
   const [activeTab, setActiveTab] = useState<TabName>('Today');
   const [refreshing, setRefreshing] = useState(false);
+  const [swipeOpenId, setSwipeOpenId] = useState<string | null>(null);
 
   const [promptQueue, setPromptQueue] = useState<Reminder[]>([]);
   const [promptTotal, setPromptTotal] = useState(0);
@@ -276,6 +280,71 @@ export default function RemindersScreen() {
     }
   };
 
+  const handleDeleteReminder = useCallback(
+    (id: string) => {
+      if (!activePetId) return;
+      setSwipeOpenId(null);
+
+      let removed: Reminder | null = null;
+      let fromTab: TabName = 'Today';
+      let fromIndex = -1;
+      for (const tab of TABS) {
+        const idx = listsByTab[tab].findIndex((r) => r.id === id);
+        if (idx >= 0) {
+          removed = listsByTab[tab][idx];
+          fromTab = tab;
+          fromIndex = idx;
+          break;
+        }
+      }
+      if (!removed) return;
+
+      const restore = removed;
+      const restoreTab = fromTab;
+      const restoreIndex = fromIndex;
+      const setTabItems = (tab: TabName, updater: (prev: Reminder[]) => Reminder[]) => {
+        if (tab === 'Today') todayPagination.setItems(updater);
+        else if (tab === 'Upcoming') upcomingPagination.setItems(updater);
+        else recentPagination.setItems(updater);
+      };
+
+      setTabItems(fromTab, (prev) => prev.filter((r) => r.id !== id));
+
+      toast.showUndo({
+        message: t('reminders.deleted'),
+        aboveFab: true,
+        onUndo: () => {
+          setTabItems(restoreTab, (prev) => {
+            const list = [...prev];
+            list.splice(Math.min(restoreIndex, list.length), 0, restore);
+            return list;
+          });
+        },
+        onCommit: async () => {
+          try {
+            await deleteReminder(activePetId, id);
+          } catch (err) {
+            setTabItems(restoreTab, (prev) => {
+              const list = [...prev];
+              list.splice(Math.min(restoreIndex, list.length), 0, restore);
+              return list;
+            });
+            invalidateReminders(activePetId);
+            toast.showError(getErrorMessage(err), { aboveFab: true });
+          }
+        },
+      });
+    },
+    [
+      activePetId,
+      listsByTab,
+      todayPagination.setItems,
+      upcomingPagination.setItems,
+      recentPagination.setItems,
+      toast,
+    ],
+  );
+
   const goAddReminder = useCallback(async () => {
     try {
       const pets = await listPets();
@@ -361,22 +430,36 @@ export default function RemindersScreen() {
           renderItem={({ item }) => {
             const category = reminderCategory(item);
             return (
-              <ReminderListItem
-                category={categoryLabel(category)}
-                title={item.title}
-                time={item.time}
-                dayLabel={
-                  activeTab === 'Today' ? undefined : reminderRelativeDate(item.date)
-                }
-                showCheckMark={activeTab === 'Today'}
-                showCompletedBar={
-                  activeTab === 'Recent' && item.status === 'completed'
-                }
-                onCheckPress={
-                  activeTab === 'Today' ? () => handleReminderPress(item) : undefined
-                }
-                onPress={() => handleReminderPress(item)}
-              />
+              <SwipeToDeleteRow
+                open={swipeOpenId === item.id}
+                onOpenChange={(open) => setSwipeOpenId(open ? item.id : null)}
+                onDelete={() => handleDeleteReminder(item.id)}
+              >
+                <ReminderListItem
+                  category={categoryLabel(category)}
+                  title={item.title}
+                  time={item.time}
+                  dayLabel={
+                    activeTab === 'Today' ? undefined : reminderRelativeDate(item.date)
+                  }
+                  showCheckMark={activeTab === 'Today'}
+                  showCompletedBar={
+                    activeTab === 'Recent' && item.status === 'completed'
+                  }
+                  onCheckPress={
+                    activeTab === 'Today'
+                      ? () => {
+                          setSwipeOpenId(null);
+                          handleReminderPress(item);
+                        }
+                      : undefined
+                  }
+                  onPress={() => {
+                    setSwipeOpenId(null);
+                    handleReminderPress(item);
+                  }}
+                />
+              </SwipeToDeleteRow>
             );
           }}
           ListEmptyComponent={renderEmptyState}
@@ -448,7 +531,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     listContent: {
       paddingTop: 16,
-      paddingHorizontal: 16,
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       paddingBottom: LIST_FAB_SCROLL_PADDING,
     },
     listContentEmpty: {

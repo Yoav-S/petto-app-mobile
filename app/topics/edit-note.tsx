@@ -23,6 +23,8 @@ import HealthNoteEditorCard from '@/components/health/HealthNoteEditorCard';
 import {
   HealthKeyboardAvoidingView,
 } from '@/components/health/HealthKeyboardFooter';
+import SavingOverlay from '@/components/ui/SavingOverlay';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
 import EditPhotoSheet from '@/components/health/EditPhotoSheet';
 import { t } from '@/i18n';
@@ -355,13 +357,9 @@ export default function EditNoteScreen() {
               disabled={!canSave}
               activeOpacity={0.85}
             >
-              {saving || savingPhoto ? (
-                <ActivityIndicator color={colors.surface} />
-              ) : (
-                <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>
-                  {t('common.save')}
-                </Text>
-              )}
+              <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>
+                {t('common.save')}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -418,6 +416,7 @@ export default function EditNoteScreen() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteVisible(false)}
       />
+      <SavingOverlay visible={saving || savingPhoto} />
     </SafeAreaView>
   );
 }
@@ -440,7 +439,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: 20,
     gap: Spacing.lg,
   },
   footerSpacer: {
@@ -448,8 +447,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     minHeight: 24,
   },
   saveButton: {
-    height: 48,
-    borderRadius: 12,
+    height: PRIMARY_BUTTON.height,
+    borderRadius: PRIMARY_BUTTON.borderRadius,
+    paddingVertical: PRIMARY_BUTTON.paddingVertical,
+    paddingHorizontal: PRIMARY_BUTTON.paddingHorizontal,
     backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',

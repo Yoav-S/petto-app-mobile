@@ -85,7 +85,7 @@ const makeStyles = (c: ThemeColors) =>
     card: {
       backgroundColor: c.surface,
       borderRadius: Radius.lg,
-      marginBottom: 16,
+      marginBottom: 12,
       width: '100%',
       maxWidth: '100%',
       alignSelf: 'center',

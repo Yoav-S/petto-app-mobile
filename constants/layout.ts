@@ -1,5 +1,3 @@
-import { Spacing } from '@/constants/theme';
-
 /** Figma reference frame (logical points, not physical pixels). */
 export const DESIGN_WIDTH = 375;
 export const DESIGN_HEIGHT = 812;
@@ -10,8 +8,11 @@ export const WELCOME_DESIGN_WIDTH = 360;
 /** Smallest supported logical width — stress-test target. */
 export const MIN_SUPPORTED_WIDTH = 360;
 
-/** Standard horizontal inset for page content and cards. */
-export const PAGE_HORIZONTAL_PADDING = Spacing.lg; // 16
+/**
+ * Standard horizontal inset for page content and cards.
+ * Figma 375 frame → 335 content ⇒ 20pt each side.
+ */
+export const PAGE_HORIZONTAL_PADDING = 20;
 
 /**
  * Soft max for phone content. Phones (360–430) use the full fluid width.

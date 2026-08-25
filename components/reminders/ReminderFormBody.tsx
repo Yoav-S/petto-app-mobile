@@ -383,13 +383,9 @@ export function ReminderSaveButton({
       disabled={!canSave}
       activeOpacity={0.85}
     >
-      {saving ? (
-        <ActivityIndicator color={colors.surface} />
-      ) : (
-        <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>
-          {t('common.save')}
-        </Text>
-      )}
+      <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>
+        {t('common.save')}
+      </Text>
     </TouchableOpacity>
   );
 }

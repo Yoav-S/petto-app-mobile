@@ -10,11 +10,10 @@ import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import { formatHealthCreatedLabel, truncateHealthDescription } from '@/utils/calendar';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 export const HEALTH_LIST_CARD_WIDTH = '100%';
 export const HEALTH_LIST_CARD_HEIGHT = 122;
-export const HEALTH_LIST_ITEM_GAP = 10;
+export const HEALTH_LIST_ITEM_GAP = 12;
 
 interface HealthListItemProps {
   title: string;
@@ -71,15 +70,6 @@ export default function HealthListItem({
 }: HealthListItemProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
-  const { contentWidth } = useResponsiveLayout();
-  const cardWidth = contentWidth;
-  const padV = 14;
-  const padH = 16;
-  /** Gap between text block and created date — tight when description is short. */
-  const metaGap = 6;
-  const textGap = 6;
-  const innerWidth = cardWidth - padH * 2;
-
   const createdLabel = formatHealthCreatedLabel(createdAt, {
     today: t('common.today'),
     yesterday: t('topics.created_yesterday'),
@@ -89,47 +79,16 @@ export default function HealthListItem({
 
   return (
     <TouchableOpacity
-      style={[
-        styles.card,
-        {
-          width: cardWidth,
-          paddingTop: padV,
-          paddingBottom: padV,
-          paddingHorizontal: padH,
-          borderRadius: 12,
-          marginBottom: HEALTH_LIST_ITEM_GAP,
-          alignSelf: 'center',
-        },
-      ]}
+      style={styles.card}
       onPress={onPress}
       onLongPress={onLongPress}
       activeOpacity={0.7}
       disabled={!onPress}
     >
-      <View
-        style={[
-          styles.inner,
-          {
-            width: innerWidth,
-            gap: metaGap,
-          },
-        ]}
-      >
-        <View
-          style={[
-            styles.textBlock,
-            {
-              width: innerWidth,
-              gap: textGap,
-            },
-          ]}
-        >
-          <View style={[styles.titleRow, { width: innerWidth }]}>
-            <Text
-              style={[styles.title, { maxWidth: innerWidth - 28 }]}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
+      <View style={styles.inner}>
+        <View style={styles.textBlock}>
+          <View style={styles.titleRow}>
+            <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
               {title}
             </Text>
             {hasReminder ? (
@@ -143,16 +102,12 @@ export default function HealthListItem({
                 <Ionicons name="notifications-outline" size={16} color={colors.secondaryText} />
               </TouchableOpacity>
             ) : (
-              <View style={{ width: 16 }} />
+              <View style={styles.reminderSpacer} />
             )}
           </View>
 
           {hasSubtitle ? (
-            <Text
-              style={styles.subtitle}
-              numberOfLines={2}
-              ellipsizeMode="tail"
-            >
+            <Text style={styles.subtitle} numberOfLines={2} ellipsizeMode="tail">
               {subtitle}
             </Text>
           ) : null}
@@ -174,64 +129,79 @@ export function healthRecordSubtitle(description?: string | null): string {
   return truncateHealthDescription(description);
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  card: {
-    backgroundColor: c.surface,
-    overflow: 'hidden',
-    shadowColor: '#2D2D2A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 20,
-    elevation: 3,
-  },
-  inner: {
-    justifyContent: 'flex-start',
-    overflow: 'hidden',
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    flexShrink: 0,
-  },
-  title: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    lineHeight: 20,
-    color: c.primaryText,
-    flex: 1,
-  },
-  reminderIconBtn: {
-    marginLeft: 8,
-    paddingTop: 2,
-  },
-  textBlock: {
-    flexShrink: 1,
-    minHeight: 0,
-    overflow: 'hidden',
-    justifyContent: 'flex-start',
-  },
-  subtitle: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: c.primaryText,
-    flexShrink: 1,
-  },
-  createdMeta: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 12,
-    lineHeight: 16,
-    color: c.secondaryText,
-    flexShrink: 0,
-  },
-  fadeOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
-  },
-  fadeBand: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-  },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      width: '100%',
+      alignSelf: 'center',
+      backgroundColor: c.surface,
+      overflow: 'hidden',
+      borderRadius: 12,
+      marginBottom: HEALTH_LIST_ITEM_GAP,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      shadowColor: '#2D2D2A',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.04,
+      shadowRadius: 20,
+      elevation: 3,
+    },
+    inner: {
+      width: '100%',
+      gap: 6,
+      justifyContent: 'flex-start',
+      overflow: 'hidden',
+    },
+    titleRow: {
+      width: '100%',
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      flexShrink: 0,
+    },
+    title: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 16,
+      lineHeight: 20,
+      color: c.primaryText,
+      flex: 1,
+      paddingRight: 8,
+    },
+    reminderIconBtn: {
+      paddingTop: 2,
+    },
+    reminderSpacer: {
+      width: 16,
+    },
+    textBlock: {
+      width: '100%',
+      gap: 6,
+      flexShrink: 1,
+      minHeight: 0,
+      overflow: 'hidden',
+      justifyContent: 'flex-start',
+    },
+    subtitle: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 14,
+      lineHeight: 20,
+      color: c.primaryText,
+      flexShrink: 1,
+    },
+    createdMeta: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 12,
+      lineHeight: 16,
+      color: c.secondaryText,
+      flexShrink: 0,
+    },
+    fadeOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      overflow: 'hidden',
+    },
+    fadeBand: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+    },
+  });
