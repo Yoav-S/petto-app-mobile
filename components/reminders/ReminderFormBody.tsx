@@ -32,7 +32,7 @@ import {
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
 import { formatDisplayDate, isIsoDateToday } from '@/utils/calendar';
-import { centeredInputText } from '@/constants/textField';
+import { centeredInputText, NAME_FIELD_TEXT } from '@/constants/textField';
 import {
   reminderCategoryIconFor,
   type ReminderCategory,
@@ -426,9 +426,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: { backgroundColor: c.surface },
   nameInput: {
     ...centeredInputText({
-      fontFamily: 'Rubik-Medium',
-      fontSize: 20,
-      lineHeight: 24,
+      ...NAME_FIELD_TEXT,
       color: c.primaryText,
     }),
   },

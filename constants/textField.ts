@@ -1,6 +1,18 @@
 import { Platform, type TextStyle } from 'react-native';
 
 /**
+ * Name fields (topics / vaccines / reminders).
+ * Figma: Rubik Medium 16 / 20. Placeholder fill is Secondary Text
+ * (#6B7280 light, #C2C6CB dark) — not brand green, so it stays readable
+ * in both schemes and matches the rest of the app.
+ */
+export const NAME_FIELD_TEXT = {
+  fontFamily: 'Rubik-Medium',
+  fontSize: 16,
+  lineHeight: 20,
+} as const;
+
+/**
  * Single-line field text. Keep the TextInput height equal to lineHeight and
  * let the parent card center it — that pins the placeholder instead of
  * sitting it at the top (especially on Android / tall iOS fields).

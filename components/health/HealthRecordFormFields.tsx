@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
-import { centeredInputText } from '@/constants/textField';
+import { centeredInputText, NAME_FIELD_TEXT } from '@/constants/textField';
 
 const CARD_SHADOW = {
   shadowColor: '#2D2D2A',
@@ -248,13 +248,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   nameInput: {
     ...centeredInputText({
-      fontFamily: 'Rubik-Medium',
-      fontSize: 16,
-      lineHeight: 22,
+      ...NAME_FIELD_TEXT,
       color: c.primaryText,
       // Avoid clipping Rubik descenders (e.g. "g") on Android.
       height: undefined,
-      minHeight: 22,
+      minHeight: NAME_FIELD_TEXT.lineHeight,
     }),
   },
   descriptionInput: {

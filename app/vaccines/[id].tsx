@@ -18,7 +18,7 @@ import { pickImageFromLibrary } from '@/services/imagePicker';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
-import { centeredInputText } from '@/constants/textField';
+import { centeredInputText, NAME_FIELD_TEXT } from '@/constants/textField';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -433,9 +433,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   nameInput: {
     ...centeredInputText({
-      fontFamily: 'Rubik-Medium',
-      fontSize: 22,
-      lineHeight: 28,
+      ...NAME_FIELD_TEXT,
       color: c.primaryText,
     }),
   },

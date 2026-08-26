@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
-import { centeredInputText } from '@/constants/textField';
+import { centeredInputText, NAME_FIELD_TEXT } from '@/constants/textField';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
@@ -382,9 +382,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   nameInput: {
     ...centeredInputText({
-      fontFamily: 'Rubik-Regular',
-      fontSize: 16,
-      lineHeight: 20,
+      ...NAME_FIELD_TEXT,
       color: c.primaryText,
     }),
   },
