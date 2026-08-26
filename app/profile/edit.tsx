@@ -82,12 +82,19 @@ export default function EditProfileScreen() {
   const { activePetId } = useActivePet();
   const headerTopPadding = useHeaderTopPadding();
   const { contentWidth, width: screenWidth } = useResponsiveLayout();
+  const pagePad = Math.max(16, Math.round((screenWidth - contentWidth) / 2));
+  const footerPadBottom = Math.max(insets.bottom, 10) + 8;
+  /** Space so last fields clear the fixed Save bar (footer stays pinned; does not rise with keyboard). */
+  const footerClearance = 12 + SAVE_BTN_HEIGHT + footerPadBottom;
   const {
     scrollRef,
-    paddingBottom: scrollPaddingBottom,
+    paddingBottom: awareScrollPad,
     onScroll,
     onInputFocus,
-  } = useKeyboardAwareScroll(24);
+  } = useKeyboardAwareScroll(footerClearance);
+  /** Parent does not lift with keyboard — add keyboard height so fields can scroll above it. */
+  const scrollPaddingBottom =
+    awareScrollPad + (keyboardOffset > 0 ? keyboardOffset : 0);
 
   useEffect(() => {
     claim();
@@ -106,9 +113,6 @@ export default function EditProfileScreen() {
   const photoEditRadius = Math.max(4, Math.round(PHOTO_EDIT_BTN.radius * photoEditScale));
   const photoEditPad = Math.max(3, Math.round(PHOTO_EDIT_BTN.padding * photoEditScale));
   const photoEditIcon = Math.max(11, PHOTO_EDIT_BTN.iconSize * photoEditScale);
-
-  const pagePad = Math.max(16, Math.round((screenWidth - contentWidth) / 2));
-  const footerPadBottom = Math.max(insets.bottom, 10) + 8;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -329,7 +333,7 @@ export default function EditProfileScreen() {
           <Text style={styles.notFoundText}>{t('profile.edit.not_found')}</Text>
         </View>
       ) : (
-        <View style={[styles.flex, keyboardOffset > 0 ? { paddingBottom: keyboardOffset } : null]}>
+        <View style={styles.flex}>
           <ScrollView
             ref={scrollRef}
             style={styles.flex}
@@ -484,7 +488,13 @@ export default function EditProfileScreen() {
           {keyboardOffset > 0 ? (
             <View
               pointerEvents="box-none"
-              style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 100 }}
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: keyboardOffset,
+                zIndex: 100,
+              }}
             >
               <KeyboardDismissDoneChip />
             </View>

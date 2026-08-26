@@ -39,7 +39,7 @@ export default function SwipeToDeleteRow({
   const styles = useThemedStyles(makeStyles);
   const ref = useRef<Swipeable>(null);
   const [revealed, setRevealed] = useState(false);
-  const rtl = isRTL();
+  const rtl = isRTL;
 
   useEffect(() => {
     if (open === false) {

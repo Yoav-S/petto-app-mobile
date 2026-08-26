@@ -1,6 +1,7 @@
 import 'react-native-gesture-handler';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
@@ -212,19 +213,21 @@ function ThemedApp() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <LocaleProvider>
-        <AuthProvider>
-          <QueryProvider>
-            <PetStoreProvider>
-              <PetOnboardingDraftProvider>
-                <ThemedApp />
-              </PetOnboardingDraftProvider>
-            </PetStoreProvider>
-          </QueryProvider>
-        </AuthProvider>
-      </LocaleProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={styles.root}>
+      <ThemeProvider>
+        <LocaleProvider>
+          <AuthProvider>
+            <QueryProvider>
+              <PetStoreProvider>
+                <PetOnboardingDraftProvider>
+                  <ThemedApp />
+                </PetOnboardingDraftProvider>
+              </PetStoreProvider>
+            </QueryProvider>
+          </AuthProvider>
+        </LocaleProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
 
