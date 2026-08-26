@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -21,9 +21,7 @@ import { useToast } from '@/context/ToastContext';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import {
-  KeyboardDismissDoneChip,
   useKeyboardBottomOffset,
-  useKeyboardDoneClaim,
 } from '@/components/ui/GlobalKeyboardDoneButton';
 import SavingOverlay from '@/components/ui/SavingOverlay';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
@@ -75,7 +73,6 @@ export default function EditProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const keyboardOffset = useKeyboardBottomOffset();
-  const { claim, release } = useKeyboardDoneClaim();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
@@ -95,11 +92,6 @@ export default function EditProfileScreen() {
   /** Parent does not lift with keyboard — add keyboard height so fields can scroll above it. */
   const scrollPaddingBottom =
     awareScrollPad + (keyboardOffset > 0 ? keyboardOffset : 0);
-
-  useEffect(() => {
-    claim();
-    return () => release();
-  }, [claim, release]);
 
   /** Keep 128×128 / r22 shape; only shrink on narrow screens. */
   const photoSize = Math.round(
@@ -485,20 +477,6 @@ export default function EditProfileScreen() {
               <Text style={styles.saveText}>{t('common.save')}</Text>
             </Pressable>
           </View>
-          {keyboardOffset > 0 ? (
-            <View
-              pointerEvents="box-none"
-              style={{
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                bottom: keyboardOffset,
-                zIndex: 100,
-              }}
-            >
-              <KeyboardDismissDoneChip />
-            </View>
-          ) : null}
         </View>
       )}
 

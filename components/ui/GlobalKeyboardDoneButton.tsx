@@ -13,6 +13,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
   type KeyboardEvent,
 } from 'react-native';
 import { FullWindowOverlay } from 'react-native-screens';
@@ -51,17 +52,33 @@ export function KeyboardDoneClaimProvider({ children }: { children: React.ReactN
   );
 }
 
-/** Distance from the bottom of the app window to the top of the keyboard. */
+/**
+ * Distance from the bottom of the *visible* app window to the top of the keyboard.
+ * - iOS: keyboard overlays → use keyboard height
+ * - Android (adjustResize): window already shrinks → 0 (bottom of window = keyboard top)
+ */
 export function useKeyboardBottomOffset(): number {
   const [offset, setOffset] = useState(0);
+  const { height: windowHeight } = useWindowDimensions();
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
     const onShow = (e: KeyboardEvent) => {
-      const { height } = e.endCoordinates;
-      setOffset(Math.max(0, Math.round(height || 0)));
+      const kbHeight = Math.max(0, Math.round(e.endCoordinates?.height ?? 0));
+      if (Platform.OS === 'android') {
+        // adjustResize: usable window bottom is already the keyboard top.
+        setOffset(0);
+        return;
+      }
+      // Prefer screenY when present so we sit exactly on the keyboard top.
+      const screenY = e.endCoordinates?.screenY;
+      if (typeof screenY === 'number' && windowHeight > 0) {
+        setOffset(Math.max(0, Math.round(windowHeight - screenY)));
+        return;
+      }
+      setOffset(kbHeight);
     };
     const onHide = () => setOffset(0);
 
@@ -71,18 +88,32 @@ export function useKeyboardBottomOffset(): number {
       showSub.remove();
       hideSub.remove();
     };
-  }, []);
+  }, [windowHeight]);
 
   return offset;
+}
+
+/** True while the keyboard is open (including Android resize where offset is 0). */
+export function useKeyboardOpen(): boolean {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, () => setOpen(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setOpen(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  return open;
 }
 
 /** Fixed Done chip — dismisses the keyboard. */
 export function KeyboardDismissDoneChip() {
   const colors = useColors();
-
-  const bg = colors.surface;
-  const border = colors.border;
-  const text = colors.primaryText;
 
   return (
     <View
@@ -90,8 +121,9 @@ export function KeyboardDismissDoneChip() {
         styles.row,
         {
           paddingHorizontal: DESIGN_TRAILING,
-          paddingVertical: 4,
+          paddingVertical: 6,
           alignItems: isRTL ? 'flex-start' : 'flex-end',
+          backgroundColor: 'transparent',
         },
       ]}
     >
@@ -104,8 +136,8 @@ export function KeyboardDismissDoneChip() {
             borderRadius: 12,
             paddingVertical: 8,
             paddingHorizontal: 14,
-            backgroundColor: bg,
-            borderColor: border,
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
           },
         ]}
         onPress={() => Keyboard.dismiss()}
@@ -119,7 +151,7 @@ export function KeyboardDismissDoneChip() {
             {
               fontSize: 14,
               lineHeight: 18,
-              color: text,
+              color: colors.primaryText,
             },
           ]}
         >
@@ -131,17 +163,22 @@ export function KeyboardDismissDoneChip() {
 }
 
 /**
- * Fallback Done for screens that do NOT use HealthKeyboardAvoidingView.
- * Anchored to the keyboard top via measured bottom offset (no Modal).
+ * Done chip anchored to the top of the keyboard on every screen.
+ * Must stay above sticky Save footers (rendered after RootLayoutNav).
  */
 export default function GlobalKeyboardDoneButton() {
   const { claimed } = useKeyboardDoneClaim();
+  const open = useKeyboardOpen();
   const offset = useKeyboardBottomOffset();
 
-  if (claimed || offset <= 0) return null;
+  if (claimed || !open) return null;
 
   const chip = (
-    <View pointerEvents="box-none" style={[styles.host, { bottom: offset }]} collapsable={false}>
+    <View
+      pointerEvents="box-none"
+      collapsable={false}
+      style={[styles.host, { bottom: offset }]}
+    >
       <KeyboardDismissDoneChip />
     </View>
   );
@@ -162,17 +199,18 @@ export default function GlobalKeyboardDoneButton() {
 const styles = StyleSheet.create({
   row: {
     width: '100%',
-    backgroundColor: 'transparent',
   },
   overlayRoot: {
     ...StyleSheet.absoluteFillObject,
+    zIndex: 99999,
+    elevation: 99999,
   },
   host: {
     position: 'absolute',
     left: 0,
     right: 0,
-    zIndex: 9999,
-    elevation: 9999,
+    zIndex: 99999,
+    elevation: 99999,
   },
   button: {
     borderWidth: 1,
@@ -180,9 +218,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     shadowColor: '#2D2D2A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.18,
     shadowRadius: 12,
-    elevation: 12,
+    elevation: 16,
   },
   label: {
     fontFamily: 'Rubik-Medium',

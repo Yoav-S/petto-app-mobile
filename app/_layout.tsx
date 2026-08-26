@@ -200,8 +200,10 @@ function ThemedApp() {
       <SystemBarsProvider isDark={isDark}>
         <ToastProvider>
           <KeyboardDoneClaimProvider>
-            <View key={locale} style={{ flex: 1, backgroundColor: colors.background }}>
-              <RootLayoutNav />
+            <View style={{ flex: 1 }}>
+              <View key={locale} style={{ flex: 1, backgroundColor: colors.background }}>
+                <RootLayoutNav />
+              </View>
               <GlobalKeyboardDoneButton />
             </View>
           </KeyboardDoneClaimProvider>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,7 @@ import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import {
-  KeyboardDismissDoneChip,
-  useKeyboardBottomOffset,
-  useKeyboardDoneClaim,
-} from '@/components/ui/GlobalKeyboardDoneButton';
+import { useKeyboardBottomOffset } from '@/components/ui/GlobalKeyboardDoneButton';
 import SavingOverlay from '@/components/ui/SavingOverlay';
 
 /** Figma sticky action bar — fixed metrics. */
@@ -47,32 +43,11 @@ interface HealthKeyboardAvoidingViewProps {
 
 export function HealthKeyboardAvoidingView({ children }: HealthKeyboardAvoidingViewProps) {
   const styles = useThemedStyles(makeStyles);
-  const offset = useKeyboardBottomOffset();
-  const { claim, release } = useKeyboardDoneClaim();
-
-  useEffect(() => {
-    claim();
-    return () => release();
-  }, [claim, release]);
-
   /**
    * Save footer stays pinned to the screen bottom — never lifts with the keyboard.
-   * ScrollViews add keyboard height via useHealthFormScrollPadding so fields stay reachable.
+   * Done chip is GlobalKeyboardDoneButton (FullWindowOverlay on iOS) so it sits on the keyboard top.
    */
-  return (
-    <View style={styles.avoiding}>
-      {children}
-      {offset > 0 ? (
-        <View
-          pointerEvents="box-none"
-          collapsable={false}
-          style={[styles.keyboardDoneHost, { bottom: offset }]}
-        >
-          <KeyboardDismissDoneChip />
-        </View>
-      ) : null}
-    </View>
-  );
+  return <View style={styles.avoiding}>{children}</View>;
 }
 
 export function healthKeyboardScrollPadding(_scaleY = 1, safeBottom = 0): number {
@@ -192,13 +167,6 @@ export default function HealthKeyboardFooter({
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   avoiding: {
     flex: 1,
-  },
-  keyboardDoneHost: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    zIndex: 100,
-    elevation: 100,
   },
   saveFooter: {
     width: '100%',
