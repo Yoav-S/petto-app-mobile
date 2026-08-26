@@ -49,23 +49,19 @@ export function HealthKeyboardAvoidingView({ children }: HealthKeyboardAvoidingV
   const styles = useThemedStyles(makeStyles);
   const offset = useKeyboardBottomOffset();
   const { claim, release } = useKeyboardDoneClaim();
-  const doneRowHeight = FOOTER.doneButtonHeight + 8;
 
   useEffect(() => {
     claim();
     return () => release();
   }, [claim, release]);
 
+  /**
+   * Save footer stays pinned to the screen bottom — never lifts with the keyboard.
+   * ScrollViews add keyboard height via useHealthFormScrollPadding so fields stay reachable.
+   */
   return (
     <View style={styles.avoiding}>
-      <View
-        style={[
-          styles.flexFill,
-          offset > 0 ? { paddingBottom: offset + doneRowHeight } : null,
-        ]}
-      >
-        {children}
-      </View>
+      {children}
       {offset > 0 ? (
         <View
           pointerEvents="box-none"
@@ -86,6 +82,14 @@ export function healthKeyboardScrollPadding(_scaleY = 1, safeBottom = 0): number
 
 export function healthDoneScrollPadding(_scaleY = 1, safeBottom = 0): number {
   return FOOTER.doneButtonHeight + Math.max(safeBottom, 0) + FOOTER.doneSafeGap + PAGE_HORIZONTAL_PADDING;
+}
+
+/** Footer stays put; when keyboard is open, scroll content clears keyboard + Done chip. */
+export function useHealthFormScrollPadding(safeBottom = 0): number {
+  const offset = useKeyboardBottomOffset();
+  const base = healthKeyboardScrollPadding(1, safeBottom);
+  if (offset <= 0) return base;
+  return base + offset + FOOTER.doneButtonHeight + 8;
 }
 
 export default function HealthKeyboardFooter({
@@ -187,9 +191,6 @@ export default function HealthKeyboardFooter({
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   avoiding: {
-    flex: 1,
-  },
-  flexFill: {
     flex: 1,
   },
   keyboardDoneHost: {

@@ -8,7 +8,7 @@ import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import ReminderFormBody from '@/components/reminders/ReminderFormBody';
 import HealthKeyboardFooter, {
-  healthKeyboardScrollPadding,
+  useHealthFormScrollPadding,
 } from '@/components/health/HealthKeyboardFooter';
 import {
   clampReminderTimeForDate,
@@ -38,6 +38,7 @@ export default function AddReminderScreen() {
   const pets = petsQuery.data ?? [];
   const insets = useSafeAreaInsets();
   const { contentWidth } = useResponsiveLayout();
+  const scrollPaddingBottom = useHealthFormScrollPadding(insets.bottom);
 
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<ReminderCategory>('general');
@@ -171,7 +172,7 @@ export default function AddReminderScreen() {
         onTimeConfirm={handleTimeConfirm}
         onRepeatSelect={setRepeat}
         autoFocus
-        scrollPaddingBottom={healthKeyboardScrollPadding(1, insets.bottom)}
+        scrollPaddingBottom={scrollPaddingBottom}
         stickyFooter={
           <HealthKeyboardFooter
             label={t('common.save')}

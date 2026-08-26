@@ -24,7 +24,7 @@ import VaccineClinicField from '@/components/vaccines/VaccineClinicField';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import HealthKeyboardFooter, {
   HealthKeyboardAvoidingView,
-  healthKeyboardScrollPadding,
+  useHealthFormScrollPadding,
 } from '@/components/health/HealthKeyboardFooter';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
@@ -52,6 +52,7 @@ export default function AddVaccineScreen() {
   const { activePetId } = useActivePet();
   const insets = useSafeAreaInsets();
   const { contentWidth } = useResponsiveLayout();
+  const scrollPaddingBottom = useHealthFormScrollPadding(insets.bottom);
 
   const [name, setName] = useState('');
   const [date, setDate] = useState(todayIsoDate);
@@ -187,7 +188,7 @@ export default function AddVaccineScreen() {
             styles.content,
             {
               paddingTop: layout.formTop,
-              paddingBottom: healthKeyboardScrollPadding(1, insets.bottom),
+              paddingBottom: scrollPaddingBottom,
               gap: layout.formGap,
               alignItems: 'center',
             },

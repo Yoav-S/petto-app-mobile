@@ -17,7 +17,7 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import HealthNoteEditorCard from '@/components/health/HealthNoteEditorCard';
 import HealthKeyboardFooter, {
   HealthKeyboardAvoidingView,
-  healthKeyboardScrollPadding,
+  useHealthFormScrollPadding,
 } from '@/components/health/HealthKeyboardFooter';
 import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
 import EditPhotoSheet from '@/components/health/EditPhotoSheet';
@@ -47,6 +47,7 @@ export default function AddNoteScreen() {
   const recordId = normalizeRouteParam(recordIdParam);
   const { activePetId } = useActivePet();
   const insets = useSafeAreaInsets();
+  const scrollPaddingBottom = useHealthFormScrollPadding(insets.bottom);
 
   const [recordTitle, setRecordTitle] = useState('');
   const [loadingRecord, setLoadingRecord] = useState(true);
@@ -144,7 +145,7 @@ export default function AddNoteScreen() {
             styles.content,
             {
               paddingTop: Math.max(Spacing.md, 16),
-              paddingBottom: healthKeyboardScrollPadding(1, insets.bottom),
+              paddingBottom: scrollPaddingBottom,
             },
           ]}
           keyboardShouldPersistTaps="handled"

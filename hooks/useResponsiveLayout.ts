@@ -16,7 +16,7 @@ export type ResponsiveLayout = {
   width: number;
   height: number;
   insets: ReturnType<typeof useSafeAreaInsets>;
-  /** Fluid content width: screen minus 16px padding, capped only at tablet widths. */
+  /** Fluid content width: screen minus 20px padding each side, capped only at tablet widths. */
   contentWidth: number;
   pagePadding: typeof PAGE_HORIZONTAL_PADDING;
   /** Structural chrome scale (cover, card heights, FAB). Not for type. */

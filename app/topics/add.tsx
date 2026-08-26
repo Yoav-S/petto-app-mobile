@@ -14,7 +14,7 @@ import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import HealthRecordFormFields from '@/components/health/HealthRecordFormFields';
 import HealthKeyboardFooter, {
   HealthKeyboardAvoidingView,
-  healthKeyboardScrollPadding,
+  useHealthFormScrollPadding,
 } from '@/components/health/HealthKeyboardFooter';
 import EmptyState from '@/components/ui/EmptyState';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,6 +36,7 @@ export default function AddHealthScreen() {
   const { activePetId } = useActivePet();
   const insets = useSafeAreaInsets();
   const { contentWidth } = useResponsiveLayout();
+  const scrollPaddingBottom = useHealthFormScrollPadding(insets.bottom);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -149,7 +150,7 @@ export default function AddHealthScreen() {
             styles.content,
             {
               paddingTop: layout.formTop,
-              paddingBottom: healthKeyboardScrollPadding(1, insets.bottom),
+              paddingBottom: scrollPaddingBottom,
             },
           ]}
           keyboardShouldPersistTaps="handled"

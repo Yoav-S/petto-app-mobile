@@ -9,7 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { type ThemeColors } from '@/constants/theme';
@@ -23,6 +23,7 @@ import EditPhotoSheet from '@/components/health/EditPhotoSheet';
 import { OnboardingPhotoAdd } from '@/components/brand/onboarding';
 import HealthKeyboardFooter, {
   HealthKeyboardAvoidingView,
+  useHealthFormScrollPadding,
 } from '@/components/health/HealthKeyboardFooter';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { t } from '@/i18n';
@@ -54,9 +55,12 @@ const TYPE_CARD = {
   padH: 16,
   gap: 10,
   optionsGap: 16,
-  dogW: 92,
-  catW: 88,
+  chipW: 92,
   optionH: 36,
+  optionRadius: 12,
+  optionPadV: 6,
+  optionPadH: 16,
+  optionGap: 10,
   emoji: 20,
 } as const;
 
@@ -69,12 +73,9 @@ export default function AddPetScreen() {
   const petsQuery = usePetsQuery();
   const pets = petsQuery.data ?? [];
   const { contentWidth } = useResponsiveLayout();
-  const {
-    scrollRef,
-    paddingBottom: scrollPaddingBottom,
-    onScroll,
-    onInputFocus,
-  } = useKeyboardAwareScroll(12);
+  const insets = useSafeAreaInsets();
+  const scrollPaddingBottom = useHealthFormScrollPadding(insets.bottom);
+  const { scrollRef, onScroll, onInputFocus } = useKeyboardAwareScroll(24);
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -254,7 +255,6 @@ export default function AddPetScreen() {
                 const selected = petType === type;
                 const label = type === 'dog' ? t('petOnboarding.dog') : t('petOnboarding.cat');
                 const emoji = type === 'dog' ? TYPE_DOG_EMOJI : TYPE_CAT_EMOJI;
-                const width = type === 'dog' ? TYPE_CARD.dogW : TYPE_CARD.catW;
                 return (
                   <Pressable
                     key={type}
@@ -262,8 +262,13 @@ export default function AddPetScreen() {
                     style={[
                       styles.typeOption,
                       {
-                        minWidth: width,
+                        width: TYPE_CARD.chipW,
                         height: TYPE_CARD.optionH,
+                        borderRadius: TYPE_CARD.optionRadius,
+                        paddingTop: TYPE_CARD.optionPadV,
+                        paddingBottom: TYPE_CARD.optionPadV,
+                        paddingHorizontal: TYPE_CARD.optionPadH,
+                        gap: TYPE_CARD.optionGap,
                       },
                       selected ? styles.typeOptionSelected : styles.typeOptionUnselected,
                     ]}
@@ -388,9 +393,6 @@ const makeStyles = (c: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 12,
-      borderRadius: 999,
-      paddingHorizontal: 12,
     },
     typeOptionSelected: {
       backgroundColor: c.brand,
