@@ -13,7 +13,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { LIST_TABS_CONTENT_GAP, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
-import ScrollTopFade from '@/components/ui/ScrollTopFade';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
@@ -306,7 +305,12 @@ export default function HealthScreen() {
                       <HealthListItem
                         title={item.title}
                         subtitle={healthRecordSubtitle(item.description)}
-                        createdAt={item.created_at}
+                        metaAt={
+                          activeTab === 'Resolved'
+                            ? item.resolved_at ?? item.updated_at ?? item.created_at
+                            : item.created_at
+                        }
+                        metaKind={activeTab === 'Resolved' ? 'resolved' : 'created'}
                         hasReminder={Boolean(item.linked_reminder_date || item.linked_reminder_time)}
                         fadeIntensity={getItemFadeIntensity(index)}
                         onPress={() => {
@@ -346,7 +350,6 @@ export default function HealthScreen() {
                   }
                   refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 />
-                <ScrollTopFade />
               </View>
             )}
           </View>
@@ -387,7 +390,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   listWrap: {
     flex: 1,
-    position: 'relative',
+    overflow: 'hidden',
   },
   list: {
     flex: 1,

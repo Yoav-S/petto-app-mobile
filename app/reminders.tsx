@@ -13,7 +13,6 @@ import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { type ThemeColors } from '@/constants/theme';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { LIST_TABS_CONTENT_GAP, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
-import ScrollTopFade from '@/components/ui/ScrollTopFade';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -477,7 +476,6 @@ export default function RemindersScreen() {
                   }
                   refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 />
-                <ScrollTopFade />
               </View>
             )}
           </View>
@@ -542,7 +540,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     listWrap: {
       flex: 1,
-      position: 'relative',
+      overflow: 'hidden',
     },
     listContent: {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,

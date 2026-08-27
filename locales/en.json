@@ -341,6 +341,7 @@
     "note_body_placeholder": "What's changed?",
     "created_yesterday": "Yesterday",
     "created_prefix": "Created",
+    "resolved_prefix": "Resolved",
     "deleted": "Note deleted",
     "record_deleted": "Topic deleted",
     "delete_record_confirm_title": "Delete topic?",

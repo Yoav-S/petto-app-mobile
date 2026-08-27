@@ -377,12 +377,17 @@ export function formatReminderListMeta(
   return formatListDateOrTime(isoDate, time);
 }
 
-/** Truncate health record description for list subtitle (~25 chars). */
-export function truncateHealthDescription(text: string | null | undefined, max = 28): string {
+/** Truncate list preview text to first N chars with … when longer. */
+export function truncatePreviewText(text: string | null | undefined, max = 20): string {
   const trimmed = text?.trim() ?? '';
   if (!trimmed) return '';
   if (trimmed.length <= max) return trimmed;
-  return `${trimmed.slice(0, max).trimEnd()}…`;
+  return `${trimmed.slice(0, max)}…`;
+}
+
+/** Truncate health record description for list subtitle. */
+export function truncateHealthDescription(text: string | null | undefined, max = 20): string {
+  return truncatePreviewText(text, max);
 }
 
 function startOfLocalDay(date: Date): Date {
@@ -397,10 +402,10 @@ function parseApiDateTime(value: string | null | undefined): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-/** Health list footer: Created Today 17:15, Created Yesterday 20:11, or Created DD.MM.YYYY. */
-export function formatHealthCreatedLabel(
+/** Health list footer: Created/Resolved + Today 17:15, Yesterday 20:11, or DD.MM.YYYY. */
+export function formatHealthDateMeta(
   isoDateTime: string | null | undefined,
-  labels: { today: string; yesterday: string; createdPrefix: string },
+  labels: { today: string; yesterday: string; prefix: string },
 ): string {
   if (!isoDateTime) return '';
   const created = parseApiDateTime(isoDateTime);
@@ -414,15 +419,27 @@ export function formatHealthCreatedLabel(
   const time = formatHourMinute(created.getHours(), created.getMinutes());
 
   if (diffDays <= 0) {
-    return `${labels.createdPrefix} ${labels.today} ${time}`;
+    return `${labels.prefix} ${labels.today} ${time}`;
   }
   if (diffDays === 1) {
-    return `${labels.createdPrefix} ${labels.yesterday} ${time}`;
+    return `${labels.prefix} ${labels.yesterday} ${time}`;
   }
   const day = String(created.getDate()).padStart(2, '0');
   const month = String(created.getMonth() + 1).padStart(2, '0');
   const year = created.getFullYear();
-  return `${labels.createdPrefix} ${day}.${month}.${year}`;
+  return `${labels.prefix} ${day}.${month}.${year}`;
+}
+
+/** @deprecated Use formatHealthDateMeta */
+export function formatHealthCreatedLabel(
+  isoDateTime: string | null | undefined,
+  labels: { today: string; yesterday: string; createdPrefix: string },
+): string {
+  return formatHealthDateMeta(isoDateTime, {
+    today: labels.today,
+    yesterday: labels.yesterday,
+    prefix: labels.createdPrefix,
+  });
 }
 
 /** Local calendar day key (YYYY-MM-DD) for grouping notes. */

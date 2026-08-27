@@ -438,6 +438,7 @@
     "note_body_placeholder": "Ce s-a schimbat?",
     "created_yesterday": "Ieri",
     "created_prefix": "Creat",
+    "resolved_prefix": "Rezolvat",
     "deleted": "Notă ștearsă",
     "record_deleted": "Subiect șters",
     "delete_record_confirm_title": "Ștergi subiectul?",

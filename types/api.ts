@@ -74,6 +74,7 @@ export interface MedicalRecord {
   status: string;
   created_at: string;
   updated_at?: string | null;
+  resolved_at?: string | null;
   latest_note_preview?: string | null;
   latest_note_id?: string | null;
   latest_note_photo_url?: string | null;

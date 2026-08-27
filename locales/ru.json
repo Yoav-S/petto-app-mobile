@@ -439,6 +439,7 @@
     "note_body_placeholder": "Что изменилось?",
     "created_yesterday": "Вчера",
     "created_prefix": "Создано",
+    "resolved_prefix": "Решено",
     "deleted": "Заметка удалена",
     "record_deleted": "Тема удалена",
     "delete_record_confirm_title": "Удалить тему?",

@@ -9,16 +9,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
-import { formatHealthCreatedLabel, truncateHealthDescription } from '@/utils/calendar';
+import {
+  formatHealthDateMeta,
+  truncateHealthDescription,
+  truncatePreviewText,
+} from '@/utils/calendar';
 
 export const HEALTH_LIST_CARD_WIDTH = '100%';
 export const HEALTH_LIST_CARD_HEIGHT = 122;
 export const HEALTH_LIST_ITEM_GAP = 12;
 
+const PREVIEW_CHARS = 20;
+
 interface HealthListItemProps {
   title: string;
   subtitle: string;
-  createdAt?: string | null;
+  metaAt?: string | null;
+  metaKind?: 'created' | 'resolved';
   hasReminder?: boolean;
   fadeIntensity?: number;
   onPress?: () => void;
@@ -61,7 +68,8 @@ function BottomFadeOverlay({ intensity }: { intensity: number }) {
 export default function HealthListItem({
   title,
   subtitle,
-  createdAt,
+  metaAt,
+  metaKind = 'created',
   hasReminder = false,
   fadeIntensity = 0,
   onPress,
@@ -70,12 +78,18 @@ export default function HealthListItem({
 }: HealthListItemProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
-  const createdLabel = formatHealthCreatedLabel(createdAt, {
+
+  const displayTitle = truncatePreviewText(title, PREVIEW_CHARS);
+  const displaySubtitle = truncateHealthDescription(subtitle, PREVIEW_CHARS);
+  const hasSubtitle = Boolean(displaySubtitle);
+
+  const metaPrefix =
+    metaKind === 'resolved' ? t('topics.resolved_prefix') : t('topics.created_prefix');
+  const metaLabel = formatHealthDateMeta(metaAt, {
     today: t('common.today'),
     yesterday: t('topics.created_yesterday'),
-    createdPrefix: t('topics.created_prefix'),
+    prefix: metaPrefix,
   });
-  const hasSubtitle = Boolean(subtitle.trim());
 
   return (
     <TouchableOpacity
@@ -85,11 +99,11 @@ export default function HealthListItem({
       activeOpacity={0.7}
       disabled={!onPress}
     >
-      <View style={styles.inner}>
-        <View style={styles.textBlock}>
+      <View style={styles.content}>
+        <View style={styles.stack}>
           <View style={styles.titleRow}>
-            <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-              {title}
+            <Text style={[styles.title, styles.rowMain]} numberOfLines={1} ellipsizeMode="tail">
+              {displayTitle}
             </Text>
             {hasReminder ? (
               <TouchableOpacity
@@ -107,15 +121,15 @@ export default function HealthListItem({
           </View>
 
           {hasSubtitle ? (
-            <Text style={styles.subtitle} numberOfLines={2} ellipsizeMode="tail">
-              {subtitle}
+            <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
+              {displaySubtitle}
             </Text>
           ) : null}
         </View>
 
-        {createdLabel ? (
-          <Text style={styles.createdMeta} numberOfLines={1} ellipsizeMode="tail">
-            {createdLabel}
+        {metaLabel ? (
+          <Text style={styles.meta} numberOfLines={1} ellipsizeMode="tail">
+            {metaLabel}
           </Text>
         ) : null}
       </View>
@@ -140,60 +154,59 @@ const makeStyles = (c: ThemeColors) =>
       marginBottom: HEALTH_LIST_ITEM_GAP,
       paddingVertical: 14,
       paddingHorizontal: 16,
+      minHeight: 96,
       shadowColor: '#2D2D2A',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.04,
       shadowRadius: 20,
       elevation: 3,
     },
-    inner: {
+    content: {
       width: '100%',
       gap: 6,
-      justifyContent: 'flex-start',
-      overflow: 'hidden',
+    },
+    stack: {
+      width: '100%',
+      gap: 6,
     },
     titleRow: {
       width: '100%',
       flexDirection: 'row',
-      alignItems: 'flex-start',
+      alignItems: 'center',
       justifyContent: 'space-between',
-      flexShrink: 0,
+      gap: 8,
+      minHeight: 20,
+    },
+    rowMain: {
+      flex: 1,
+      minWidth: 0,
     },
     title: {
       fontFamily: 'Rubik-Medium',
       fontSize: 16,
       lineHeight: 20,
       color: c.primaryText,
-      flex: 1,
-      paddingRight: 8,
     },
     reminderIconBtn: {
-      paddingTop: 2,
+      flexShrink: 0,
     },
     reminderSpacer: {
       width: 16,
-    },
-    textBlock: {
-      width: '100%',
-      gap: 6,
-      flexShrink: 1,
-      minHeight: 0,
-      overflow: 'hidden',
-      justifyContent: 'flex-start',
+      flexShrink: 0,
     },
     subtitle: {
       fontFamily: 'Rubik-Regular',
       fontSize: 14,
       lineHeight: 20,
       color: c.primaryText,
-      flexShrink: 1,
+      width: '100%',
     },
-    createdMeta: {
+    meta: {
       fontFamily: 'Rubik-Regular',
       fontSize: 12,
       lineHeight: 16,
       color: c.secondaryText,
-      flexShrink: 0,
+      width: '100%',
     },
     fadeOverlay: {
       ...StyleSheet.absoluteFillObject,

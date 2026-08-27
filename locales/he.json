@@ -439,6 +439,7 @@
     "note_body_placeholder": "מה השתנה?",
     "created_yesterday": "אתמול",
     "created_prefix": "נוצר",
+    "resolved_prefix": "נפתר",
     "deleted": "הפתק נמחק",
     "record_deleted": "הנושא נמחק",
     "delete_record_confirm_title": "למחוק את הנושא?",
