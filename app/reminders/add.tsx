@@ -17,6 +17,7 @@ import { useActivePet } from '@/store/petStore';
 import { createReminder, type RepeatOption } from '@/services/reminders';
 import { getErrorMessage } from '@/services/errors';
 import { guardAddReminder } from '@/services/subscription';
+import { registerForPushNotifications } from '@/services/notifications';
 import { usePetsQuery } from '@/hooks/useCachedQueries';
 import {
   resolveReminderCategory,
@@ -97,12 +98,26 @@ export default function AddReminderScreen() {
 
   const handleSave = async () => {
     Keyboard.dismiss();
-    if (!canSave || !activePetId || !date || !time) return;
+    if (!title.trim()) {
+      toast.showError(t('errors.generic'));
+      return;
+    }
+    if (!activePetId) {
+      toast.showError(t('errors.generic'));
+      return;
+    }
+    if (!date || !time) {
+      toast.showError(t('reminders.past_datetime'));
+      return;
+    }
+    if (submitting) return;
     if (!(await guardAddReminder(router, pets))) return;
     if (warnPastDate(date)) return;
 
     try {
       setSubmitting(true);
+      // Sync device timezone so server "today" matches this phone.
+      await registerForPushNotifications();
       await createReminder(activePetId, {
         title: title.trim(),
         date: date.slice(0, 10),
