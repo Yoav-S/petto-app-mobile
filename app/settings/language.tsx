@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { t, type AppLocale } from '@/i18n';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
+import { HeaderScrollScreen } from '@/components/ui/HeaderScrollLayout';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
-// Language names stay in their own language (never translated).
 const OPTIONS: { code: AppLocale; label: string }[] = [
   { code: 'en', label: 'English' },
   { code: 'ro', label: 'Română' },
@@ -21,49 +21,43 @@ export default function LanguageSettingsScreen() {
   const styles = useThemedStyles(makeStyles);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <SettingsHeader title={t('settings.language')} />
-
-      <View style={styles.content}>
-        <View style={styles.card}>
-          <View style={styles.inner}>
-            {OPTIONS.map((option, index) => {
-              const selected = locale === option.code;
-              return (
-                <React.Fragment key={option.code}>
-                  <Pressable
-                    style={styles.row}
-                    onPress={() => setLocale(option.code)}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected }}
-                  >
-                    <Text style={styles.rowLabel}>{option.label}</Text>
-                    <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
-                      {selected && (
-                        <Ionicons name="checkmark" size={16} color={colors.button.primaryText} />
-                      )}
-                    </View>
-                  </Pressable>
-                  {index < OPTIONS.length - 1 ? <View style={styles.divider} /> : null}
-                </React.Fragment>
-              );
-            })}
-          </View>
+    <HeaderScrollScreen
+      header={<SettingsHeader title={t('settings.language')} />}
+      contentContainerStyle={styles.content}
+    >
+      <View style={styles.card}>
+        <View style={styles.inner}>
+          {OPTIONS.map((option, index) => {
+            const selected = locale === option.code;
+            return (
+              <React.Fragment key={option.code}>
+                <Pressable
+                  style={styles.row}
+                  onPress={() => setLocale(option.code)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                >
+                  <Text style={styles.rowLabel}>{option.label}</Text>
+                  <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
+                    {selected && (
+                      <Ionicons name="checkmark" size={16} color={colors.button.primaryText} />
+                    )}
+                  </View>
+                </Pressable>
+                {index < OPTIONS.length - 1 ? <View style={styles.divider} /> : null}
+              </React.Fragment>
+            );
+          })}
         </View>
       </View>
-    </SafeAreaView>
+    </HeaderScrollScreen>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: c.background,
-    },
     content: {
-      paddingHorizontal: 20,
-      paddingTop: 22,
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     },
     card: {
       backgroundColor: c.surface,

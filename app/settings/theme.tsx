@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { t } from '@/i18n';
 import { useTheme, useThemedStyles, type ThemeMode } from '@/context/ThemeContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
+import { HeaderScrollScreen } from '@/components/ui/HeaderScrollLayout';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
 const OPTIONS: ThemeMode[] = ['light', 'dark', 'system'];
 
@@ -14,49 +15,43 @@ export default function ThemeSettingsScreen() {
   const styles = useThemedStyles(makeStyles);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <SettingsHeader title={t('settings.theme')} />
-
-      <View style={styles.content}>
-        <View style={styles.card}>
-          <View style={styles.inner}>
-            {OPTIONS.map((option, index) => {
-              const selected = mode === option;
-              return (
-                <React.Fragment key={option}>
-                  <Pressable
-                    style={styles.row}
-                    onPress={() => setMode(option)}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected }}
-                  >
-                    <Text style={styles.rowLabel}>{t(`settings.theme_${option}`)}</Text>
-                    <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
-                      {selected && (
-                        <Ionicons name="checkmark" size={16} color={colors.button.primaryText} />
-                      )}
-                    </View>
-                  </Pressable>
-                  {index < OPTIONS.length - 1 ? <View style={styles.divider} /> : null}
-                </React.Fragment>
-              );
-            })}
-          </View>
+    <HeaderScrollScreen
+      header={<SettingsHeader title={t('settings.theme')} />}
+      contentContainerStyle={styles.content}
+    >
+      <View style={styles.card}>
+        <View style={styles.inner}>
+          {OPTIONS.map((option, index) => {
+            const selected = mode === option;
+            return (
+              <React.Fragment key={option}>
+                <Pressable
+                  style={styles.row}
+                  onPress={() => setMode(option)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                >
+                  <Text style={styles.rowLabel}>{t(`settings.theme_${option}`)}</Text>
+                  <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
+                    {selected && (
+                      <Ionicons name="checkmark" size={16} color={colors.button.primaryText} />
+                    )}
+                  </View>
+                </Pressable>
+                {index < OPTIONS.length - 1 ? <View style={styles.divider} /> : null}
+              </React.Fragment>
+            );
+          })}
         </View>
       </View>
-    </SafeAreaView>
+    </HeaderScrollScreen>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: c.background,
-    },
     content: {
-      paddingHorizontal: 20,
-      paddingTop: 22,
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     },
     card: {
       backgroundColor: c.surface,

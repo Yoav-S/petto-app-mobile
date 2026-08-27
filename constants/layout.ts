@@ -28,6 +28,12 @@ export const LayoutBreakpoint = {
   xl: 430,
 } as const;
 
+/** Gap below the header chrome before scroll content (Figma). */
+export const HEADER_SCROLL_GAP = 10;
+
+/** Rounded bottom corners on the floating header chrome. */
+export const HEADER_CHROME_BOTTOM_RADIUS = 16;
+
 /** Figma header band: row starts 56pt from screen top; row height 44pt. */
 export const HEADER_LAYOUT = {
   topFromScreen: 56,

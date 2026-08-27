@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -16,7 +16,8 @@ import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
-import VaccineScreenHeader, { getVaccineHeaderContentOffset } from '@/components/vaccines/VaccineScreenHeader';
+import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
+import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import EmptyState from '@/components/ui/EmptyState';
@@ -33,7 +34,6 @@ import { invalidateVaccinations } from '@/services/queryClient';
 import { useCursorPagination } from '@/hooks/useCursorPagination';
 import type { Vaccination } from '@/types/api';
 
-const EMPTY_TOP = 305;
 
 function VaccineThumbnail({ uri }: { uri?: string | null }) {
   const styles = useThemedStyles(makeStyles);
@@ -52,8 +52,6 @@ export default function VaccinesScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const { activePetId } = useActivePet();
-  const headerOffset = getVaccineHeaderContentOffset(812);
-  const emptyTop = Math.max(Spacing.lg, EMPTY_TOP - headerOffset);
 
   const fetchPage = useCallback(
     async (params: { limit: number; cursor?: string }) => {
@@ -133,10 +131,10 @@ export default function VaccinesScreen() {
     [activePetId, items, setItems, toast],
   );
 
-  const renderContent = () => {
+  const renderContent = (paddingTop: number) => {
     if (loading) {
       return (
-        <View style={styles.centered}>
+        <View style={[styles.centered, { paddingTop }]}>
           <ActivityIndicator color={colors.primaryText} />
         </View>
       );
@@ -144,7 +142,7 @@ export default function VaccinesScreen() {
 
     if (error && !items.length) {
       return (
-        <View style={styles.centered}>
+        <View style={[styles.centered, { paddingTop }]}>
           <EmptyState
             title={t('common.error')}
             subtitle={error}
@@ -202,12 +200,13 @@ export default function VaccinesScreen() {
             subtitle={t('vaccines.empty_subtitle')}
             actionTitle={t('vaccines.add')}
             actionCompact
-            topOffset={emptyTop}
+            topOffset={Spacing.lg}
             onAction={() => router.push('/vaccines/add' as never)}
           />
         }
         contentContainerStyle={[
           styles.listContent,
+          { paddingTop },
           items.length === 0 ? styles.listContentEmpty : null,
         ]}
         showsVerticalScrollIndicator={false}
@@ -224,9 +223,13 @@ export default function VaccinesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
-      <VaccineScreenHeader title={t('vaccines.list_title')} />
-      {renderContent()}
+    <>
+      <HeaderScrollLayout
+        header={<VaccineScreenHeader title={t('vaccines.list_title')} />}
+        edges={['left', 'right', 'bottom']}
+      >
+        {({ paddingTop }) => renderContent(paddingTop)}
+      </HeaderScrollLayout>
       {items.length > 0 && !loading && !(error && !items.length) ? (
         <SpeedDialFab
           items={[
@@ -241,23 +244,18 @@ export default function VaccinesScreen() {
         />
       ) : null}
       <ListFetchBlocker visible={loadingMore} />
-    </SafeAreaView>
+    </>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: c.background,
-    },
     centered: {
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
     },
     listContent: {
-      paddingTop: Spacing.md,
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       paddingBottom: LIST_FAB_SCROLL_PADDING,
     },

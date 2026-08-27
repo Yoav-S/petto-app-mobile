@@ -8,7 +8,8 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { t } from '@/i18n';
@@ -157,22 +158,26 @@ export default function SubscriptionSettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+    <>
       <PremiumSuccessModal
         visible={successVisible}
         onClose={() => setSuccessVisible(false)}
       />
-      <SettingsHeader title={t('settings.subscription')} />
-
-      {loading ? (
-        <View style={styles.loadingWrap}>
-          <ActivityIndicator color={colors.brand} />
-        </View>
-      ) : (
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-        >
+      <HeaderScrollLayout header={<SettingsHeader title={t('settings.subscription')} />}>
+        {({ paddingTop, paddingBottom }) =>
+          loading ? (
+            <View style={[styles.loadingWrap, { paddingTop }]}>
+              <ActivityIndicator color={colors.brand} />
+            </View>
+          ) : (
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={[
+                styles.content,
+                { paddingTop, paddingBottom: paddingBottom + 40 },
+              ]}
+              showsVerticalScrollIndicator={false}
+            >
           {/* Free plan */}
           <View style={styles.cardWrap}>
             {plan === 'free' ? <CurrentPlanBadge /> : null}
@@ -241,16 +246,17 @@ export default function SubscriptionSettingsScreen() {
             )}
           </Pressable>
         </ScrollView>
-      )}
-    </SafeAreaView>
+          )
+        }
+      </HeaderScrollLayout>
+    </>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    safeArea: {
+    scroll: {
       flex: 1,
-      backgroundColor: c.background,
     },
     loadingWrap: {
       flex: 1,
@@ -258,9 +264,7 @@ const makeStyles = (c: ThemeColors) =>
       justifyContent: 'center',
     },
     content: {
-      paddingHorizontal: 20,
-      paddingTop: 28,
-      paddingBottom: 40,
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       gap: 22,
     },
     cardWrap: {

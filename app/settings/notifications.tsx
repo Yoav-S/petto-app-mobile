@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
@@ -13,6 +12,8 @@ import {
 import { getErrorMessage } from '@/services/errors';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import Toggle from '@/components/settings/Toggle';
+import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
 type PrefKey = keyof NotificationPrefs;
 
@@ -86,55 +87,60 @@ export default function NotificationsSettingsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <SettingsHeader title={t('settings.notifications')} />
-
-      <View style={styles.content}>
-        {loading ? (
-          <View style={styles.loader}>
-            <ActivityIndicator color={colors.brand} />
-          </View>
-        ) : error ? (
-          <View style={styles.loader}>
-            <Text style={styles.error}>{error}</Text>
-          </View>
-        ) : prefs ? (
-          <View style={styles.card}>
-            <View style={styles.inner}>
-              <View style={styles.masterSection}>
-                <View style={styles.masterHeader}>
-                  <Text style={styles.rowTitle}>{t('settings.notif_all')}</Text>
-                  <Toggle value={prefs.all} onValueChange={(next) => toggle('all', next)} />
-                </View>
-                <Text style={styles.subtitle}>{t('settings.notif_all_subtitle')}</Text>
-              </View>
-
-              {CATEGORY_KEYS.map((key) => (
-                <React.Fragment key={key}>
-                  <View style={styles.divider} />
-                  {renderRow(key, !prefs.all)}
-                </React.Fragment>
-              ))}
+    <HeaderScrollLayout header={<SettingsHeader title={t('settings.notifications')} />}>
+      {({ paddingTop, paddingBottom }) => (
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop, paddingBottom: paddingBottom + 16 },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {loading ? (
+            <View style={styles.loader}>
+              <ActivityIndicator color={colors.brand} />
             </View>
-          </View>
-        ) : null}
-      </View>
-    </SafeAreaView>
+          ) : error ? (
+            <View style={styles.loader}>
+              <Text style={styles.error}>{error}</Text>
+            </View>
+          ) : prefs ? (
+            <View style={styles.card}>
+              <View style={styles.inner}>
+                <View style={styles.masterSection}>
+                  <View style={styles.masterHeader}>
+                    <Text style={styles.rowTitle}>{t('settings.notif_all')}</Text>
+                    <Toggle value={prefs.all} onValueChange={(next) => toggle('all', next)} />
+                  </View>
+                  <Text style={styles.subtitle}>{t('settings.notif_all_subtitle')}</Text>
+                </View>
+
+                {CATEGORY_KEYS.map((key) => (
+                  <React.Fragment key={key}>
+                    <View style={styles.divider} />
+                    {renderRow(key, !prefs.all)}
+                  </React.Fragment>
+                ))}
+              </View>
+            </View>
+          ) : null}
+        </ScrollView>
+      )}
+    </HeaderScrollLayout>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safeArea: {
+  scroll: {
     flex: 1,
-    backgroundColor: c.background,
   },
   content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 22,
+    flexGrow: 1,
+    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
   },
   loader: {
-    flex: 1,
+    minHeight: 200,
     alignItems: 'center',
     justifyContent: 'center',
   },

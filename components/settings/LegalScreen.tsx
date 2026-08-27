@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { t, currentLocale } from '@/i18n';
 import SettingsHeader from '@/components/settings/SettingsHeader';
+import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
 export type LegalBlock =
   | { type: 'intro'; text: string; gap?: number }
@@ -17,9 +18,6 @@ interface LegalScreenProps {
   lastUpdatedISO: string;
   blocks: LegalBlock[];
 }
-
-const TOP_CHROME_RADIUS = 16;
-const SCROLL_UNDER_MARGIN = 8;
 
 function formatUpdated(iso: string): string {
   const date = new Date(iso);
@@ -54,19 +52,17 @@ function TextBlock({
 
 export default function LegalScreen({ title, lastUpdatedISO, blocks }: LegalScreenProps) {
   const styles = useThemedStyles(makeStyles);
-  const insets = useSafeAreaInsets();
-  const [chromeHeight, setChromeHeight] = useState(0);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <View style={styles.body}>
+    <HeaderScrollLayout header={<SettingsHeader title={title} />}>
+      {({ paddingTop, paddingBottom }) => (
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
             {
-              paddingTop: chromeHeight + SCROLL_UNDER_MARGIN,
-              paddingBottom: Math.max(insets.bottom, 8) + 28,
+              paddingTop,
+              paddingBottom: paddingBottom + 28,
             },
           ]}
           showsVerticalScrollIndicator={false}
@@ -96,49 +92,18 @@ export default function LegalScreen({ title, lastUpdatedISO, blocks }: LegalScre
             })}
           </View>
         </ScrollView>
-
-        <View
-          style={styles.chrome}
-          onLayout={(e) => setChromeHeight(e.nativeEvent.layout.height)}
-          pointerEvents="box-none"
-        >
-          <SettingsHeader title={title} />
-        </View>
-      </View>
-    </SafeAreaView>
+      )}
+    </HeaderScrollLayout>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: c.background,
-    },
-    body: {
-      flex: 1,
-      position: 'relative',
-    },
-    chrome: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 2,
-      backgroundColor: c.background,
-      borderBottomLeftRadius: TOP_CHROME_RADIUS,
-      borderBottomRightRadius: TOP_CHROME_RADIUS,
-      shadowColor: '#1E1E1E',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.06,
-      shadowRadius: 10,
-      elevation: 4,
-    },
     scroll: {
       flex: 1,
     },
     scrollContent: {
-      paddingHorizontal: 20,
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     },
     card: {
       backgroundColor: c.surface,

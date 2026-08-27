@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
@@ -10,6 +9,8 @@ import { deleteAccount } from '@/services/auth';
 import { getErrorMessage } from '@/services/errors';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import { HeaderScrollScreen } from '@/components/ui/HeaderScrollLayout';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
 export default function AccountSettingsScreen() {
   const { user, signOut } = useAuth();
@@ -35,10 +36,11 @@ export default function AccountSettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <SettingsHeader title={t('settings.account')} />
-
-      <View style={styles.content}>
+    <>
+      <HeaderScrollScreen
+        header={<SettingsHeader title={t('settings.account')} />}
+        contentContainerStyle={styles.content}
+      >
         <View style={styles.card}>
           <View style={styles.emailSection}>
             <Text style={styles.emailLabel}>{t('settings.account_email')}</Text>
@@ -65,7 +67,7 @@ export default function AccountSettingsScreen() {
             )}
           </TouchableOpacity>
         </View>
-      </View>
+      </HeaderScrollScreen>
 
       <ConfirmModal
         visible={confirmVisible}
@@ -75,18 +77,13 @@ export default function AccountSettingsScreen() {
         onConfirm={handleDelete}
         onCancel={() => setConfirmVisible(false)}
       />
-    </SafeAreaView>
+    </>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: c.background,
-  },
   content: {
-    paddingHorizontal: 20,
-    paddingTop: 22,
+    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
   },
   card: {
     backgroundColor: c.surface,
@@ -131,4 +128,4 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   deleteTextDisabled: {
     opacity: 0.5,
   },
-})
+});

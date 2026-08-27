@@ -86,6 +86,8 @@ interface ReminderFormBodyProps {
   /** Pin footer (delete) to the bottom; only scroll on short screens. */
   pinFooterToBottom?: boolean;
   footerBottomInset?: number;
+  /** Extra top inset when the header floats above scroll content. */
+  scrollInsetTop?: number;
 }
 
 export default function ReminderFormBody({
@@ -113,6 +115,7 @@ export default function ReminderFormBody({
   scrollPaddingBottom = 32,
   pinFooterToBottom = false,
   footerBottomInset = 32,
+  scrollInsetTop = 0,
 }: ReminderFormBodyProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -124,6 +127,15 @@ export default function ReminderFormBody({
 
   const minTime =
     date && isIsoDateToday(date) ? soonestValidReminderTime(date) : null;
+
+  const formFieldsStyle = [
+    styles.content,
+    {
+      paddingTop: scrollInsetTop + layout.formTop,
+      gap: layout.formGap,
+      alignItems: 'center' as const,
+    },
+  ];
 
   const formFields = (
     <View style={{ gap: layout.formGap, alignItems: 'center', width: '100%' }}>
@@ -287,14 +299,7 @@ export default function ReminderFormBody({
         {saveFooter ? (
           <HealthFormSaveScroll
             footer={saveFooter}
-            fieldsStyle={[
-              styles.content,
-              {
-                paddingTop: layout.formTop,
-                gap: layout.formGap,
-                alignItems: 'center',
-              },
-            ]}
+            fieldsStyle={formFieldsStyle}
           >
             {formFields}
             {!pinFooterToBottom && footer ? (
@@ -310,12 +315,7 @@ export default function ReminderFormBody({
         ) : (
           <HealthFormScroll
             contentContainerStyle={[
-              styles.content,
-              {
-                paddingTop: layout.formTop,
-                gap: layout.formGap,
-                alignItems: 'center',
-              },
+              ...formFieldsStyle,
               pinFooterToBottom ? styles.scrollWithSave : null,
             ]}
           >

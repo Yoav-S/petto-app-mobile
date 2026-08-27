@@ -1,6 +1,5 @@
 ﻿import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
@@ -8,6 +7,8 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t, currentLocale } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
+import { HeaderScrollScreen } from '@/components/ui/HeaderScrollLayout';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
 interface SettingsRow {
   key: string;
@@ -28,7 +29,6 @@ const ROWS: SettingsRow[] = [
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { signOut } = useAuth();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -36,64 +36,51 @@ export default function SettingsScreen() {
   const languageLabel = t(`settings.language_${currentLocale}`);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <SettingsHeader title={t('settings.title')} />
-
-      <ScrollView
-        style={styles.flex}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.card}>
-          <View style={styles.inner}>
-            {ROWS.map((row, index) => (
-              <React.Fragment key={row.key}>
-                <TouchableOpacity
-                  style={styles.row}
-                  onPress={() => router.push(row.route as never)}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.rowLabel}>{t(`settings.${row.key}`)}</Text>
-                  <View style={styles.rowRight}>
-                    {row.key === 'language' ? (
-                      <Text style={styles.rowValue}>{languageLabel}</Text>
-                    ) : null}
-                    <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
-                  </View>
-                </TouchableOpacity>
-                {index < ROWS.length - 1 ? <View style={styles.divider} /> : null}
-              </React.Fragment>
-            ))}
-          </View>
+    <HeaderScrollScreen
+      header={<SettingsHeader title={t('settings.title')} />}
+      contentContainerStyle={styles.content}
+    >
+      <View style={styles.card}>
+        <View style={styles.inner}>
+          {ROWS.map((row, index) => (
+            <React.Fragment key={row.key}>
+              <TouchableOpacity
+                style={styles.row}
+                onPress={() => router.push(row.route as never)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+              >
+                <Text style={styles.rowLabel}>{t(`settings.${row.key}`)}</Text>
+                <View style={styles.rowRight}>
+                  {row.key === 'language' ? (
+                    <Text style={styles.rowValue}>{languageLabel}</Text>
+                  ) : null}
+                  <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
+                </View>
+              </TouchableOpacity>
+              {index < ROWS.length - 1 ? <View style={styles.divider} /> : null}
+            </React.Fragment>
+          ))}
         </View>
+      </View>
 
-        <TouchableOpacity
-          style={styles.signOut}
-          onPress={() => void signOut()}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-        >
-          <Feather name="log-out" size={24} color={colors.error} />
-          <Text style={styles.signOutText}>{t('common.sign_out')}</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+      <TouchableOpacity
+        style={styles.signOut}
+        onPress={() => void signOut()}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+      >
+        <Feather name="log-out" size={24} color={colors.error} />
+        <Text style={styles.signOutText}>{t('common.sign_out')}</Text>
+      </TouchableOpacity>
+    </HeaderScrollScreen>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: c.background,
-  },
-  flex: {
-    flex: 1,
-  },
   content: {
     flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingTop: 22,
+    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
   },
   card: {
     backgroundColor: c.surface,
@@ -150,4 +137,3 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.error,
   },
 });
-

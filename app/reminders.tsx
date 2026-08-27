@@ -6,12 +6,13 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { type ThemeColors } from '@/constants/theme';
-import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
+import { HEADER_SCROLL_GAP, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -400,78 +401,86 @@ export default function RemindersScreen() {
     );
   };
 
-  return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+  const listHeader = (
+    <>
       <ScreenHeader title={t('reminders.title')} />
-
       <SegmentedControl
         tabs={[...TABS]}
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab as TabName)}
         getLabel={(tab) => t(`reminders.tab_${tab.toLowerCase()}`)}
-        style={{ marginTop: 20 }}
+        style={styles.tabs}
       />
+    </>
+  );
 
-      {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.primaryText} />
-        </View>
-      ) : error ? (
-        <View style={styles.centered}>
-          <EmptyState
-            title={t('common.error')}
-            subtitle={error}
-            actionTitle={t('common.retry')}
-            onAction={() => {
-              void refetchAll();
-            }}
-          />
-        </View>
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => {
-            return (
-              <SwipeToDeleteRow
-                open={swipeOpenId === item.id}
-                onOpenChange={(open) => setSwipeOpenId(open ? item.id : null)}
-                onDelete={() => handleDeleteReminder(item.id)}
-              >
-                <ReminderListItem
-                  title={previewText(item.title)}
-                  description={previewText(item.note) || undefined}
-                  time={formatSheetClockTime(item.time)}
-                  dayLabel={
-                    activeTab === 'Today' ? undefined : reminderRelativeDate(item.date)
-                  }
-                  showCompletedBar={
-                    activeTab === 'Recent' && item.status === 'completed'
-                  }
-                  onPress={() => {
-                    setSwipeOpenId(null);
-                    handleReminderPress(item);
-                  }}
-                />
-              </SwipeToDeleteRow>
-            );
-          }}
-          ListEmptyComponent={renderEmptyState}
-          contentContainerStyle={[
-            styles.listContent,
-            items.length === 0 ? styles.listContentEmpty : null,
-          ]}
-          showsVerticalScrollIndicator={false}
-          onEndReached={() => {
-            void loadMore();
-          }}
-          onEndReachedThreshold={0.35}
-          ListFooterComponent={
-            <ListLoadMoreFooter loading={loadingMore} hasMore={hasMore} />
-          }
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        />
-      )}
+  return (
+    <>
+      <HeaderScrollLayout header={listHeader} edges={['left', 'right', 'bottom']}>
+        {({ paddingTop }) =>
+          loading ? (
+            <View style={[styles.centered, { paddingTop }]}>
+              <ActivityIndicator color={colors.primaryText} />
+            </View>
+          ) : error ? (
+            <View style={[styles.centered, { paddingTop }]}>
+              <EmptyState
+                title={t('common.error')}
+                subtitle={error}
+                actionTitle={t('common.retry')}
+                onAction={() => {
+                  void refetchAll();
+                }}
+              />
+            </View>
+          ) : (
+            <FlatList
+              data={items}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => {
+                return (
+                  <SwipeToDeleteRow
+                    open={swipeOpenId === item.id}
+                    onOpenChange={(open) => setSwipeOpenId(open ? item.id : null)}
+                    onDelete={() => handleDeleteReminder(item.id)}
+                  >
+                    <ReminderListItem
+                      title={previewText(item.title)}
+                      description={previewText(item.note) || undefined}
+                      time={formatSheetClockTime(item.time)}
+                      dayLabel={
+                        activeTab === 'Today' ? undefined : reminderRelativeDate(item.date)
+                      }
+                      showCompletedBar={
+                        activeTab === 'Recent' && item.status === 'completed'
+                      }
+                      onPress={() => {
+                        setSwipeOpenId(null);
+                        handleReminderPress(item);
+                      }}
+                    />
+                  </SwipeToDeleteRow>
+                );
+              }}
+              ListEmptyComponent={renderEmptyState}
+              contentContainerStyle={[
+                styles.listContent,
+                { paddingTop },
+                items.length === 0 ? styles.listContentEmpty : null,
+              ]}
+              showsVerticalScrollIndicator={false}
+              onEndReached={() => {
+                void loadMore();
+              }}
+              onEndReachedThreshold={0.35}
+              ListFooterComponent={
+                <ListLoadMoreFooter loading={loadingMore} hasMore={hasMore} />
+              }
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            />
+          )
+        }
+      </HeaderScrollLayout>
 
       {hasAnyReminders ? (
         <SpeedDialFab
@@ -508,15 +517,16 @@ export default function RemindersScreen() {
       />
 
       <ListFetchBlocker visible={loadingMore} />
-    </SafeAreaView>
+    </>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: c.background,
+    tabs: {
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+      paddingTop: HEADER_SCROLL_GAP,
+      paddingBottom: 6,
     },
     centered: {
       flex: 1,
@@ -524,7 +534,6 @@ const makeStyles = (c: ThemeColors) =>
       justifyContent: 'center',
     },
     listContent: {
-      paddingTop: 16,
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       paddingBottom: LIST_FAB_SCROLL_PADDING,
     },

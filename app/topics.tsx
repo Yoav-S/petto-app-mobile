@@ -6,12 +6,13 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
-import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
+import { HEADER_SCROLL_GAP, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
@@ -254,40 +255,45 @@ export default function HealthScreen() {
     );
   };
 
-  return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+  const listHeader = (
+    <>
       <ScreenHeader title={t('topics.title')} />
-
       <SegmentedControl
         tabs={[...TABS]}
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab as TabName)}
         getLabel={(tab) => t(`topics.tab_${tab.toLowerCase()}`)}
         width={220}
-        style={{ marginTop: 20, marginBottom: 6 }}
+        style={styles.tabs}
       />
+    </>
+  );
 
-      {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.primaryText} />
-        </View>
-      ) : error ? (
-        <View style={styles.centered}>
-          <EmptyState
-            title={t('common.error')}
-            subtitle={error}
-            actionTitle={t('common.retry')}
-            onAction={() => {
-              void refetchAll();
-            }}
-          />
-        </View>
-      ) : (
-        <View
-          style={styles.listWrap}
-          onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
-        >
-          <FlatList
+  return (
+    <>
+      <HeaderScrollLayout header={listHeader} edges={['left', 'right', 'bottom']}>
+        {({ paddingTop }) =>
+          loading ? (
+            <View style={[styles.centered, { paddingTop }]}>
+              <ActivityIndicator color={colors.primaryText} />
+            </View>
+          ) : error ? (
+            <View style={[styles.centered, { paddingTop }]}>
+              <EmptyState
+                title={t('common.error')}
+                subtitle={error}
+                actionTitle={t('common.retry')}
+                onAction={() => {
+                  void refetchAll();
+                }}
+              />
+            </View>
+          ) : (
+            <View
+              style={[styles.listWrap, { paddingTop }]}
+              onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
+            >
+              <FlatList
             data={items}
             keyExtractor={(item) => item.id}
             scrollEventThrottle={16}
@@ -341,8 +347,10 @@ export default function HealthScreen() {
             }
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           />
-        </View>
-      )}
+            </View>
+          )
+        }
+      </HeaderScrollLayout>
 
       {hasAnyRecords ? (
         <SpeedDialFab
@@ -359,14 +367,15 @@ export default function HealthScreen() {
       ) : null}
 
       <ListFetchBlocker visible={loadingMore} />
-    </SafeAreaView>
+    </>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: c.background,
+  tabs: {
+    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+    paddingTop: HEADER_SCROLL_GAP,
+    paddingBottom: 6,
   },
   centered: {
     flex: 1,
@@ -377,7 +386,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingTop: 14,
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     paddingBottom: LIST_FAB_SCROLL_PADDING,
   },

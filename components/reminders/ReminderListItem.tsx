@@ -4,16 +4,12 @@ import { Radius, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 
 interface ReminderListItemProps {
-  /** Top-left bold title. */
   title: string;
-  /** Optional note/description under the title (already truncated by caller). */
   description?: string | null;
-  /** Top-right time (e.g. "9:00"). */
   time: string;
-  /** Bottom-right day/date (Upcoming / Recent). */
+  /** Upcoming / Recent — shown on row 2, right side. */
   dayLabel?: string;
   onPress?: () => void;
-  /** Completed recent: green bar on the left. */
   showCompletedBar?: boolean;
 }
 
@@ -30,42 +26,66 @@ export default function ReminderListItem({
 
   return (
     <TouchableOpacity
-      style={[styles.card, !hasDescription && styles.cardCompact]}
+      style={[
+        styles.card,
+        !dayLabel && !hasDescription ? styles.cardCompact : null,
+      ]}
       onPress={onPress}
       activeOpacity={0.7}
       disabled={!onPress}
     >
       {showCompletedBar ? <View style={styles.completedBar} /> : null}
-      <View style={[styles.content, !hasDescription && styles.contentCompact]}>
-        <View style={styles.left}>
-          <Text style={styles.title} numberOfLines={1}>
-            {title}
-          </Text>
-          {hasDescription ? (
-            <Text style={styles.description} numberOfLines={1}>
-              {description}
+      <View style={styles.content}>
+        {dayLabel ? (
+          /* Upcoming / Recent: row1 title|time, row2 description|day */
+          <View style={styles.stack}>
+            <View style={styles.row}>
+              <Text style={[styles.title, styles.rowMain]} numberOfLines={1}>
+                {title}
+              </Text>
+              <Text style={styles.time} numberOfLines={1}>
+                {time}
+              </Text>
+            </View>
+            <View style={styles.row}>
+              {hasDescription ? (
+                <Text style={[styles.description, styles.rowMain]} numberOfLines={1}>
+                  {description}
+                </Text>
+              ) : (
+                <View style={styles.rowMain} />
+              )}
+              <Text style={styles.day} numberOfLines={1}>
+                {dayLabel}
+              </Text>
+            </View>
+          </View>
+        ) : hasDescription ? (
+          /* Today + note: title, then description|time */
+          <View style={styles.stack}>
+            <Text style={styles.title} numberOfLines={1}>
+              {title}
             </Text>
-          ) : null}
-        </View>
-        <View
-          style={[
-            styles.right,
-            dayLabel
-              ? styles.rightCentered
-              : hasDescription
-                ? styles.rightTimeAtBottom
-                : styles.rightCentered,
-          ]}
-        >
-          <Text style={styles.time} numberOfLines={1}>
-            {time}
-          </Text>
-          {dayLabel ? (
-            <Text style={styles.day} numberOfLines={1}>
-              {dayLabel}
+            <View style={styles.row}>
+              <Text style={[styles.description, styles.rowMain]} numberOfLines={1}>
+                {description}
+              </Text>
+              <Text style={styles.time} numberOfLines={1}>
+                {time}
+              </Text>
+            </View>
+          </View>
+        ) : (
+          /* Today, no note: title|time */
+          <View style={styles.row}>
+            <Text style={[styles.title, styles.rowMain]} numberOfLines={1}>
+              {title}
             </Text>
-          ) : null}
-        </View>
+            <Text style={styles.time} numberOfLines={1}>
+              {time}
+            </Text>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -75,7 +95,7 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     card: {
       backgroundColor: c.surface,
-      borderRadius: Radius.lg,
+      borderRadius: Radius.md,
       marginBottom: 12,
       width: '100%',
       maxWidth: '100%',
@@ -90,7 +110,7 @@ const makeStyles = (c: ThemeColors) =>
       minHeight: 76,
     },
     cardCompact: {
-      minHeight: 56,
+      minHeight: 48,
     },
     completedBar: {
       width: 4,
@@ -100,30 +120,24 @@ const makeStyles = (c: ThemeColors) =>
     },
     content: {
       flex: 1,
-      flexDirection: 'row',
-      alignItems: 'stretch',
-      paddingVertical: 14,
+      paddingTop: 14,
+      paddingBottom: 14,
       paddingHorizontal: 16,
-      gap: 12,
-    },
-    contentCompact: {
-      paddingVertical: 12,
-    },
-    left: {
-      flex: 1,
-      gap: 4,
-      minWidth: 0,
-    },
-    right: {
-      alignItems: 'flex-end',
-      gap: 4,
-      flexShrink: 0,
-    },
-    rightCentered: {
       justifyContent: 'center',
     },
-    rightTimeAtBottom: {
-      justifyContent: 'flex-end',
+    stack: {
+      gap: 6,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 10,
+      minHeight: 20,
+    },
+    rowMain: {
+      flex: 1,
+      minWidth: 0,
     },
     title: {
       fontFamily: 'Rubik-Medium',
@@ -134,7 +148,7 @@ const makeStyles = (c: ThemeColors) =>
     description: {
       fontFamily: 'Rubik-Regular',
       fontSize: 14,
-      lineHeight: 18,
+      lineHeight: 20,
       color: c.secondaryText,
     },
     time: {
@@ -143,12 +157,14 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 20,
       color: c.primaryText,
       textAlign: 'right',
+      flexShrink: 0,
     },
     day: {
       fontFamily: 'Rubik-Regular',
       fontSize: 14,
-      lineHeight: 18,
+      lineHeight: 20,
       color: c.secondaryText,
       textAlign: 'right',
+      flexShrink: 0,
     },
   });

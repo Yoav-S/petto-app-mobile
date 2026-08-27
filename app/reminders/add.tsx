@@ -1,9 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { StyleSheet, Alert, Keyboard } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
-import { type ThemeColors } from '@/constants/theme';
-import { useThemedStyles } from '@/context/ThemeContext';
+import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import ReminderFormBody from '@/components/reminders/ReminderFormBody';
@@ -27,7 +25,6 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { todayIsoDate } from '@/utils/calendar';
 
 export default function AddReminderScreen() {
-  const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const router = useRouter();
   const { activePetId } = useActivePet();
@@ -165,10 +162,14 @@ export default function AddReminderScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <VaccineScreenHeader title={t('reminders.add_title')} icon="close" />
-      <ReminderFormBody
-        layout={layout}
+    <HeaderScrollLayout
+      header={<VaccineScreenHeader title={t('reminders.add_title')} icon="close" />}
+      edges={['left', 'right']}
+    >
+      {({ paddingTop }) => (
+        <ReminderFormBody
+          scrollInsetTop={paddingTop}
+          layout={layout}
         title={title}
         onTitleChange={handleTitleChange}
         category={category}
@@ -193,14 +194,8 @@ export default function AddReminderScreen() {
           loading: submitting,
           onPress: handleSave,
         }}
-      />
-    </SafeAreaView>
+        />
+      )}
+    </HeaderScrollLayout>
   );
 }
-
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: c.background,
-  },
-});

@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -17,6 +16,8 @@ import { guardAddPet } from '@/services/subscription';
 import { useActivePet } from '@/store/petStore';
 import { usePetsQuery } from '@/hooks/useCachedQueries';
 import SettingsHeader from '@/components/settings/SettingsHeader';
+import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { AddPetRow, PetSwitcherRow } from '@/components/home/PetSwitcherRows';
 
 export default function PetsListScreen() {
@@ -49,56 +50,55 @@ export default function PetsListScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <SettingsHeader title={t('home.pets_title')} />
-
-      {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.brand} />
-        </View>
-      ) : error && !pets.length ? (
-        <View style={styles.centered}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={() => void query.refetch()}>
-            <Text style={styles.retry}>{t('common.retry')}</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.list}>
-            {pets.map((pet) => (
-              <PetSwitcherRow
-                key={pet.id}
-                pet={pet}
-                selected={pet.id === activePetId}
-                onPress={() => {
-                  void handleSelect(pet.id);
-                }}
-              />
-            ))}
+    <HeaderScrollLayout header={<SettingsHeader title={t('home.pets_title')} />}>
+      {({ paddingTop, paddingBottom }) =>
+        loading ? (
+          <View style={[styles.centered, { paddingTop }]}>
+            <ActivityIndicator color={colors.brand} />
           </View>
+        ) : error && !pets.length ? (
+          <View style={[styles.centered, { paddingTop }]}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity onPress={() => void query.refetch()}>
+              <Text style={styles.retry}>{t('common.retry')}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <ScrollView
+            contentContainerStyle={[
+              styles.content,
+              { paddingTop, paddingBottom: paddingBottom + 40 },
+            ]}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.list}>
+              {pets.map((pet) => (
+                <PetSwitcherRow
+                  key={pet.id}
+                  pet={pet}
+                  selected={pet.id === activePetId}
+                  onPress={() => {
+                    void handleSelect(pet.id);
+                  }}
+                />
+              ))}
+            </View>
 
-          <View style={styles.divider} />
-          <AddPetRow
-            onPress={() => {
-              void handleAddPet();
-            }}
-          />
-        </ScrollView>
-      )}
-    </SafeAreaView>
+            <View style={styles.divider} />
+            <AddPetRow
+              onPress={() => {
+                void handleAddPet();
+              }}
+            />
+          </ScrollView>
+        )
+      }
+    </HeaderScrollLayout>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: c.background,
-    },
     centered: {
       flex: 1,
       alignItems: 'center',
@@ -119,9 +119,7 @@ const makeStyles = (c: ThemeColors) =>
       color: c.brand,
     },
     content: {
-      paddingHorizontal: 20,
-      paddingTop: 16,
-      paddingBottom: 40,
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       gap: 16,
     },
     list: {
