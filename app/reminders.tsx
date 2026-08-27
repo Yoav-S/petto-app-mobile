@@ -12,7 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { type ThemeColors } from '@/constants/theme';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
-import { HEADER_SCROLL_GAP, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -401,41 +401,39 @@ export default function RemindersScreen() {
     );
   };
 
-  const listHeader = (
-    <>
-      <ScreenHeader title={t('reminders.title')} />
-      <SegmentedControl
-        tabs={[...TABS]}
-        activeTab={activeTab}
-        onTabChange={(tab) => setActiveTab(tab as TabName)}
-        getLabel={(tab) => t(`reminders.tab_${tab.toLowerCase()}`)}
-        style={styles.tabs}
-      />
-    </>
-  );
+  const listHeader = <ScreenHeader title={t('reminders.title')} />;
 
   return (
     <>
       <HeaderScrollLayout header={listHeader} edges={['left', 'right', 'bottom']}>
-        {({ paddingTop }) =>
-          loading ? (
-            <View style={[styles.centered, { paddingTop }]}>
-              <ActivityIndicator color={colors.primaryText} />
-            </View>
-          ) : error ? (
-            <View style={[styles.centered, { paddingTop }]}>
-              <EmptyState
-                title={t('common.error')}
-                subtitle={error}
-                actionTitle={t('common.retry')}
-                onAction={() => {
-                  void refetchAll();
-                }}
-              />
-            </View>
-          ) : (
-            <FlatList
-              data={items}
+        {({ paddingTop }) => (
+          <View style={[styles.screenBody, { paddingTop }]}>
+            <SegmentedControl
+              tabs={[...TABS]}
+              activeTab={activeTab}
+              onTabChange={(tab) => setActiveTab(tab as TabName)}
+              getLabel={(tab) => t(`reminders.tab_${tab.toLowerCase()}`)}
+              style={styles.tabs}
+            />
+            {loading ? (
+              <View style={styles.centered}>
+                <ActivityIndicator color={colors.primaryText} />
+              </View>
+            ) : error ? (
+              <View style={styles.centered}>
+                <EmptyState
+                  title={t('common.error')}
+                  subtitle={error}
+                  actionTitle={t('common.retry')}
+                  onAction={() => {
+                    void refetchAll();
+                  }}
+                />
+              </View>
+            ) : (
+              <FlatList
+                style={styles.list}
+                data={items}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => {
                 return (
@@ -465,7 +463,6 @@ export default function RemindersScreen() {
               ListEmptyComponent={renderEmptyState}
               contentContainerStyle={[
                 styles.listContent,
-                { paddingTop },
                 items.length === 0 ? styles.listContentEmpty : null,
               ]}
               showsVerticalScrollIndicator={false}
@@ -478,8 +475,9 @@ export default function RemindersScreen() {
               }
               refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             />
-          )
-        }
+            )}
+          </View>
+        )}
       </HeaderScrollLayout>
 
       {hasAnyReminders ? (
@@ -523,10 +521,15 @@ export default function RemindersScreen() {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    screenBody: {
+      flex: 1,
+    },
+    list: {
+      flex: 1,
+    },
     tabs: {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-      paddingTop: HEADER_SCROLL_GAP,
-      paddingBottom: 6,
+      marginBottom: 6,
     },
     centered: {
       flex: 1,

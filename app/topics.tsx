@@ -12,7 +12,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
-import { HEADER_SCROLL_GAP, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
@@ -255,46 +255,43 @@ export default function HealthScreen() {
     );
   };
 
-  const listHeader = (
-    <>
-      <ScreenHeader title={t('topics.title')} />
-      <SegmentedControl
-        tabs={[...TABS]}
-        activeTab={activeTab}
-        onTabChange={(tab) => setActiveTab(tab as TabName)}
-        getLabel={(tab) => t(`topics.tab_${tab.toLowerCase()}`)}
-        width={220}
-        style={styles.tabs}
-      />
-    </>
-  );
+  const listHeader = <ScreenHeader title={t('topics.title')} />;
 
   return (
     <>
       <HeaderScrollLayout header={listHeader} edges={['left', 'right', 'bottom']}>
-        {({ paddingTop }) =>
-          loading ? (
-            <View style={[styles.centered, { paddingTop }]}>
-              <ActivityIndicator color={colors.primaryText} />
-            </View>
-          ) : error ? (
-            <View style={[styles.centered, { paddingTop }]}>
-              <EmptyState
-                title={t('common.error')}
-                subtitle={error}
-                actionTitle={t('common.retry')}
-                onAction={() => {
-                  void refetchAll();
-                }}
-              />
-            </View>
-          ) : (
-            <View
-              style={[styles.listWrap, { paddingTop }]}
-              onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
-            >
-              <FlatList
-            data={items}
+        {({ paddingTop }) => (
+          <View style={[styles.screenBody, { paddingTop }]}>
+            <SegmentedControl
+              tabs={[...TABS]}
+              activeTab={activeTab}
+              onTabChange={(tab) => setActiveTab(tab as TabName)}
+              getLabel={(tab) => t(`topics.tab_${tab.toLowerCase()}`)}
+              width={220}
+              style={styles.tabs}
+            />
+            {loading ? (
+              <View style={styles.centered}>
+                <ActivityIndicator color={colors.primaryText} />
+              </View>
+            ) : error ? (
+              <View style={styles.centered}>
+                <EmptyState
+                  title={t('common.error')}
+                  subtitle={error}
+                  actionTitle={t('common.retry')}
+                  onAction={() => {
+                    void refetchAll();
+                  }}
+                />
+              </View>
+            ) : (
+              <View
+                style={styles.listWrap}
+                onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
+              >
+                <FlatList
+                  data={items}
             keyExtractor={(item) => item.id}
             scrollEventThrottle={16}
             onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
@@ -346,10 +343,11 @@ export default function HealthScreen() {
               <ListLoadMoreFooter loading={loadingMore} hasMore={hasMore} />
             }
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          />
-            </View>
-          )
-        }
+                />
+              </View>
+            )}
+          </View>
+        )}
       </HeaderScrollLayout>
 
       {hasAnyRecords ? (
@@ -372,10 +370,12 @@ export default function HealthScreen() {
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  screenBody: {
+    flex: 1,
+  },
   tabs: {
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-    paddingTop: HEADER_SCROLL_GAP,
-    paddingBottom: 6,
+    marginBottom: 6,
   },
   centered: {
     flex: 1,

@@ -160,12 +160,13 @@ export default function AddPetScreen() {
   };
 
   return (
-    <HeaderScrollLayout
-      header={<VaccineScreenHeader title={t('pets.add_title')} icon="close" />}
-      edges={['left', 'right']}
-    >
-      {({ paddingTop }) => (
-        <HealthFormScreen
+    <>
+      <HeaderScrollLayout
+        header={<VaccineScreenHeader title={t('pets.add_title')} icon="close" />}
+        edges={['left', 'right']}
+      >
+        {({ paddingTop }) => (
+          <HealthFormScreen
           scrollInsetTop={paddingTop}
           scrollRef={scrollRef}
           onScroll={onScroll}
@@ -316,8 +317,9 @@ export default function AddPetScreen() {
               ]}
             />
           </View>
-      </HealthFormScreen>
-      )}
+          </HealthFormScreen>
+        )}
+      </HeaderScrollLayout>
 
       <BirthDatePickerSheet
         visible={birthSheetVisible}
@@ -336,7 +338,7 @@ export default function AddPetScreen() {
         onChoose={() => void pickImage('library')}
         onRemove={photoUri ? handleRemovePhoto : undefined}
       />
-    </HeaderScrollLayout>
+    </>
   );
 }
 

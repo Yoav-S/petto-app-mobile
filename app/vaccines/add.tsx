@@ -175,25 +175,26 @@ export default function AddVaccineScreen() {
   };
 
   return (
-    <HeaderScrollLayout
-      header={<VaccineScreenHeader title={t('vaccines.add_title')} icon="close" />}
-      edges={['left', 'right']}
-    >
-      {({ paddingTop }) => (
-        <HealthFormScreen
-          scrollInsetTop={paddingTop}
-          contentContainerStyle={{
-            paddingTop: layout.formTop,
-            gap: layout.formGap,
-            alignItems: 'center',
-          }}
-          footer={{
-            label: t('common.save'),
-            disabled: !canSave,
-            loading: submitting,
-            onPress: handleSave,
-          }}
-        >
+    <>
+      <HeaderScrollLayout
+        header={<VaccineScreenHeader title={t('vaccines.add_title')} icon="close" />}
+        edges={['left', 'right']}
+      >
+        {({ paddingTop }) => (
+          <HealthFormScreen
+            scrollInsetTop={paddingTop}
+            contentContainerStyle={{
+              paddingTop: layout.formTop,
+              gap: layout.formGap,
+              alignItems: 'center',
+            }}
+            footer={{
+              label: t('common.save'),
+              disabled: !canSave,
+              loading: submitting,
+              onPress: handleSave,
+            }}
+          >
           {/* Vaccine name */}
           <View
             style={[
@@ -314,8 +315,9 @@ export default function AddVaccineScreen() {
               },
             ]}
           />
-      </HealthFormScreen>
-      )}
+          </HealthFormScreen>
+        )}
+      </HeaderScrollLayout>
 
       <VaccinePhotoSourceSheet
         visible={photoSheetVisible}
@@ -349,7 +351,7 @@ export default function AddVaccineScreen() {
         uri={photoUri}
         onClose={() => setViewerVisible(false)}
       />
-    </HeaderScrollLayout>
+    </>
   );
 }
 
