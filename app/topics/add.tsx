@@ -5,7 +5,7 @@ import {
   View,
   Keyboard,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -107,74 +107,75 @@ export default function AddHealthScreen() {
 
   const screenTitle = isEditing ? t('topics.edit_topic') : t('topics.add_health');
 
+  const header = <VaccineScreenHeader title={screenTitle} icon="close" />;
+
   if (isEditing && loading) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        <VaccineScreenHeader title={screenTitle} icon="close" />
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.primaryText} />
-        </View>
-      </SafeAreaView>
+      <HeaderScrollLayout header={header} edges={['left', 'right']}>
+        {({ paddingTop }) => (
+          <View style={[styles.centered, { paddingTop }]}>
+            <ActivityIndicator color={colors.primaryText} />
+          </View>
+        )}
+      </HeaderScrollLayout>
     );
   }
 
   if (isEditing && notFound) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        <VaccineScreenHeader title={screenTitle} icon="close" />
-        <View style={styles.centered}>
-          <EmptyState
-            title={t('topics.not_found_title')}
-            subtitle={t('topics.not_found_subtitle')}
-            actionTitle={t('reminders.back')}
-            onAction={() => router.back()}
-          />
-        </View>
-      </SafeAreaView>
+      <HeaderScrollLayout header={header} edges={['left', 'right']}>
+        {({ paddingTop }) => (
+          <View style={[styles.centered, { paddingTop }]}>
+            <EmptyState
+              title={t('topics.not_found_title')}
+              subtitle={t('topics.not_found_subtitle')}
+              actionTitle={t('reminders.back')}
+              onAction={() => router.back()}
+            />
+          </View>
+        )}
+      </HeaderScrollLayout>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <VaccineScreenHeader title={screenTitle} icon="close" />
-
-      <HealthFormScreen
-        contentContainerStyle={{ paddingTop: layout.formTop }}
-        footer={{
-          label: t('common.save'),
-          disabled: !canSave,
-          loading: submitting,
-          onPress: handleSave,
-          fullWidth: true,
-        }}
-      >
-        <HealthRecordFormFields
-          name={name}
-          onNameChange={setName}
-          namePlaceholder={t('topics.health_name_placeholder')}
-          nameFocused={nameFocused}
-          onNameFocus={() => setNameFocused(true)}
-          onNameBlur={() => setNameFocused(false)}
-          description={description}
-          onDescriptionChange={setDescription}
-          descriptionLabel={t('topics.field_description')}
-          descriptionPlaceholder={t('topics.description_placeholder')}
-          descriptionFocused={descriptionFocused}
-          onDescriptionFocus={() => setDescriptionFocused(true)}
-          onDescriptionBlur={() => setDescriptionFocused(false)}
-          layout={layout}
-          autoFocusName={!isEditing}
-        />
-      </HealthFormScreen>
-    </SafeAreaView>
+    <HeaderScrollLayout header={header} edges={['left', 'right']}>
+      {({ paddingTop }) => (
+        <HealthFormScreen
+          scrollInsetTop={paddingTop}
+          contentContainerStyle={{ paddingTop: layout.formTop }}
+          footer={{
+            label: t('common.save'),
+            disabled: !canSave,
+            loading: submitting,
+            onPress: handleSave,
+            fullWidth: true,
+          }}
+        >
+          <HealthRecordFormFields
+            name={name}
+            onNameChange={setName}
+            namePlaceholder={t('topics.health_name_placeholder')}
+            nameFocused={nameFocused}
+            onNameFocus={() => setNameFocused(true)}
+            onNameBlur={() => setNameFocused(false)}
+            description={description}
+            onDescriptionChange={setDescription}
+            descriptionLabel={t('topics.field_description')}
+            descriptionPlaceholder={t('topics.description_placeholder')}
+            descriptionFocused={descriptionFocused}
+            onDescriptionFocus={() => setDescriptionFocused(true)}
+            onDescriptionBlur={() => setDescriptionFocused(false)}
+            layout={layout}
+            autoFocusName={!isEditing}
+          />
+        </HealthFormScreen>
+      )}
+    </HeaderScrollLayout>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: c.background,
-  },
   centered: {
     flex: 1,
     alignItems: 'center',

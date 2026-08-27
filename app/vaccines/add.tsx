@@ -8,7 +8,7 @@ import {
   Alert,
   Keyboard,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
@@ -175,22 +175,25 @@ export default function AddVaccineScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <VaccineScreenHeader title={t('vaccines.add_title')} icon="close" />
-
-      <HealthFormScreen
-        contentContainerStyle={{
-          paddingTop: layout.formTop,
-          gap: layout.formGap,
-          alignItems: 'center',
-        }}
-        footer={{
-          label: t('common.save'),
-          disabled: !canSave,
-          loading: submitting,
-          onPress: handleSave,
-        }}
-      >
+    <HeaderScrollLayout
+      header={<VaccineScreenHeader title={t('vaccines.add_title')} icon="close" />}
+      edges={['left', 'right']}
+    >
+      {({ paddingTop }) => (
+        <HealthFormScreen
+          scrollInsetTop={paddingTop}
+          contentContainerStyle={{
+            paddingTop: layout.formTop,
+            gap: layout.formGap,
+            alignItems: 'center',
+          }}
+          footer={{
+            label: t('common.save'),
+            disabled: !canSave,
+            loading: submitting,
+            onPress: handleSave,
+          }}
+        >
           {/* Vaccine name */}
           <View
             style={[
@@ -312,6 +315,7 @@ export default function AddVaccineScreen() {
             ]}
           />
       </HealthFormScreen>
+      )}
 
       <VaccinePhotoSourceSheet
         visible={photoSheetVisible}
@@ -345,7 +349,7 @@ export default function AddVaccineScreen() {
         uri={photoUri}
         onClose={() => setViewerVisible(false)}
       />
-    </SafeAreaView>
+    </HeaderScrollLayout>
   );
 }
 

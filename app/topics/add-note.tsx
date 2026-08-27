@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
   Keyboard,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { Spacing, type ThemeColors } from '@/constants/theme';
@@ -118,51 +118,55 @@ export default function AddNoteScreen() {
     }
   };
 
+  const header = <ScreenHeader title={t('topics.add_note')} />;
+
   if (!recordId || loadingRecord) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        <ScreenHeader title={t('topics.add_note')} />
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.primaryText} />
-        </View>
-      </SafeAreaView>
+      <HeaderScrollLayout header={header} edges={['left', 'right']}>
+        {({ paddingTop }) => (
+          <View style={[styles.centered, { paddingTop }]}>
+            <ActivityIndicator color={colors.primaryText} />
+          </View>
+        )}
+      </HeaderScrollLayout>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <ScreenHeader title={t('topics.add_note')} />
-
-      <HealthFormScreen
-        contentContainerStyle={{
-          paddingTop: Math.max(Spacing.md, 16),
-        }}
-        footer={{
-          label: t('common.save'),
-          disabled: !canSave,
-          loading: submitting,
-          onPress: handleSave,
-          fullWidth: true,
-        }}
-      >
-        <HealthNoteEditorCard
-          noteText={note}
-          onChangeNoteText={setNote}
-          photoUri={photoUri}
-          onPickImage={() => {
-            Keyboard.dismiss();
-            setReminderSheetVisible(false);
-            setPhotoSheetVisible(true);
-          }}
-          reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
-          onReminderPress={() => {
-            Keyboard.dismiss();
-            setPhotoSheetVisible(false);
-            setReminderSheetVisible(true);
-          }}
-          placeholder={t('topics.note_body_placeholder')}
-        />
-      </HealthFormScreen>
+    <HeaderScrollLayout header={header} edges={['left', 'right']}>
+      {({ paddingTop }) => (
+        <>
+          <HealthFormScreen
+            scrollInsetTop={paddingTop}
+            contentContainerStyle={{
+              paddingTop: Math.max(Spacing.md, 16),
+            }}
+            footer={{
+              label: t('common.save'),
+              disabled: !canSave,
+              loading: submitting,
+              onPress: handleSave,
+              fullWidth: true,
+            }}
+          >
+            <HealthNoteEditorCard
+              noteText={note}
+              onChangeNoteText={setNote}
+              photoUri={photoUri}
+              onPickImage={() => {
+                Keyboard.dismiss();
+                setReminderSheetVisible(false);
+                setPhotoSheetVisible(true);
+              }}
+              reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
+              onReminderPress={() => {
+                Keyboard.dismiss();
+                setPhotoSheetVisible(false);
+                setReminderSheetVisible(true);
+              }}
+              placeholder={t('topics.note_body_placeholder')}
+            />
+          </HealthFormScreen>
 
       <EditPhotoSheet
         visible={photoSheetVisible}
@@ -195,21 +199,13 @@ export default function AddNoteScreen() {
         onClose={() => setReminderSheetVisible(false)}
         onConfirm={setReminderDraft}
       />
-    </SafeAreaView>
+        </>
+      )}
+    </HeaderScrollLayout>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: c.background,
-  },
-  container: {
-    flex: 1,
-  },
-  scroll: {
-    flex: 1,
-  },
   centered: {
     flex: 1,
     justifyContent: 'center',

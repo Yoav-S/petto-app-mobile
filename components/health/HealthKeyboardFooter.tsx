@@ -263,6 +263,8 @@ interface HealthFormScreenProps {
   scrollRef?: React.RefObject<ScrollView | null>;
   onScroll?: ScrollViewProps['onScroll'];
   scrollEventThrottle?: number;
+  /** Top inset when header floats above scroll (from HeaderScrollLayout). */
+  scrollInsetTop?: number;
 }
 
 export function HealthFormScreen({
@@ -272,12 +274,19 @@ export function HealthFormScreen({
   scrollRef,
   onScroll,
   scrollEventThrottle,
+  scrollInsetTop = 0,
 }: HealthFormScreenProps) {
+  const flat = StyleSheet.flatten(contentContainerStyle) ?? {};
+  const baseTop = typeof flat.paddingTop === 'number' ? flat.paddingTop : 0;
+  const fieldsStyle = scrollInsetTop
+    ? { ...flat, paddingTop: scrollInsetTop + baseTop }
+    : contentContainerStyle;
+
   return (
     <HealthKeyboardAvoidingView>
       <HealthFormSaveScroll
         footer={footer}
-        fieldsStyle={contentContainerStyle}
+        fieldsStyle={fieldsStyle}
         scrollRef={scrollRef}
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}

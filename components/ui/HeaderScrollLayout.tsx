@@ -33,7 +33,8 @@ interface HeaderScrollLayoutProps {
 
 /**
  * Floating header chrome + scroll content underneath.
- * Content gets paddingTop = chrome height + HEADER_SCROLL_GAP (10px).
+ * Chrome includes HEADER_SCROLL_GAP (10px) below the title row so content
+ * never visually touches the title while scrolling.
  */
 export default function HeaderScrollLayout({
   header,
@@ -45,7 +46,7 @@ export default function HeaderScrollLayout({
   const insets = useSafeAreaInsets();
   const [chromeHeight, setChromeHeight] = useState(0);
 
-  const paddingTop = chromeHeight + HEADER_SCROLL_GAP;
+  const paddingTop = chromeHeight;
   const paddingBottom = Math.max(insets.bottom, 8);
 
   return (
@@ -119,8 +120,10 @@ const makeStyles = (c: ThemeColors) =>
       right: 0,
       zIndex: 2,
       backgroundColor: c.background,
+      paddingBottom: HEADER_SCROLL_GAP,
       borderBottomLeftRadius: HEADER_CHROME_BOTTOM_RADIUS,
       borderBottomRightRadius: HEADER_CHROME_BOTTOM_RADIUS,
+      overflow: 'hidden',
       shadowColor: '#1E1E1E',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.06,

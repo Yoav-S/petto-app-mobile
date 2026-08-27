@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Keyboard,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { useFocusEffect } from '@react-navigation/native';
@@ -274,53 +274,57 @@ export default function EditNoteScreen() {
     });
   };
 
+  const header = <ScreenHeader title={t('topics.edit_note')} />;
+
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        <ScreenHeader title={t('topics.edit_note')} />
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.primaryText} />
-        </View>
-      </SafeAreaView>
+      <HeaderScrollLayout header={header} edges={['left', 'right']}>
+        {({ paddingTop }) => (
+          <View style={[styles.centered, { paddingTop }]}>
+            <ActivityIndicator color={colors.primaryText} />
+          </View>
+        )}
+      </HeaderScrollLayout>
     );
   }
 
   if (notFound) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        <ScreenHeader title={t('topics.edit_note')} />
-        <View style={styles.centered}>
-          <EmptyState
-            title={t('topics.not_found_title')}
-            subtitle={t('topics.not_found_subtitle')}
-            actionTitle={t('reminders.back')}
-            onAction={() => router.back()}
-          />
-        </View>
-      </SafeAreaView>
+      <HeaderScrollLayout header={header} edges={['left', 'right']}>
+        {({ paddingTop }) => (
+          <View style={[styles.centered, { paddingTop }]}>
+            <EmptyState
+              title={t('topics.not_found_title')}
+              subtitle={t('topics.not_found_subtitle')}
+              actionTitle={t('reminders.back')}
+              onAction={() => router.back()}
+            />
+          </View>
+        )}
+      </HeaderScrollLayout>
     );
   }
 
   const canSave = Boolean(noteText.trim()) && !saving && !savingPhoto;
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <ScreenHeader title={t('topics.edit_note')} />
-
-      <HealthKeyboardAvoidingView>
-        <View
-          style={styles.flex}
-          onLayout={(e) => setViewportH(e.nativeEvent.layout.height)}
-        >
-          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={[
-              styles.content,
-              {
-                paddingTop: Math.max(Spacing.md, 16),
-                paddingBottom: deleteBottomPad,
-              },
-            ]}
+    <HeaderScrollLayout header={header} edges={['left', 'right']}>
+      {({ paddingTop }) => (
+        <>
+          <HealthKeyboardAvoidingView>
+            <View
+              style={styles.flex}
+              onLayout={(e) => setViewportH(e.nativeEvent.layout.height)}
+            >
+              <ScrollView
+                style={styles.scroll}
+                contentContainerStyle={[
+                  styles.content,
+                  {
+                    paddingTop: paddingTop + Math.max(Spacing.md, 16),
+                    paddingBottom: deleteBottomPad,
+                  },
+                ]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             scrollEnabled={needsScroll}
@@ -417,15 +421,13 @@ export default function EditNoteScreen() {
         onCancel={() => setDeleteVisible(false)}
       />
       <SavingOverlay visible={saving || savingPhoto} />
-    </SafeAreaView>
+        </>
+      )}
+    </HeaderScrollLayout>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: c.background,
-  },
   flex: {
     flex: 1,
   },

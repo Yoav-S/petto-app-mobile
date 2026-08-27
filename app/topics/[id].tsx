@@ -10,7 +10,8 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { useFocusEffect } from '@react-navigation/native';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -316,28 +317,30 @@ export default function HealthDetailsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        <ScreenHeader title={t('topics.title')} />
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.primaryText} />
-        </View>
-      </SafeAreaView>
+      <HeaderScrollLayout header={<ScreenHeader title={t('topics.title')} />} edges={['left', 'right']}>
+        {({ paddingTop }) => (
+          <View style={[styles.centered, { paddingTop }]}>
+            <ActivityIndicator color={colors.primaryText} />
+          </View>
+        )}
+      </HeaderScrollLayout>
     );
   }
 
   if (error || !record) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        <ScreenHeader title={t('topics.title')} />
-        <View style={styles.centered}>
-          <EmptyState
-            title={t('topics.not_found_title')}
-            subtitle={error ?? t('topics.not_found_subtitle')}
-            actionTitle={t('reminders.back')}
-            onAction={() => router.back()}
-          />
-        </View>
-      </SafeAreaView>
+      <HeaderScrollLayout header={<ScreenHeader title={t('topics.title')} />} edges={['left', 'right']}>
+        {({ paddingTop }) => (
+          <View style={[styles.centered, { paddingTop }]}>
+            <EmptyState
+              title={t('topics.not_found_title')}
+              subtitle={error ?? t('topics.not_found_subtitle')}
+              actionTitle={t('reminders.back')}
+              onAction={() => router.back()}
+            />
+          </View>
+        )}
+      </HeaderScrollLayout>
     );
   }
 
@@ -353,35 +356,37 @@ export default function HealthDetailsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <View style={styles.headerShell}>
-        <ScreenHeader title={record.title} right={menuButton} />
-      </View>
-
-      <View style={styles.listArea}>
-        <FlatList
-          data={noteListItems}
-          keyExtractor={(item) => (item.type === 'header' ? item.key : item.note.id)}
-          renderItem={renderNoteItem}
-          style={styles.scrollView}
-          contentContainerStyle={[
-            styles.content,
-            noteListItems.length === 0 ? styles.contentEmpty : null,
-            { paddingBottom: LIST_SCROLL_END_GAP },
-          ]}
-          showsVerticalScrollIndicator={false}
-          onEndReached={() => {
-            void loadMoreNotes();
-          }}
-          onEndReachedThreshold={0.35}
-          ListEmptyComponent={
-            !loading ? <Text style={styles.emptyNotes}>{t('topics.no_notes_yet')}</Text> : null
-          }
-          ListFooterComponent={
-            <ListLoadMoreFooter loading={notesLoadingMore} hasMore={notesHasMore} />
-          }
-        />
-      </View>
+    <>
+      <HeaderScrollLayout
+        header={<ScreenHeader title={record.title} right={menuButton} />}
+        edges={['left', 'right']}
+      >
+        {({ paddingTop }) => (
+          <FlatList
+            data={noteListItems}
+            keyExtractor={(item) => (item.type === 'header' ? item.key : item.note.id)}
+            renderItem={renderNoteItem}
+            style={styles.scrollView}
+            contentContainerStyle={[
+              styles.content,
+              { paddingTop },
+              noteListItems.length === 0 ? styles.contentEmpty : null,
+              { paddingBottom: LIST_SCROLL_END_GAP },
+            ]}
+            showsVerticalScrollIndicator={false}
+            onEndReached={() => {
+              void loadMoreNotes();
+            }}
+            onEndReachedThreshold={0.35}
+            ListEmptyComponent={
+              !loading ? <Text style={styles.emptyNotes}>{t('topics.no_notes_yet')}</Text> : null
+            }
+            ListFooterComponent={
+              <ListLoadMoreFooter loading={notesLoadingMore} hasMore={notesHasMore} />
+            }
+          />
+        )}
+      </HeaderScrollLayout>
 
       {isActive ? (
         <View
@@ -476,15 +481,11 @@ export default function HealthDetailsScreen() {
       />
 
       <ListFetchBlocker visible={listBlocked} />
-    </SafeAreaView>
+    </>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: c.background,
-  },
   centered: {
     flex: 1,
     alignItems: 'center',
@@ -492,28 +493,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: DESIGN_FOOTER_RADIUS + 10,
   },
   contentEmpty: {
     flexGrow: 1,
-  },
-  headerShell: {
-    backgroundColor: c.panel,
-    borderBottomLeftRadius: DESIGN_FOOTER_RADIUS,
-    borderBottomRightRadius: DESIGN_FOOTER_RADIUS,
-    paddingBottom: 16,
-    zIndex: 2,
-    overflow: 'hidden',
-    shadowColor: '#1E1E1E',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  listArea: {
-    flex: 1,
-    marginTop: -DESIGN_FOOTER_RADIUS,
-    zIndex: 1,
   },
   scrollView: {
     flex: 1,

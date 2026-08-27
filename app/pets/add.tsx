@@ -9,7 +9,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { type ThemeColors } from '@/constants/theme';
@@ -160,24 +160,27 @@ export default function AddPetScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <VaccineScreenHeader title={t('pets.add_title')} icon="close" />
-
-      <HealthFormScreen
-        scrollRef={scrollRef}
-        onScroll={onScroll}
-        scrollEventThrottle={16}
-        contentContainerStyle={{
-          paddingTop: layout.formTop,
-          gap: layout.formGap,
-        }}
-        footer={{
-          label: t('home.add_pet'),
-          disabled: !canSave,
-          loading: submitting,
-          onPress: () => void handleSave(),
-        }}
-      >
+    <HeaderScrollLayout
+      header={<VaccineScreenHeader title={t('pets.add_title')} icon="close" />}
+      edges={['left', 'right']}
+    >
+      {({ paddingTop }) => (
+        <HealthFormScreen
+          scrollInsetTop={paddingTop}
+          scrollRef={scrollRef}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          contentContainerStyle={{
+            paddingTop: layout.formTop,
+            gap: layout.formGap,
+          }}
+          footer={{
+            label: t('home.add_pet'),
+            disabled: !canSave,
+            loading: submitting,
+            onPress: () => void handleSave(),
+          }}
+        >
           <Pressable
             onPress={() => {
               setBirthSheetVisible(false);
@@ -314,6 +317,7 @@ export default function AddPetScreen() {
             />
           </View>
       </HealthFormScreen>
+      )}
 
       <BirthDatePickerSheet
         visible={birthSheetVisible}
@@ -332,7 +336,7 @@ export default function AddPetScreen() {
         onChoose={() => void pickImage('library')}
         onRemove={photoUri ? handleRemovePhoto : undefined}
       />
-    </SafeAreaView>
+    </HeaderScrollLayout>
   );
 }
 

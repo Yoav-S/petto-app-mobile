@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
@@ -282,41 +282,45 @@ export default function EditReminderScreen() {
     });
   };
 
+  const headerTitle = readOnly ? t('reminders.detail_title') : t('reminders.edit_title');
+  const header = <VaccineScreenHeader title={headerTitle} icon="close" />;
+
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
-        <VaccineScreenHeader title={t('reminders.edit_title')} icon="close" />
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.primaryText} />
-        </View>
-      </SafeAreaView>
+      <HeaderScrollLayout header={header} edges={['left', 'right', 'bottom']}>
+        {({ paddingTop }) => (
+          <View style={[styles.centered, { paddingTop }]}>
+            <ActivityIndicator color={colors.primaryText} />
+          </View>
+        )}
+      </HeaderScrollLayout>
     );
   }
 
   if (notFound) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
-        <VaccineScreenHeader title={t('reminders.edit_title')} icon="close" />
-        <View style={styles.centered}>
-          <EmptyState
-            title={t('reminders.not_found_title')}
-            subtitle={error ?? t('reminders.not_found_subtitle')}
-            actionTitle={t('reminders.back')}
-            onAction={() => router.back()}
-          />
-        </View>
-      </SafeAreaView>
+      <HeaderScrollLayout header={header} edges={['left', 'right', 'bottom']}>
+        {({ paddingTop }) => (
+          <View style={[styles.centered, { paddingTop }]}>
+            <EmptyState
+              title={t('reminders.not_found_title')}
+              subtitle={error ?? t('reminders.not_found_subtitle')}
+              actionTitle={t('reminders.back')}
+              onAction={() => router.back()}
+            />
+          </View>
+        )}
+      </HeaderScrollLayout>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
-      <VaccineScreenHeader
-        title={readOnly ? t('reminders.detail_title') : t('reminders.edit_title')}
-        icon="close"
-      />
-      <ReminderFormBody
-        layout={layout}
+    <>
+      <HeaderScrollLayout header={header} edges={['left', 'right', 'bottom']}>
+        {({ paddingTop }) => (
+          <ReminderFormBody
+            scrollInsetTop={paddingTop}
+            layout={layout}
         title={title}
         onTitleChange={handleTitleChange}
         category={category}
@@ -354,7 +358,9 @@ export default function EditReminderScreen() {
             </View>
           )
         }
-      />
+          />
+        )}
+      </HeaderScrollLayout>
 
       <ConfirmModal
         visible={deleteVisible}
@@ -364,15 +370,11 @@ export default function EditReminderScreen() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteVisible(false)}
       />
-    </SafeAreaView>
+    </>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: c.background,
-  },
   centered: {
     flex: 1,
     alignItems: 'center',
