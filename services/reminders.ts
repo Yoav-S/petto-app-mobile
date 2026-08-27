@@ -46,7 +46,10 @@ export function getReminder(petId: string, id: string): Promise<Reminder> {
 }
 
 export async function createReminder(petId: string, input: CreateReminderInput): Promise<Reminder> {
-  const row = await apiPost<Reminder>(`/pets/${petId}/reminders`, input);
+  const row = await apiPost<Reminder>(`/pets/${petId}/reminders`, {
+    ...input,
+    date: input.date.slice(0, 10),
+  });
   invalidateReminders(petId);
   return row;
 }
@@ -56,7 +59,10 @@ export async function updateReminder(
   id: string,
   patch: UpdateReminderInput,
 ): Promise<Reminder> {
-  const row = await apiPatch<Reminder>(`/pets/${petId}/reminders/${id}`, patch);
+  const payload = patch.date
+    ? { ...patch, date: patch.date.slice(0, 10) }
+    : patch;
+  const row = await apiPatch<Reminder>(`/pets/${petId}/reminders/${id}`, payload);
   invalidateReminders(petId);
   return row;
 }

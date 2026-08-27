@@ -3,7 +3,6 @@ import {
   formatHourMinute,
   isIsoDateBefore,
   isIsoDateToday,
-  isReminderDateTimeInPast,
   minReminderDateIso,
   parseHourMinute,
   soonestValidReminderTime,
@@ -35,15 +34,15 @@ export function formatTimeDisplay(time: string): string {
   return formatHourMinute(hour, minute);
 }
 
-/** Current clock time as HH:MM (seconds cleared). */
+/** Current clock time as HH:MM. */
 export function nowReminderTime(): string {
   const now = new Date();
   return formatHourMinute(now.getHours(), now.getMinutes());
 }
 
 /**
- * Normalize time for the selected date.
- * Today: default to the next valid minute (not "now", which APIs treat as past).
+ * Normalize / default time for a date.
+ * Today with no time → next minute (sensible default, not a server workaround).
  */
 export function clampReminderTimeForDate(
   nextDate: string,
@@ -51,21 +50,9 @@ export function clampReminderTimeForDate(
 ): string | null {
   if (!nextTime) {
     if (!isIsoDateToday(nextDate)) return null;
-    return soonestValidReminderTime(nextDate) ?? '23:59';
+    return soonestValidReminderTime(nextDate) ?? nowReminderTime();
   }
   return normalizeTime(nextTime);
-}
-
-/**
- * Time to send to the API for today.
- * Today is always allowed as a date; if the clock time already passed,
- * bump to the next minute so create succeeds on servers that reject past times.
- */
-export function resolveReminderSaveTime(date: string, time: string): string {
-  const normalized = normalizeTime(time);
-  if (!isIsoDateToday(date)) return normalized;
-  if (!isReminderDateTimeInPast(date, normalized)) return normalized;
-  return soonestValidReminderTime(date) ?? '23:59';
 }
 
 export function isActiveReminderStatus(status: string): boolean {

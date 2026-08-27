@@ -253,8 +253,7 @@ export function isReminderDateTimeInPast(isoDate: string, time: string): boolean
   const scheduled = new Date(date.getFullYear(), date.getMonth(), date.getDate(), h, m, 0, 0);
   const now = new Date();
   now.setSeconds(0, 0);
-  // Same minute counts as past — APIs often reject scheduled_at <= now.
-  return scheduled.getTime() <= now.getTime();
+  return scheduled.getTime() < now.getTime();
 }
 
 /** Earliest HH:MM on `isoDate` that is still in the future. Null if the day is over. */
