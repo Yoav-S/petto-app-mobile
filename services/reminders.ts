@@ -1,7 +1,14 @@
-import { apiGet, apiPost, apiPatch, apiDelete } from '@/services/api';
+import { apiGet, apiPost, apiPatch, apiDelete, ApiError } from '@/services/api';
 import type { Reminder } from '@/types/api';
 import { invalidateReminders } from '@/services/queryClient';
 import { buildCursorQueryWithBase, type CursorListParams } from '@/utils/cursorPagination';
+import {
+  addDaysToIsoDate,
+  isIsoDateToday,
+  isReminderDateTimeInPast,
+  soonestValidReminderTime,
+  todayIsoDate,
+} from '@/utils/calendar';
 
 export type { CursorListParams };
 
@@ -45,13 +52,40 @@ export function getReminder(petId: string, id: string): Promise<Reminder> {
   return apiGet<Reminder>(`/pets/${petId}/reminders/${id}`);
 }
 
+function normalizeSchedule(date: string, time: string): { date: string; time: string } {
+  const d = date.slice(0, 10);
+  let t = time.trim();
+  if (isIsoDateToday(d) && isReminderDateTimeInPast(d, t)) {
+    t = soonestValidReminderTime(d) ?? t;
+  }
+  return { date: d, time: t };
+}
+
 export async function createReminder(petId: string, input: CreateReminderInput): Promise<Reminder> {
-  const row = await apiPost<Reminder>(`/pets/${petId}/reminders`, {
-    ...input,
-    date: input.date.slice(0, 10),
-  });
-  invalidateReminders(petId);
-  return row;
+  const { date, time } = normalizeSchedule(input.date, input.time);
+  const payload = { ...input, date, time };
+
+  try {
+    const row = await apiPost<Reminder>(`/pets/${petId}/reminders`, payload);
+    invalidateReminders(petId);
+    return row;
+  } catch (err) {
+    // Old Cloud Run build rejects the calendar day "today". Retry once with
+    // tomorrow so Save still succeeds (shows under Upcoming until server is redeployed).
+    if (
+      !(err instanceof ApiError) ||
+      err.code !== 'reminder_datetime_in_past' ||
+      !isIsoDateToday(payload.date)
+    ) {
+      throw err;
+    }
+    const row = await apiPost<Reminder>(`/pets/${petId}/reminders`, {
+      ...payload,
+      date: addDaysToIsoDate(todayIsoDate(), 1),
+    });
+    invalidateReminders(petId);
+    return row;
+  }
 }
 
 export async function updateReminder(
@@ -59,9 +93,12 @@ export async function updateReminder(
   id: string,
   patch: UpdateReminderInput,
 ): Promise<Reminder> {
-  const payload = patch.date
-    ? { ...patch, date: patch.date.slice(0, 10) }
-    : patch;
+  let payload = { ...patch };
+  if (payload.date && payload.time) {
+    payload = { ...payload, ...normalizeSchedule(payload.date, payload.time) };
+  } else if (payload.date) {
+    payload = { ...payload, date: payload.date.slice(0, 10) };
+  }
   const row = await apiPatch<Reminder>(`/pets/${petId}/reminders/${id}`, payload);
   invalidateReminders(petId);
   return row;
