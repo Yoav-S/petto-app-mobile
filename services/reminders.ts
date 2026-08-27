@@ -1,13 +1,11 @@
-import { apiGet, apiPost, apiPatch, apiDelete, ApiError } from '@/services/api';
+import { apiGet, apiPost, apiPatch, apiDelete } from '@/services/api';
 import type { Reminder } from '@/types/api';
 import { invalidateReminders } from '@/services/queryClient';
 import { buildCursorQueryWithBase, type CursorListParams } from '@/utils/cursorPagination';
 import {
-  addDaysToIsoDate,
   isIsoDateToday,
   isReminderDateTimeInPast,
   soonestValidReminderTime,
-  todayIsoDate,
 } from '@/utils/calendar';
 
 export type { CursorListParams };
@@ -52,6 +50,7 @@ export function getReminder(petId: string, id: string): Promise<Reminder> {
   return apiGet<Reminder>(`/pets/${petId}/reminders/${id}`);
 }
 
+/** Today + past clock time → next minute. Never changes the calendar date. */
 function normalizeSchedule(date: string, time: string): { date: string; time: string } {
   const d = date.slice(0, 10);
   let t = time.trim();
@@ -63,29 +62,13 @@ function normalizeSchedule(date: string, time: string): { date: string; time: st
 
 export async function createReminder(petId: string, input: CreateReminderInput): Promise<Reminder> {
   const { date, time } = normalizeSchedule(input.date, input.time);
-  const payload = { ...input, date, time };
-
-  try {
-    const row = await apiPost<Reminder>(`/pets/${petId}/reminders`, payload);
-    invalidateReminders(petId);
-    return row;
-  } catch (err) {
-    // Old Cloud Run build rejects the calendar day "today". Retry once with
-    // tomorrow so Save still succeeds (shows under Upcoming until server is redeployed).
-    if (
-      !(err instanceof ApiError) ||
-      err.code !== 'reminder_datetime_in_past' ||
-      !isIsoDateToday(payload.date)
-    ) {
-      throw err;
-    }
-    const row = await apiPost<Reminder>(`/pets/${petId}/reminders`, {
-      ...payload,
-      date: addDaysToIsoDate(todayIsoDate(), 1),
-    });
-    invalidateReminders(petId);
-    return row;
-  }
+  const row = await apiPost<Reminder>(`/pets/${petId}/reminders`, {
+    ...input,
+    date,
+    time,
+  });
+  invalidateReminders(petId);
+  return row;
 }
 
 export async function updateReminder(
