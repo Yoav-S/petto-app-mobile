@@ -2,12 +2,11 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
-  ScrollView,
   Alert,
   ActivityIndicator,
   Keyboard,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { Spacing, type ThemeColors } from '@/constants/theme';
@@ -15,10 +14,7 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import HealthNoteEditorCard from '@/components/health/HealthNoteEditorCard';
-import HealthKeyboardFooter, {
-  HealthKeyboardAvoidingView,
-  useHealthFormScrollPadding,
-} from '@/components/health/HealthKeyboardFooter';
+import { HealthFormScreen } from '@/components/health/HealthKeyboardFooter';
 import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
 import EditPhotoSheet from '@/components/health/EditPhotoSheet';
 import { t } from '@/i18n';
@@ -46,8 +42,6 @@ export default function AddNoteScreen() {
   const { recordId: recordIdParam } = useLocalSearchParams<{ recordId?: string }>();
   const recordId = normalizeRouteParam(recordIdParam);
   const { activePetId } = useActivePet();
-  const insets = useSafeAreaInsets();
-  const scrollPaddingBottom = useHealthFormScrollPadding(insets.bottom);
 
   const [recordTitle, setRecordTitle] = useState('');
   const [loadingRecord, setLoadingRecord] = useState(true);
@@ -91,6 +85,7 @@ export default function AddNoteScreen() {
   };
 
   const handleSave = async () => {
+    Keyboard.dismiss();
     if (!canSave || !activePetId || !recordId) return;
     try {
       setSubmitting(true);
@@ -138,46 +133,36 @@ export default function AddNoteScreen() {
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <ScreenHeader title={t('topics.add_note')} />
 
-      <HealthKeyboardAvoidingView>
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[
-            styles.content,
-            {
-              paddingTop: Math.max(Spacing.md, 16),
-              paddingBottom: scrollPaddingBottom,
-            },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <HealthNoteEditorCard
-            noteText={note}
-            onChangeNoteText={setNote}
-            photoUri={photoUri}
-            onPickImage={() => {
-              Keyboard.dismiss();
-              setReminderSheetVisible(false);
-              setPhotoSheetVisible(true);
-            }}
-            reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
-            onReminderPress={() => {
-              Keyboard.dismiss();
-              setPhotoSheetVisible(false);
-              setReminderSheetVisible(true);
-            }}
-            placeholder={t('topics.note_body_placeholder')}
-          />
-        </ScrollView>
-
-        <HealthKeyboardFooter
-          label={t('common.save')}
-          disabled={!canSave}
-          loading={submitting}
-          onPress={handleSave}
-          fullWidth
+      <HealthFormScreen
+        contentContainerStyle={{
+          paddingTop: Math.max(Spacing.md, 16),
+        }}
+        footer={{
+          label: t('common.save'),
+          disabled: !canSave,
+          loading: submitting,
+          onPress: handleSave,
+          fullWidth: true,
+        }}
+      >
+        <HealthNoteEditorCard
+          noteText={note}
+          onChangeNoteText={setNote}
+          photoUri={photoUri}
+          onPickImage={() => {
+            Keyboard.dismiss();
+            setReminderSheetVisible(false);
+            setPhotoSheetVisible(true);
+          }}
+          reminderValue={reminderDraft ? reminderLabel(reminderDraft) : null}
+          onReminderPress={() => {
+            Keyboard.dismiss();
+            setPhotoSheetVisible(false);
+            setReminderSheetVisible(true);
+          }}
+          placeholder={t('topics.note_body_placeholder')}
         />
-      </HealthKeyboardAvoidingView>
+      </HealthFormScreen>
 
       <EditPhotoSheet
         visible={photoSheetVisible}

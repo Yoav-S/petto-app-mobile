@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
-  ScrollView,
   View,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -12,12 +12,8 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import HealthRecordFormFields from '@/components/health/HealthRecordFormFields';
-import HealthKeyboardFooter, {
-  HealthKeyboardAvoidingView,
-  useHealthFormScrollPadding,
-} from '@/components/health/HealthKeyboardFooter';
+import { HealthFormScreen } from '@/components/health/HealthKeyboardFooter';
 import EmptyState from '@/components/ui/EmptyState';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { createRecord, getRecord, updateRecord } from '@/services/health';
@@ -34,9 +30,7 @@ export default function AddHealthScreen() {
   const recordId = normalizeRouteParam(idParam);
   const isEditing = Boolean(recordId);
   const { activePetId } = useActivePet();
-  const insets = useSafeAreaInsets();
   const { contentWidth } = useResponsiveLayout();
-  const scrollPaddingBottom = useHealthFormScrollPadding(insets.bottom);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -91,6 +85,7 @@ export default function AddHealthScreen() {
   const canSave = name.trim().length > 0 && !submitting && !loading;
 
   const handleSave = async () => {
+    Keyboard.dismiss();
     if (!canSave || !activePetId) return;
     try {
       setSubmitting(true);
@@ -143,46 +138,34 @@ export default function AddHealthScreen() {
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <VaccineScreenHeader title={screenTitle} icon="close" />
 
-      <HealthKeyboardAvoidingView>
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[
-            styles.content,
-            {
-              paddingTop: layout.formTop,
-              paddingBottom: scrollPaddingBottom,
-            },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <HealthRecordFormFields
-            name={name}
-            onNameChange={setName}
-            namePlaceholder={t('topics.health_name_placeholder')}
-            nameFocused={nameFocused}
-            onNameFocus={() => setNameFocused(true)}
-            onNameBlur={() => setNameFocused(false)}
-            description={description}
-            onDescriptionChange={setDescription}
-            descriptionLabel={t('topics.field_description')}
-            descriptionPlaceholder={t('topics.description_placeholder')}
-            descriptionFocused={descriptionFocused}
-            onDescriptionFocus={() => setDescriptionFocused(true)}
-            onDescriptionBlur={() => setDescriptionFocused(false)}
-            layout={layout}
-            autoFocusName={!isEditing}
-          />
-        </ScrollView>
-
-        <HealthKeyboardFooter
-          label={t('common.save')}
-          disabled={!canSave}
-          loading={submitting}
-          onPress={handleSave}
-          fullWidth
+      <HealthFormScreen
+        contentContainerStyle={{ paddingTop: layout.formTop }}
+        footer={{
+          label: t('common.save'),
+          disabled: !canSave,
+          loading: submitting,
+          onPress: handleSave,
+          fullWidth: true,
+        }}
+      >
+        <HealthRecordFormFields
+          name={name}
+          onNameChange={setName}
+          namePlaceholder={t('topics.health_name_placeholder')}
+          nameFocused={nameFocused}
+          onNameFocus={() => setNameFocused(true)}
+          onNameBlur={() => setNameFocused(false)}
+          description={description}
+          onDescriptionChange={setDescription}
+          descriptionLabel={t('topics.field_description')}
+          descriptionPlaceholder={t('topics.description_placeholder')}
+          descriptionFocused={descriptionFocused}
+          onDescriptionFocus={() => setDescriptionFocused(true)}
+          onDescriptionBlur={() => setDescriptionFocused(false)}
+          layout={layout}
+          autoFocusName={!isEditing}
         />
-      </HealthKeyboardAvoidingView>
+      </HealthFormScreen>
     </SafeAreaView>
   );
 }
@@ -191,12 +174,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: c.background,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flexGrow: 1,
   },
   centered: {
     flex: 1,

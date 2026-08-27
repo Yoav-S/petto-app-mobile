@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   Keyboard,
   ActivityIndicator,
   Image,
@@ -20,7 +19,10 @@ import CategoryPickerSheet, {
   categoryLabel,
 } from '@/components/pickers/CategoryPickerSheet';
 import {
+  HealthFormScroll,
   HealthKeyboardAvoidingView,
+  HealthKeyboardFooter,
+  type HealthKeyboardFooterProps,
 } from '@/components/health/HealthKeyboardFooter';
 import { t } from '@/i18n';
 import type { RepeatOption } from '@/services/reminders';
@@ -78,8 +80,8 @@ interface ReminderFormBodyProps {
   readOnly?: boolean;
   /** Inline content at the end of the scroll (e.g. delete / autosave). */
   footer?: React.ReactNode;
-  /** Sticky bottom save bar (outside the scroll), like add-note. */
-  stickyFooter?: React.ReactNode;
+  /** Save at bottom of scroll — scroll into view when keyboard open. */
+  saveFooter?: HealthKeyboardFooterProps;
   /** Extra scroll padding when a sticky footer is present. */
   scrollPaddingBottom?: number;
   /** Pin footer (delete) to the bottom; only scroll on short screens. */
@@ -108,7 +110,7 @@ export default function ReminderFormBody({
   autoFocus = false,
   readOnly = false,
   footer,
-  stickyFooter,
+  saveFooter,
   scrollPaddingBottom = 32,
   pinFooterToBottom = false,
   footerBottomInset = 32,
@@ -281,36 +283,28 @@ export default function ReminderFormBody({
   return (
     <>
       <HealthKeyboardAvoidingView>
-        <View style={styles.flex}>
-          <ScrollView
-            style={styles.flex}
-            contentContainerStyle={[
-              styles.content,
-              {
-                paddingTop: layout.formTop,
-                paddingBottom: pinFooterToBottom ? footerBottomInset : scrollPaddingBottom,
-                gap: layout.formGap,
-                alignItems: 'center',
-                flexGrow: pinFooterToBottom ? 1 : undefined,
-              },
-            ]}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            showsVerticalScrollIndicator={false}
-            bounces
-          >
-            {formFields}
-            {footer ? (
-              <>
-                {pinFooterToBottom ? <View style={styles.footerSpacer} /> : null}
-                <View style={pinFooterToBottom ? undefined : { marginTop: layout.formGap }}>
-                  {footer}
-                </View>
-              </>
-            ) : null}
-          </ScrollView>
-        </View>
-        {stickyFooter}
+        <HealthFormScroll
+          contentContainerStyle={[
+            styles.content,
+            {
+              paddingTop: layout.formTop,
+              gap: layout.formGap,
+              alignItems: 'center',
+            },
+          ]}
+        >
+          {formFields}
+          {!pinFooterToBottom && footer ? (
+            <View style={{ marginTop: layout.formGap }}>{footer}</View>
+          ) : null}
+          {pinFooterToBottom && footer ? (
+            <>
+              <View style={styles.footerSpacer} />
+              {footer}
+            </>
+          ) : null}
+        </HealthFormScroll>
+        {saveFooter ? <HealthKeyboardFooter {...saveFooter} /> : null}
       </HealthKeyboardAvoidingView>
 
       {!readOnly ? (

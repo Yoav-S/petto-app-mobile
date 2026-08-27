@@ -6,10 +6,10 @@ import {
   TextInput,
   Alert,
   Pressable,
-  ScrollView,
+  Keyboard,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { type ThemeColors } from '@/constants/theme';
@@ -21,10 +21,7 @@ import { ProfilePillField, ProfileSelectField } from '@/components/profile/Profi
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import EditPhotoSheet from '@/components/health/EditPhotoSheet';
 import { OnboardingPhotoAdd } from '@/components/brand/onboarding';
-import HealthKeyboardFooter, {
-  HealthKeyboardAvoidingView,
-  useHealthFormScrollPadding,
-} from '@/components/health/HealthKeyboardFooter';
+import { HealthFormScreen } from '@/components/health/HealthKeyboardFooter';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { t } from '@/i18n';
 import { createPet } from '@/services/pets';
@@ -73,9 +70,7 @@ export default function AddPetScreen() {
   const petsQuery = usePetsQuery();
   const pets = petsQuery.data ?? [];
   const { contentWidth } = useResponsiveLayout();
-  const insets = useSafeAreaInsets();
-  const scrollPaddingBottom = useHealthFormScrollPadding(insets.bottom);
-  const { scrollRef, onScroll, onInputFocus } = useKeyboardAwareScroll(24);
+  const { scrollRef, onScroll, onInputFocus } = useKeyboardAwareScroll(0);
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -129,6 +124,7 @@ export default function AddPetScreen() {
   };
 
   const handleSave = async () => {
+    Keyboard.dismiss();
     if (!canSave || !petType) return;
     if (!(await guardAddPet(router, pets.length))) return;
     try {
@@ -167,24 +163,21 @@ export default function AddPetScreen() {
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <VaccineScreenHeader title={t('pets.add_title')} icon="close" />
 
-      <HealthKeyboardAvoidingView>
-        <ScrollView
-          ref={scrollRef}
-          style={styles.flex}
-          contentContainerStyle={[
-            styles.content,
-            {
-              paddingTop: layout.formTop,
-              paddingBottom: scrollPaddingBottom,
-              gap: layout.formGap,
-            },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-          showsVerticalScrollIndicator={false}
-          onScroll={onScroll}
-          scrollEventThrottle={16}
-        >
+      <HealthFormScreen
+        scrollRef={scrollRef}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={{
+          paddingTop: layout.formTop,
+          gap: layout.formGap,
+        }}
+        footer={{
+          label: t('home.add_pet'),
+          disabled: !canSave,
+          loading: submitting,
+          onPress: () => void handleSave(),
+        }}
+      >
           <Pressable
             onPress={() => {
               setBirthSheetVisible(false);
@@ -320,15 +313,7 @@ export default function AddPetScreen() {
               ]}
             />
           </View>
-        </ScrollView>
-
-        <HealthKeyboardFooter
-          label={t('home.add_pet')}
-          disabled={!canSave}
-          loading={submitting}
-          onPress={() => void handleSave()}
-        />
-      </HealthKeyboardAvoidingView>
+      </HealthFormScreen>
 
       <BirthDatePickerSheet
         visible={birthSheetVisible}

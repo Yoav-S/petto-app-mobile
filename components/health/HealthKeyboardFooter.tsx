@@ -4,7 +4,10 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Keyboard,
+  ScrollView,
+  type ScrollViewProps,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
@@ -12,7 +15,11 @@ import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { useKeyboardBottomOffset } from '@/components/ui/GlobalKeyboardDoneButton';
+import {
+  dismissKeyboard,
+  useKeyboardBottomOffset,
+  KEYBOARD_DONE_BAR_HEIGHT,
+} from '@/components/ui/keyboardUtils';
 import SavingOverlay from '@/components/ui/SavingOverlay';
 
 /** Figma sticky action bar — fixed metrics. */
@@ -28,7 +35,7 @@ const FOOTER = {
   doneSafeGap: 25,
 } as const;
 
-interface HealthKeyboardFooterProps {
+export interface HealthKeyboardFooterProps {
   label: string;
   disabled?: boolean;
   loading?: boolean;
@@ -41,33 +48,101 @@ interface HealthKeyboardAvoidingViewProps {
   keyboardVerticalOffset?: number;
 }
 
+/** Plain flex shell — Save never moves; only the form scrolls. */
 export function HealthKeyboardAvoidingView({ children }: HealthKeyboardAvoidingViewProps) {
   const styles = useThemedStyles(makeStyles);
-  /**
-   * Save footer stays pinned to the screen bottom — never lifts with the keyboard.
-   * Done chip is GlobalKeyboardDoneButton (FullWindowOverlay on iOS) so it sits on the keyboard top.
-   */
   return <View style={styles.avoiding}>{children}</View>;
 }
 
-export function healthKeyboardScrollPadding(_scaleY = 1, safeBottom = 0): number {
+export function healthSaveFooterHeight(safeBottom = 0): number {
   const bottom = Math.max(safeBottom, FOOTER.minBottom) + FOOTER.safeGap;
-  return FOOTER.padTop + FOOTER.saveButtonHeight + bottom + PAGE_HORIZONTAL_PADDING;
+  return FOOTER.padTop + FOOTER.saveButtonHeight + bottom;
+}
+
+export function healthKeyboardScrollPadding(_scaleY = 1, safeBottom = 0): number {
+  return healthSaveFooterHeight(safeBottom) + PAGE_HORIZONTAL_PADDING;
 }
 
 export function healthDoneScrollPadding(_scaleY = 1, safeBottom = 0): number {
   return FOOTER.doneButtonHeight + Math.max(safeBottom, 0) + FOOTER.doneSafeGap + PAGE_HORIZONTAL_PADDING;
 }
 
-/** Footer stays put; when keyboard is open, scroll content clears keyboard + Done chip. */
-export function useHealthFormScrollPadding(safeBottom = 0): number {
-  const offset = useKeyboardBottomOffset();
-  const base = healthKeyboardScrollPadding(1, safeBottom);
-  if (offset <= 0) return base;
-  return base + offset + FOOTER.doneButtonHeight + 8;
+/** Extra scroll room when keyboard open (form fields only). */
+export function useHealthFormScrollPadding(): number {
+  const keyboardHeight = useKeyboardBottomOffset();
+  if (keyboardHeight <= 0) return PAGE_HORIZONTAL_PADDING;
+  return keyboardHeight + KEYBOARD_DONE_BAR_HEIGHT + PAGE_HORIZONTAL_PADDING;
 }
 
-export default function HealthKeyboardFooter({
+interface HealthFormScrollProps extends Pick<ScrollViewProps, 'onScroll' | 'scrollEventThrottle'> {
+  children: React.ReactNode;
+  contentContainerStyle?: StyleProp<ViewStyle>;
+  scrollRef?: React.RefObject<ScrollView | null>;
+}
+
+/** Form scroll — fills space above the fixed Save footer. */
+export function HealthFormScroll({
+  children,
+  contentContainerStyle,
+  scrollRef,
+  onScroll,
+  scrollEventThrottle,
+}: HealthFormScrollProps) {
+  const scrollPad = useHealthFormScrollPadding();
+
+  return (
+    <ScrollView
+      ref={scrollRef}
+      style={styles.scroll}
+      contentContainerStyle={[
+        contentContainerStyle,
+        { paddingBottom: scrollPad },
+      ]}
+      keyboardShouldPersistTaps="always"
+      keyboardDismissMode="none"
+      showsVerticalScrollIndicator={false}
+      onScroll={onScroll}
+      scrollEventThrottle={scrollEventThrottle}
+    >
+      {children}
+    </ScrollView>
+  );
+}
+
+interface HealthFormScreenProps {
+  children: React.ReactNode;
+  footer: HealthKeyboardFooterProps;
+  contentContainerStyle?: StyleProp<ViewStyle>;
+  scrollRef?: React.RefObject<ScrollView | null>;
+  onScroll?: ScrollViewProps['onScroll'];
+  scrollEventThrottle?: number;
+}
+
+/** Scroll form + Save pinned to screen bottom (only form scrolls). */
+export function HealthFormScreen({
+  children,
+  footer,
+  contentContainerStyle,
+  scrollRef,
+  onScroll,
+  scrollEventThrottle,
+}: HealthFormScreenProps) {
+  return (
+    <HealthKeyboardAvoidingView>
+      <HealthFormScroll
+        scrollRef={scrollRef}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        contentContainerStyle={contentContainerStyle}
+      >
+        {children}
+      </HealthFormScroll>
+      <HealthKeyboardFooter {...footer} />
+    </HealthKeyboardAvoidingView>
+  );
+}
+
+export function HealthKeyboardFooter({
   label,
   disabled = false,
   loading = false,
@@ -84,7 +159,7 @@ export default function HealthKeyboardFooter({
   );
 
   const handlePress = () => {
-    Keyboard.dismiss();
+    dismissKeyboard();
     onPress();
   };
 
@@ -164,12 +239,20 @@ export default function HealthKeyboardFooter({
   );
 }
 
+const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+  },
+});
+
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   avoiding: {
     flex: 1,
+    minHeight: 0,
   },
   saveFooter: {
     width: '100%',
+    flexShrink: 0,
     backgroundColor: c.panel,
     alignItems: 'center',
     justifyContent: 'flex-start',
@@ -181,6 +264,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   doneFooter: {
     width: '100%',
+    flexShrink: 0,
     backgroundColor: 'transparent',
     alignItems: 'flex-end',
   },

@@ -7,7 +7,7 @@ import {
   type ScrollView,
   type TextInputFocusEventData,
 } from 'react-native';
-import { useKeyboardBottomOffset } from '@/components/ui/GlobalKeyboardDoneButton';
+import { useKeyboardBottomOffset } from '@/components/ui/keyboardUtils';
 
 /** Done chip (40) + vertical padding around it — keep focused fields clear of it. */
 const DONE_CHIP_CLEARANCE = 56;

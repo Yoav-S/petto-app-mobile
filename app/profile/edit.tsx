@@ -3,13 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  Pressable,
-  ScrollView,
   Alert,
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,10 +19,11 @@ import { useToast } from '@/context/ToastContext';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import {
-  useKeyboardBottomOffset,
-} from '@/components/ui/GlobalKeyboardDoneButton';
-import SavingOverlay from '@/components/ui/SavingOverlay';
-import { PRIMARY_BUTTON } from '@/constants/buttons';
+  HealthFormScroll,
+  HealthKeyboardAvoidingView,
+  HealthKeyboardFooter,
+} from '@/components/health/HealthKeyboardFooter';
+import { dismissKeyboard } from '@/components/ui/keyboardUtils';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { patchPetInCache, updatePet, deletePet } from '@/services/pets';
 import { uploadPetPhoto } from '@/services/storage';
@@ -61,8 +60,6 @@ const PHOTO_EDIT_BTN = {
   iconSize: 13.33,
   iconStroke: 1,
 } as const;
-/** Match HealthKeyboardFooter primary CTA — 48 tall, full content width. */
-const SAVE_BTN_HEIGHT = 48;
 
 function trimOrNull(value: string): string | null {
   const trimmed = value.trim();
@@ -71,8 +68,6 @@ function trimOrNull(value: string): string | null {
 
 export default function EditProfileScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const keyboardOffset = useKeyboardBottomOffset();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
@@ -80,18 +75,11 @@ export default function EditProfileScreen() {
   const headerTopPadding = useHeaderTopPadding();
   const { contentWidth, width: screenWidth } = useResponsiveLayout();
   const pagePad = Math.max(16, Math.round((screenWidth - contentWidth) / 2));
-  const footerPadBottom = Math.max(insets.bottom, 10) + 8;
-  /** Space so last fields clear the fixed Save bar (footer stays pinned; does not rise with keyboard). */
-  const footerClearance = 12 + SAVE_BTN_HEIGHT + footerPadBottom;
   const {
     scrollRef,
-    paddingBottom: awareScrollPad,
     onScroll,
     onInputFocus,
-  } = useKeyboardAwareScroll(footerClearance);
-  /** Parent does not lift with keyboard — add keyboard height so fields can scroll above it. */
-  const scrollPaddingBottom =
-    awareScrollPad + (keyboardOffset > 0 ? keyboardOffset : 0);
+  } = useKeyboardAwareScroll(0);
 
   /** Keep 128×128 / r22 shape; only shrink on narrow screens. */
   const photoSize = Math.round(
@@ -233,6 +221,7 @@ export default function EditProfileScreen() {
   };
 
   const handleSave = async () => {
+    dismissKeyboard();
     if (!activePetId) return;
     if (!name.trim()) {
       Alert.alert(t('profile.edit.name_required'));
@@ -326,19 +315,16 @@ export default function EditProfileScreen() {
         </View>
       ) : (
         <View style={styles.flex}>
-          <ScrollView
-            ref={scrollRef}
-            style={styles.flex}
-            contentContainerStyle={[
-              styles.content,
-              { paddingHorizontal: pagePad, paddingBottom: scrollPaddingBottom },
-            ]}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
-            showsVerticalScrollIndicator={false}
-            onScroll={onScroll}
-            scrollEventThrottle={16}
-          >
+          <HealthKeyboardAvoidingView>
+            <HealthFormScroll
+              scrollRef={scrollRef}
+              onScroll={onScroll}
+              scrollEventThrottle={16}
+              contentContainerStyle={[
+                styles.content,
+                { paddingHorizontal: pagePad },
+              ]}
+            >
             <View style={[styles.photoWrap, { width: photoSize, height: photoSize }]}>
               <PetPhotoImage
                 source={photoUri ? { uri: photoUri } : defaultPetPhotoSource(petType)}
@@ -447,40 +433,15 @@ export default function EditProfileScreen() {
                 <Text style={styles.removeText}>{t('profile.edit.remove_pet')}</Text>
               </TouchableOpacity>
             </View>
-          </ScrollView>
-
-          <View
-            style={[
-              styles.footer,
-              {
-                paddingHorizontal: pagePad,
-                paddingBottom: footerPadBottom,
-              },
-            ]}
-          >
-            <Pressable
-              style={[
-                styles.saveBtn,
-                {
-                  width: contentWidth,
-                  height: PRIMARY_BUTTON.height,
-                  borderRadius: PRIMARY_BUTTON.borderRadius,
-                  paddingVertical: PRIMARY_BUTTON.paddingVertical,
-                  paddingHorizontal: PRIMARY_BUTTON.paddingHorizontal,
-                },
-                saving && styles.saveBtnDisabled,
-              ]}
-              onPress={handleSave}
-              disabled={saving}
-              accessibilityRole="button"
-            >
-              <Text style={styles.saveText}>{t('common.save')}</Text>
-            </Pressable>
-          </View>
+          </HealthFormScroll>
+          <HealthKeyboardFooter
+            label={t('common.save')}
+            loading={saving}
+            onPress={() => void handleSave()}
+          />
+        </HealthKeyboardAvoidingView>
         </View>
       )}
-
-      <SavingOverlay visible={saving} />
 
       <BirthDatePickerSheet
         visible={dateSheetVisible}
@@ -583,32 +544,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 14,
     lineHeight: 18,
     color: c.error,
-  },
-  footer: {
-    paddingTop: 12,
-    alignItems: 'center',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    backgroundColor: c.panel,
-    shadowColor: '#1E1E1E',
-    shadowOffset: { width: 0, height: -1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  saveBtn: {
-    backgroundColor: c.brand,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  saveBtnDisabled: {
-    opacity: 0.6,
-  },
-  saveText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    lineHeight: 24,
-    color: c.button.primaryText,
   },
 });

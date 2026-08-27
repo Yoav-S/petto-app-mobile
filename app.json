@@ -19,7 +19,7 @@
     "android": {
       "package": "com.yoav.petto",
       "googleServicesFile": "./google-services.json",
-      "softwareKeyboardLayoutMode": "resize",
+      "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "backgroundColor": "#004741",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

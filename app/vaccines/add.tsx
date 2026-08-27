@@ -5,10 +5,10 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   Alert,
+  Keyboard,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
@@ -22,10 +22,7 @@ import VaccinePhotoSourceSheet from '@/components/vaccines/VaccinePhotoSourceShe
 import VaccinePhotoViewer from '@/components/vaccines/VaccinePhotoViewer';
 import VaccineClinicField from '@/components/vaccines/VaccineClinicField';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
-import HealthKeyboardFooter, {
-  HealthKeyboardAvoidingView,
-  useHealthFormScrollPadding,
-} from '@/components/health/HealthKeyboardFooter';
+import { HealthFormScreen } from '@/components/health/HealthKeyboardFooter';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { createVaccination } from '@/services/vaccines';
@@ -50,9 +47,7 @@ export default function AddVaccineScreen() {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const { activePetId } = useActivePet();
-  const insets = useSafeAreaInsets();
   const { contentWidth } = useResponsiveLayout();
-  const scrollPaddingBottom = useHealthFormScrollPadding(insets.bottom);
 
   const [name, setName] = useState('');
   const [date, setDate] = useState(todayIsoDate);
@@ -149,6 +144,7 @@ export default function AddVaccineScreen() {
   };
 
   const handleSave = async () => {
+    Keyboard.dismiss();
     if (!canSave || !activePetId) return;
     if (isIsoDateAfter(date, todayIsoDate())) {
       toast.showError(t('errors.vaccination_date_in_future'));
@@ -182,20 +178,19 @@ export default function AddVaccineScreen() {
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <VaccineScreenHeader title={t('vaccines.add_title')} icon="close" />
 
-      <HealthKeyboardAvoidingView>
-        <ScrollView
-          contentContainerStyle={[
-            styles.content,
-            {
-              paddingTop: layout.formTop,
-              paddingBottom: scrollPaddingBottom,
-              gap: layout.formGap,
-              alignItems: 'center',
-            },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
+      <HealthFormScreen
+        contentContainerStyle={{
+          paddingTop: layout.formTop,
+          gap: layout.formGap,
+          alignItems: 'center',
+        }}
+        footer={{
+          label: t('common.save'),
+          disabled: !canSave,
+          loading: submitting,
+          onPress: handleSave,
+        }}
+      >
           {/* Vaccine name */}
           <View
             style={[
@@ -316,15 +311,7 @@ export default function AddVaccineScreen() {
               },
             ]}
           />
-        </ScrollView>
-
-        <HealthKeyboardFooter
-          label={t('common.save')}
-          disabled={!canSave}
-          loading={submitting}
-          onPress={handleSave}
-        />
-      </HealthKeyboardAvoidingView>
+      </HealthFormScreen>
 
       <VaccinePhotoSourceSheet
         visible={photoSheetVisible}

@@ -20,9 +20,7 @@ import QueryProvider from '@/context/QueryProvider';
 import { PetStoreProvider } from '@/store/petStore';
 import { PetOnboardingDraftProvider, usePetOnboardingDraft } from '@/store/petOnboardingDraft';
 import { useReminderNotificationRouting } from '@/hooks/useReminderNotificationRouting';
-import GlobalKeyboardDoneButton, {
-  KeyboardDoneClaimProvider,
-} from '@/components/ui/GlobalKeyboardDoneButton';
+import GlobalKeyboardDoneButton from '@/components/ui/GlobalKeyboardDoneButton';
 import AppSplash from '@/components/ui/AppSplash';
 import { SPLASH_BACKGROUND } from '@/constants/splash';
 import { SystemBarsProvider } from '@/context/SystemBarsContext';
@@ -199,14 +197,12 @@ function ThemedApp() {
     <NavThemeProvider value={navTheme}>
       <SystemBarsProvider isDark={isDark}>
         <ToastProvider>
-          <KeyboardDoneClaimProvider>
             <View style={{ flex: 1 }}>
               <View key={locale} style={{ flex: 1, backgroundColor: colors.background }}>
                 <RootLayoutNav />
               </View>
               <GlobalKeyboardDoneButton />
             </View>
-          </KeyboardDoneClaimProvider>
         </ToastProvider>
       </SystemBarsProvider>
     </NavThemeProvider>

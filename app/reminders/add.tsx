@@ -1,15 +1,12 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { StyleSheet, Alert } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StyleSheet, Alert, Keyboard } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import ReminderFormBody from '@/components/reminders/ReminderFormBody';
-import HealthKeyboardFooter, {
-  useHealthFormScrollPadding,
-} from '@/components/health/HealthKeyboardFooter';
 import {
   clampReminderTimeForDate,
   isReminderScheduleInPast,
@@ -36,9 +33,7 @@ export default function AddReminderScreen() {
   const { activePetId } = useActivePet();
   const petsQuery = usePetsQuery();
   const pets = petsQuery.data ?? [];
-  const insets = useSafeAreaInsets();
   const { contentWidth } = useResponsiveLayout();
-  const scrollPaddingBottom = useHealthFormScrollPadding(insets.bottom);
 
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<ReminderCategory>('general');
@@ -101,6 +96,7 @@ export default function AddReminderScreen() {
   };
 
   const handleSave = async () => {
+    Keyboard.dismiss();
     if (!canSave || !activePetId || !date || !time) return;
     if (!(await guardAddReminder(router, pets))) return;
     if (warnPastSchedule(date, time)) return;
@@ -172,15 +168,12 @@ export default function AddReminderScreen() {
         onTimeConfirm={handleTimeConfirm}
         onRepeatSelect={setRepeat}
         autoFocus
-        scrollPaddingBottom={scrollPaddingBottom}
-        stickyFooter={
-          <HealthKeyboardFooter
-            label={t('common.save')}
-            disabled={!canSave}
-            loading={submitting}
-            onPress={handleSave}
-          />
-        }
+        saveFooter={{
+          label: t('common.save'),
+          disabled: !canSave,
+          loading: submitting,
+          onPress: handleSave,
+        }}
       />
     </SafeAreaView>
   );
