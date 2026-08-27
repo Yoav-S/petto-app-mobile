@@ -334,7 +334,7 @@
     "no_fields_to_update": "אין מה לעדכן.",
     "already_resolved": "פריט זה כבר הושלם.",
     "duplicate_reminder_datetime": "כבר יש לך תזכורת בתאריך ובשעה האלה.",
-    "reminder_datetime_in_past": "בחר שעה מאוחרת יותר היום, או תאריך עתידי.",
+    "reminder_datetime_in_past": "בחר היום או תאריך עתידי.",
     "cannot_delete_last_pet": "צריך לפחות חיה אחת. הוסף חיה נוספת לפני מחיקת זו.",
     "premium_required_pet": "בחינם כלולה חיה אחת. שדרג ל-Premium כדי להוסיף עוד.",
     "premium_required_reminder": "בחינם כלולות עד 10 תזכורות פעילות. שדרג ל-Premium לתזכורות ללא הגבלה.",

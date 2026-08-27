@@ -334,7 +334,7 @@
     "no_fields_to_update": "Nimic de actualizat.",
     "already_resolved": "Acest element a fost deja finalizat.",
     "duplicate_reminder_datetime": "Ai deja un memento la această dată și oră.",
-    "reminder_datetime_in_past": "Alege o oră mai târzie astăzi sau o dată viitoare.",
+    "reminder_datetime_in_past": "Alege astăzi sau o dată viitoare.",
     "cannot_delete_last_pet": "Ai nevoie de cel puțin un animal. Adaugă alt animal înainte de a-l elimina pe acesta.",
     "premium_required_pet": "Planul gratuit include 1 animal. Treci la Premium pentru a adăuga mai multe.",
     "premium_required_reminder": "Planul gratuit include până la 10 memento-uri active. Treci la Premium pentru memento-uri nelimitate.",

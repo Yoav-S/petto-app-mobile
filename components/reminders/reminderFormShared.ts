@@ -3,11 +3,8 @@ import {
   formatHourMinute,
   isIsoDateBefore,
   isIsoDateToday,
-  isReminderDateTimeInPast,
   minReminderDateIso,
   parseHourMinute,
-  soonestValidReminderTime,
-  todayIsoDate,
 } from '@/utils/calendar';
 import { t } from '@/i18n';
 import type { RepeatOption } from '@/services/reminders';
@@ -43,18 +40,18 @@ export function nowReminderTime(): string {
 }
 
 /**
- * When the selected date is today, bump time up to "now" (or the soonest
- * valid minute) so the user cannot schedule earlier than the current clock.
+ * Normalize time for the selected date.
+ * Today allows any clock time (matches server); we only normalize the string.
  */
 export function clampReminderTimeForDate(
   nextDate: string,
   nextTime: string | null | undefined,
 ): string | null {
-  if (!isIsoDateToday(nextDate)) return nextTime ? normalizeTime(nextTime) : null;
-  const soonest = soonestValidReminderTime(nextDate) ?? nowReminderTime();
-  if (!nextTime) return soonest;
-  const normalized = normalizeTime(nextTime);
-  return isReminderDateTimeInPast(nextDate, normalized) ? soonest : normalized;
+  if (!nextTime) {
+    // Sensible default when opening/picking a date with no time yet.
+    return isIsoDateToday(nextDate) ? nowReminderTime() : null;
+  }
+  return normalizeTime(nextTime);
 }
 
 export function isActiveReminderStatus(status: string): boolean {
@@ -85,14 +82,11 @@ export function isBeforeMinReminderDate(nextDate: string): boolean {
 }
 
 /**
- * Past calendar days are always invalid.
- * Today + time: reject times earlier than the current clock.
+ * Past calendar days are invalid.
+ * Today (any clock time) and future dates are allowed — matches server.
  */
-export function isReminderScheduleInPast(nextDate: string, nextTime?: string | null): boolean {
-  if (isBeforeMinReminderDate(nextDate)) return true;
-  if (!nextTime) return false;
-  if (nextDate > todayIsoDate()) return false;
-  return isReminderDateTimeInPast(nextDate, normalizeTime(nextTime));
+export function isReminderScheduleInPast(nextDate: string, _nextTime?: string | null): boolean {
+  return isBeforeMinReminderDate(nextDate);
 }
 
 export function needsStatusPrompt(reminder: Reminder): boolean {

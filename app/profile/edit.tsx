@@ -19,9 +19,8 @@ import { useToast } from '@/context/ToastContext';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import {
-  HealthFormScroll,
+  HealthFormSaveScroll,
   HealthKeyboardAvoidingView,
-  HealthKeyboardFooter,
 } from '@/components/health/HealthKeyboardFooter';
 import { dismissKeyboard } from '@/components/ui/keyboardUtils';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
@@ -316,11 +315,16 @@ export default function EditProfileScreen() {
       ) : (
         <View style={styles.flex}>
           <HealthKeyboardAvoidingView>
-            <HealthFormScroll
+            <HealthFormSaveScroll
+              footer={{
+                label: t('common.save'),
+                loading: saving,
+                onPress: () => void handleSave(),
+              }}
               scrollRef={scrollRef}
               onScroll={onScroll}
               scrollEventThrottle={16}
-              contentContainerStyle={[
+              fieldsStyle={[
                 styles.content,
                 { paddingHorizontal: pagePad },
               ]}
@@ -433,13 +437,8 @@ export default function EditProfileScreen() {
                 <Text style={styles.removeText}>{t('profile.edit.remove_pet')}</Text>
               </TouchableOpacity>
             </View>
-          </HealthFormScroll>
-          <HealthKeyboardFooter
-            label={t('common.save')}
-            loading={saving}
-            onPress={() => void handleSave()}
-          />
-        </HealthKeyboardAvoidingView>
+            </HealthFormSaveScroll>
+          </HealthKeyboardAvoidingView>
         </View>
       )}
 
@@ -514,6 +513,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingTop: 22,
     alignItems: 'center',
   },
+
   photoWrap: {
     alignSelf: 'center',
     marginBottom: 24,

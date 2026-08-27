@@ -18,7 +18,6 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import ReminderFormBody, { ReminderAutosaveStatus } from '@/components/reminders/ReminderFormBody';
 import {
   clampReminderTimeForDate,
-  isReminderScheduleInPast,
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
 import { categoryLabel } from '@/components/pickers/CategoryPickerSheet';
@@ -37,6 +36,7 @@ import {
   type ReminderCategory,
 } from '@/utils/reminderCategory';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { todayIsoDate } from '@/utils/calendar';
 
 type AutosaveState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -162,12 +162,10 @@ export default function EditReminderScreen() {
     }, [fetchData]),
   );
 
-  const warnPastSchedule = useCallback((nextDate: string, nextTime?: string | null) => {
-    const sameOriginalSlot =
-      originalDateRef.current === nextDate &&
-      (nextTime == null || originalTimeRef.current === nextTime);
-    if (sameOriginalSlot) return false;
-    if (!isReminderScheduleInPast(nextDate, nextTime)) return false;
+  const warnPastDate = useCallback((nextDate: string) => {
+    const sameOriginal = originalDateRef.current === nextDate;
+    if (sameOriginal) return false;
+    if (nextDate >= todayIsoDate()) return false;
     toast.showError(t('reminders.past_datetime'));
     return true;
   }, [toast]);
@@ -196,7 +194,7 @@ export default function EditReminderScreen() {
     if (!activePetId || !id || !hydratedRef.current || readOnly) return;
     if (!title.trim() || !date || !time) return;
 
-    if (warnPastSchedule(date, time)) {
+    if (warnPastDate(date)) {
       setAutosaveState('error');
       return;
     }
@@ -227,7 +225,7 @@ export default function EditReminderScreen() {
     repeat,
     note,
     category,
-    warnPastSchedule,
+    warnPastDate,
     buildSnapshot,
     toast,
   ]);
@@ -249,7 +247,7 @@ export default function EditReminderScreen() {
   }, [title, date, time, repeat, note, category, buildSnapshot, persist, readOnly]);
 
   const handleDateConfirm = (iso: string) => {
-    if (warnPastSchedule(iso, null)) return;
+    if (warnPastDate(iso)) return;
     const nextTime = clampReminderTimeForDate(iso, time);
     setDate(iso);
     setTime(nextTime);
@@ -258,9 +256,7 @@ export default function EditReminderScreen() {
 
   const handleTimeConfirm = (value: string) => {
     if (!date) return;
-    const clamped = clampReminderTimeForDate(date, value) ?? value;
-    if (warnPastSchedule(date, clamped)) return;
-    setTime(clamped);
+    setTime(clampReminderTimeForDate(date, value) ?? value);
     setSheet(null);
   };
 

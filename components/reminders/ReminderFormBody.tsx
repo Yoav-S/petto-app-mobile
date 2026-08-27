@@ -19,9 +19,9 @@ import CategoryPickerSheet, {
   categoryLabel,
 } from '@/components/pickers/CategoryPickerSheet';
 import {
+  HealthFormSaveScroll,
   HealthFormScroll,
   HealthKeyboardAvoidingView,
-  HealthKeyboardFooter,
   type HealthKeyboardFooterProps,
 } from '@/components/health/HealthKeyboardFooter';
 import { t } from '@/i18n';
@@ -29,11 +29,10 @@ import type { RepeatOption } from '@/services/reminders';
 import {
   CARD_SHADOW,
   formatTimeDisplay,
-  nowReminderTime,
   repeatToggleLabel,
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
-import { formatDisplayDate, isIsoDateToday } from '@/utils/calendar';
+import { formatDisplayDate } from '@/utils/calendar';
 import { centeredInputText, NAME_FIELD_TEXT } from '@/constants/textField';
 import {
   reminderCategoryIconFor,
@@ -118,7 +117,6 @@ export default function ReminderFormBody({
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
 
-  const timeMin = date && isIsoDateToday(date) ? nowReminderTime() : null;
   const openSheet = (next: ReminderSheet) => {
     if (readOnly) return;
     onSheetChange(next);
@@ -283,28 +281,53 @@ export default function ReminderFormBody({
   return (
     <>
       <HealthKeyboardAvoidingView>
-        <HealthFormScroll
-          contentContainerStyle={[
-            styles.content,
-            {
-              paddingTop: layout.formTop,
-              gap: layout.formGap,
-              alignItems: 'center',
-            },
-          ]}
-        >
-          {formFields}
-          {!pinFooterToBottom && footer ? (
-            <View style={{ marginTop: layout.formGap }}>{footer}</View>
-          ) : null}
-          {pinFooterToBottom && footer ? (
-            <>
-              <View style={styles.footerSpacer} />
-              {footer}
-            </>
-          ) : null}
-        </HealthFormScroll>
-        {saveFooter ? <HealthKeyboardFooter {...saveFooter} /> : null}
+        {saveFooter ? (
+          <HealthFormSaveScroll
+            footer={saveFooter}
+            fieldsStyle={[
+              styles.content,
+              {
+                paddingTop: layout.formTop,
+                gap: layout.formGap,
+                alignItems: 'center',
+              },
+            ]}
+          >
+            {formFields}
+            {!pinFooterToBottom && footer ? (
+              <View style={{ marginTop: layout.formGap }}>{footer}</View>
+            ) : null}
+            {pinFooterToBottom && footer ? (
+              <>
+                <View style={styles.footerSpacer} />
+                {footer}
+              </>
+            ) : null}
+          </HealthFormSaveScroll>
+        ) : (
+          <HealthFormScroll
+            contentContainerStyle={[
+              styles.content,
+              {
+                paddingTop: layout.formTop,
+                gap: layout.formGap,
+                alignItems: 'center',
+              },
+              pinFooterToBottom ? styles.scrollWithSave : null,
+            ]}
+          >
+            {formFields}
+            {!pinFooterToBottom && footer ? (
+              <View style={{ marginTop: layout.formGap }}>{footer}</View>
+            ) : null}
+            {pinFooterToBottom && footer ? (
+              <>
+                <View style={styles.footerSpacer} />
+                {footer}
+              </>
+            ) : null}
+          </HealthFormScroll>
+        )}
       </HealthKeyboardAvoidingView>
 
       {!readOnly ? (
@@ -318,7 +341,6 @@ export default function ReminderFormBody({
           <TimePickerSheet
             visible={sheet === 'time'}
             value={time}
-            minTime={timeMin}
             onClose={() => onSheetChange(null)}
             onConfirm={onTimeConfirm}
           />
@@ -518,5 +540,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flexGrow: 1,
     minHeight: 16,
     width: '100%',
+  },
+  scrollWithSave: {
+    flexGrow: 1,
   },
 });
