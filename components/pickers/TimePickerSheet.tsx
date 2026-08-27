@@ -190,7 +190,7 @@ export default function TimePickerSheet({
     setMountKey((k) => k + 1);
   }, [visible, value, clampToMin]);
 
-  const preview = formatHourMinute(hourIndex, minuteIndex);
+  const preview = clampToMin(hourIndex, minuteIndex).time;
 
   const handleConfirm = () => {
     const clamped = clampToMin(hourIndex, minuteIndex);

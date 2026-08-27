@@ -32,7 +32,7 @@ import {
   repeatToggleLabel,
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
-import { formatDisplayDate } from '@/utils/calendar';
+import { formatDisplayDate, isIsoDateToday, soonestValidReminderTime } from '@/utils/calendar';
 import { centeredInputText, NAME_FIELD_TEXT } from '@/constants/textField';
 import {
   reminderCategoryIconFor,
@@ -121,6 +121,9 @@ export default function ReminderFormBody({
     if (readOnly) return;
     onSheetChange(next);
   };
+
+  const minTime =
+    date && isIsoDateToday(date) ? soonestValidReminderTime(date) : null;
 
   const formFields = (
     <View style={{ gap: layout.formGap, alignItems: 'center', width: '100%' }}>
@@ -341,6 +344,7 @@ export default function ReminderFormBody({
           <TimePickerSheet
             visible={sheet === 'time'}
             value={time}
+            minTime={minTime}
             onClose={() => onSheetChange(null)}
             onConfirm={onTimeConfirm}
           />

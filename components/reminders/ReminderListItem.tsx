@@ -47,7 +47,16 @@ export default function ReminderListItem({
             </Text>
           ) : null}
         </View>
-        <View style={styles.right}>
+        <View
+          style={[
+            styles.right,
+            dayLabel
+              ? styles.rightCentered
+              : hasDescription
+                ? styles.rightTimeAtBottom
+                : styles.rightCentered,
+          ]}
+        >
           <Text style={styles.time} numberOfLines={1}>
             {time}
           </Text>
@@ -92,7 +101,7 @@ const makeStyles = (c: ThemeColors) =>
     content: {
       flex: 1,
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'stretch',
       paddingVertical: 14,
       paddingHorizontal: 16,
       gap: 12,
@@ -107,9 +116,14 @@ const makeStyles = (c: ThemeColors) =>
     },
     right: {
       alignItems: 'flex-end',
-      justifyContent: 'center',
       gap: 4,
       flexShrink: 0,
+    },
+    rightCentered: {
+      justifyContent: 'center',
+    },
+    rightTimeAtBottom: {
+      justifyContent: 'flex-end',
     },
     title: {
       fontFamily: 'Rubik-Medium',

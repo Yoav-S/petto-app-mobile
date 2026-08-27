@@ -201,10 +201,15 @@ export default function EditReminderScreen() {
 
     try {
       setAutosaveState('saving');
+      const saveTime = clampReminderTimeForDate(date.slice(0, 10), time);
+      if (!saveTime) {
+        setAutosaveState('error');
+        return;
+      }
       await updateReminder(activePetId, id, {
         title: title.trim(),
         date: date.slice(0, 10),
-        time,
+        time: saveTime,
         repeat,
         note: note.trim() || undefined,
         category,

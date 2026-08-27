@@ -2,11 +2,6 @@ import { apiGet, apiPost, apiPatch, apiDelete } from '@/services/api';
 import type { Reminder } from '@/types/api';
 import { invalidateReminders } from '@/services/queryClient';
 import { buildCursorQueryWithBase, type CursorListParams } from '@/utils/cursorPagination';
-import {
-  isIsoDateToday,
-  isReminderDateTimeInPast,
-  soonestValidReminderTime,
-} from '@/utils/calendar';
 
 export type { CursorListParams };
 
@@ -50,22 +45,11 @@ export function getReminder(petId: string, id: string): Promise<Reminder> {
   return apiGet<Reminder>(`/pets/${petId}/reminders/${id}`);
 }
 
-/** Today + past clock time → next minute. Never changes the calendar date. */
-function normalizeSchedule(date: string, time: string): { date: string; time: string } {
-  const d = date.slice(0, 10);
-  let t = time.trim();
-  if (isIsoDateToday(d) && isReminderDateTimeInPast(d, t)) {
-    t = soonestValidReminderTime(d) ?? t;
-  }
-  return { date: d, time: t };
-}
-
 export async function createReminder(petId: string, input: CreateReminderInput): Promise<Reminder> {
-  const { date, time } = normalizeSchedule(input.date, input.time);
   const row = await apiPost<Reminder>(`/pets/${petId}/reminders`, {
     ...input,
-    date,
-    time,
+    date: input.date.slice(0, 10),
+    time: input.time.trim(),
   });
   invalidateReminders(petId);
   return row;
@@ -76,12 +60,11 @@ export async function updateReminder(
   id: string,
   patch: UpdateReminderInput,
 ): Promise<Reminder> {
-  let payload = { ...patch };
-  if (payload.date && payload.time) {
-    payload = { ...payload, ...normalizeSchedule(payload.date, payload.time) };
-  } else if (payload.date) {
-    payload = { ...payload, date: payload.date.slice(0, 10) };
-  }
+  const payload = {
+    ...patch,
+    ...(patch.date ? { date: patch.date.slice(0, 10) } : {}),
+    ...(patch.time ? { time: patch.time.trim() } : {}),
+  };
   const row = await apiPatch<Reminder>(`/pets/${petId}/reminders/${id}`, payload);
   invalidateReminders(petId);
   return row;

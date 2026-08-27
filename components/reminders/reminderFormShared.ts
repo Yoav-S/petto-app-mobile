@@ -3,6 +3,7 @@ import {
   formatHourMinute,
   isIsoDateBefore,
   isIsoDateToday,
+  isReminderDateTimeInPast,
   minReminderDateIso,
   parseHourMinute,
   soonestValidReminderTime,
@@ -41,8 +42,16 @@ export function nowReminderTime(): string {
 }
 
 /**
+ * Earliest selectable HH:MM when `nextDate` is today; null for future days.
+ */
+export function minReminderTimeForDate(nextDate: string): string | null {
+  if (!isIsoDateToday(nextDate)) return null;
+  return soonestValidReminderTime(nextDate);
+}
+
+/**
  * Normalize / default time for a date.
- * Today with no time → next minute (sensible default, not a server workaround).
+ * Today with no time → now + 1 minute. Today with a past time → same floor.
  */
 export function clampReminderTimeForDate(
   nextDate: string,
@@ -50,9 +59,13 @@ export function clampReminderTimeForDate(
 ): string | null {
   if (!nextTime) {
     if (!isIsoDateToday(nextDate)) return null;
-    return soonestValidReminderTime(nextDate) ?? nowReminderTime();
+    return minReminderTimeForDate(nextDate) ?? nowReminderTime();
   }
-  return normalizeTime(nextTime);
+  const normalized = normalizeTime(nextTime);
+  if (isIsoDateToday(nextDate) && isReminderDateTimeInPast(nextDate, normalized)) {
+    return minReminderTimeForDate(nextDate) ?? normalized;
+  }
+  return normalized;
 }
 
 export function isActiveReminderStatus(status: string): boolean {

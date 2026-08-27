@@ -114,6 +114,12 @@ export default function AddReminderScreen() {
     if (!(await guardAddReminder(router, pets))) return;
     if (warnPastDate(date)) return;
 
+    const saveTime = clampReminderTimeForDate(date.slice(0, 10), time);
+    if (!saveTime) {
+      toast.showError(t('reminders.past_datetime'));
+      return;
+    }
+
     try {
       setSubmitting(true);
       // Sync device timezone so server "today" matches this phone.
@@ -121,7 +127,7 @@ export default function AddReminderScreen() {
       await createReminder(activePetId, {
         title: title.trim(),
         date: date.slice(0, 10),
-        time,
+        time: saveTime,
         repeat,
         note: note.trim() || undefined,
         category,
