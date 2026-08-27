@@ -20,9 +20,8 @@ import EmptyState from '@/components/ui/EmptyState';
 import ReminderListItem from '@/components/reminders/ReminderListItem';
 import ReminderActionSheet from '@/components/reminders/ReminderActionSheet';
 import SwipeToDeleteRow from '@/components/ui/SwipeToDeleteRow';
-import { needsStatusPrompt } from '@/components/reminders/reminderFormShared';
+import { needsStatusPrompt, formatSheetClockTime } from '@/components/reminders/reminderFormShared';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
-import { categoryLabel } from '@/components/pickers/CategoryPickerSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { deleteReminder, updateReminderStatus, listReminders } from '@/services/reminders';
@@ -47,9 +46,18 @@ import { LIST_FAB_SCROLL_PADDING, LIST_PAGE_SIZE } from '@/constants/pagination'
 
 const TABS = ['Today', 'Upcoming', 'Recent'] as const;
 type TabName = (typeof TABS)[number];
+const PREVIEW_CHARS = 20;
 
 function reminderCategory(item: Reminder): ReminderCategory {
   return (item.category as ReminderCategory | undefined) ?? resolveReminderCategory(item.title);
+}
+
+/** Truncate to first N chars with … when there is more. */
+function previewText(value: string | null | undefined, max = PREVIEW_CHARS): string {
+  const text = (value ?? '').trim();
+  if (!text) return '';
+  if (text.length <= max) return text;
+  return `${text.slice(0, max)}…`;
 }
 
 function reminderRelativeDate(date: string): string {
@@ -58,10 +66,6 @@ function reminderRelativeDate(date: string): string {
   if (date === addDaysToIsoDate(today, -1)) return t('common.yesterday');
   if (date === addDaysToIsoDate(today, 1)) return t('common.tomorrow');
   return formatDisplayDate(date);
-}
-
-function reminderDateLabel(date: string): string {
-  return reminderRelativeDate(date);
 }
 
 function sortPromptQueue(items: Reminder[], focusId?: string | null): Reminder[] {
@@ -428,7 +432,6 @@ export default function RemindersScreen() {
           data={items}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => {
-            const category = reminderCategory(item);
             return (
               <SwipeToDeleteRow
                 open={swipeOpenId === item.id}
@@ -436,23 +439,14 @@ export default function RemindersScreen() {
                 onDelete={() => handleDeleteReminder(item.id)}
               >
                 <ReminderListItem
-                  category={categoryLabel(category)}
-                  title={item.title}
-                  time={item.time}
+                  title={previewText(item.title)}
+                  description={previewText(item.note) || undefined}
+                  time={formatSheetClockTime(item.time)}
                   dayLabel={
                     activeTab === 'Today' ? undefined : reminderRelativeDate(item.date)
                   }
-                  showCheckMark={activeTab === 'Today'}
                   showCompletedBar={
                     activeTab === 'Recent' && item.status === 'completed'
-                  }
-                  onCheckPress={
-                    activeTab === 'Today'
-                      ? () => {
-                          setSwipeOpenId(null);
-                          handleReminderPress(item);
-                        }
-                      : undefined
                   }
                   onPress={() => {
                     setSwipeOpenId(null);

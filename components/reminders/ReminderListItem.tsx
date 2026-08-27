@@ -1,80 +1,62 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { Radius, type ThemeColors } from '@/constants/theme';
-import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useThemedStyles } from '@/context/ThemeContext';
 
 interface ReminderListItemProps {
-  /** Top-left label (category). */
-  category: string;
-  /** Bottom-left reminder name. */
+  /** Top-left bold title. */
   title: string;
-  /** Top-right time. */
+  /** Optional note/description under the title (already truncated by caller). */
+  description?: string | null;
+  /** Top-right time (e.g. "9:00"). */
   time: string;
-  /** Bottom-right day label (Today / Yesterday / date). */
+  /** Bottom-right day/date (Upcoming / Recent). */
   dayLabel?: string;
   onPress?: () => void;
-  /** Green check on the right (Today done affordance). */
-  showCheckMark?: boolean;
-  onCheckPress?: () => void;
   /** Completed recent: green bar on the left. */
   showCompletedBar?: boolean;
 }
 
 export default function ReminderListItem({
-  category,
   title,
+  description,
   time,
   dayLabel,
   onPress,
-  showCheckMark = false,
-  onCheckPress,
   showCompletedBar = false,
 }: ReminderListItemProps) {
-  const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const hasDescription = Boolean(description?.trim());
 
   return (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, !hasDescription && styles.cardCompact]}
       onPress={onPress}
       activeOpacity={0.7}
       disabled={!onPress}
     >
       {showCompletedBar ? <View style={styles.completedBar} /> : null}
-      <View style={styles.content}>
-        <View style={styles.rows}>
-          <View style={styles.row}>
-            <Text style={styles.category} numberOfLines={1}>
-              {category}
+      <View style={[styles.content, !hasDescription && styles.contentCompact]}>
+        <View style={styles.left}>
+          <Text style={styles.title} numberOfLines={1}>
+            {title}
+          </Text>
+          {hasDescription ? (
+            <Text style={styles.description} numberOfLines={1}>
+              {description}
             </Text>
-            <Text style={styles.time} numberOfLines={1}>
-              {time}
-            </Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.title} numberOfLines={1}>
-              {title}
-            </Text>
-            {dayLabel ? (
-              <Text style={styles.day} numberOfLines={1}>
-                {dayLabel}
-              </Text>
-            ) : null}
-          </View>
+          ) : null}
         </View>
-        {showCheckMark ? (
-          <TouchableOpacity
-            style={styles.checkBtn}
-            onPress={() => onCheckPress?.()}
-            hitSlop={8}
-            activeOpacity={0.7}
-            disabled={!onCheckPress}
-            accessibilityRole="button"
-          >
-            <Ionicons name="checkmark-circle" size={28} color={colors.success} />
-          </TouchableOpacity>
-        ) : null}
+        <View style={styles.right}>
+          <Text style={styles.time} numberOfLines={1}>
+            {time}
+          </Text>
+          {dayLabel ? (
+            <Text style={styles.day} numberOfLines={1}>
+              {dayLabel}
+            </Text>
+          ) : null}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -98,6 +80,9 @@ const makeStyles = (c: ThemeColors) =>
       overflow: 'hidden',
       minHeight: 76,
     },
+    cardCompact: {
+      minHeight: 56,
+    },
     completedBar: {
       width: 4,
       alignSelf: 'stretch',
@@ -110,27 +95,33 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: 'center',
       paddingVertical: 14,
       paddingHorizontal: 16,
-      gap: 10,
+      gap: 12,
     },
-    rows: {
+    contentCompact: {
+      paddingVertical: 12,
+    },
+    left: {
       flex: 1,
-      gap: 6,
+      gap: 4,
       minWidth: 0,
     },
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 8,
-      minHeight: 20,
+    right: {
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+      gap: 4,
+      flexShrink: 0,
     },
-    category: {
-      flex: 1,
+    title: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 16,
+      lineHeight: 20,
+      color: c.primaryText,
+    },
+    description: {
       fontFamily: 'Rubik-Regular',
       fontSize: 14,
-      lineHeight: 20,
+      lineHeight: 18,
       color: c.secondaryText,
-      minWidth: 0,
     },
     time: {
       fontFamily: 'Rubik-Regular',
@@ -138,26 +129,12 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 20,
       color: c.primaryText,
       textAlign: 'right',
-      flexShrink: 0,
-    },
-    title: {
-      flex: 1,
-      fontFamily: 'Rubik-Medium',
-      fontSize: 16,
-      lineHeight: 20,
-      color: c.primaryText,
-      minWidth: 0,
     },
     day: {
       fontFamily: 'Rubik-Regular',
       fontSize: 14,
-      lineHeight: 20,
+      lineHeight: 18,
       color: c.secondaryText,
       textAlign: 'right',
-      flexShrink: 0,
-    },
-    checkBtn: {
-      alignItems: 'center',
-      justifyContent: 'center',
     },
   });
