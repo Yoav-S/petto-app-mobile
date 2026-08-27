@@ -12,7 +12,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
-import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { LIST_TABS_CONTENT_GAP, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import ScrollTopFade from '@/components/ui/ScrollTopFade';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
@@ -107,7 +108,7 @@ export default function HealthScreen() {
   const getItemFadeIntensity = useCallback(
     (index: number) => {
       if (listHeight <= 0) return 0;
-      const listPaddingTop = 14;
+      const listPaddingTop = LIST_TABS_CONTENT_GAP;
       const itemBottom =
         listPaddingTop + (index + 1) * cardHeight + index * itemGap - scrollY;
       if (itemBottom <= listHeight) return 0;
@@ -259,7 +260,7 @@ export default function HealthScreen() {
 
   return (
     <>
-      <HeaderScrollLayout header={listHeader} edges={['left', 'right', 'bottom']}>
+      <HeaderScrollLayout header={listHeader} edges={['left', 'right', 'bottom']} bottomFade>
         {({ paddingTop }) => (
           <View style={[styles.screenBody, { paddingTop }]}>
             <SegmentedControl
@@ -291,59 +292,61 @@ export default function HealthScreen() {
                 onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
               >
                 <FlatList
+                  style={styles.list}
                   data={items}
-            keyExtractor={(item) => item.id}
-            scrollEventThrottle={16}
-            onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
-            renderItem={({ item, index }) => (
-              <SwipeToDeleteRow
-                open={swipeOpenId === item.id}
-                onOpenChange={(open) => setSwipeOpenId(open ? item.id : null)}
-                onDelete={() => handleDeleteRecord(item.id)}
-              >
-                <HealthListItem
-                  title={item.title}
-                  subtitle={healthRecordSubtitle(item.description)}
-                  createdAt={item.created_at}
-                  hasReminder={Boolean(item.linked_reminder_date || item.linked_reminder_time)}
-                  fadeIntensity={getItemFadeIntensity(index)}
-                  onPress={() => {
-                    setSwipeOpenId(null);
-                    router.push(`/topics/${item.id}` as never);
-                  }}
-                  onReminderPress={
-                    item.latest_note_id
-                      ? () => {
+                  keyExtractor={(item) => item.id}
+                  scrollEventThrottle={16}
+                  onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
+                  renderItem={({ item, index }) => (
+                    <SwipeToDeleteRow
+                      open={swipeOpenId === item.id}
+                      onOpenChange={(open) => setSwipeOpenId(open ? item.id : null)}
+                      onDelete={() => handleDeleteRecord(item.id)}
+                    >
+                      <HealthListItem
+                        title={item.title}
+                        subtitle={healthRecordSubtitle(item.description)}
+                        createdAt={item.created_at}
+                        hasReminder={Boolean(item.linked_reminder_date || item.linked_reminder_time)}
+                        fadeIntensity={getItemFadeIntensity(index)}
+                        onPress={() => {
                           setSwipeOpenId(null);
-                          router.push({
-                            pathname: '/topics/edit-note',
-                            params: {
-                              recordId: item.id,
-                              noteId: item.latest_note_id!,
-                              open: 'reminder',
-                            },
-                          } as never);
+                          router.push(`/topics/${item.id}` as never);
+                        }}
+                        onReminderPress={
+                          item.latest_note_id
+                            ? () => {
+                                setSwipeOpenId(null);
+                                router.push({
+                                  pathname: '/topics/edit-note',
+                                  params: {
+                                    recordId: item.id,
+                                    noteId: item.latest_note_id!,
+                                    open: 'reminder',
+                                  },
+                                } as never);
+                              }
+                            : undefined
                         }
-                      : undefined
+                      />
+                    </SwipeToDeleteRow>
+                  )}
+                  ListEmptyComponent={renderEmptyState}
+                  contentContainerStyle={[
+                    styles.listContent,
+                    items.length === 0 ? styles.listContentEmpty : null,
+                  ]}
+                  showsVerticalScrollIndicator={false}
+                  onEndReached={() => {
+                    void loadMore();
+                  }}
+                  onEndReachedThreshold={0.35}
+                  ListFooterComponent={
+                    <ListLoadMoreFooter loading={loadingMore} hasMore={hasMore} />
                   }
+                  refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 />
-              </SwipeToDeleteRow>
-            )}
-            ListEmptyComponent={renderEmptyState}
-            contentContainerStyle={[
-              styles.listContent,
-              items.length === 0 ? styles.listContentEmpty : null,
-            ]}
-            showsVerticalScrollIndicator={false}
-            onEndReached={() => {
-              void loadMore();
-            }}
-            onEndReachedThreshold={0.35}
-            ListFooterComponent={
-              <ListLoadMoreFooter loading={loadingMore} hasMore={hasMore} />
-            }
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-                />
+                <ScrollTopFade />
               </View>
             )}
           </View>
@@ -375,7 +378,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   tabs: {
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-    marginBottom: 6,
+    marginBottom: LIST_TABS_CONTENT_GAP,
   },
   centered: {
     flex: 1,
@@ -383,6 +386,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   listWrap: {
+    flex: 1,
+    position: 'relative',
+  },
+  list: {
     flex: 1,
   },
   listContent: {

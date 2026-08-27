@@ -12,7 +12,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { type ThemeColors } from '@/constants/theme';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
-import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { LIST_TABS_CONTENT_GAP, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import ScrollTopFade from '@/components/ui/ScrollTopFade';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -405,7 +406,7 @@ export default function RemindersScreen() {
 
   return (
     <>
-      <HeaderScrollLayout header={listHeader} edges={['left', 'right', 'bottom']}>
+      <HeaderScrollLayout header={listHeader} edges={['left', 'right', 'bottom']} bottomFade>
         {({ paddingTop }) => (
           <View style={[styles.screenBody, { paddingTop }]}>
             <SegmentedControl
@@ -431,50 +432,53 @@ export default function RemindersScreen() {
                 />
               </View>
             ) : (
-              <FlatList
-                style={styles.list}
-                data={items}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => {
-                return (
-                  <SwipeToDeleteRow
-                    open={swipeOpenId === item.id}
-                    onOpenChange={(open) => setSwipeOpenId(open ? item.id : null)}
-                    onDelete={() => handleDeleteReminder(item.id)}
-                  >
-                    <ReminderListItem
-                      title={previewText(item.title)}
-                      description={previewText(item.note) || undefined}
-                      time={formatSheetClockTime(item.time)}
-                      dayLabel={
-                        activeTab === 'Today' ? undefined : reminderRelativeDate(item.date)
-                      }
-                      showCompletedBar={
-                        activeTab === 'Recent' && item.status === 'completed'
-                      }
-                      onPress={() => {
-                        setSwipeOpenId(null);
-                        handleReminderPress(item);
-                      }}
-                    />
-                  </SwipeToDeleteRow>
-                );
-              }}
-              ListEmptyComponent={renderEmptyState}
-              contentContainerStyle={[
-                styles.listContent,
-                items.length === 0 ? styles.listContentEmpty : null,
-              ]}
-              showsVerticalScrollIndicator={false}
-              onEndReached={() => {
-                void loadMore();
-              }}
-              onEndReachedThreshold={0.35}
-              ListFooterComponent={
-                <ListLoadMoreFooter loading={loadingMore} hasMore={hasMore} />
-              }
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            />
+              <View style={styles.listWrap}>
+                <FlatList
+                  style={styles.list}
+                  data={items}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => {
+                    return (
+                      <SwipeToDeleteRow
+                        open={swipeOpenId === item.id}
+                        onOpenChange={(open) => setSwipeOpenId(open ? item.id : null)}
+                        onDelete={() => handleDeleteReminder(item.id)}
+                      >
+                        <ReminderListItem
+                          title={previewText(item.title)}
+                          description={previewText(item.note) || undefined}
+                          time={formatSheetClockTime(item.time)}
+                          dayLabel={
+                            activeTab === 'Today' ? undefined : reminderRelativeDate(item.date)
+                          }
+                          showCompletedBar={
+                            activeTab === 'Recent' && item.status === 'completed'
+                          }
+                          onPress={() => {
+                            setSwipeOpenId(null);
+                            handleReminderPress(item);
+                          }}
+                        />
+                      </SwipeToDeleteRow>
+                    );
+                  }}
+                  ListEmptyComponent={renderEmptyState}
+                  contentContainerStyle={[
+                    styles.listContent,
+                    items.length === 0 ? styles.listContentEmpty : null,
+                  ]}
+                  showsVerticalScrollIndicator={false}
+                  onEndReached={() => {
+                    void loadMore();
+                  }}
+                  onEndReachedThreshold={0.35}
+                  ListFooterComponent={
+                    <ListLoadMoreFooter loading={loadingMore} hasMore={hasMore} />
+                  }
+                  refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                />
+                <ScrollTopFade />
+              </View>
             )}
           </View>
         )}
@@ -529,12 +533,16 @@ const makeStyles = (c: ThemeColors) =>
     },
     tabs: {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-      marginBottom: 6,
+      marginBottom: LIST_TABS_CONTENT_GAP,
     },
     centered: {
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    listWrap: {
+      flex: 1,
+      position: 'relative',
     },
     listContent: {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,

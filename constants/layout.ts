@@ -34,6 +34,9 @@ export const HEADER_SCROLL_GAP = 10;
 /** Extra space between header chrome and the first content row. */
 export const HEADER_CONTENT_GAP = 12;
 
+/** Gap between segmented tabs and the scrollable list below. */
+export const LIST_TABS_CONTENT_GAP = 12;
+
 /** Rounded bottom corners on the floating header chrome. */
 export const HEADER_CHROME_BOTTOM_RADIUS = 16;
 
