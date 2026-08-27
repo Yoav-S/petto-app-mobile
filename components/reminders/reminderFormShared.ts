@@ -3,8 +3,10 @@ import {
   formatHourMinute,
   isIsoDateBefore,
   isIsoDateToday,
+  isReminderDateTimeInPast,
   minReminderDateIso,
   parseHourMinute,
+  soonestValidReminderTime,
 } from '@/utils/calendar';
 import { t } from '@/i18n';
 import type { RepeatOption } from '@/services/reminders';
@@ -41,17 +43,29 @@ export function nowReminderTime(): string {
 
 /**
  * Normalize time for the selected date.
- * Today allows any clock time (matches server); we only normalize the string.
+ * Today: default to the next valid minute (not "now", which APIs treat as past).
  */
 export function clampReminderTimeForDate(
   nextDate: string,
   nextTime: string | null | undefined,
 ): string | null {
   if (!nextTime) {
-    // Sensible default when opening/picking a date with no time yet.
-    return isIsoDateToday(nextDate) ? nowReminderTime() : null;
+    if (!isIsoDateToday(nextDate)) return null;
+    return soonestValidReminderTime(nextDate) ?? '23:59';
   }
   return normalizeTime(nextTime);
+}
+
+/**
+ * Time to send to the API for today.
+ * Today is always allowed as a date; if the clock time already passed,
+ * bump to the next minute so create succeeds on servers that reject past times.
+ */
+export function resolveReminderSaveTime(date: string, time: string): string {
+  const normalized = normalizeTime(time);
+  if (!isIsoDateToday(date)) return normalized;
+  if (!isReminderDateTimeInPast(date, normalized)) return normalized;
+  return soonestValidReminderTime(date) ?? '23:59';
 }
 
 export function isActiveReminderStatus(status: string): boolean {
@@ -78,13 +92,10 @@ export function hasDuplicateInList(
 }
 
 export function isBeforeMinReminderDate(nextDate: string): boolean {
-  return isIsoDateBefore(nextDate, minReminderDateIso());
+  return isIsoDateBefore(nextDate.slice(0, 10), minReminderDateIso());
 }
 
-/**
- * Past calendar days are invalid.
- * Today (any clock time) and future dates are allowed — matches server.
- */
+/** Only past calendar days — today (any time) is allowed. */
 export function isReminderScheduleInPast(nextDate: string, _nextTime?: string | null): boolean {
   return isBeforeMinReminderDate(nextDate);
 }

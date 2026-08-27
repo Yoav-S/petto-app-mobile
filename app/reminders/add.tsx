@@ -9,6 +9,7 @@ import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import ReminderFormBody from '@/components/reminders/ReminderFormBody';
 import {
   clampReminderTimeForDate,
+  resolveReminderSaveTime,
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
 import { categoryLabel } from '@/components/pickers/CategoryPickerSheet';
@@ -68,7 +69,7 @@ export default function AddReminderScreen() {
 
   const warnPastDate = useCallback((nextDate: string) => {
     // Only past calendar days are blocked — today (any time) is allowed.
-    if (nextDate >= todayIsoDate()) return false;
+    if (nextDate.slice(0, 10) >= todayIsoDate()) return false;
     toast.showError(t('reminders.past_datetime'));
     return true;
   }, [toast]);
@@ -101,12 +102,15 @@ export default function AddReminderScreen() {
     if (!(await guardAddReminder(router, pets))) return;
     if (warnPastDate(date)) return;
 
+    const saveDate = date.slice(0, 10);
+    const saveTime = resolveReminderSaveTime(saveDate, time);
+
     try {
       setSubmitting(true);
       await createReminder(activePetId, {
         title: title.trim(),
-        date,
-        time,
+        date: saveDate,
+        time: saveTime,
         repeat,
         note: note.trim() || undefined,
         category,
@@ -130,9 +134,10 @@ export default function AddReminderScreen() {
   };
 
   const handleDateConfirm = (iso: string) => {
-    if (warnPastDate(iso)) return;
-    const nextTime = clampReminderTimeForDate(iso, time);
-    setDate(iso);
+    const nextDate = iso.slice(0, 10);
+    if (warnPastDate(nextDate)) return;
+    const nextTime = clampReminderTimeForDate(nextDate, time);
+    setDate(nextDate);
     setTime(nextTime);
     setSheet(null);
   };

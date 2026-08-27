@@ -18,6 +18,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import ReminderFormBody, { ReminderAutosaveStatus } from '@/components/reminders/ReminderFormBody';
 import {
   clampReminderTimeForDate,
+  resolveReminderSaveTime,
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
 import { categoryLabel } from '@/components/pickers/CategoryPickerSheet';
@@ -201,10 +202,12 @@ export default function EditReminderScreen() {
 
     try {
       setAutosaveState('saving');
+      const saveDate = date.slice(0, 10);
+      const saveTime = resolveReminderSaveTime(saveDate, time);
       await updateReminder(activePetId, id, {
         title: title.trim(),
-        date,
-        time,
+        date: saveDate,
+        time: saveTime,
         repeat,
         note: note.trim() || undefined,
         category,
