@@ -40,8 +40,9 @@ import {
 import { uploadHealthNotePhoto } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDate } from '@/utils/calendar';
-import { normalizeRouteParam } from '@/utils/routeParams';
+import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { normalizeRouteParam } from '@/utils/routeParams';
 import { DESIGN_HEIGHT } from '@/constants/layout';
 
 function reminderLabel(draft: HealthReminderDraft): string {
@@ -84,7 +85,20 @@ export default function EditNoteScreen() {
   const [deleteVisible, setDeleteVisible] = useState(false);
   const [viewportH, setViewportH] = useState(0);
   const [contentH, setContentH] = useState(0);
+  const bottomAnchorRef = useRef<View>(null);
+  const {
+    scrollRef,
+    contentPaddingBottom,
+    keyboardScrollRoom,
+    onScroll,
+    onInputFocus,
+  } = useKeyboardAwareScroll(deleteBottomPad, {
+    bottomAnchorRef,
+    autoScrollOnFocus: false,
+  });
   const needsScroll = contentH > viewportH + 1;
+  const pinPanelMinHeight =
+    !needsScroll && viewportH > 0 ? viewportH - contentPaddingBottom : undefined;
   const loadedRef = useRef(false);
 
   useFocusEffect(
@@ -309,7 +323,14 @@ export default function EditNoteScreen() {
 
   return (
     <HeaderScrollLayout header={header} edges={['left', 'right']}>
-      {({ paddingTop }) => (
+      {({ paddingTop }) => {
+        const topPad = paddingTop + Math.max(Spacing.md, 16);
+        const panelMinHeight =
+          pinPanelMinHeight != null
+            ? pinPanelMinHeight - topPad
+            : undefined;
+
+        return (
         <>
           <HealthKeyboardAvoidingView>
             <View
@@ -317,23 +338,27 @@ export default function EditNoteScreen() {
               onLayout={(e) => setViewportH(e.nativeEvent.layout.height)}
             >
               <ScrollView
+                ref={scrollRef}
                 style={styles.scroll}
                 contentContainerStyle={[
                   styles.content,
                   {
-                    paddingTop: paddingTop + Math.max(Spacing.md, 16),
-                    paddingBottom: deleteBottomPad,
+                    paddingTop: topPad,
+                    paddingBottom: contentPaddingBottom,
                   },
                 ]}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="none"
             showsVerticalScrollIndicator={false}
-            scrollEnabled={needsScroll}
+            onScroll={onScroll}
+            scrollEventThrottle={16}
             onContentSizeChange={(_w, h) => setContentH(h)}
           >
-            <HealthNoteEditorCard
-              noteText={noteText}
-              onChangeNoteText={setNoteText}
-              photoUri={photoUri}
+            <View style={panelMinHeight ? { minHeight: panelMinHeight } : undefined}>
+              <HealthNoteEditorCard
+                noteText={noteText}
+                onChangeNoteText={setNoteText}
+                photoUri={photoUri}
               onPickImage={() => {
                 Keyboard.dismiss();
                 setReminderSheetVisible(false);
@@ -366,17 +391,23 @@ export default function EditNoteScreen() {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => {
-                setReminderSheetVisible(false);
-                setPhotoSheetVisible(false);
-                setDeleteVisible(true);
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.deleteText}>{t('topics.delete_note')}</Text>
-            </TouchableOpacity>
+            <View ref={bottomAnchorRef} collapsable={false}>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => {
+                  setReminderSheetVisible(false);
+                  setPhotoSheetVisible(false);
+                  setDeleteVisible(true);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.deleteText}>{t('topics.delete_note')}</Text>
+              </TouchableOpacity>
+            </View>
+            </View>
+            {keyboardScrollRoom > 0 ? (
+              <View style={{ height: keyboardScrollRoom }} />
+            ) : null}
           </ScrollView>
         </View>
       </HealthKeyboardAvoidingView>
@@ -422,7 +453,8 @@ export default function EditNoteScreen() {
       />
       <SavingOverlay visible={saving || savingPhoto} />
         </>
-      )}
+        );
+      }}
     </HeaderScrollLayout>
   );
 }
@@ -440,9 +472,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    flexGrow: 1,
     paddingHorizontal: 20,
     gap: Spacing.lg,
+  },
+  scrollContentGrow: {
+    flexGrow: 1,
   },
   footerSpacer: {
     flexGrow: 1,

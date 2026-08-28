@@ -89,9 +89,21 @@ export function parseHourMinute(value?: string | null): { hour: number; minute: 
   return { hour: 8, minute: 0 };
 }
 
-/** Format 24h hour/minute as stored "HH:MM". */
+/** Format 24h hour/minute as stored "HH:MM" (internal / API). */
 export function formatHourMinute(hour: number, minute: number): string {
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+/** User-facing clock: "4:46" (no leading zero on hour; minutes stay padded). */
+export function formatDisplayHourMinute(hour: number, minute: number): string {
+  return `${hour}:${String(minute).padStart(2, '0')}`;
+}
+
+/** Format stored "HH:MM" for display. */
+export function formatDisplayTime(time: string | null | undefined): string {
+  if (!time?.trim()) return '';
+  const { hour, minute } = parseHourMinute(time);
+  return formatDisplayHourMinute(hour, minute);
 }
 
 /** Parse "HH:MM" (24h) into 12-hour parts. Defaults to 8:00 AM. */
@@ -343,7 +355,7 @@ function extractTimeFromIso(value: string): string {
   if (!value || value.length <= 10) return '';
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return '';
-  return `${String(parsed.getHours()).padStart(2, '0')}:${String(parsed.getMinutes()).padStart(2, '0')}`;
+  return formatDisplayHourMinute(parsed.getHours(), parsed.getMinutes());
 }
 
 /** List meta: "Today HH:MM" when due today, otherwise formatted date. */
@@ -356,14 +368,15 @@ export function formatListDateOrTime(
   const datePart = normalizeToDatePart(date ?? undefined);
 
   if (datePart && isIsoDateToday(datePart)) {
-    if (todayLabel && timePart) return `${todayLabel} ${timePart}`;
+    const displayTime = timePart ? formatDisplayTime(timePart) : '';
+    if (todayLabel && displayTime) return `${todayLabel} ${displayTime}`;
     if (todayLabel) return todayLabel;
-    if (timePart) return timePart;
+    if (displayTime) return displayTime;
     return extractTimeFromIso(date ?? '');
   }
 
   if (datePart) return formatDisplayDate(datePart);
-  if (timePart) return timePart;
+  if (timePart) return formatDisplayTime(timePart);
   if (date) return formatDisplayDate(date);
   return '';
 }
@@ -416,7 +429,7 @@ export function formatHealthDateMeta(
   const diffDays = Math.floor(
     (startOfLocalDay(now).getTime() - startOfLocalDay(created).getTime()) / dayMs,
   );
-  const time = formatHourMinute(created.getHours(), created.getMinutes());
+  const time = formatDisplayHourMinute(created.getHours(), created.getMinutes());
 
   if (diffDays <= 0) {
     return `${labels.prefix} ${labels.today} ${time}`;

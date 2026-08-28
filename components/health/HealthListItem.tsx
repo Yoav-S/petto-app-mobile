@@ -16,10 +16,25 @@ import {
 } from '@/utils/calendar';
 
 export const HEALTH_LIST_CARD_WIDTH = '100%';
-export const HEALTH_LIST_CARD_HEIGHT = 122;
+/** Title + meta + padding (no description). */
+export const HEALTH_LIST_CARD_COMPACT_HEIGHT = 70;
+/** Title + description + meta + padding. */
+export const HEALTH_LIST_CARD_FULL_HEIGHT = 96;
+/** @deprecated Use HEALTH_LIST_CARD_FULL_HEIGHT or estimate per row. */
+export const HEALTH_LIST_CARD_HEIGHT = HEALTH_LIST_CARD_FULL_HEIGHT;
 export const HEALTH_LIST_ITEM_GAP = 12;
 
 const PREVIEW_CHARS = 20;
+const CARD_PAD_V = 14;
+const ROW_GAP = 6;
+const TITLE_LINE = 20;
+const SUBTITLE_LINE = 20;
+const META_LINE = 16;
+
+export function estimateHealthListItemHeight(description?: string | null): number {
+  const hasSubtitle = Boolean(truncateHealthDescription(description, PREVIEW_CHARS));
+  return hasSubtitle ? HEALTH_LIST_CARD_FULL_HEIGHT : HEALTH_LIST_CARD_COMPACT_HEIGHT;
+}
 
 interface HealthListItemProps {
   title: string;
@@ -99,33 +114,31 @@ export default function HealthListItem({
       activeOpacity={0.7}
       disabled={!onPress}
     >
-      <View style={styles.content}>
-        <View style={styles.stack}>
-          <View style={styles.titleRow}>
-            <Text style={[styles.title, styles.rowMain]} numberOfLines={1} ellipsizeMode="tail">
-              {displayTitle}
-            </Text>
-            {hasReminder ? (
-              <TouchableOpacity
-                onPress={onReminderPress}
-                hitSlop={8}
-                activeOpacity={0.7}
-                disabled={!onReminderPress}
-                style={styles.reminderIconBtn}
-              >
-                <Ionicons name="notifications-outline" size={16} color={colors.secondaryText} />
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.reminderSpacer} />
-            )}
-          </View>
-
-          {hasSubtitle ? (
-            <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
-              {displaySubtitle}
-            </Text>
-          ) : null}
+      <View style={styles.body}>
+        <View style={styles.titleRow}>
+          <Text style={[styles.title, styles.rowMain]} numberOfLines={1} ellipsizeMode="tail">
+            {displayTitle}
+          </Text>
+          {hasReminder ? (
+            <TouchableOpacity
+              onPress={onReminderPress}
+              hitSlop={8}
+              activeOpacity={0.7}
+              disabled={!onReminderPress}
+              style={styles.reminderIconBtn}
+            >
+              <Ionicons name="notifications-outline" size={16} color={colors.secondaryText} />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.reminderSpacer} />
+          )}
         </View>
+
+        {hasSubtitle ? (
+          <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
+            {displaySubtitle}
+          </Text>
+        ) : null}
 
         {metaLabel ? (
           <Text style={styles.meta} numberOfLines={1} ellipsizeMode="tail">
@@ -152,22 +165,17 @@ const makeStyles = (c: ThemeColors) =>
       overflow: 'hidden',
       borderRadius: 12,
       marginBottom: HEALTH_LIST_ITEM_GAP,
-      paddingVertical: 14,
+      paddingVertical: CARD_PAD_V,
       paddingHorizontal: 16,
-      minHeight: 96,
       shadowColor: '#2D2D2A',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.04,
       shadowRadius: 20,
       elevation: 3,
     },
-    content: {
+    body: {
       width: '100%',
-      gap: 6,
-    },
-    stack: {
-      width: '100%',
-      gap: 6,
+      gap: ROW_GAP,
     },
     titleRow: {
       width: '100%',
@@ -175,7 +183,7 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: 8,
-      minHeight: 20,
+      minHeight: TITLE_LINE,
     },
     rowMain: {
       flex: 1,
@@ -184,7 +192,7 @@ const makeStyles = (c: ThemeColors) =>
     title: {
       fontFamily: 'Rubik-Medium',
       fontSize: 16,
-      lineHeight: 20,
+      lineHeight: TITLE_LINE,
       color: c.primaryText,
     },
     reminderIconBtn: {
@@ -197,14 +205,14 @@ const makeStyles = (c: ThemeColors) =>
     subtitle: {
       fontFamily: 'Rubik-Regular',
       fontSize: 14,
-      lineHeight: 20,
+      lineHeight: SUBTITLE_LINE,
       color: c.primaryText,
       width: '100%',
     },
     meta: {
       fontFamily: 'Rubik-Regular',
       fontSize: 12,
-      lineHeight: 16,
+      lineHeight: META_LINE,
       color: c.secondaryText,
       width: '100%',
     },

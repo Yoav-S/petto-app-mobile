@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,6 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -34,6 +32,7 @@ import { updateVaccination, deleteVaccination } from '@/services/vaccines';
 import { uploadImage } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import { addYearsToIsoDate, formatDisplayDate, isIsoDateAfter, parseIsoDate, todayIsoDate } from '@/utils/calendar';
+import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { useVaccinationQuery } from '@/hooks/useCachedQueries';
 import { queryClient } from '@/services/queryClient';
 import { queryKeys } from '@/services/queryKeys';
@@ -67,10 +66,26 @@ export default function VaccineDetailsScreen() {
   const [deleteVisible, setDeleteVisible] = useState(false);
   const [bodyH, setBodyH] = useState(0);
   const [formH, setFormH] = useState(0);
+  const deleteAnchorRef = useRef<View>(null);
+  const {
+    scrollRef,
+    contentPaddingBottom,
+    keyboardScrollRoom,
+    onScroll,
+    onInputFocus,
+  } = useKeyboardAwareScroll(deleteBottomPad, {
+    bottomAnchorRef: deleteAnchorRef,
+    autoScrollOnFocus: false,
+  });
 
-  /** Only scroll when the form + delete row cannot fit the viewport. */
+  /** Pin delete to bottom when the form fits on screen. */
   const needsScroll =
     bodyH > 0 && formH > 0 && formH + DELETE_ROW_H + deleteBottomPad > bodyH + 1;
+  const pinDeleteToBottom = !needsScroll;
+  const pinPanelMinHeight =
+    pinDeleteToBottom && bodyH > 0
+      ? bodyH - Spacing.md - contentPaddingBottom
+      : undefined;
 
   const query = useVaccinationQuery(activePetId, id);
   const loading = query.isLoading && !query.data && !vaccine;
@@ -198,6 +213,7 @@ export default function VaccineDetailsScreen() {
           value={name}
           onChangeText={setName}
           onBlur={handleNameBlur}
+          onFocus={onInputFocus}
           placeholder={t('vaccines.field_name')}
           placeholderTextColor={colors.secondaryText}
           returnKeyType="done"
@@ -285,6 +301,7 @@ export default function VaccineDetailsScreen() {
         value={clinic}
         onChangeText={setClinic}
         onBlur={handleClinicBlur}
+        onFocus={onInputFocus}
         style={styles.clinicCard}
       />
     </View>
@@ -308,34 +325,44 @@ export default function VaccineDetailsScreen() {
     <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
       <ScreenHeader title={t('vaccines.list_title')} />
 
-      <KeyboardAvoidingView
+      <View
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        onLayout={(e) => setBodyH(e.nativeEvent.layout.height)}
       >
-        <View
+        <ScrollView
+          ref={scrollRef}
           style={styles.flex}
-          onLayout={(e) => setBodyH(e.nativeEvent.layout.height)}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: contentPaddingBottom },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="none"
+          showsVerticalScrollIndicator={false}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
         >
-          {needsScroll ? (
-            <ScrollView
-              style={styles.flex}
-              contentContainerStyle={[styles.content, { paddingBottom: deleteBottomPad }]}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-              bounces
-            >
-              {formFields}
-              <View style={styles.deleteAfterForm}>{deleteButton}</View>
-            </ScrollView>
-          ) : (
-            <View style={[styles.content, styles.fitBody]}>
+          {pinDeleteToBottom ? (
+            <View style={pinPanelMinHeight ? { minHeight: pinPanelMinHeight } : undefined}>
               {formFields}
               <View style={styles.deletePinned} />
-              <View style={{ paddingBottom: deleteBottomPad }}>{deleteButton}</View>
+              <View ref={deleteAnchorRef} collapsable={false}>
+                {deleteButton}
+              </View>
             </View>
+          ) : (
+            <>
+              {formFields}
+              <View ref={deleteAnchorRef} collapsable={false} style={styles.deleteAfterForm}>
+                {deleteButton}
+              </View>
+            </>
           )}
-        </View>
-      </KeyboardAvoidingView>
+          {keyboardScrollRoom > 0 ? (
+            <View style={{ height: keyboardScrollRoom }} />
+          ) : null}
+        </ScrollView>
+      </View>
 
       <BirthDatePickerSheet
         visible={picker === 'date'}
@@ -405,6 +432,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
+  },
+  scrollContentGrow: {
+    flexGrow: 1,
   },
   fitBody: {
     flex: 1,

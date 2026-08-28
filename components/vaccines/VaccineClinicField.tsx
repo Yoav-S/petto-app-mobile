@@ -6,6 +6,7 @@ import {
   View,
   Keyboard,
   type StyleProp,
+  type TextInputProps,
   type ViewStyle,
 } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
@@ -17,6 +18,7 @@ interface VaccineClinicFieldProps {
   value: string;
   onChangeText: (text: string) => void;
   onBlur?: () => void;
+  onFocus?: TextInputProps['onFocus'];
   style?: StyleProp<ViewStyle>;
 }
 
@@ -25,6 +27,7 @@ export default function VaccineClinicField({
   value,
   onChangeText,
   onBlur,
+  onFocus,
   style,
 }: VaccineClinicFieldProps) {
   const colors = useColors();
@@ -40,6 +43,7 @@ export default function VaccineClinicField({
           value={value}
           onChangeText={onChangeText}
           onBlur={onBlur}
+          onFocus={onFocus}
           placeholder={t('vaccines.vet_clinic_placeholder')}
           placeholderTextColor={colors.secondaryText}
           textAlignVertical="center"

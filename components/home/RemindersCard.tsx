@@ -60,7 +60,7 @@ export default function RemindersCard({
 
   const formatTime = (isoString: string) => {
     const date = new Date(isoString);
-    return date.toLocaleTimeString(currentLocale, { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString(currentLocale, { hour: 'numeric', minute: '2-digit' });
   };
 
   return (

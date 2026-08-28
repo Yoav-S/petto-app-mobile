@@ -46,6 +46,7 @@ import HeaderIconButton, {
 } from '@/components/ui/HeaderIconButton';
 import { defaultPetPhotoSource } from '@/utils/petPhotoSource';
 import PetPhotoImage from '@/components/ui/PetPhotoImage';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 const PHOTO_DESIGN = { size: 128, radius: 22 } as const;
@@ -72,8 +73,7 @@ export default function EditProfileScreen() {
   const toast = useToast();
   const { activePetId } = useActivePet();
   const headerTopPadding = useHeaderTopPadding();
-  const { contentWidth, width: screenWidth } = useResponsiveLayout();
-  const pagePad = Math.max(16, Math.round((screenWidth - contentWidth) / 2));
+  const { contentWidth } = useResponsiveLayout();
   const {
     scrollRef,
     onScroll,
@@ -326,7 +326,7 @@ export default function EditProfileScreen() {
               scrollEventThrottle={16}
               fieldsStyle={[
                 styles.content,
-                { paddingHorizontal: pagePad },
+                { paddingHorizontal: PAGE_HORIZONTAL_PADDING },
               ]}
             >
             <View style={[styles.photoWrap, { width: photoSize, height: photoSize }]}>
@@ -486,7 +486,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     paddingVertical: 6,
   },
   headerSpacer: {

@@ -303,7 +303,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     paddingVertical: 6,
     zIndex: 90,
   },
@@ -341,7 +341,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'flex-start',
     marginBottom: 12,
     paddingBottom: 0,
-    paddingHorizontal: 20,
+    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
   },
   nameRow: {
     maxWidth: '100%',

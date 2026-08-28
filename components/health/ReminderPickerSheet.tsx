@@ -18,6 +18,7 @@ import type { RepeatOption } from '@/services/reminders';
 import type { HealthReminderDraft } from '@/services/healthReminder';
 import {
   formatDisplayDate,
+  formatDisplayTime,
   formatHourMinute,
   isIsoDateBefore,
   minReminderDateIso,
@@ -91,9 +92,7 @@ function chipForTime(time: string): string | null {
 }
 
 function formatTimeDisplay(time: string): string {
-  const [h, m] = time.split(':').map(Number);
-  if (!Number.isFinite(h) || !Number.isFinite(m)) return time;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  return formatDisplayTime(time);
 }
 
 function resolveInitialDate(preferred?: string | null): string {

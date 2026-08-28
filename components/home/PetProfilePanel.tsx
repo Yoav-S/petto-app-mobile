@@ -104,7 +104,7 @@ const cardShadow = {
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   wrapper: {
-    paddingHorizontal: Spacing.lg,
+    width: '100%',
     gap: Spacing.lg,
   },
   switcher: {

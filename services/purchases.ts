@@ -6,7 +6,7 @@
  * Test Store keys (test_…) are for development only.
  * Preview/production must use goog_ / appl_ keys (Expo env already maps this).
  */
-import { LogBox, NativeModules, Platform } from 'react-native';
+import { Linking, LogBox, NativeModules, Platform } from 'react-native';
 import Constants from 'expo-constants';
 import Purchases, {
   LOG_LEVEL,
@@ -324,6 +324,56 @@ export async function restorePremium(): Promise<PurchaseResult> {
     }
     return { status: 'error', message: t('errors.generic') };
   }
+}
+
+export function isTestStorePurchases(): boolean {
+  const key = Platform.OS === 'ios' ? iosKey() : androidKey();
+  return key.startsWith('test_');
+}
+
+/** RevenueCat / store URL for this user's subscription, when available. */
+export async function getSubscriptionManagementUrl(): Promise<string | null> {
+  if (!(await configurePurchases())) return null;
+  try {
+    const info = await Purchases.getCustomerInfo();
+    return info.managementURL ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Open subscription management. iOS uses the native sheet when possible;
+ * otherwise RevenueCat managementURL or a store deep link.
+ */
+export async function openSubscriptionManagement(
+  fallbackProductId?: string | null,
+): Promise<void> {
+  if (!(await configurePurchases())) {
+    throw new Error('purchases_unavailable');
+  }
+
+  if (Platform.OS === 'ios') {
+    try {
+      await Purchases.showManageSubscriptions();
+      return;
+    } catch {
+      // Fall through to URL-based management (older iOS / Test Store).
+    }
+  }
+
+  const managementUrl = await getSubscriptionManagementUrl();
+  if (managementUrl) {
+    await Linking.openURL(managementUrl);
+    return;
+  }
+
+  const sku = (fallbackProductId || PREMIUM_PRODUCT_ID).split(':')[0];
+  const url =
+    Platform.OS === 'ios'
+      ? 'https://apps.apple.com/account/subscriptions'
+      : `https://play.google.com/store/account/subscriptions?package=com.yoav.petto&sku=${encodeURIComponent(sku)}`;
+  await Linking.openURL(url);
 }
 
 export async function hasActivePremiumEntitlement(): Promise<boolean> {

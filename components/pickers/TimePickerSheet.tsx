@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
-import { formatHourMinute, parseHourMinute } from '@/utils/calendar';
+import { formatDisplayTime, formatHourMinute, parseHourMinute } from '@/utils/calendar';
 
 interface TimePickerSheetProps {
   visible: boolean;
@@ -190,7 +190,7 @@ export default function TimePickerSheet({
     setMountKey((k) => k + 1);
   }, [visible, value, clampToMin]);
 
-  const preview = clampToMin(hourIndex, minuteIndex).time;
+  const preview = formatDisplayTime(clampToMin(hourIndex, minuteIndex).time);
 
   const handleConfirm = () => {
     const clamped = clampToMin(hourIndex, minuteIndex);

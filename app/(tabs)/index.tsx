@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useActivePet } from '@/store/petStore';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { getErrorMessage } from '@/services/errors';
@@ -378,8 +379,8 @@ const makeStyles = (c: ThemeColors) =>
     errorBanner: {
       position: 'absolute',
       top: Spacing.sm,
-      left: Spacing.lg,
-      right: Spacing.lg,
+      left: PAGE_HORIZONTAL_PADDING,
+      right: PAGE_HORIZONTAL_PADDING,
       zIndex: 100,
       elevation: 8,
     },

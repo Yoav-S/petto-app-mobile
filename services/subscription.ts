@@ -1,10 +1,14 @@
-import { Alert, Linking, Platform } from 'react-native';
+import { Alert } from 'react-native';
 import { Router } from 'expo-router';
 import { apiGet } from '@/services/api';
 import { listReminders } from '@/services/reminders';
 import { waitForBottomSheetsToSettle } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 import type { Pet, UserProfile, UserSubscription } from '@/types/api';
+import {
+  isTestStorePurchases,
+  openSubscriptionManagement,
+} from '@/services/purchases';
 
 export const FREE_MAX_PETS = 1;
 export const FREE_MAX_ACTIVE_REMINDERS = 10;
@@ -70,16 +74,16 @@ export function showUpgradeAlert(
   ]);
 }
 
-export async function openManageSubscriptions(): Promise<void> {
-  const url =
-    Platform.OS === 'ios'
-      ? 'https://apps.apple.com/account/subscriptions'
-      : 'https://play.google.com/store/account/subscriptions';
+export async function openManageSubscriptions(productId?: string | null): Promise<void> {
   try {
-    await Linking.openURL(url);
+    await openSubscriptionManagement(productId);
   } catch {
     Alert.alert(t('common.error'), t('errors.generic'));
   }
+}
+
+export function isTestStoreEnvironment(): boolean {
+  return isTestStorePurchases();
 }
 
 /**

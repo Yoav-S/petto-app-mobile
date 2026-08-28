@@ -1,11 +1,11 @@
 import type { Reminder } from '@/types/api';
 import {
+  formatDisplayTime,
   formatHourMinute,
   isIsoDateBefore,
   isIsoDateToday,
   isReminderDateTimeInPast,
   minReminderDateIso,
-  parseHourMinute,
   soonestValidReminderTime,
 } from '@/utils/calendar';
 import { t } from '@/i18n';
@@ -31,8 +31,7 @@ export function normalizeTime(time: string): string {
 }
 
 export function formatTimeDisplay(time: string): string {
-  const { hour, minute } = parseHourMinute(normalizeTime(time));
-  return formatHourMinute(hour, minute);
+  return formatDisplayTime(normalizeTime(time));
 }
 
 /** Current clock time as HH:MM. */
@@ -105,10 +104,7 @@ export function needsStatusPrompt(reminder: Reminder): boolean {
   return reminder.status === 'today';
 }
 
-/** Compact clock for the action sheet (matches design "8:00"). */
+/** Compact clock for list rows and action sheet (e.g. "4:46"). */
 export function formatSheetClockTime(time: string): string {
-  const normalized = normalizeTime(time);
-  const [h, m] = normalized.split(':');
-  if (!h || !m) return time;
-  return `${Number(h)}:${m}`;
+  return formatDisplayTime(normalizeTime(time));
 }

@@ -8,6 +8,7 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +20,7 @@ import PremiumSuccessModal from '@/components/settings/PremiumSuccessModal';
 import {
   getMyProfile,
   isPremiumPlan,
+  isTestStoreEnvironment,
   openManageSubscriptions,
 } from '@/services/subscription';
 import {
@@ -26,6 +28,8 @@ import {
   purchasePremium,
   restorePremium,
 } from '@/services/purchases';
+import { formatDisplayDateLong } from '@/utils/calendar';
+import type { UserSubscription } from '@/types/api';
 
 type PlanId = 'free' | 'premium';
 
@@ -57,14 +61,17 @@ export default function SubscriptionSettingsScreen() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [plan, setPlan] = useState<PlanId>('free');
+  const [subscription, setSubscription] = useState<UserSubscription | null>(null);
   const [priceLabel, setPriceLabel] = useState(t('settings.plan_premium_price'));
   const [successVisible, setSuccessVisible] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
       const profile = await getMyProfile();
+      setSubscription(profile.subscription ?? null);
       setPlan(isPremiumPlan(profile.subscription) ? 'premium' : 'free');
     } catch {
+      setSubscription(null);
       setPlan('free');
     }
     try {
@@ -87,16 +94,33 @@ export default function SubscriptionSettingsScreen() {
     };
   }, [refresh]);
 
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh]),
+  );
+
   const handleSelectFree = async () => {
     if (plan === 'free') return;
-    Alert.alert(t('settings.manage_subscription'), t('settings.manage_subscription_body'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('settings.manage_subscription'),
-        onPress: () => {
-          void openManageSubscriptions();
-        },
-      },
+    const body = isTestStoreEnvironment()
+      ? t('settings.manage_subscription_test_body')
+      : subscription?.will_renew === false
+        ? t('settings.manage_subscription_cancel_pending_body')
+        : t('settings.manage_subscription_body');
+    Alert.alert(t('settings.manage_subscription'), body, [
+      isTestStoreEnvironment()
+        ? { text: t('common.close'), style: 'cancel' }
+        : { text: t('common.cancel'), style: 'cancel' },
+      ...(isTestStoreEnvironment()
+        ? []
+        : [
+            {
+              text: t('settings.manage_subscription'),
+              onPress: () => {
+                void openManageSubscriptions(subscription?.product_id);
+              },
+            },
+          ]),
     ]);
   };
 
@@ -231,6 +255,14 @@ export default function SubscriptionSettingsScreen() {
               </View>
             </Pressable>
           </View>
+
+          {plan === 'premium' && subscription?.expires_at ? (
+            <Text style={styles.statusNote}>
+              {subscription.will_renew === false
+                ? `${t('settings.subscription_ends_on')} ${formatDisplayDateLong(subscription.expires_at)}`
+                : `${t('settings.subscription_renews_on')} ${formatDisplayDateLong(subscription.expires_at)}`}
+            </Text>
+          ) : null}
 
           <Pressable
             style={styles.restoreBtn}
@@ -400,5 +432,13 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 18,
       color: c.secondaryText,
       textAlign: 'center',
+    },
+    statusNote: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 12,
+      lineHeight: 16,
+      color: c.secondaryText,
+      textAlign: 'center',
+      marginTop: -8,
     },
   });

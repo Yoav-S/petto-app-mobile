@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
 } from 'react-native';
+import type { TextFieldFocusHandler } from '@/hooks/useKeyboardAwareScroll';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
@@ -36,6 +37,7 @@ interface HealthNoteEditorCardProps {
   onReminderPress: () => void;
   placeholder?: string;
   autoFocus?: boolean;
+  onNoteFocus?: TextFieldFocusHandler;
 }
 
 export default function HealthNoteEditorCard({
@@ -47,6 +49,7 @@ export default function HealthNoteEditorCard({
   onReminderPress,
   placeholder,
   autoFocus = false,
+  onNoteFocus,
 }: HealthNoteEditorCardProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
@@ -105,6 +108,7 @@ export default function HealthNoteEditorCard({
           style={styles.noteInput}
           value={noteText}
           onChangeText={onChangeNoteText}
+          onFocus={onNoteFocus}
           multiline
           autoFocus={autoFocus}
           placeholder={placeholder ?? t('topics.note_placeholder')}

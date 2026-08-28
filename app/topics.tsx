@@ -20,7 +20,7 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import EmptyState from '@/components/ui/EmptyState';
 import HealthListItem, {
-  HEALTH_LIST_CARD_HEIGHT,
+  estimateHealthListItemHeight,
   HEALTH_LIST_ITEM_GAP,
   healthRecordSubtitle,
 } from '@/components/health/HealthListItem';
@@ -52,9 +52,8 @@ export default function HealthScreen() {
   const [swipeOpenId, setSwipeOpenId] = useState<string | null>(null);
   const [scrollY, setScrollY] = useState(0);
   const [listHeight, setListHeight] = useState(0);
-  const cardHeight = HEALTH_LIST_CARD_HEIGHT;
   const itemGap = HEALTH_LIST_ITEM_GAP;
-  const fadeZone = cardHeight * 0.89;
+  const fadeZone = estimateHealthListItemHeight('placeholder') * 0.89;
 
   const fetchActivePage = useCallback(
     async (params: { limit: number; cursor?: string }) => {
@@ -108,12 +107,16 @@ export default function HealthScreen() {
     (index: number) => {
       if (listHeight <= 0) return 0;
       const listPaddingTop = LIST_TABS_CONTENT_GAP;
-      const itemBottom =
-        listPaddingTop + (index + 1) * cardHeight + index * itemGap - scrollY;
+      let itemBottom = listPaddingTop;
+      for (let i = 0; i <= index; i += 1) {
+        itemBottom += estimateHealthListItemHeight(items[i]?.description);
+        if (i < index) itemBottom += itemGap;
+      }
+      itemBottom -= scrollY;
       if (itemBottom <= listHeight) return 0;
       return Math.min(1, (itemBottom - listHeight) / fadeZone);
     },
-    [cardHeight, fadeZone, itemGap, listHeight, scrollY],
+    [fadeZone, itemGap, items, listHeight, scrollY],
   );
 
   const tabPresence = useMemo(
