@@ -144,47 +144,14 @@ export function isIsoDateTomorrow(iso: string | null | undefined): boolean {
   return datePart === addDaysToIsoDate(todayIsoDate(), 1);
 }
 
-/** 12-hour clock for reminder rows, e.g. "8:00 PM". */
+/** 24-hour clock for reminder rows, e.g. "20:00". Never AM/PM. */
 export function formatReminderClockTime(
   time: string | null | undefined,
-  locale?: string,
+  _locale?: string,
 ): string {
   const trimmed = time?.trim();
   if (!trimmed) return '';
-  const [h, m] = trimmed.split(':').map(Number);
-  if (!Number.isFinite(h) || !Number.isFinite(m)) return trimmed;
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return d.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' });
-}
-
-function parseDatePartToLocalDate(datePart: string): Date | null {
-  const parsed = parseIsoDate(datePart);
-  return parsed ?? null;
-}
-
-/** Short month + day for future reminders, e.g. "Apr 21". */
-export function formatReminderMonthDay(
-  isoDate: string | null | undefined,
-  locale?: string,
-): string {
-  const datePart = normalizeToDatePart(isoDate);
-  if (!datePart) return '';
-  const date = parseDatePartToLocalDate(datePart);
-  if (!date) return '';
-  return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
-}
-
-/** Month name for past reminders, e.g. "March". */
-export function formatReminderMonthName(
-  isoDate: string | null | undefined,
-  locale?: string,
-): string {
-  const datePart = normalizeToDatePart(isoDate);
-  if (!datePart) return '';
-  const date = parseDatePartToLocalDate(datePart);
-  if (!date) return '';
-  return date.toLocaleDateString(locale, { month: 'long' });
+  return formatDisplayTime(trimmed) || trimmed;
 }
 
 export interface HealthReminderLabels {
@@ -201,22 +168,16 @@ export function formatHealthReminderValue(
   locale?: string,
 ): string {
   const datePart = normalizeToDatePart(date);
-  const timeStr = formatReminderClockTime(time, locale);
+  const timeStr = formatReminderClockTime(time);
   if (!datePart) return timeStr;
 
-  const today = todayIsoDate();
-  if (datePart < today) {
-    const month = formatReminderMonthName(datePart, locale);
-    return month ? `${labels.sentSuccessfully}, ${month}, ${timeStr}` : labels.sentSuccessfully;
+  const dateStr = formatDisplayDate(datePart);
+  const dateTime = timeStr ? `${dateStr}, ${timeStr}` : dateStr;
+
+  if (datePart < todayIsoDate()) {
+    return `${labels.sentSuccessfully}, ${dateTime}`;
   }
-  if (isIsoDateToday(datePart)) {
-    return timeStr ? `${labels.today}, ${timeStr}` : labels.today;
-  }
-  if (isIsoDateTomorrow(datePart)) {
-    return timeStr ? `${labels.tomorrow}, ${timeStr}` : labels.tomorrow;
-  }
-  const monthDay = formatReminderMonthDay(datePart, locale);
-  return timeStr ? `${monthDay}, ${timeStr}` : monthDay;
+  return dateTime;
 }
 
 export function parseIsoDate(value: string | null | undefined): Date | null {
@@ -300,7 +261,7 @@ export function getYearOptions(options?: { pastYears?: number; futureYears?: num
   return years;
 }
 
-/** Format an ISO date (YYYY-MM-DD) or Date as DD.MM.YY for display. */
+/** Format an ISO date (YYYY-MM-DD) or Date as DD/MM/YY for display. */
 export function formatDisplayDate(value: string | Date | null | undefined): string {
   if (!value) return '';
   const date = typeof value === 'string' ? new Date(value) : value;
@@ -308,10 +269,10 @@ export function formatDisplayDate(value: string | Date | null | undefined): stri
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = String(date.getFullYear()).slice(-2);
-  return `${day}.${month}.${year}`;
+  return `${day}/${month}/${year}`;
 }
 
-/** Format an ISO date (YYYY-MM-DD) or Date as DD.MM.YYYY for display. */
+/** Format an ISO date (YYYY-MM-DD) or Date as DD/MM/YYYY for display. */
 export function formatDisplayDateLong(value: string | Date | null | undefined): string {
   if (!value) return '';
   const date = typeof value === 'string' ? new Date(value) : value;
@@ -319,7 +280,7 @@ export function formatDisplayDateLong(value: string | Date | null | undefined): 
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = String(date.getFullYear());
-  return `${day}.${month}.${year}`;
+  return `${day}/${month}/${year}`;
 }
 
 /** True if an ISO date (YYYY-MM-DD) is the same calendar day as today. */
@@ -415,7 +376,7 @@ function parseApiDateTime(value: string | null | undefined): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-/** Health list footer: Created/Resolved + Today 17:15, Yesterday 20:11, or DD.MM.YYYY. */
+/** Health list footer: Created/Resolved + Today 17:15, Yesterday 20:11, or DD/MM/YY. */
 export function formatHealthDateMeta(
   isoDateTime: string | null | undefined,
   labels: { today: string; yesterday: string; prefix: string },
@@ -437,10 +398,7 @@ export function formatHealthDateMeta(
   if (diffDays === 1) {
     return `${labels.prefix} ${labels.yesterday} ${time}`;
   }
-  const day = String(created.getDate()).padStart(2, '0');
-  const month = String(created.getMonth() + 1).padStart(2, '0');
-  const year = created.getFullYear();
-  return `${labels.prefix} ${day}.${month}.${year}`;
+  return `${labels.prefix} ${formatDisplayDate(created)}`;
 }
 
 /** @deprecated Use formatHealthDateMeta */

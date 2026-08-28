@@ -18,7 +18,10 @@ import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import EmptyState from '@/components/ui/EmptyState';
-import ReminderListItem from '@/components/reminders/ReminderListItem';
+import ReminderListItem, {
+  estimateReminderListItemHeight,
+  REMINDER_LIST_ITEM_GAP,
+} from '@/components/reminders/ReminderListItem';
 import ReminderActionSheet from '@/components/reminders/ReminderActionSheet';
 import SwipeToDeleteRow from '@/components/ui/SwipeToDeleteRow';
 import { needsStatusPrompt, formatSheetClockTime } from '@/components/reminders/reminderFormShared';
@@ -100,6 +103,8 @@ export default function RemindersScreen() {
   const [activeTab, setActiveTab] = useState<TabName>('Today');
   const [refreshing, setRefreshing] = useState(false);
   const [swipeOpenId, setSwipeOpenId] = useState<string | null>(null);
+  const [scrollY, setScrollY] = useState(0);
+  const [listHeight, setListHeight] = useState(0);
 
   const [promptQueue, setPromptQueue] = useState<Reminder[]>([]);
   const [promptTotal, setPromptTotal] = useState(0);
@@ -171,6 +176,31 @@ export default function RemindersScreen() {
   );
 
   const hasAnyReminders = tabPresence.today || tabPresence.upcoming || tabPresence.recent;
+
+  const rowHeightFor = useCallback(
+    (item: Reminder | undefined) =>
+      estimateReminderListItemHeight({
+        description: item?.note,
+        dayLabel: activeTab === 'Today' ? null : 'day',
+      }),
+    [activeTab],
+  );
+
+  const getItemFadeIntensity = useCallback(
+    (index: number) => {
+      if (listHeight <= 0) return 0;
+      let itemBottom = 0;
+      for (let i = 0; i <= index; i += 1) {
+        itemBottom += rowHeightFor(items[i]);
+        if (i < index) itemBottom += REMINDER_LIST_ITEM_GAP;
+      }
+      itemBottom -= scrollY;
+      if (itemBottom <= listHeight) return 0;
+      const fadeZone = rowHeightFor(items[index]) * 0.89;
+      return Math.min(1, (itemBottom - listHeight) / fadeZone);
+    },
+    [items, listHeight, rowHeightFor, scrollY],
+  );
 
   React.useEffect(() => {
     if (params.deletedId) {
@@ -431,12 +461,17 @@ export default function RemindersScreen() {
                 />
               </View>
             ) : (
-              <View style={styles.listWrap}>
+              <View
+                style={styles.listWrap}
+                onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
+              >
                 <FlatList
                   style={styles.list}
                   data={items}
                   keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => {
+                  scrollEventThrottle={16}
+                  onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
+                  renderItem={({ item, index }) => {
                     return (
                       <SwipeToDeleteRow
                         open={swipeOpenId === item.id}
@@ -453,6 +488,7 @@ export default function RemindersScreen() {
                           showCompletedBar={
                             activeTab === 'Recent' && item.status === 'completed'
                           }
+                          fadeIntensity={getItemFadeIntensity(index)}
                           onPress={() => {
                             setSwipeOpenId(null);
                             handleReminderPress(item);

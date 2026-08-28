@@ -13,7 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { useFocusEffect } from '@react-navigation/native';
-import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -35,11 +35,11 @@ import {
 } from '@/services/health';
 import { getErrorMessage } from '@/services/errors';
 import HealthReminderLine from '@/components/health/HealthReminderLine';
-import HealthNoteIconRow from '@/components/health/HealthNoteIconRow';
 import { normalizeRouteParam } from '@/utils/routeParams';
 import {
   formatNoteSectionDateLabel,
   getNoteLocalDateKey,
+  truncatePreviewText,
 } from '@/utils/calendar';
 import type { MedicalRecordDetail, HealthNote } from '@/types/api';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
@@ -51,6 +51,18 @@ const DESIGN_SAVE_BUTTON_HEIGHT = 48;
 const DESIGN_RESOLVED_TEXT_HEIGHT = 20;
 const DESIGN_FOOTER_MIN_BOTTOM = 10;
 const DESIGN_FOOTER_SAFE_GAP = 8;
+const NOTE_PREVIEW_CHARS = 25;
+
+/** Figma note card: 335×auto, r12, 14/16/20/16 padding, 12px inner gap, 160px image. */
+const NOTE_CARD = {
+  radius: 12,
+  padTop: 14,
+  padH: 16,
+  padBottom: 20,
+  innerGap: 12,
+  imageHeight: 160,
+  imageRadius: 12,
+} as const;
 
 type NoteListItem =
   | { type: 'header'; key: string; label: string; isFirst: boolean }
@@ -271,13 +283,13 @@ export default function HealthDetailsScreen() {
 
       const note = item.note;
       return (
-        <View style={styles.noteCard}>
+        <TouchableOpacity
+          style={styles.noteCard}
+          activeOpacity={0.85}
+          onPress={() => openNote(note.id)}
+        >
           {note.photo_url && !failedPhotoIds[note.id] ? (
-            <TouchableOpacity
-              style={styles.noteImageWrap}
-              activeOpacity={0.85}
-              onPress={() => openNote(note.id, 'photo')}
-            >
+            <View style={styles.noteImageWrap}>
               <Image
                 source={{ uri: note.photo_url }}
                 style={styles.noteImage}
@@ -288,28 +300,20 @@ export default function HealthDetailsScreen() {
                   setFailedPhotoIds((prev) => ({ ...prev, [note.id]: true }))
                 }
               />
-            </TouchableOpacity>
+            </View>
           ) : null}
-          <TouchableOpacity activeOpacity={0.7} onPress={() => openNote(note.id, 'focus')}>
-            <Text style={styles.noteText}>{note.text}</Text>
-          </TouchableOpacity>
+          <Text style={styles.noteText} numberOfLines={1}>
+            {truncatePreviewText(note.text, NOTE_PREVIEW_CHARS)}
+          </Text>
           {note.linked_reminder_date || note.linked_reminder_time ? (
-            <TouchableOpacity
-              style={styles.reminderRow}
-              activeOpacity={0.7}
-              onPress={() => openNote(note.id, 'reminder')}
-            >
+            <View style={styles.reminderRow}>
               <HealthReminderLine
                 date={note.linked_reminder_date}
                 time={note.linked_reminder_time}
               />
-            </TouchableOpacity>
+            </View>
           ) : null}
-          <HealthNoteIconRow
-            onPhotoPress={() => openNote(note.id, 'photo')}
-            onReminderPress={() => openNote(note.id, 'reminder')}
-          />
-        </View>
+        </TouchableOpacity>
       );
     },
     [failedPhotoIds, openNote, styles],
@@ -520,20 +524,22 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   noteCard: {
     backgroundColor: c.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
+    borderRadius: NOTE_CARD.radius,
+    paddingTop: NOTE_CARD.padTop,
+    paddingHorizontal: NOTE_CARD.padH,
+    paddingBottom: NOTE_CARD.padBottom,
     marginBottom: Spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    gap: NOTE_CARD.innerGap,
+    shadowColor: '#2D2D2A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 20,
+    elevation: 3,
   },
   noteImageWrap: {
     width: '100%',
-    height: 180,
-    borderRadius: Radius.md,
-    marginBottom: Spacing.md,
+    height: NOTE_CARD.imageHeight,
+    borderRadius: NOTE_CARD.imageRadius,
     overflow: 'hidden',
     backgroundColor: c.background,
   },
@@ -543,12 +549,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   noteText: {
     fontFamily: 'Rubik-Regular',
-    fontSize: 16,
+    fontSize: 14,
+    lineHeight: 20,
     color: c.primaryText,
-    lineHeight: 22,
   },
   reminderRow: {
-    marginTop: Spacing.sm,
+    width: '100%',
+    minHeight: 20,
   },
   footer: {
     width: '100%',

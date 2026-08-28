@@ -1,6 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
+import HeaderIconButton, {
+  HEADER_ICON_BTN,
+} from '@/components/ui/HeaderIconButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
@@ -43,9 +46,13 @@ export default function CategoryPickerSheet({
           <Text style={styles.title} numberOfLines={1}>
             {t('reminders.category_title')}
           </Text>
-          <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
-            <Ionicons name="close" size={20} color={colors.primaryText} />
-          </Pressable>
+          <HeaderIconButton onPress={onClose} accessibilityLabel={t('common.close')}>
+            <Ionicons
+              name="close"
+              size={HEADER_ICON_BTN.iconSize}
+              color={colors.primaryText}
+            />
+          </HeaderIconButton>
         </View>
 
         <View style={styles.body}>
@@ -110,7 +117,7 @@ const makeStyles = (c: ThemeColors) =>
       marginBottom: 22,
       minHeight: 32,
     },
-    headerSpacer: { width: 32 },
+    headerSpacer: { width: HEADER_ICON_BTN.size },
     title: {
       flex: 1,
       textAlign: 'center',
@@ -118,14 +125,6 @@ const makeStyles = (c: ThemeColors) =>
       fontSize: 20,
       lineHeight: 24,
       color: c.primaryText,
-    },
-    closeButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: c.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     body: {
       gap: 22,

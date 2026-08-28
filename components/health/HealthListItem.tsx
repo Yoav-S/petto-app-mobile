@@ -8,32 +8,44 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import CardBottomFadeOverlay from '@/components/ui/CardBottomFadeOverlay';
 import { t } from '@/i18n';
-import {
-  formatHealthDateMeta,
-  truncateHealthDescription,
-  truncatePreviewText,
-} from '@/utils/calendar';
+import { formatHealthDateMeta, truncatePreviewText } from '@/utils/calendar';
 
 export const HEALTH_LIST_CARD_WIDTH = '100%';
-/** Title + meta + padding (no description). */
-export const HEALTH_LIST_CARD_COMPACT_HEIGHT = 70;
-/** Title + description + meta + padding. */
-export const HEALTH_LIST_CARD_FULL_HEIGHT = 96;
-/** @deprecated Use HEALTH_LIST_CARD_FULL_HEIGHT or estimate per row. */
-export const HEALTH_LIST_CARD_HEIGHT = HEALTH_LIST_CARD_FULL_HEIGHT;
 export const HEALTH_LIST_ITEM_GAP = 12;
 
-const PREVIEW_CHARS = 20;
+const TITLE_CHARS = 20;
 const CARD_PAD_V = 14;
-const ROW_GAP = 6;
+/** Title → description. */
+const TITLE_GAP = 6;
+/** Description → meta line (double the title gap). */
+const META_GAP = 12;
 const TITLE_LINE = 20;
 const SUBTITLE_LINE = 20;
 const META_LINE = 16;
+/** Description wraps to at most two lines. */
+const SUBTITLE_MAX_LINES = 2;
+/** Rough chars that fit on one description line at 14/20 inside a 303pt card. */
+const SUBTITLE_CHARS_PER_LINE = 42;
+
+/** Title + meta + padding (no description). */
+export const HEALTH_LIST_CARD_COMPACT_HEIGHT =
+  CARD_PAD_V * 2 + TITLE_LINE + TITLE_GAP + META_LINE;
+/** Title + one description line + meta + padding. */
+export const HEALTH_LIST_CARD_FULL_HEIGHT =
+  CARD_PAD_V * 2 + TITLE_LINE + TITLE_GAP + SUBTITLE_LINE + META_GAP + META_LINE;
+/** @deprecated Use HEALTH_LIST_CARD_FULL_HEIGHT or estimate per row. */
+export const HEALTH_LIST_CARD_HEIGHT = HEALTH_LIST_CARD_FULL_HEIGHT;
 
 export function estimateHealthListItemHeight(description?: string | null): number {
-  const hasSubtitle = Boolean(truncateHealthDescription(description, PREVIEW_CHARS));
-  return hasSubtitle ? HEALTH_LIST_CARD_FULL_HEIGHT : HEALTH_LIST_CARD_COMPACT_HEIGHT;
+  const text = description?.trim() ?? '';
+  if (!text) return HEALTH_LIST_CARD_COMPACT_HEIGHT;
+  const lines = Math.min(
+    SUBTITLE_MAX_LINES,
+    Math.max(1, Math.ceil(text.length / SUBTITLE_CHARS_PER_LINE)),
+  );
+  return HEALTH_LIST_CARD_FULL_HEIGHT + (lines - 1) * SUBTITLE_LINE;
 }
 
 interface HealthListItemProps {
@@ -46,38 +58,6 @@ interface HealthListItemProps {
   onPress?: () => void;
   onLongPress?: () => void;
   onReminderPress?: () => void;
-}
-
-function BottomFadeOverlay({ intensity }: { intensity: number }) {
-  const styles = useThemedStyles(makeStyles);
-  const colors = useColors();
-  if (intensity <= 0.01) return null;
-
-  const stops = [0, 0.22, 0.45, 0.68, 0.89, 1];
-
-  return (
-    <View style={styles.fadeOverlay} pointerEvents="none">
-      {stops.map((stop, index) => {
-        const nextStop = stops[index + 1] ?? 1;
-        const bandOpacity = intensity * stop * 0.95;
-        if (bandOpacity <= 0.01) return null;
-        return (
-          <View
-            key={stop}
-            style={[
-              styles.fadeBand,
-              {
-                top: `${stop * 100}%`,
-                height: `${(nextStop - stop) * 100}%`,
-                backgroundColor: colors.surface,
-                opacity: bandOpacity,
-              },
-            ]}
-          />
-        );
-      })}
-    </View>
-  );
 }
 
 export default function HealthListItem({
@@ -94,8 +74,8 @@ export default function HealthListItem({
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
 
-  const displayTitle = truncatePreviewText(title, PREVIEW_CHARS);
-  const displaySubtitle = truncateHealthDescription(subtitle, PREVIEW_CHARS);
+  const displayTitle = truncatePreviewText(title, TITLE_CHARS);
+  const displaySubtitle = subtitle?.trim() ?? '';
   const hasSubtitle = Boolean(displaySubtitle);
 
   const metaPrefix =
@@ -135,25 +115,34 @@ export default function HealthListItem({
         </View>
 
         {hasSubtitle ? (
-          <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
+          <Text
+            style={styles.subtitle}
+            numberOfLines={SUBTITLE_MAX_LINES}
+            ellipsizeMode="tail"
+          >
             {displaySubtitle}
           </Text>
         ) : null}
 
         {metaLabel ? (
-          <Text style={styles.meta} numberOfLines={1} ellipsizeMode="tail">
+          <Text
+            style={[styles.meta, !hasSubtitle && styles.metaTight]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {metaLabel}
           </Text>
         ) : null}
       </View>
 
-      <BottomFadeOverlay intensity={fadeIntensity} />
+      <CardBottomFadeOverlay intensity={fadeIntensity} />
     </TouchableOpacity>
   );
 }
 
+/** Description shown in the topics list — wraps to two lines, no char cap. */
 export function healthRecordSubtitle(description?: string | null): string {
-  return truncateHealthDescription(description);
+  return description?.trim() ?? '';
 }
 
 const makeStyles = (c: ThemeColors) =>
@@ -175,7 +164,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     body: {
       width: '100%',
-      gap: ROW_GAP,
     },
     titleRow: {
       width: '100%',
@@ -208,21 +196,17 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: SUBTITLE_LINE,
       color: c.primaryText,
       width: '100%',
+      marginTop: TITLE_GAP,
     },
     meta: {
       fontFamily: 'Rubik-Regular',
       fontSize: 12,
       lineHeight: META_LINE,
       color: c.secondaryText,
+      marginTop: META_GAP,
       width: '100%',
     },
-    fadeOverlay: {
-      ...StyleSheet.absoluteFillObject,
-      overflow: 'hidden',
-    },
-    fadeBand: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
+    metaTight: {
+      marginTop: TITLE_GAP,
     },
   });

@@ -24,7 +24,6 @@ import {
   HealthKeyboardAvoidingView,
 } from '@/components/health/HealthKeyboardFooter';
 import SavingOverlay from '@/components/ui/SavingOverlay';
-import { PRIMARY_BUTTON } from '@/constants/buttons';
 import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
 import EditPhotoSheet from '@/components/health/EditPhotoSheet';
 import { t } from '@/i18n';
@@ -39,14 +38,14 @@ import {
 } from '@/services/healthReminder';
 import { uploadHealthNotePhoto } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
-import { formatDisplayDate } from '@/utils/calendar';
+import { formatDisplayDate, formatDisplayTime } from '@/utils/calendar';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { normalizeRouteParam } from '@/utils/routeParams';
-import { DESIGN_HEIGHT } from '@/constants/layout';
+import { DESIGN_HEIGHT, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
 function reminderLabel(draft: HealthReminderDraft): string {
-  return `${formatDisplayDate(draft.date)} ${draft.time}`;
+  return `${formatDisplayDate(draft.date)}, ${formatDisplayTime(draft.time)}`;
 }
 
 export default function EditNoteScreen() {
@@ -63,7 +62,7 @@ export default function EditNoteScreen() {
   const noteId = normalizeRouteParam(noteIdParam);
   const open = normalizeRouteParam(openParam);
   const { activePetId } = useActivePet();
-  const { contentWidth, height } = useResponsiveLayout();
+  const { height } = useResponsiveLayout();
   const deleteBottomPad = Math.max(24, Math.round(height * (58 / DESIGN_HEIGHT)));
   const openHandled = useRef(false);
 
@@ -100,6 +99,7 @@ export default function EditNoteScreen() {
   const pinPanelMinHeight =
     !needsScroll && viewportH > 0 ? viewportH - contentPaddingBottom : undefined;
   const loadedRef = useRef(false);
+  const savedTextRef = useRef<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -129,6 +129,7 @@ export default function EditNoteScreen() {
             setNotFound(false);
             setRecordTitle(detail.title ?? '');
             setNoteText(note.text);
+            savedTextRef.current = note.text.trim();
             setPhotoUri(note.photo_url ?? null);
             setPhotoMime(null);
             setPhotoChanged(false);
@@ -233,43 +234,55 @@ export default function EditNoteScreen() {
     }
   }, [loading, notFound, open]);
 
-  const handleSave = async () => {
-    Keyboard.dismiss();
-    if (!activePetId || !recordId || !noteId || !noteText.trim()) return;
-    try {
-      setSaving(true);
+  /** Auto-save note text — debounced while typing, flushed on blur / unmount. */
+  useEffect(() => {
+    if (loading || notFound || !loadedRef.current) return;
+    const trimmed = noteText.trim();
+    if (!trimmed || trimmed === savedTextRef.current) return;
+    if (!activePetId || !recordId || !noteId) return;
 
-      let photoUrl: string | null | undefined;
-      if (photoChanged) {
-        photoUrl = photoUri ? await uploadHealthNotePhoto(photoUri, photoMime) : null;
-      }
-
-      let nextLinkedReminderId: string | null = linkedReminderId;
-
-      if (reminderDraft) {
-        nextLinkedReminderId = await upsertHealthReminder(
-          activePetId,
-          reminderDraft,
-          healthReminderTitle(noteText, recordTitle),
-          linkedReminderId,
-        );
-      } else if (linkedReminderId) {
-        await removeHealthReminder(activePetId, linkedReminderId);
-        nextLinkedReminderId = null;
-      }
-
-      await updateNote(activePetId, recordId, noteId, {
-        text: noteText.trim(),
-        photo_url: photoUrl,
-        linked_reminder_id: nextLinkedReminderId,
+    const timer = setTimeout(() => {
+      savedTextRef.current = trimmed;
+      void updateNote(activePetId, recordId, noteId, { text: trimmed }).catch((err) => {
+        savedTextRef.current = null;
+        toast.showError(getErrorMessage(err));
       });
-      router.back();
-    } catch (err) {
-      toast.showError(getErrorMessage(err));
-    } finally {
-      setSaving(false);
-    }
-  };
+    }, 700);
+
+    return () => clearTimeout(timer);
+  }, [activePetId, loading, noteId, noteText, notFound, recordId, toast]);
+
+  /** Reminder changes save immediately — the sheet is an explicit confirm. */
+  const persistReminder = useCallback(
+    async (draft: HealthReminderDraft | null) => {
+      setReminderDraft(draft);
+      if (!activePetId || !recordId || !noteId) return;
+      setSaving(true);
+      try {
+        let nextLinkedReminderId: string | null = linkedReminderId;
+        if (draft) {
+          nextLinkedReminderId = await upsertHealthReminder(
+            activePetId,
+            draft,
+            healthReminderTitle(noteText, recordTitle),
+            linkedReminderId,
+          );
+        } else if (linkedReminderId) {
+          await removeHealthReminder(activePetId, linkedReminderId);
+          nextLinkedReminderId = null;
+        }
+        setLinkedReminderId(nextLinkedReminderId);
+        await updateNote(activePetId, recordId, noteId, {
+          linked_reminder_id: nextLinkedReminderId,
+        });
+      } catch (err) {
+        toast.showError(getErrorMessage(err));
+      } finally {
+        setSaving(false);
+      }
+    },
+    [activePetId, linkedReminderId, noteId, noteText, recordId, recordTitle, toast],
+  );
 
   const handleDelete = () => {
     if (!activePetId || !recordId || !noteId) return;
@@ -318,8 +331,6 @@ export default function EditNoteScreen() {
       </HeaderScrollLayout>
     );
   }
-
-  const canSave = Boolean(noteText.trim()) && !saving && !savingPhoto;
 
   return (
     <HeaderScrollLayout header={header} edges={['left', 'right']}>
@@ -376,21 +387,6 @@ export default function EditNoteScreen() {
 
             <View style={styles.footerSpacer} />
 
-            <TouchableOpacity
-              style={[
-                styles.saveButton,
-                { width: contentWidth },
-                !canSave && styles.saveButtonDisabled,
-              ]}
-              onPress={handleSave}
-              disabled={!canSave}
-              activeOpacity={0.85}
-            >
-              <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>
-                {t('common.save')}
-              </Text>
-            </TouchableOpacity>
-
             <View ref={bottomAnchorRef} collapsable={false}>
               <TouchableOpacity
                 style={styles.deleteButton}
@@ -440,7 +436,9 @@ export default function EditNoteScreen() {
         initialTime={reminderDraft?.time}
         initialRepeat={reminderDraft?.repeat}
         onClose={() => setReminderSheetVisible(false)}
-        onConfirm={setReminderDraft}
+        onConfirm={(draft) => {
+          void persistReminder(draft);
+        }}
       />
 
       <ConfirmModal
@@ -472,37 +470,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    paddingHorizontal: 20,
-    gap: Spacing.lg,
-  },
-  scrollContentGrow: {
-    flexGrow: 1,
+    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
   },
   footerSpacer: {
     flexGrow: 1,
     minHeight: 24,
-  },
-  saveButton: {
-    height: PRIMARY_BUTTON.height,
-    borderRadius: PRIMARY_BUTTON.borderRadius,
-    paddingVertical: PRIMARY_BUTTON.paddingVertical,
-    paddingHorizontal: PRIMARY_BUTTON.paddingHorizontal,
-    backgroundColor: c.brand,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-  },
-  saveButtonDisabled: {
-    backgroundColor: c.button.disabledBg,
-  },
-  saveText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    lineHeight: 24,
-    color: c.button.primaryText,
-  },
-  saveTextDisabled: {
-    color: c.button.disabledText,
   },
   deleteButton: {
     padding: Spacing.md,

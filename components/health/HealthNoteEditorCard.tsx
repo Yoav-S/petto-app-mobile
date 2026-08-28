@@ -171,7 +171,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     lineHeight: 20,
     color: c.primaryText,
     padding: 0,
-    minHeight: 40,
+    minHeight: 20,
     includeFontPadding: false,
     textAlignVertical: 'top',
   },

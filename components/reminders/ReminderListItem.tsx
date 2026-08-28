@@ -2,6 +2,23 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Radius, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
+import CardBottomFadeOverlay from '@/components/ui/CardBottomFadeOverlay';
+
+/** Title + time only. */
+export const REMINDER_LIST_CARD_COMPACT_HEIGHT = 48;
+/** Two stacked rows (description and/or day label). */
+export const REMINDER_LIST_CARD_FULL_HEIGHT = 76;
+export const REMINDER_LIST_ITEM_GAP = 12;
+
+export function estimateReminderListItemHeight(options: {
+  description?: string | null;
+  dayLabel?: string | null;
+}): number {
+  const hasDescription = Boolean(options.description?.trim());
+  return !options.dayLabel && !hasDescription
+    ? REMINDER_LIST_CARD_COMPACT_HEIGHT
+    : REMINDER_LIST_CARD_FULL_HEIGHT;
+}
 
 interface ReminderListItemProps {
   title: string;
@@ -11,6 +28,8 @@ interface ReminderListItemProps {
   dayLabel?: string;
   onPress?: () => void;
   showCompletedBar?: boolean;
+  /** 0 (visible) → 1 (faded out) as the row passes the list bottom edge. */
+  fadeIntensity?: number;
 }
 
 export default function ReminderListItem({
@@ -20,6 +39,7 @@ export default function ReminderListItem({
   dayLabel,
   onPress,
   showCompletedBar = false,
+  fadeIntensity = 0,
 }: ReminderListItemProps) {
   const styles = useThemedStyles(makeStyles);
   const hasDescription = Boolean(description?.trim());
@@ -87,6 +107,8 @@ export default function ReminderListItem({
           </View>
         )}
       </View>
+
+      <CardBottomFadeOverlay intensity={fadeIntensity} />
     </TouchableOpacity>
   );
 }
@@ -96,7 +118,7 @@ const makeStyles = (c: ThemeColors) =>
     card: {
       backgroundColor: c.surface,
       borderRadius: Radius.md,
-      marginBottom: 12,
+      marginBottom: REMINDER_LIST_ITEM_GAP,
       width: '100%',
       maxWidth: '100%',
       alignSelf: 'center',
@@ -107,10 +129,10 @@ const makeStyles = (c: ThemeColors) =>
       elevation: 3,
       flexDirection: 'row',
       overflow: 'hidden',
-      minHeight: 76,
+      minHeight: REMINDER_LIST_CARD_FULL_HEIGHT,
     },
     cardCompact: {
-      minHeight: 48,
+      minHeight: REMINDER_LIST_CARD_COMPACT_HEIGHT,
     },
     completedBar: {
       width: 4,

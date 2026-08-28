@@ -94,9 +94,11 @@ export function isBeforeMinReminderDate(nextDate: string): boolean {
   return isIsoDateBefore(nextDate.slice(0, 10), minReminderDateIso());
 }
 
-/** Only past calendar days — today (any time) is allowed. */
-export function isReminderScheduleInPast(nextDate: string, _nextTime?: string | null): boolean {
-  return isBeforeMinReminderDate(nextDate);
+/** Past calendar days, or a time today that has already passed. */
+export function isReminderScheduleInPast(nextDate: string, nextTime?: string | null): boolean {
+  if (isBeforeMinReminderDate(nextDate)) return true;
+  if (!nextTime) return false;
+  return isReminderDateTimeInPast(nextDate.slice(0, 10), normalizeTime(nextTime));
 }
 
 export function needsStatusPrompt(reminder: Reminder): boolean {

@@ -17,18 +17,13 @@ import { t } from '@/i18n';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import PremiumSuccessModal from '@/components/settings/PremiumSuccessModal';
-import {
-  getMyProfile,
-  isPremiumPlan,
-  isTestStoreEnvironment,
-  openManageSubscriptions,
-} from '@/services/subscription';
+import { getMyProfile, isPremiumPlan } from '@/services/subscription';
 import {
   getLocalizedPriceString,
   purchasePremium,
   restorePremium,
 } from '@/services/purchases';
-import { formatDisplayDateLong } from '@/utils/calendar';
+import { formatDisplayDateLong, formatDisplayHourMinute } from '@/utils/calendar';
 import type { UserSubscription } from '@/types/api';
 
 type PlanId = 'free' | 'premium';
@@ -64,6 +59,7 @@ export default function SubscriptionSettingsScreen() {
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
   const [priceLabel, setPriceLabel] = useState(t('settings.plan_premium_price'));
   const [successVisible, setSuccessVisible] = useState(false);
+  const [downgradeConfirmed, setDowngradeConfirmed] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -102,25 +98,12 @@ export default function SubscriptionSettingsScreen() {
 
   const handleSelectFree = async () => {
     if (plan === 'free') return;
-    const body = isTestStoreEnvironment()
-      ? t('settings.manage_subscription_test_body')
-      : subscription?.will_renew === false
-        ? t('settings.manage_subscription_cancel_pending_body')
-        : t('settings.manage_subscription_body');
-    Alert.alert(t('settings.manage_subscription'), body, [
-      isTestStoreEnvironment()
-        ? { text: t('common.close'), style: 'cancel' }
-        : { text: t('common.cancel'), style: 'cancel' },
-      ...(isTestStoreEnvironment()
-        ? []
-        : [
-            {
-              text: t('settings.manage_subscription'),
-              onPress: () => {
-                void openManageSubscriptions(subscription?.product_id);
-              },
-            },
-          ]),
+    Alert.alert(t('settings.downgrade_title'), t('settings.downgrade_body'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('settings.downgrade_confirm'),
+        onPress: () => setDowngradeConfirmed(true),
+      },
     ]);
   };
 
@@ -180,6 +163,17 @@ export default function SubscriptionSettingsScreen() {
       setBusy(false);
     }
   };
+
+  const expiresAtDate = subscription?.expires_at ? new Date(subscription.expires_at) : null;
+  const expiryLabel =
+    expiresAtDate && !Number.isNaN(expiresAtDate.getTime())
+      ? `${formatDisplayDateLong(expiresAtDate)}, ${formatDisplayHourMinute(
+          expiresAtDate.getHours(),
+          expiresAtDate.getMinutes(),
+        )}`
+      : null;
+  const downgradePending =
+    plan === 'premium' && (downgradeConfirmed || subscription?.will_renew === false);
 
   return (
     <>
@@ -256,11 +250,11 @@ export default function SubscriptionSettingsScreen() {
             </Pressable>
           </View>
 
-          {plan === 'premium' && subscription?.expires_at ? (
+          {plan === 'premium' && expiryLabel ? (
             <Text style={styles.statusNote}>
-              {subscription.will_renew === false
-                ? `${t('settings.subscription_ends_on')} ${formatDisplayDateLong(subscription.expires_at)}`
-                : `${t('settings.subscription_renews_on')} ${formatDisplayDateLong(subscription.expires_at)}`}
+              {downgradePending
+                ? `${t('settings.downgrade_scheduled')} ${expiryLabel}`
+                : `${t('settings.subscription_renews_on')} ${expiryLabel}`}
             </Text>
           ) : null}
 

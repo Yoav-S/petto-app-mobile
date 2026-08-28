@@ -21,11 +21,16 @@ import {
   formatDisplayTime,
   formatHourMinute,
   isIsoDateBefore,
+  isReminderDateTimeInPast,
   minReminderDateIso,
   parseIsoDate,
   todayIsoDate,
 } from '@/utils/calendar';
-import { isBeforeMinReminderDate } from '@/components/reminders/reminderFormShared';
+import {
+  clampReminderTimeForDate,
+  isReminderScheduleInPast,
+  minReminderTimeForDate,
+} from '@/components/reminders/reminderFormShared';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 interface ReminderPickerSheetProps {
@@ -59,17 +64,18 @@ const SHEET = {
   todayBlockGap: 12,
   chipsRowHeight: 48,
   chipsGap: 16,
-  chipWidth: 72,
   chipHeight: 48,
   chipPadV: 6,
   chipPadH: 12,
   chipGap: 4,
   chipRadius: 12,
+  /** Card: 335×120, 14/16 padding → 303×92 inner, 8px between rows. */
   settingsHeight: 120,
   settingsPadV: 14,
+  /** Rows and dividers span the full 303pt inner width. */
   settingsPadH: 0,
   settingsInnerGap: 8,
-  settingsRowHeight: 20,
+  settingsRowHeight: 25,
   buttonWidth: 335,
   buttonHeight: 48,
   buttonRadius: 12,
@@ -101,8 +107,14 @@ function resolveInitialDate(preferred?: string | null): string {
   return preferred;
 }
 
-function resolveInitialTime(preferred: string): { time: string; chipId: string | null } {
-  const time = preferred || formatHourMinute(13, 0);
+function resolveInitialTime(
+  date: string,
+  preferred: string,
+): { time: string; chipId: string | null } {
+  const time =
+    clampReminderTimeForDate(date, preferred || formatHourMinute(13, 0)) ??
+    preferred ??
+    formatHourMinute(13, 0);
   return { time, chipId: chipForTime(time) };
 }
 
@@ -132,7 +144,7 @@ export default function ReminderPickerSheet({
     }
     const nextDate = resolveInitialDate(initialDate);
     const preferred = initialTime ?? '13:00';
-    const resolved = resolveInitialTime(preferred);
+    const resolved = resolveInitialTime(nextDate, preferred);
     setDate(nextDate);
     setTime(resolved.time);
     setRepeat(initialRepeat);
@@ -141,7 +153,7 @@ export default function ReminderPickerSheet({
   }, [visible, initialDate, initialTime, initialRepeat]);
 
   const canSave = useMemo(
-    () => Boolean(date && time) && !isBeforeMinReminderDate(date),
+    () => Boolean(date && time) && !isReminderScheduleInPast(date, time),
     [date, time],
   );
 
@@ -175,7 +187,6 @@ export default function ReminderPickerSheet({
       todayBlockGap: SHEET.todayBlockGap,
       chipsRowHeight: SHEET.chipsRowHeight,
       chipsGap: SHEET.chipsGap,
-      chipWidth: SHEET.chipWidth,
       chipHeight: SHEET.chipHeight,
       chipPadV: SHEET.chipPadV,
       chipPadH: SHEET.chipPadH,
@@ -197,19 +208,24 @@ export default function ReminderPickerSheet({
   );
 
   const handleChipPress = (chipId: string, chipTime: string) => {
-    setDate(todayIsoDate());
+    const today = todayIsoDate();
+    if (isReminderDateTimeInPast(today, chipTime)) return;
+    setDate(today);
     setSelectedChip(chipId);
     setTime(chipTime);
   };
 
   const handleDateConfirm = (iso: string) => {
-    setDate(resolveInitialDate(iso));
+    const nextDate = resolveInitialDate(iso);
+    const nextTime = clampReminderTimeForDate(nextDate, time) ?? time;
+    setDate(nextDate);
+    setTime(nextTime);
+    setSelectedChip(chipForTime(nextTime));
     setSubSheet(null);
   };
 
   const handleDone = () => {
     if (!canSave) return;
-    if (isBeforeMinReminderDate(date)) return;
     onConfirm({ date, time, repeat });
     onClose();
   };
@@ -300,7 +316,7 @@ export default function ReminderPickerSheet({
                   styles.contentCard,
                   {
                     width: layout.contentWidth,
-                    height: layout.cardHeight,
+                    minHeight: layout.cardHeight,
                     borderRadius: layout.cardRadius,
                     paddingTop: layout.cardPadTop,
                     paddingBottom: layout.cardPadBottom,
@@ -335,13 +351,13 @@ export default function ReminderPickerSheet({
                     >
                       {TIME_CHIPS.map((chip) => {
                         const isSelected = selectedChip === chip.id && date === todayIsoDate();
+                        const isPast = isReminderDateTimeInPast(todayIsoDate(), chip.time);
                         return (
                           <TouchableOpacity
                             key={chip.id}
                             style={[
                               styles.chip,
                               {
-                                width: layout.chipWidth,
                                 height: layout.chipHeight,
                                 borderRadius: layout.chipRadius,
                                 paddingVertical: layout.chipPadV,
@@ -349,8 +365,10 @@ export default function ReminderPickerSheet({
                                 gap: layout.chipGap,
                               },
                               isSelected && styles.chipActive,
+                              isPast && styles.chipDisabled,
                             ]}
                             onPress={() => handleChipPress(chip.id, chip.time)}
+                            disabled={isPast}
                             activeOpacity={0.8}
                           >
                             <Text
@@ -359,6 +377,8 @@ export default function ReminderPickerSheet({
                                 isSelected && styles.chipLabelActive,
                               ]}
                               numberOfLines={1}
+                              adjustsFontSizeToFit
+                              minimumFontScale={0.8}
                             >
                               {t(chip.labelKey)}
                             </Text>
@@ -385,40 +405,42 @@ export default function ReminderPickerSheet({
                         borderRadius: layout.cardRadius,
                         paddingVertical: layout.settingsPadV,
                         paddingHorizontal: layout.settingsPadH,
-                        gap: layout.settingsInnerGap,
                       },
                     ]}
                   >
                     {scheduleRows.map((row, index) => (
-                      <TouchableOpacity
-                        key={row.key}
-                        style={[
-                          styles.scheduleRow,
-                          { minHeight: layout.settingsRowHeight },
-                          index < scheduleRows.length - 1 && styles.scheduleRowDivider,
-                        ]}
-                        onPress={() => setSubSheet(row.key)}
-                        activeOpacity={0.7}
-                      >
-                        <View style={styles.scheduleLeft}>
-                          <Ionicons
-                            name={row.icon}
-                            size={18}
-                            color={colors.primaryText}
-                            style={styles.scheduleIcon}
-                          />
-                          <Text style={styles.scheduleLabel}>{row.label}</Text>
-                        </View>
-                        <Text
+                      <React.Fragment key={row.key}>
+                        <TouchableOpacity
                           style={[
-                            styles.scheduleValue,
-                            row.key === 'repeat' ? styles.scheduleRepeatValue : null,
+                            styles.scheduleRow,
+                            { minHeight: layout.settingsRowHeight },
                           ]}
-                          numberOfLines={1}
+                          onPress={() => setSubSheet(row.key)}
+                          activeOpacity={0.7}
                         >
-                          {row.value}
-                        </Text>
-                      </TouchableOpacity>
+                          <View style={styles.scheduleLeft}>
+                            <Ionicons
+                              name={row.icon}
+                              size={18}
+                              color={colors.primaryText}
+                              style={styles.scheduleIcon}
+                            />
+                            <Text style={styles.scheduleLabel}>{row.label}</Text>
+                          </View>
+                          <Text
+                            style={[
+                              styles.scheduleValue,
+                              row.key === 'repeat' ? styles.scheduleRepeatValue : null,
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {row.value}
+                          </Text>
+                        </TouchableOpacity>
+                        {index < scheduleRows.length - 1 ? (
+                          <View style={styles.scheduleDivider} />
+                        ) : null}
+                      </React.Fragment>
                     ))}
                   </View>
                 </View>
@@ -461,10 +483,12 @@ export default function ReminderPickerSheet({
       <TimePickerSheet
         visible={visible && subSheet === 'time'}
         value={time}
+        minTime={minReminderTimeForDate(date)}
         onClose={() => setSubSheet(null)}
         onConfirm={(value) => {
-          setTime(value);
-          setSelectedChip(chipForTime(value));
+          const next = clampReminderTimeForDate(date, value) ?? value;
+          setTime(next);
+          setSelectedChip(chipForTime(next));
           setSubSheet(null);
         }}
       />
@@ -565,6 +589,9 @@ const makeStyles = (c: ThemeColors) =>
       width: '100%',
     },
     chip: {
+      /** Width follows the label; only shrinks when the row runs out of space. */
+      flexGrow: 0,
+      flexShrink: 1,
       backgroundColor: c.surface,
       alignItems: 'center',
       justifyContent: 'center',
@@ -643,9 +670,12 @@ const makeStyles = (c: ThemeColors) =>
     scheduleRepeatValue: {
       color: c.secondaryText,
     },
-    scheduleRowDivider: {
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: c.border,
+    /** Sits centered in the 8px gap: 3.5 + 1 + 3.5. */
+    scheduleDivider: {
+      width: '100%',
+      height: 1,
+      backgroundColor: c.border,
+      marginVertical: (SHEET.settingsInnerGap - 1) / 2,
     },
     footer: {
       alignItems: 'center',
