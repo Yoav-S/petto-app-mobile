@@ -7,13 +7,12 @@ import {
   Pressable,
   TouchableOpacity,
   type KeyboardTypeOptions,
-  type NativeSyntheticEvent,
-  type TextInputFocusEventData,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { centeredInputText } from '@/constants/textField';
+import type { TextFieldFocusHandler } from '@/hooks/useKeyboardAwareScroll';
 
 const CARD_SHADOW = {
   shadowColor: '#2D2D2A',
@@ -33,7 +32,7 @@ function CardShell({ minHeight, children }: CardShellProps) {
   return <View style={[styles.card, CARD_SHADOW, { minHeight }]}>{children}</View>;
 }
 
-type FocusHandler = (e: NativeSyntheticEvent<TextInputFocusEventData>) => void;
+type FocusHandler = TextFieldFocusHandler;
 
 /** Pet name — always present, Rubik Medium 20/24, no floating label. */
 export function ProfileNameField({

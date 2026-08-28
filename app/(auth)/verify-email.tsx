@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,8 @@ import {
 } from '@/services/auth';
 import { getOnboardingComplete } from '@/services/onboarding';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 const OTP_LENGTH = 6;
@@ -90,8 +92,8 @@ export default function VerifyEmailScreen() {
       const wasOnboarded = await getOnboardingComplete();
       const profile = await verifyOtpAndSignIn(email, otp);
       verifiedRef.current = true;
-      // Server is the source of truth: pets → home; first-time no pets → onboarding;
-      // pets wiped after a past onboarding → welcome (session reset in AuthContext).
+      // Server is the source of truth: pets â†’ home; first-time no pets â†’ onboarding;
+      // pets wiped after a past onboarding â†’ welcome (session reset in AuthContext).
       if (profile.has_pets) {
         router.replace('/(tabs)' as any);
       } else if (wasOnboarded) {
@@ -234,7 +236,7 @@ export default function VerifyEmailScreen() {
                 {cooldown > 0
                   ? `Resend code 00:${String(cooldown).padStart(2, '0')}`
                   : isSending
-                    ? 'Sending…'
+                    ? 'Sendingâ€¦'
                     : 'Resend code'}
               </Text>
             </TouchableOpacity>
@@ -260,7 +262,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   flex: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     justifyContent: 'flex-start',
     paddingBottom: Spacing.xl,
   },
@@ -355,10 +357,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 13,
   },
   button: {
+    ...PRIMARY_BUTTON,
     backgroundColor: c.brand,
-    padding: Spacing.lg,
-    borderRadius: Radius.md,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: Spacing.sm,
   },
   buttonDisabled: { backgroundColor: c.button.disabledBg },

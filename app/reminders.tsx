@@ -540,7 +540,7 @@ export default function RemindersScreen() {
         subtitle={selectedReminder?.note ?? undefined}
         category={selectedReminder ? reminderCategory(selectedReminder) : undefined}
         time={selectedReminder?.time}
-        dateLabel={selectedReminder ? reminderDateLabel(selectedReminder.date) : undefined}
+        dateLabel={selectedReminder ? reminderRelativeDate(selectedReminder.date) : undefined}
         currentIndex={promptPosition}
         totalCount={promptTotal > 1 ? promptTotal : undefined}
         onClose={closeActionSheet}

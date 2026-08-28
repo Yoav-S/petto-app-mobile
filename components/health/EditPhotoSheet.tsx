@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 
@@ -175,9 +176,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     marginHorizontal: Spacing.lg,
   },
   cancelButton: {
-    height: 48,
+    ...PRIMARY_BUTTON,
     backgroundColor: c.surface,
-    borderRadius: Radius.lg,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#2D2D2A',

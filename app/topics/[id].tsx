@@ -24,6 +24,8 @@ import ListLoadMoreFooter from '@/components/ui/ListLoadMoreFooter';
 import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
 import TopicActionsSheet from '@/components/topics/TopicActionsSheet';
 import { LIST_PAGE_SIZE, LIST_SCROLL_END_GAP } from '@/constants/pagination';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import {
@@ -496,7 +498,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
   },
   contentEmpty: {
     flexGrow: 1,
@@ -569,7 +571,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     elevation: 6,
   },
   addButton: {
+    ...PRIMARY_BUTTON,
     backgroundColor: c.brand,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },

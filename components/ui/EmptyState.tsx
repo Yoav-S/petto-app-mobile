@@ -90,7 +90,8 @@ const makeStyles = (c: ThemeColors) =>
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      paddingHorizontal: 20,
+      // No horizontal inset: every host list already applies the 20pt page
+      // padding, and adding it again here indented empty states to 40.
     },
     containerOffset: {
       flex: 0,

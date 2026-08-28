@@ -34,7 +34,6 @@ export function centeredInputText(extra?: TextStyle): TextStyle {
       ? { minHeight: lineHeight }
       : { height: explicitHeight }),
     textAlignVertical: 'center',
-    includeFontPadding: false,
     ...(Platform.OS === 'android' ? { textAlignVertical: 'center' as const } : null),
     ...extra,
     includeFontPadding: extra?.includeFontPadding ?? false,

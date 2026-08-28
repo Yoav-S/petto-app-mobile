@@ -30,17 +30,6 @@ export const ONBOARDING_COPY = {
   subtitleLine: 16,
 } as const;
 
-export const ONBOARDING_BUTTON = {
-  top: 184,
-  left: 20,
-  width: 335,
-  height: 48,
-  radius: 12,
-  paddingV: 12,
-  paddingH: 16,
-  bg: '#004741',
-} as const;
-
 export const ONBOARDING_LEGAL = {
   size: 12,
   line: 16,

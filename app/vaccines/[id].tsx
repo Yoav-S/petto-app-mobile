@@ -16,6 +16,7 @@ import { pickImageFromLibrary } from '@/services/imagePicker';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { centeredInputText, NAME_FIELD_TEXT } from '@/constants/textField';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
@@ -430,7 +431,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     paddingTop: Spacing.md,
   },
   scrollContentGrow: {

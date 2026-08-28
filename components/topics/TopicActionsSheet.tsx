@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import BottomSheetModal, {
 } from '@/components/ui/BottomSheetModal';
 import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
 import { type ThemeColors } from '@/constants/theme';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useTheme, useThemedStyles } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { t } from '@/i18n';
@@ -203,13 +204,11 @@ const makeStyles = (c: ThemeColors) =>
       gap: 2,
     },
     cancelButton: {
-      height: 48,
-      borderRadius: 12,
+      ...PRIMARY_BUTTON,
       backgroundColor: c.surface,
+      flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      paddingVertical: 12,
-      paddingHorizontal: 16,
       shadowColor: '#2D2D2A',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.08,

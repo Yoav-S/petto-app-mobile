@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -9,6 +9,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 interface GoogleSignInButtonProps {
@@ -41,7 +42,6 @@ export default function GoogleSignInButton({
               name="logo-google"
               size={20}
               color={colors.primaryText}
-              style={styles.icon}
             />
             <Text style={styles.buttonText}>{label}</Text>
           </>
@@ -60,10 +60,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   button: {
+    ...PRIMARY_BUTTON,
     flexDirection: 'row',
     backgroundColor: c.surface,
-    padding: Spacing.lg,
-    borderRadius: Radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -71,9 +70,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.7,
-  },
-  icon: {
-    marginRight: Spacing.sm,
   },
   buttonText: {
     fontFamily: 'Rubik-Medium',

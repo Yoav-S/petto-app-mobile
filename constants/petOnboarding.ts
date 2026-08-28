@@ -1,9 +1,9 @@
-/** Figma reference frame 375×812 — pet creation onboarding */
+﻿/** Figma reference frame 375Ã—812 â€” pet creation onboarding */
 export const PET_ONBOARDING_DESIGN_WIDTH = 375;
 export const PET_ONBOARDING_DESIGN_HEIGHT = 812;
 export const PET_ONBOARDING_STEPS = 4;
 
-/** Shared hero art footprint from Figma exports (303×168). */
+/** Shared hero art footprint from Figma exports (303Ã—168). */
 export const PET_ONBOARDING_HERO = {
   width: 303,
   height: 168,
@@ -56,7 +56,6 @@ export const PET_TYPE_STEP = {
   petIconWidth: 106,
   petIconHeight: 93,
   continuePaddingH: 20,
-  continueBtnWidth: 335,
   continueBtnHeight: 48,
   continueBtnRadius: 12,
 } as const;
@@ -108,7 +107,6 @@ export const PET_PHOTO_STEP = {
   skipFontSize: 14,
   skipLineHeight: 18,
   continuePaddingH: 20,
-  continueBtnWidth: 335,
   continueBtnHeight: 48,
   continueBtnRadius: 12,
 } as const;
@@ -159,7 +157,6 @@ export const PET_BIRTH_STEP = {
   selectBtnHeight: 48,
   selectBtnRadius: 12,
   continuePaddingH: 20,
-  continueBtnWidth: 335,
   continueBtnHeight: 48,
   continueBtnRadius: 12,
 } as const;

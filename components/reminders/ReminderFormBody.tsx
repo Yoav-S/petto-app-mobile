@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import ReminderCalendarPickerSheet from '@/components/reminders/ReminderCalendarPickerSheet';
 import TimePickerSheet from '@/components/pickers/TimePickerSheet';
@@ -517,7 +518,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     includeFontPadding: false,
   },
   saveButton: {
+    ...PRIMARY_BUTTON,
     backgroundColor: c.brand,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },

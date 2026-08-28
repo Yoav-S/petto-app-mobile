@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import TimePickerSheet from '@/components/pickers/TimePickerSheet';
@@ -42,7 +43,7 @@ interface ReminderPickerSheetProps {
   onConfirm: (draft: HealthReminderDraft) => void;
 }
 
-/** Figma sheet chrome (375×812 frame). */
+/** Figma sheet chrome (375Ã—812 frame). */
 const SHEET = {
   height: 438,
   radius: 24,
@@ -69,16 +70,15 @@ const SHEET = {
   chipPadH: 12,
   chipGap: 4,
   chipRadius: 12,
-  /** Card: 335×120, 14/16 padding → 303×92 inner, 8px between rows. */
+  /** Card: 335Ã—120, 14/16 padding â†’ 303Ã—92 inner, 8px between rows. */
   settingsHeight: 120,
   settingsPadV: 14,
   /** Rows and dividers span the full 303pt inner width. */
   settingsPadH: 0,
   settingsInnerGap: 8,
   settingsRowHeight: 25,
-  buttonWidth: 335,
-  buttonHeight: 48,
-  buttonRadius: 12,
+  buttonHeight: PRIMARY_BUTTON.height,
+  buttonRadius: PRIMARY_BUTTON.borderRadius,
   closeSize: 32,
   closeRadius: 10,
   padH: 20,
@@ -157,7 +157,7 @@ export default function ReminderPickerSheet({
     [date, time],
   );
 
-  /** Stable Date for BirthDatePickerSheet — a new object each render resets the calendar. */
+  /** Stable Date for BirthDatePickerSheet â€” a new object each render resets the calendar. */
   const parsedDate = useMemo(() => parseIsoDate(date), [date]);
 
   /**
@@ -683,10 +683,11 @@ const makeStyles = (c: ThemeColors) =>
       borderTopWidth: 0,
     },
     doneButton: {
+      ...PRIMARY_BUTTON,
       backgroundColor: c.brand,
+      flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      paddingHorizontal: 16,
     },
     doneButtonDisabled: {
       backgroundColor: c.button.disabledBg,

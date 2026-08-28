@@ -340,8 +340,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    gap: 10,
   },
   continueText: {
     fontFamily: 'Rubik-Medium',

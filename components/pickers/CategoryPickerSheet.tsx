@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import HeaderIconButton, {
@@ -7,6 +7,7 @@ import HeaderIconButton, {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { t } from '@/i18n';
@@ -174,10 +175,8 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.border,
     },
     cancelButton: {
-      height: 48,
-      borderRadius: Radius.lg,
-      paddingVertical: 12,
-      paddingHorizontal: 16,
+      ...PRIMARY_BUTTON,
+      flexDirection: 'row',
       backgroundColor: c.surface,
       alignItems: 'center',
       justifyContent: 'center',

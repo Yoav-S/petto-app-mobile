@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import {
@@ -299,10 +300,9 @@ const makeStyles = (c: ThemeColors) =>
       gap: 12,
     },
     doneButton: {
-      height: 48,
-      borderRadius: 12,
-      paddingHorizontal: 16,
+      ...PRIMARY_BUTTON,
       backgroundColor: c.brand,
+      flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -312,9 +312,8 @@ const makeStyles = (c: ThemeColors) =>
       color: c.button.primaryText,
     },
     missedButton: {
-      height: 48,
-      borderRadius: 12,
-      paddingHorizontal: 16,
+      ...PRIMARY_BUTTON,
+      flexDirection: 'row',
       backgroundColor: c.surface,
       borderWidth: 1,
       borderColor: c.border,

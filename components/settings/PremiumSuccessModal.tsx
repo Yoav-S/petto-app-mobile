@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useSettledModalVisible } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
@@ -131,11 +132,11 @@ const makeStyles = (c: ThemeColors) =>
       color: c.primaryText,
     },
     cta: {
+      ...PRIMARY_BUTTON,
       alignSelf: 'stretch',
       marginTop: 12,
-      height: 48,
-      borderRadius: 10,
       backgroundColor: c.button.primaryBg,
+      flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
     },

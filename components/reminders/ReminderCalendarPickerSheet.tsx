@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import CalendarPickerCore from '@/components/pickers/CalendarPickerCore';
 import { t } from '@/i18n';
@@ -132,9 +133,9 @@ const makeStyles = (c: ThemeColors) =>
       justifyContent: 'center',
     },
     doneButton: {
-      height: 48,
-      borderRadius: 12,
+      ...PRIMARY_BUTTON,
       backgroundColor: c.brand,
+      flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: 8,

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import { t, currentLocale } from '@/i18n';
 import { Spacing, type ThemeColors } from '@/constants/theme';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import {
   LEGAL_LAST_UPDATED_ISO,
@@ -166,7 +167,7 @@ const makeStyles = (c: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: Spacing.md,
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       paddingVertical: Spacing.sm,
     },
     backBtn: {
@@ -182,7 +183,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     tabs: {
       flexDirection: 'row',
-      paddingHorizontal: Spacing.lg,
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       paddingTop: Spacing.xs,
       gap: 8,
     },
@@ -209,7 +210,7 @@ const makeStyles = (c: ThemeColors) =>
       flex: 1,
     },
     scrollContent: {
-      paddingHorizontal: Spacing.xl,
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       gap: 8,
     },
     updated: {

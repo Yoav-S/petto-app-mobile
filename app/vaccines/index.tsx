@@ -167,7 +167,8 @@ export default function VaccinesScreen() {
           >
             <TouchableOpacity
               style={styles.card}
-              activeOpacity={0.7}
+              // Press feedback comes from the swipe row's disabled wash.
+              activeOpacity={1}
               onPress={() => {
                 setSwipeOpenId(null);
                 router.push(`/vaccines/${item.id}` as never);

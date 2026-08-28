@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import CalendarPickerCore from '@/components/pickers/CalendarPickerCore';
 import { isBeforeIsoDate, parseIsoDate, toIsoDate } from '@/utils/calendar';
@@ -166,9 +167,9 @@ const makeStyles = (c: ThemeColors) =>
       width: '100%',
     },
     confirmBtn: {
-      height: 48,
-      borderRadius: 12,
+      ...PRIMARY_BUTTON,
       backgroundColor: c.brand,
+      flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: 8,

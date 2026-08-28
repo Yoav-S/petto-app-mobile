@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import { formatDisplayTime, formatHourMinute, parseHourMinute } from '@/utils/calendar';
@@ -340,9 +341,9 @@ const makeStyles = (c: ThemeColors) =>
       opacity: 0.72,
     },
     doneButton: {
-      height: 48,
-      borderRadius: 12,
+      ...PRIMARY_BUTTON,
       backgroundColor: c.brand,
+      flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       marginTop: 4,

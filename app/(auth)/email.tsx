@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+﻿import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,8 @@ import { sendOtp, setPendingEmail } from '@/services/auth';
 import { t } from '@/i18n';
 import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { centeredInputText } from '@/constants/textField';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
@@ -150,7 +152,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   scroll: {
     flexGrow: 1,
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.xl,
   },
@@ -209,9 +211,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     marginBottom: Spacing.md,
   },
   button: {
+    ...PRIMARY_BUTTON,
     backgroundColor: c.brand,
-    height: 48,
-    borderRadius: Radius.md,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },

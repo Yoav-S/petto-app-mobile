@@ -438,7 +438,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'flex-end',
   },
   saveButton: {
+    ...PRIMARY_BUTTON,
     backgroundColor: c.brand,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },

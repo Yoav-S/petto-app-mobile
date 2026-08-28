@@ -20,12 +20,6 @@ const TRASH_COLUMN_WIDTH = 42;
 const TRASH_COLUMN_HEIGHT = 58;
 const ACTION_WIDTH = REVEAL_GAP + TRASH_COLUMN_WIDTH;
 
-/**
- * Share of the reveal at which the card has travelled past the whole trash
- * column, i.e. the first moment there is room for all 42px of it.
- */
-const TRASH_CLEARED_AT = TRASH_COLUMN_WIDTH / ACTION_WIDTH;
-
 const TRASH_BUTTON = {
   size: 32,
   radius: 10,
@@ -41,6 +35,7 @@ const DISABLED_BG_LIGHT = '#E5E7EB';
 const DISABLED_BG_DARK = '#373C42';
 /** Keeps the card readable while still reading as disabled. */
 const DISABLED_BG_OPACITY = 0.6;
+const PRESS_IN_DELAY = 120;
 
 interface SwipeToDeleteRowProps {
   children: React.ReactNode;
@@ -99,6 +94,35 @@ export default function SwipeToDeleteRow({
     outputRange: [0, DISABLED_BG_OPACITY],
   });
 
+  /**
+   * Mirrors `TouchableOpacity`'s press-in delay: a finger that lands only to
+   * start scrolling should not grey the card.
+   */
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearPressTimer = useCallback(() => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  }, []);
+
+  const onGestureBegan = useCallback(() => {
+    clearPressTimer();
+    pressTimer.current = setTimeout(() => fadeWash(1), PRESS_IN_DELAY);
+  }, [clearPressTimer, fadeWash]);
+
+  /**
+   * Runs after Swipeable has already handled the release, so `revealedRef` is
+   * up to date and a row that is opening never flashes back to normal first.
+   */
+  const onGestureSettled = useCallback(() => {
+    clearPressTimer();
+    if (!revealedRef.current) fadeWash(0);
+  }, [clearPressTimer, fadeWash]);
+
+  useEffect(() => clearPressTimer, [clearPressTimer]);
+
   useEffect(() => {
     if (open === false) {
       ref.current?.close();
@@ -115,46 +139,62 @@ export default function SwipeToDeleteRow({
   }, []);
 
   const renderActions = useCallback(
-    (progress: Animated.AnimatedInterpolation<number>) => (
-      <Animated.View
-        style={[
-          styles.actions,
-          {
-            paddingBottom: rowBottomGap,
-            alignItems: rtl ? 'flex-start' : 'flex-end',
-            // Painted only once the card has fully cleared the trash column, so
-            // it can never be seen through the card nor as a clipped sliver.
-            opacity: progress.interpolate({
-              inputRange: [0, TRASH_CLEARED_AT, TRASH_CLEARED_AT + 0.0001, 1],
-              outputRange: [0, 0, 1, 1],
-              extrapolate: 'clamp',
-            }),
-          },
-        ]}
-      >
-        <Pressable
-          style={styles.trashColumn}
-          onPress={() => {
-            ref.current?.close();
-            onDelete();
-          }}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={t('common.delete')}
+    (progress: Animated.AnimatedInterpolation<number>) => {
+      // How far the clipping window still has to travel before it sits exactly
+      // over the trash: a full column width at rest, zero once the card has
+      // moved past it.
+      const gap = progress.interpolate({
+        inputRange: [0, TRASH_COLUMN_WIDTH / ACTION_WIDTH, 1],
+        outputRange: [TRASH_COLUMN_WIDTH, 0, 0],
+        extrapolate: 'clamp',
+      });
+      const windowShift = rtl ? Animated.multiply(gap, -1) : gap;
+      // Cancels the window's travel, so the trash itself never moves on screen.
+      const contentShift = rtl ? gap : Animated.multiply(gap, -1);
+
+      return (
+        <View
+          style={[
+            styles.actions,
+            {
+              paddingBottom: rowBottomGap,
+              alignItems: rtl ? 'flex-start' : 'flex-end',
+            },
+          ]}
         >
-          <View style={[styles.trashButton, { backgroundColor: colors.error }]}>
-            <Trash2
-              size={TRASH_BUTTON.iconSize}
-              color="#FFFFFF"
-              strokeWidth={TRASH_BUTTON.iconStroke}
-            />
-          </View>
-          <Text style={[styles.deleteLabel, { color: colors.error }]} numberOfLines={1}>
-            {t('common.delete')}
-          </Text>
-        </Pressable>
-      </Animated.View>
-    ),
+          <Animated.View
+            style={[styles.trashWindow, { transform: [{ translateX: windowShift }] }]}
+          >
+            <Animated.View style={{ transform: [{ translateX: contentShift }] }}>
+              <Pressable
+                style={styles.trashColumn}
+                onPress={() => {
+                  ref.current?.close();
+                  onDelete();
+                }}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.delete')}
+              >
+                <View style={[styles.trashButton, { backgroundColor: colors.error }]}>
+                  <Trash2
+                    size={TRASH_BUTTON.iconSize}
+                    color="#FFFFFF"
+                    strokeWidth={TRASH_BUTTON.iconStroke}
+                  />
+                </View>
+                <Text
+                  style={[styles.deleteLabel, { color: colors.error }]}
+                  numberOfLines={1}
+                >
+                  {t('common.delete')}
+                </Text>
+              </Pressable>
+            </Animated.View>
+          </Animated.View>
+        </View>
+      );
+    },
     [colors.error, onDelete, rowBottomGap, rtl, styles],
   );
 
@@ -172,6 +212,10 @@ export default function SwipeToDeleteRow({
         overshootRight={false}
         leftThreshold={rtl ? 40 : undefined}
         rightThreshold={rtl ? undefined : 40}
+        onBegan={onGestureBegan}
+        onEnded={onGestureSettled}
+        onFailed={onGestureSettled}
+        onCancelled={onGestureSettled}
         renderLeftActions={rtl ? renderActions : undefined}
         renderRightActions={rtl ? undefined : renderActions}
         onSwipeableWillOpen={() => {
@@ -232,6 +276,16 @@ const makeStyles = (_c: ThemeColors) =>
     actions: {
       width: ACTION_WIDTH,
       justifyContent: 'center',
+    },
+    /**
+     * Slides over the trash as the card travels; whatever falls outside it is
+     * clipped, so the trash can never be seen before the card has vacated the
+     * space for it — regardless of platform paint order.
+     */
+    trashWindow: {
+      width: TRASH_COLUMN_WIDTH,
+      height: TRASH_COLUMN_HEIGHT,
+      overflow: 'hidden',
     },
     trashColumn: {
       width: TRASH_COLUMN_WIDTH,

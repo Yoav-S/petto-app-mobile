@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+﻿import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import RaglyWordmark, { RAGLY_WORDMARK } from '@/components/brand/RaglyWordmark'
 import { setTermsAccepted } from '@/services/onboarding';
 import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles, useTheme } from '@/context/ThemeContext';
 import { useThemedStatusBar } from '@/context/SystemBarsContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
@@ -34,7 +36,7 @@ export default function OnboardingWelcomeScreen() {
   const { contentWidth, height } = useResponsiveLayout();
 
   const layout = useMemo(() => {
-    const sidePad = Math.max(insets.left, insets.right, 16);
+    const sidePad = Math.max(insets.left, insets.right, PAGE_HORIZONTAL_PADDING);
     const bottomPad = Math.max(insets.bottom, 16);
     const cardWidth = contentWidth;
     const paddingH = CARD.paddingH;
@@ -81,7 +83,7 @@ export default function OnboardingWelcomeScreen() {
   return (
     <View style={styles.root}>
       <WelcomePhotoMarquee />
-      {/* Darken collage under the card — soft veil between photos and UI. */}
+      {/* Darken collage under the card â€” soft veil between photos and UI. */}
       <View
         pointerEvents="none"
         style={[
@@ -247,8 +249,10 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: 'center',
     },
     button: {
+      ...PRIMARY_BUTTON,
       width: '100%',
       backgroundColor: c.button.primaryBg,
+      flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
     },

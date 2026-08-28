@@ -544,8 +544,10 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.brand,
       alignItems: 'center',
       justifyContent: 'center',
+      flexDirection: 'row',
       paddingHorizontal: 16,
       paddingVertical: 12,
+      gap: 10,
     },
     continueText: {
       fontFamily: 'Rubik-Medium',
