@@ -6,6 +6,3 @@ export const LIST_SCROLL_END_GAP = 16;
 
 /** Extra bottom padding when a FAB overlays the list. */
 export const LIST_FAB_SCROLL_PADDING = 96;
-
-/** Vertical padding around the load-more spinner. */
-export const LIST_LOAD_MORE_SPINNER_PADDING = 24;

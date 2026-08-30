@@ -104,7 +104,9 @@ export default function HealthDetailsScreen() {
   const [notesHasMore, setNotesHasMore] = useState(false);
   const [notesLoadingMore, setNotesLoadingMore] = useState(false);
   const notesCursorRef = useRef<string | null>(null);
+  const notesRef = useRef<HealthNote[]>([]);
   const notesLoadingMoreRef = useRef(false);
+  const notesGenRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [failedPhotoIds, setFailedPhotoIds] = useState<Record<string, true>>({});
@@ -117,15 +119,24 @@ export default function HealthDetailsScreen() {
   recordRef.current = record;
 
   const applyNotesPage = useCallback((page: HealthNote[], append: boolean) => {
-    setNotes((prev) => (append ? [...prev, ...page] : page));
-    const nextCursor = page.length > 0 ? page[page.length - 1].id : null;
-    notesCursorRef.current = nextCursor;
+    const prev = append ? notesRef.current : [];
+    const seen = new Set(prev.map((note) => note.id));
+    const extra = append ? page.filter((note) => !seen.has(note.id)) : page;
+    if (append && extra.length === 0) {
+      setNotesHasMore(false);
+      return;
+    }
+    const next = append ? [...prev, ...extra] : extra;
+    notesRef.current = next;
+    setNotes(next);
+    notesCursorRef.current = next.length > 0 ? next[next.length - 1].id : null;
     setNotesHasMore(page.length === LIST_PAGE_SIZE);
   }, []);
 
   const loadMoreNotes = useCallback(async () => {
     if (!activePetId || !recordId || notesLoadingMoreRef.current || !notesHasMore) return;
     if (!notesCursorRef.current) return;
+    const gen = notesGenRef.current;
     notesLoadingMoreRef.current = true;
     setNotesLoadingMore(true);
     try {
@@ -133,10 +144,13 @@ export default function HealthDetailsScreen() {
         limit: LIST_PAGE_SIZE,
         cursor: notesCursorRef.current,
       });
+      if (gen !== notesGenRef.current) return;
       applyNotesPage(page, true);
     } catch (err) {
+      if (gen !== notesGenRef.current) return;
       toast.showError(getErrorMessage(err));
     } finally {
+      if (gen !== notesGenRef.current) return;
       notesLoadingMoreRef.current = false;
       setNotesLoadingMore(false);
     }
@@ -144,11 +158,13 @@ export default function HealthDetailsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      let cancelled = false;
+      const gen = ++notesGenRef.current;
+      notesLoadingMoreRef.current = false;
+      setNotesLoadingMore(false);
 
       (async () => {
         if (!activePetId || !recordId) {
-          if (!cancelled) {
+          if (gen === notesGenRef.current) {
             setError(t('topics.not_found_subtitle'));
             setLoading(false);
           }
@@ -156,26 +172,28 @@ export default function HealthDetailsScreen() {
         }
 
         const showFullLoader = recordRef.current == null;
-        if (showFullLoader && !cancelled) setLoading(true);
+        if (showFullLoader && gen === notesGenRef.current) setLoading(true);
 
         try {
-          if (!cancelled) setError(null);
+          if (gen === notesGenRef.current) setError(null);
           const detail = await getRecord(activePetId, recordId, {
             notes_limit: LIST_PAGE_SIZE,
           });
-          if (!cancelled) {
-            setRecord(detail);
-            applyNotesPage(detail.notes ?? [], false);
-          }
+          if (gen !== notesGenRef.current) return;
+          setRecord(detail);
+          applyNotesPage(detail.notes ?? [], false);
         } catch (err) {
-          if (!cancelled) setError(getErrorMessage(err));
+          if (gen !== notesGenRef.current) return;
+          setError(getErrorMessage(err));
         } finally {
-          if (!cancelled) setLoading(false);
+          if (gen !== notesGenRef.current) return;
+          setLoading(false);
         }
       })();
 
       return () => {
-        cancelled = true;
+        notesGenRef.current += 1;
+        notesLoadingMoreRef.current = false;
       };
     }, [activePetId, applyNotesPage, recordId]),
   );

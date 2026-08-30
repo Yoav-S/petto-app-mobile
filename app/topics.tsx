@@ -15,7 +15,7 @@ import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { LIST_TABS_CONTENT_GAP, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
-import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
+import { TOPICS_FAB_ICON } from '@/components/home/categoryIcons';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import EmptyState from '@/components/ui/EmptyState';
@@ -146,13 +146,14 @@ export default function HealthScreen() {
   );
 
   const onRefresh = useCallback(async () => {
+    if (loadingMore) return;
     setRefreshing(true);
     try {
       await refetchAll();
     } finally {
       setRefreshing(false);
     }
-  }, [refetchAll]);
+  }, [loadingMore, refetchAll]);
 
   const setTabItems = useCallback(
     (tab: TabName, updater: (prev: MedicalRecord[]) => MedicalRecord[]) => {
@@ -365,7 +366,7 @@ export default function HealthScreen() {
             {
               key: 'add-health',
               label: t('topics.add_health'),
-              icon: HOME_CATEGORY_ICONS.health,
+              icon: TOPICS_FAB_ICON,
               onPress: () => router.push('/topics/add' as never),
             },
           ]}

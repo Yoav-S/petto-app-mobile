@@ -258,13 +258,14 @@ export default function RemindersScreen() {
   );
 
   const onRefresh = useCallback(async () => {
+    if (loadingMore) return;
     setRefreshing(true);
     try {
       await refetchAll();
     } finally {
       setRefreshing(false);
     }
-  }, [refetchAll]);
+  }, [loadingMore, refetchAll]);
 
   const closeActionSheet = useCallback(() => {
     // X dismisses the rest of the queue for this session; next cold open / force

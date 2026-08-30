@@ -87,13 +87,14 @@ export default function VaccinesScreen() {
   );
 
   const onRefresh = useCallback(async () => {
+    if (loadingMore) return;
     setRefreshing(true);
     try {
       await refresh();
     } finally {
       setRefreshing(false);
     }
-  }, [refresh]);
+  }, [loadingMore, refresh]);
 
   const handleDeleteVaccine = useCallback(
     (id: string) => {
