@@ -31,6 +31,7 @@ import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDateLong } from '@/utils/calendar';
 import { deleteVaccination, listVaccinations } from '@/services/vaccines';
 import { invalidateVaccinations } from '@/services/queryClient';
+import { queryKeys } from '@/services/queryKeys';
 import { useCursorPagination } from '@/hooks/useCursorPagination';
 import type { Vaccination } from '@/types/api';
 
@@ -74,6 +75,7 @@ export default function VaccinesScreen() {
     fetchPage,
     enabled: Boolean(activePetId),
     resetKey: activePetId,
+    cacheKey: [...queryKeys.vaccinations.all(activePetId ?? ''), 'page1'],
   });
 
   const [refreshing, setRefreshing] = useState(false);
@@ -133,7 +135,7 @@ export default function VaccinesScreen() {
   );
 
   const renderContent = (paddingTop: number) => {
-    if (loading) {
+    if (loading && items.length === 0) {
       return (
         <View style={[styles.centered, { paddingTop }]}>
           <ActivityIndicator color={colors.primaryText} />
@@ -202,7 +204,6 @@ export default function VaccinesScreen() {
             subtitle={t('vaccines.empty_subtitle')}
             actionTitle={t('vaccines.add')}
             actionCompact
-            topOffset={Spacing.lg}
             onAction={() => router.push('/vaccines/add' as never)}
           />
         }
@@ -263,6 +264,8 @@ const makeStyles = (c: ThemeColors) =>
     },
     listContentEmpty: {
       flexGrow: 1,
+      justifyContent: 'center',
+      paddingBottom: 0,
     },
     card: {
       backgroundColor: c.surface,

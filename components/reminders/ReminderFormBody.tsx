@@ -281,7 +281,7 @@ export default function ReminderFormBody({
                 onChangeText={onNoteChange}
                 onFocus={onNoteFocus}
                 onBlur={onNoteBlur}
-                placeholder={t('reminders.field_note_placeholder')}
+                placeholder={readOnly ? undefined : t('reminders.field_note_placeholder')}
                 placeholderTextColor={colors.secondaryText}
                 multiline
                 editable={!readOnly}

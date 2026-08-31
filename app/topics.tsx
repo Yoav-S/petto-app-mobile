@@ -35,6 +35,7 @@ import { getErrorMessage } from '@/services/errors';
 import type { MedicalRecord } from '@/types/api';
 import { useCursorPagination } from '@/hooks/useCursorPagination';
 import { invalidateRecords } from '@/services/queryClient';
+import { queryKeys } from '@/services/queryKeys';
 
 const TABS = ['Active', 'Resolved'] as const;
 type TabName = (typeof TABS)[number];
@@ -75,12 +76,15 @@ export default function HealthScreen() {
     fetchPage: fetchActivePage,
     enabled: Boolean(activePetId),
     resetKey: activePetId,
+    cacheKey: [...queryKeys.records.status(activePetId ?? '', 'active'), 'page1'],
   });
 
+  // Both tabs stay mounted and cached so switching never refetches from scratch.
   const resolvedPagination = useCursorPagination<MedicalRecord>({
     fetchPage: fetchResolvedPage,
-    enabled: Boolean(activePetId) && activeTab === 'Resolved',
+    enabled: Boolean(activePetId),
     resetKey: activePetId,
+    cacheKey: [...queryKeys.records.status(activePetId ?? '', 'resolved'), 'page1'],
   });
 
   const currentPagination = activeTab === 'Active' ? activePagination : resolvedPagination;
@@ -91,9 +95,12 @@ export default function HealthScreen() {
     hasMore,
     error,
     loadMore,
-    refresh,
     setItems,
   } = currentPagination;
+
+  /** Empty-state copy depends on both tabs, so wait for both to resolve once. */
+  const bothTabsLoaded = activePagination.loaded && resolvedPagination.loaded;
+  const showSpinner = loading && items.length === 0 && !bothTabsLoaded;
 
   const listsByTab = useMemo(
     () => ({
@@ -221,6 +228,9 @@ export default function HealthScreen() {
   };
 
   const renderEmptyState = () => {
+    // Avoid flashing the "no topics at all" copy before the other tab resolves.
+    if (!bothTabsLoaded) return null;
+
     if (!hasAnyRecords) {
       return (
         <EmptyState
@@ -274,11 +284,11 @@ export default function HealthScreen() {
               width={220}
               style={styles.tabs}
             />
-            {loading ? (
+            {showSpinner ? (
               <View style={styles.centered}>
                 <ActivityIndicator color={colors.primaryText} />
               </View>
-            ) : error ? (
+            ) : error && items.length === 0 ? (
               <View style={styles.centered}>
                 <EmptyState
                   title={t('common.error')}

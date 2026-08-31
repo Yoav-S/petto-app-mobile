@@ -74,11 +74,14 @@ export default function EditProfileScreen() {
   const { activePetId } = useActivePet();
   const headerTopPadding = useHeaderTopPadding();
   const { contentWidth } = useResponsiveLayout();
+  // Same as every other form screen: let the OS reveal the focused field
+  // instead of JS-scrolling on focus. Mixing both added phantom bottom space,
+  // blocked scrolling back to the top, and threw the Done chip off the keyboard.
   const {
     scrollRef,
     onScroll,
     onInputFocus,
-  } = useKeyboardAwareScroll(0);
+  } = useKeyboardAwareScroll(0, { autoScrollOnFocus: false });
 
   /** Keep 128×128 / r22 shape; only shrink on narrow screens. */
   const photoSize = Math.round(

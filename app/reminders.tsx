@@ -31,6 +31,7 @@ import { useActivePet } from '@/store/petStore';
 import { deleteReminder, updateReminderStatus, listReminders } from '@/services/reminders';
 import { getErrorMessage } from '@/services/errors';
 import { invalidateReminders } from '@/services/queryClient';
+import { queryKeys } from '@/services/queryKeys';
 import {
   addDaysToIsoDate,
   formatDisplayDate,
@@ -118,6 +119,7 @@ export default function RemindersScreen() {
     ),
     enabled: Boolean(activePetId),
     resetKey: activePetId,
+    cacheKey: [...queryKeys.reminders.tab(activePetId ?? '', 'today'), 'page1'],
   });
   const upcomingPagination = useCursorPagination<Reminder>({
     fetchPage: useCallback(
@@ -126,6 +128,7 @@ export default function RemindersScreen() {
     ),
     enabled: Boolean(activePetId),
     resetKey: activePetId,
+    cacheKey: [...queryKeys.reminders.tab(activePetId ?? '', 'upcoming'), 'page1'],
   });
   const recentPagination = useCursorPagination<Reminder>({
     fetchPage: useCallback(
@@ -134,6 +137,7 @@ export default function RemindersScreen() {
     ),
     enabled: Boolean(activePetId),
     resetKey: activePetId,
+    cacheKey: [...queryKeys.reminders.tab(activePetId ?? '', 'recent'), 'page1'],
   });
 
   const paginationByTab = {
@@ -150,7 +154,6 @@ export default function RemindersScreen() {
     hasMore,
     error,
     loadMore,
-    refresh,
   } = currentPagination;
 
   const listsByTab = useMemo(
@@ -176,6 +179,11 @@ export default function RemindersScreen() {
   );
 
   const hasAnyReminders = tabPresence.today || tabPresence.upcoming || tabPresence.recent;
+
+  /** Empty-state copy depends on every tab, so wait for all three to resolve once. */
+  const allTabsLoaded =
+    todayPagination.loaded && upcomingPagination.loaded && recentPagination.loaded;
+  const showSpinner = loading && items.length === 0 && !allTabsLoaded;
 
   const rowHeightFor = useCallback(
     (item: Reminder | undefined) =>
@@ -392,6 +400,9 @@ export default function RemindersScreen() {
   }, [router]);
 
   const renderEmptyState = () => {
+    // Avoid flashing the "no reminders at all" copy before the other tabs resolve.
+    if (!allTabsLoaded) return null;
+
     if (!hasAnyReminders) {
       return (
         <EmptyState
@@ -446,11 +457,11 @@ export default function RemindersScreen() {
               getLabel={(tab) => t(`reminders.tab_${tab.toLowerCase()}`)}
               style={styles.tabs}
             />
-            {loading ? (
+            {showSpinner ? (
               <View style={styles.centered}>
                 <ActivityIndicator color={colors.primaryText} />
               </View>
-            ) : error ? (
+            ) : error && items.length === 0 ? (
               <View style={styles.centered}>
                 <EmptyState
                   title={t('common.error')}

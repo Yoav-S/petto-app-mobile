@@ -19,6 +19,7 @@ import {
   termsOfServiceBlocks,
 } from '@/constants/legalContent';
 import type { LegalBlock } from '@/components/settings/LegalScreen';
+import ScrollBottomFade from '@/components/ui/ScrollBottomFade';
 
 type Tab = 'terms' | 'privacy';
 
@@ -98,6 +99,8 @@ export default function TermsScreen() {
           </Text>
           <Blocks blocks={blocks} styles={styles} />
         </ScrollView>
+
+        <ScrollBottomFade color={colors.surface} />
 
         <View
           style={styles.chrome}
