@@ -3,12 +3,11 @@ import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/context/ThemeContext';
-
-/** Figma: fade ends at ~89% — transparent top → solid background bottom. */
-const FADE_SOLID_AT = 0.8913;
-
-/** Visible fade band above the home-indicator area (content stops ~30px above device bottom). */
-const FADE_BAND = 56;
+import {
+  SCROLL_FADE_BAND,
+  SCROLL_FADE_LINE_OFFSET,
+  SCROLL_FADE_SOLID_AT,
+} from '@/constants/layout';
 
 interface ScrollBottomFadeProps {
   /** Extra height beyond the safe-area inset (default covers gesture bar zone). */
@@ -21,10 +20,13 @@ interface ScrollBottomFadeProps {
  * Bottom screen fade — content can scroll under it; last lines stay readable
  * when scrolled to end thanks to scroll paddingBottom on the parent screen.
  */
-export default function ScrollBottomFade({ bandHeight = FADE_BAND, color }: ScrollBottomFadeProps) {
+export default function ScrollBottomFade({
+  bandHeight = SCROLL_FADE_BAND,
+  color,
+}: ScrollBottomFadeProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const height = bandHeight + insets.bottom;
+  const height = bandHeight + SCROLL_FADE_LINE_OFFSET + insets.bottom;
   const fadeColor = color ?? colors.background;
 
   return (
@@ -33,7 +35,7 @@ export default function ScrollBottomFade({ bandHeight = FADE_BAND, color }: Scro
         <Defs>
           <LinearGradient id="scrollBottomFade" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor={fadeColor} stopOpacity={0} />
-            <Stop offset={String(FADE_SOLID_AT)} stopColor={fadeColor} stopOpacity={1} />
+            <Stop offset={String(SCROLL_FADE_SOLID_AT)} stopColor={fadeColor} stopOpacity={1} />
             <Stop offset="1" stopColor={fadeColor} stopOpacity={1} />
           </LinearGradient>
         </Defs>

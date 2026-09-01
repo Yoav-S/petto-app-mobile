@@ -47,6 +47,8 @@ export interface HealthKeyboardFooterProps {
   loading?: boolean;
   onPress: () => void;
   fullWidth?: boolean;
+  /** Primary filled button (default) or destructive text link pinned like Save. */
+  tone?: 'primary' | 'destructive-text';
 }
 
 interface HealthKeyboardAvoidingViewProps {
@@ -267,6 +269,7 @@ export function HealthKeyboardFooter({
   loading = false,
   onPress,
   fullWidth = true,
+  tone = 'primary',
 }: HealthKeyboardFooterProps) {
   const styles = useThemedStyles(makeStyles);
   const keyboardOpen = useKeyboardOpen();
@@ -287,6 +290,35 @@ export function HealthKeyboardFooter({
   };
 
   const busy = disabled || loading;
+
+  if (tone === 'destructive-text' && fullWidth) {
+    return (
+      <>
+        <SavingOverlay visible={loading} />
+        <View
+          style={[
+            styles.saveFooter,
+            {
+              paddingTop: FOOTER.padTop,
+              paddingHorizontal: FOOTER.padH,
+              paddingBottom: footerPadBottom,
+              borderTopLeftRadius: FOOTER.radius,
+              borderTopRightRadius: FOOTER.radius,
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={styles.destructiveTextButton}
+            onPress={handlePress}
+            disabled={busy}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.destructiveText, busy && styles.buttonTextDisabled]}>{label}</Text>
+          </TouchableOpacity>
+        </View>
+      </>
+    );
+  }
 
   if (!fullWidth) {
     return (
@@ -427,5 +459,15 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   buttonTextDisabled: {
     color: c.button.disabledText,
+  },
+  destructiveTextButton: {
+    width: '100%',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  destructiveText: {
+    fontFamily: 'Rubik-Medium',
+    fontSize: 16,
+    color: c.error,
   },
 });

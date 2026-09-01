@@ -17,7 +17,8 @@
     "remindersCard": {
       "title": "Memento-uri",
       "upcoming": "următoare",
-      "empty": "Niciun memento încă"
+      "empty": "Niciun memento încă",
+      "allDone": "Totul e gata pentru azi"
     },
     "healthCard": {
       "title": "Subiecte",
@@ -25,7 +26,8 @@
     },
     "topicsCard": {
       "title": "Subiecte",
-      "empty": "Nicio înregistrare încă"
+      "empty": "Nicio înregistrare încă",
+      "allDone": "Gata pentru astăzi"
     }
   },
   "pets": {
@@ -476,7 +478,7 @@
     "note_placeholder": "Ce s-a schimbat?",
     "reminder_label": "Memento:",
     "reminder_tomorrow": "Mâine",
-    "reminder_sent_successfully": "Trimis cu succes",
+    "reminder_sent_successfully": "Trimis",
     "no_reminder_for_note": "Niciun memento pentru această notă",
     "add_photo": "Adaugă fotografie",
     "add_reminder": "Adaugă memento",

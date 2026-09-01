@@ -25,6 +25,7 @@ import {
 } from '@/services/subscription';
 import {
   getLocalizedPriceString,
+  getPremiumWillRenewFromStore,
   purchasePremium,
   syncPurchasesWithStore,
 } from '@/services/purchases';
@@ -69,8 +70,14 @@ export default function SubscriptionSettingsScreen() {
     await syncPurchasesWithStore();
     try {
       const profile = await getMyProfile();
-      setSubscription(profile.subscription ?? null);
-      setPlan(isPremiumPlan(profile.subscription) ? 'premium' : 'free');
+      const sub = profile.subscription ?? null;
+      const storeWillRenew = await getPremiumWillRenewFromStore();
+      if (sub && storeWillRenew !== null) {
+        setSubscription({ ...sub, will_renew: storeWillRenew });
+      } else {
+        setSubscription(sub);
+      }
+      setPlan(isPremiumPlan(sub) ? 'premium' : 'free');
     } catch {
       setSubscription(null);
       setPlan('free');

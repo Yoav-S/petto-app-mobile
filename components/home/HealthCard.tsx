@@ -19,6 +19,7 @@ interface HealthCardProps {
     reminder_date?: string;
     reminder_time?: string;
   } | null;
+  allDoneToday?: boolean;
   loading: boolean;
   onPress: () => void;
 }
@@ -33,7 +34,7 @@ function CategoryIcon() {
   );
 }
 
-export default function HealthCard({ latestRecord, loading, onPress }: HealthCardProps) {
+export default function HealthCard({ latestRecord, allDoneToday = false, loading, onPress }: HealthCardProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
   const homeCardTypography = useThemedStyles(makeHomeCardTypography);
@@ -111,7 +112,9 @@ export default function HealthCard({ latestRecord, loading, onPress }: HealthCar
                 </>
               ) : (
                 <Text style={homeCardTypography.note} numberOfLines={1} ellipsizeMode="tail">
-                  {t('home.topicsCard.empty')}
+                  {allDoneToday
+                    ? t('home.topicsCard.allDone')
+                    : t('home.topicsCard.empty')}
                 </Text>
               )}
             </View>

@@ -17,6 +17,7 @@ interface RemindersCardProps {
     status: 'today' | 'scheduled' | 'missed' | 'completed';
   } | null;
   upcomingCount: number;
+  allDoneToday?: boolean;
   loading: boolean;
   onPress: () => void;
 }
@@ -34,6 +35,7 @@ function CategoryIcon() {
 export default function RemindersCard({
   nextReminder,
   upcomingCount,
+  allDoneToday = false,
   loading,
   onPress,
 }: RemindersCardProps) {
@@ -95,7 +97,9 @@ export default function RemindersCard({
                 </>
               ) : (
                 <Text style={homeCardTypography.note} numberOfLines={1} ellipsizeMode="tail">
-                  {t('home.remindersCard.empty')}
+                  {allDoneToday
+                    ? t('home.remindersCard.allDone')
+                    : t('home.remindersCard.empty')}
                 </Text>
               )}
             </View>

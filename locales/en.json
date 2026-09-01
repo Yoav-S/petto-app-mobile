@@ -17,7 +17,8 @@
     "remindersCard": {
       "title": "Reminders",
       "upcoming": "upcoming",
-      "empty": "No reminders yet"
+      "empty": "No reminders yet",
+      "allDone": "All done for today"
     },
     "healthCard": {
       "title": "Topics",
@@ -25,7 +26,8 @@
     },
     "topicsCard": {
       "title": "Topics",
-      "empty": "No records yet"
+      "empty": "No records yet",
+      "allDone": "All done for today"
     }
   },
   "pets": {
@@ -379,7 +381,7 @@
     "note_placeholder": "What's changed?",
     "reminder_label": "Reminder:",
     "reminder_tomorrow": "Tomorrow",
-    "reminder_sent_successfully": "Sent successfully",
+    "reminder_sent_successfully": "Sent",
     "no_reminder_for_note": "No reminder for this note",
     "add_photo": "Add photo",
     "add_reminder": "Add reminder",

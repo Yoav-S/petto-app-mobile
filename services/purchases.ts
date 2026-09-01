@@ -322,6 +322,21 @@ export async function syncPurchasesWithStore(): Promise<void> {
   }
 }
 
+/** Live renewal flag from the store — used to refresh will_renew after manage-subscriptions. */
+export async function getPremiumWillRenewFromStore(): Promise<boolean | null> {
+  if (!(await configurePurchases())) return null;
+  try {
+    const info = await Purchases.getCustomerInfo();
+    const entitlement = info.entitlements.active[PREMIUM_ENTITLEMENT] as
+      | { willRenew?: boolean }
+      | undefined;
+    if (!entitlement) return null;
+    return entitlement.willRenew ?? true;
+  } catch {
+    return null;
+  }
+}
+
 export async function restorePremium(): Promise<PurchaseResult> {
   if (!(await configurePurchases())) {
     return { status: 'unavailable', message: t('settings.purchase_unavailable') };

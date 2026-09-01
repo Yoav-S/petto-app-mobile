@@ -59,6 +59,15 @@ export const DESIGN_HOME_HEALTH_CARD_HEIGHT = 112;
 /** Gap below safe-area inset when inset is taller than the Figma status band. */
 export const HEADER_BELOW_SAFE_AREA = 12;
 
+/** Scroll fade band above the home indicator / below the title row. */
+export const SCROLL_FADE_BAND = 56;
+
+/** Extend fade start by ~one text line at top and bottom. */
+export const SCROLL_FADE_LINE_OFFSET = 18;
+
+/** Figma: fade ends at ~89% — transparent → solid (bottom) or solid → transparent (top). */
+export const SCROLL_FADE_SOLID_AT = 0.8913;
+
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }

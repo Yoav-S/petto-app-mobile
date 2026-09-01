@@ -17,7 +17,8 @@
     "remindersCard": {
       "title": "תזכורות",
       "upcoming": "קרובות",
-      "empty": "אין תזכורות עדיין"
+      "empty": "אין תזכורות עדיין",
+      "allDone": "הכל בוצע להיום"
     },
     "healthCard": {
       "title": "נושאים",
@@ -25,7 +26,8 @@
     },
     "topicsCard": {
       "title": "נושאים",
-      "empty": "אין רשומות עדיין"
+      "empty": "אין רשומות עדיין",
+      "allDone": "הכל מוכן להיום"
     }
   },
   "pets": {
@@ -477,7 +479,7 @@
     "note_placeholder": "מה השתנה?",
     "reminder_label": "תזכורת:",
     "reminder_tomorrow": "מחר",
-    "reminder_sent_successfully": "נשלח בהצלחה",
+    "reminder_sent_successfully": "נשלח",
     "no_reminder_for_note": "אין תזכורת לפתק זה",
     "add_photo": "הוסף תמונה",
     "add_reminder": "הוסף תזכורת",

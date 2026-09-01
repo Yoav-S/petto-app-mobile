@@ -146,15 +146,22 @@ export default function HomeScreen() {
   const vaccinesQuery = useVaccinationsQuery(resolvedPetId);
   const todayQuery = useRemindersQuery(resolvedPetId, 'today');
   const upcomingQuery = useRemindersQuery(resolvedPetId, 'upcoming');
+  const recentQuery = useRemindersQuery(resolvedPetId, 'recent');
   const recordsQuery = useRecordsQuery(resolvedPetId, 'active');
+  const resolvedRecordsQuery = useRecordsQuery(resolvedPetId, 'resolved');
 
   const latestVaccine = vaccinesQuery.data?.[0] ?? null;
-  const { nextReminder, upcomingCount, latestRecord } = useMemo(() => {
+  const { nextReminder, upcomingCount, latestRecord, remindersAllDone, topicsAllDone } =
+    useMemo(() => {
     const today = todayQuery.data ?? [];
     const upcoming = upcomingQuery.data ?? [];
+    const recent = recentQuery.data ?? [];
     const records = recordsQuery.data ?? [];
+    const resolved = resolvedRecordsQuery.data ?? [];
     const { next, count } = pickNextReminder(today, upcoming, records);
     const record = pickLatestHealthRecord(records);
+    const hasAnyReminders = today.length + upcoming.length + recent.length > 0;
+    const hasAnyRecords = records.length + resolved.length > 0;
     return {
       nextReminder: next
         ? {
@@ -173,15 +180,25 @@ export default function HomeScreen() {
             reminder_time: record.linked_reminder_time ?? undefined,
           }
         : null,
+      remindersAllDone: !next && hasAnyReminders,
+      topicsAllDone: !record && hasAnyRecords,
     };
-  }, [todayQuery.data, upcomingQuery.data, recordsQuery.data]);
+  }, [
+    todayQuery.data,
+    upcomingQuery.data,
+    recentQuery.data,
+    recordsQuery.data,
+    resolvedRecordsQuery.data,
+  ]);
 
   const domainFetching =
     Boolean(resolvedPetId) &&
     (vaccinesQuery.isFetching ||
       todayQuery.isFetching ||
       upcomingQuery.isFetching ||
-      recordsQuery.isFetching);
+      recentQuery.isFetching ||
+      recordsQuery.isFetching ||
+      resolvedRecordsQuery.isFetching);
 
   const hasCachedHome =
     petsQuery.isSuccess ||
@@ -209,12 +226,16 @@ export default function HomeScreen() {
     void vaccinesQuery.refetch();
     void todayQuery.refetch();
     void upcomingQuery.refetch();
+    void recentQuery.refetch();
     void recordsQuery.refetch();
+    void resolvedRecordsQuery.refetch();
   }, [
     vaccinesQuery.refetch,
     todayQuery.refetch,
     upcomingQuery.refetch,
+    recentQuery.refetch,
     recordsQuery.refetch,
+    resolvedRecordsQuery.refetch,
   ]);
 
   useFocusEffect(
@@ -291,6 +312,7 @@ export default function HomeScreen() {
                   <RemindersCard
                     nextReminder={nextReminder}
                     upcomingCount={upcomingCount}
+                    allDoneToday={remindersAllDone}
                     loading={loading}
                     onPress={() => router.push('/reminders' as never)}
                   />
@@ -299,6 +321,7 @@ export default function HomeScreen() {
                 <View style={styles.healthWrap}>
                   <HealthCard
                     latestRecord={latestRecord}
+                    allDoneToday={topicsAllDone}
                     loading={loading}
                     onPress={() => router.push('/topics' as never)}
                   />

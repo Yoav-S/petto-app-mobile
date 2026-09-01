@@ -46,7 +46,6 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     wrap: {
       width: '100%',
-      backgroundColor: c.background,
     },
     header: {
       height: 44,

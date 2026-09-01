@@ -29,7 +29,7 @@ export default function ScreenHeader({ title, icon = 'back', onBack, right }: Sc
   const layout = useHeaderLayout();
 
   return (
-    <View style={[styles.wrap, { paddingTop: layout.paddingTop, backgroundColor: colors.background }]}>
+    <View style={[styles.wrap, { paddingTop: layout.paddingTop }]}>
       <View
         style={[
           styles.container,

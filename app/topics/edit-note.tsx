@@ -1,10 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
-  TouchableOpacity,
-  ScrollView,
   Alert,
   ActivityIndicator,
   Keyboard,
@@ -20,9 +17,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import HealthNoteEditorCard from '@/components/health/HealthNoteEditorCard';
-import {
-  HealthKeyboardAvoidingView,
-} from '@/components/health/HealthKeyboardFooter';
+import { HealthFormScreen } from '@/components/health/HealthKeyboardFooter';
 import SavingOverlay from '@/components/ui/SavingOverlay';
 import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
 import EditPhotoSheet from '@/components/health/EditPhotoSheet';
@@ -39,10 +34,8 @@ import {
 import { uploadHealthNotePhoto } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import { formatDisplayDate, formatDisplayTime } from '@/utils/calendar';
-import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { normalizeRouteParam } from '@/utils/routeParams';
-import { DESIGN_HEIGHT, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
 function reminderLabel(draft: HealthReminderDraft): string {
   return `${formatDisplayDate(draft.date)}, ${formatDisplayTime(draft.time)}`;
@@ -62,8 +55,6 @@ export default function EditNoteScreen() {
   const noteId = normalizeRouteParam(noteIdParam);
   const open = normalizeRouteParam(openParam);
   const { activePetId } = useActivePet();
-  const { height } = useResponsiveLayout();
-  const deleteBottomPad = Math.max(24, Math.round(height * (58 / DESIGN_HEIGHT)));
   const openHandled = useRef(false);
 
   const [loading, setLoading] = useState(true);
@@ -82,22 +73,6 @@ export default function EditNoteScreen() {
   const [reminderSheetVisible, setReminderSheetVisible] = useState(false);
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
-  const [viewportH, setViewportH] = useState(0);
-  const [contentH, setContentH] = useState(0);
-  const bottomAnchorRef = useRef<View>(null);
-  const {
-    scrollRef,
-    contentPaddingBottom,
-    keyboardScrollRoom,
-    onScroll,
-    onInputFocus,
-  } = useKeyboardAwareScroll(deleteBottomPad, {
-    bottomAnchorRef,
-    autoScrollOnFocus: false,
-  });
-  const needsScroll = contentH > viewportH + 1;
-  const pinPanelMinHeight =
-    !needsScroll && viewportH > 0 ? viewportH - contentPaddingBottom : undefined;
   const loadedRef = useRef(false);
   const savedTextRef = useRef<string | null>(null);
 
@@ -305,7 +280,7 @@ export default function EditNoteScreen() {
 
   if (loading) {
     return (
-      <HeaderScrollLayout header={header} edges={['left', 'right']}>
+      <HeaderScrollLayout header={header} edges={['left', 'right']} topFade={false} bottomFade={false}>
         {({ paddingTop }) => (
           <View style={[styles.centered, { paddingTop }]}>
             <ActivityIndicator color={colors.primaryText} />
@@ -317,7 +292,7 @@ export default function EditNoteScreen() {
 
   if (notFound) {
     return (
-      <HeaderScrollLayout header={header} edges={['left', 'right']}>
+      <HeaderScrollLayout header={header} edges={['left', 'right']} topFade={false} bottomFade={false}>
         {({ paddingTop }) => (
           <View style={[styles.centered, { paddingTop }]}>
             <EmptyState
@@ -334,42 +309,28 @@ export default function EditNoteScreen() {
 
   return (
     <HeaderScrollLayout header={header} edges={['left', 'right']}>
-      {({ paddingTop }) => {
-        const topPad = paddingTop + Math.max(Spacing.md, 16);
-        const panelMinHeight =
-          pinPanelMinHeight != null
-            ? pinPanelMinHeight - topPad
-            : undefined;
-
-        return (
+      {({ paddingTop }) => (
         <>
-          <HealthKeyboardAvoidingView>
-            <View
-              style={styles.flex}
-              onLayout={(e) => setViewportH(e.nativeEvent.layout.height)}
-            >
-              <ScrollView
-                ref={scrollRef}
-                style={styles.scroll}
-                contentContainerStyle={[
-                  styles.content,
-                  {
-                    paddingTop: topPad,
-                    paddingBottom: contentPaddingBottom,
-                  },
-                ]}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="none"
-            showsVerticalScrollIndicator={false}
-            onScroll={onScroll}
-            scrollEventThrottle={16}
-            onContentSizeChange={(_w, h) => setContentH(h)}
+          <HealthFormScreen
+            scrollInsetTop={paddingTop}
+            contentContainerStyle={{
+              paddingTop: Math.max(Spacing.md, 16),
+              paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+            }}
+            footer={{
+              label: t('topics.delete_note'),
+              tone: 'destructive-text',
+              onPress: () => {
+                setReminderSheetVisible(false);
+                setPhotoSheetVisible(false);
+                setDeleteVisible(true);
+              },
+            }}
           >
-            <View style={panelMinHeight ? { minHeight: panelMinHeight } : undefined}>
-              <HealthNoteEditorCard
-                noteText={noteText}
-                onChangeNoteText={setNoteText}
-                photoUri={photoUri}
+            <HealthNoteEditorCard
+              noteText={noteText}
+              onChangeNoteText={setNoteText}
+              photoUri={photoUri}
               onPickImage={() => {
                 Keyboard.dismiss();
                 setReminderSheetVisible(false);
@@ -384,105 +345,60 @@ export default function EditNoteScreen() {
               placeholder={t('topics.note_body_placeholder')}
               autoFocus={open === 'focus'}
             />
+          </HealthFormScreen>
 
-            <View style={styles.footerSpacer} />
+          <EditPhotoSheet
+            visible={photoSheetVisible}
+            hasPhoto={Boolean(photoUri)}
+            onClose={() => setPhotoSheetVisible(false)}
+            onTake={() => {
+              setPhotoSheetVisible(false);
+              void handlePickedPhoto('camera');
+            }}
+            onChoose={() => {
+              setPhotoSheetVisible(false);
+              void handlePickedPhoto('library');
+            }}
+            onRemove={
+              photoUri
+                ? () => {
+                    setPhotoSheetVisible(false);
+                    handleRemovePhoto();
+                  }
+                : undefined
+            }
+          />
 
-            <View ref={bottomAnchorRef} collapsable={false}>
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => {
-                  setReminderSheetVisible(false);
-                  setPhotoSheetVisible(false);
-                  setDeleteVisible(true);
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.deleteText}>{t('topics.delete_note')}</Text>
-              </TouchableOpacity>
-            </View>
-            </View>
-            {keyboardScrollRoom > 0 ? (
-              <View style={{ height: keyboardScrollRoom }} />
-            ) : null}
-          </ScrollView>
-        </View>
-      </HealthKeyboardAvoidingView>
+          <ReminderPickerSheet
+            visible={reminderSheetVisible}
+            initialDate={reminderDraft?.date}
+            initialTime={reminderDraft?.time}
+            initialRepeat={reminderDraft?.repeat}
+            onClose={() => setReminderSheetVisible(false)}
+            onConfirm={(draft) => {
+              void persistReminder(draft);
+            }}
+          />
 
-      <EditPhotoSheet
-        visible={photoSheetVisible}
-        hasPhoto={Boolean(photoUri)}
-        onClose={() => setPhotoSheetVisible(false)}
-        onTake={() => {
-          setPhotoSheetVisible(false);
-          void handlePickedPhoto('camera');
-        }}
-        onChoose={() => {
-          setPhotoSheetVisible(false);
-          void handlePickedPhoto('library');
-        }}
-        onRemove={
-          photoUri
-            ? () => {
-                setPhotoSheetVisible(false);
-                handleRemovePhoto();
-              }
-            : undefined
-        }
-      />
-
-      <ReminderPickerSheet
-        visible={reminderSheetVisible}
-        initialDate={reminderDraft?.date}
-        initialTime={reminderDraft?.time}
-        initialRepeat={reminderDraft?.repeat}
-        onClose={() => setReminderSheetVisible(false)}
-        onConfirm={(draft) => {
-          void persistReminder(draft);
-        }}
-      />
-
-      <ConfirmModal
-        visible={deleteVisible}
-        title={t('topics.delete_note_confirm_title')}
-        message={t('topics.delete_note_confirm_body')}
-        confirmText={t('common.delete')}
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteVisible(false)}
-      />
-      <SavingOverlay visible={saving || savingPhoto} />
+          <ConfirmModal
+            visible={deleteVisible}
+            title={t('topics.delete_note_confirm_title')}
+            message={t('topics.delete_note_confirm_body')}
+            confirmText={t('common.delete')}
+            onConfirm={handleDelete}
+            onCancel={() => setDeleteVisible(false)}
+          />
+          <SavingOverlay visible={saving || savingPhoto} />
         </>
-        );
-      }}
+      )}
     </HeaderScrollLayout>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-  scroll: {
-    flex: 1,
-  },
   centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  content: {
-    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-  },
-  footerSpacer: {
-    flexGrow: 1,
-    minHeight: 24,
-  },
-  deleteButton: {
-    padding: Spacing.md,
-    alignItems: 'center',
-  },
-  deleteText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: c.error,
   },
 });

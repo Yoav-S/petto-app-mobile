@@ -17,7 +17,8 @@
     "remindersCard": {
       "title": "Напоминания",
       "upcoming": "предстоящих",
-      "empty": "Напоминаний пока нет"
+      "empty": "Напоминаний пока нет",
+      "allDone": "На сегодня всё готово"
     },
     "healthCard": {
       "title": "Темы",
@@ -25,7 +26,8 @@
     },
     "topicsCard": {
       "title": "Темы",
-      "empty": "Записей пока нет"
+      "empty": "Записей пока нет",
+      "allDone": "На сегодня всё готово"
     }
   },
   "pets": {
@@ -477,7 +479,7 @@
     "note_placeholder": "Что изменилось?",
     "reminder_label": "Напоминание:",
     "reminder_tomorrow": "Завтра",
-    "reminder_sent_successfully": "Успешно отправлено",
+    "reminder_sent_successfully": "Отправлено",
     "no_reminder_for_note": "Для этой заметки нет напоминания",
     "add_photo": "Добавить фото",
     "add_reminder": "Добавить напоминание",
