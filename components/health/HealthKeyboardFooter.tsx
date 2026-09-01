@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Dimensions,
+  Platform,
   View,
   Text,
   StyleSheet,
@@ -22,6 +22,8 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import {
   dismissKeyboard,
   useKeyboardBottomOffset,
+  useKeyboardOpen,
+  useKeyboardWindowResized,
   KEYBOARD_DONE_BAR_HEIGHT,
 } from '@/components/ui/keyboardUtils';
 import SavingOverlay from '@/components/ui/SavingOverlay';
@@ -132,12 +134,17 @@ export function HealthFormSaveScroll({
   scrollEventThrottle,
 }: HealthFormSaveScrollProps) {
   const keyboardHeight = useKeyboardBottomOffset();
+  const keyboardOpen = useKeyboardOpen();
+  const windowResized = useKeyboardWindowResized();
   const insets = useSafeAreaInsets();
   const [viewportH, setViewportH] = useState(0);
   const [scrollRoom, setScrollRoom] = useState(0);
-  const footerWrapRef = useRef<View>(null);
   const scrollYRef = useRef(0);
   const localScrollRef = useRef<ScrollView>(null);
+
+  const footerPadBottom = keyboardOpen
+    ? FOOTER.minBottom + FOOTER.safeGap
+    : Math.max(insets.bottom, FOOTER.minBottom) + FOOTER.safeGap;
 
   const setScrollRef = useCallback(
     (node: ScrollView | null) => {
@@ -156,71 +163,28 @@ export function HealthFormSaveScroll({
   };
 
   /**
-   * Measure Save BUTTON (not empty footer safe-padding) vs Done chip.
-   * scrollRoom = exact distance so button bottom lands on Done top.
-   * Using footer bottom overshot by ~safe-area (≈48–56px) on many devices.
+   * Trailing scroll extent so max scroll parks Save on the Done chip.
+   * Android (adjustResize): the viewport already shrinks — only reserve the Done band.
+   * iOS: lift Save by keyboard height + Done band.
    */
   useEffect(() => {
-    if (keyboardHeight <= 0) {
+    if (!keyboardOpen) {
       setScrollRoom(0);
       return;
     }
-
-    const footerPadBottom =
-      Math.max(insets.bottom, FOOTER.minBottom) + FOOTER.safeGap;
-    const fallback = Math.max(
-      0,
-      keyboardHeight + KEYBOARD_DONE_BAR_HEIGHT - footerPadBottom,
-    );
-    let cancelled = false;
-
-    const measure = () => {
-      footerWrapRef.current?.measureInWindow((_x, y, _w, h) => {
-        if (cancelled) return;
-        if (!Number.isFinite(y) || !Number.isFinite(h) || h <= 0) {
-          setScrollRoom(fallback);
-          return;
-        }
-        const winH = Dimensions.get('window').height;
-        const keyboardTop = winH - keyboardHeight;
-        // Done host sits on keyboard top and extends upward by KEYBOARD_DONE_BAR_HEIGHT.
-        const doneTop = keyboardTop - KEYBOARD_DONE_BAR_HEIGHT;
-        // Button sits above the footer's bottom safe/padding inset.
-        const buttonBottom = y + h - footerPadBottom;
-        // Total max scroll from y=0 (measureInWindow already reflects current scroll/pan).
-        const needed = Math.max(
-          0,
-          Math.round(buttonBottom - doneTop + scrollYRef.current),
-        );
-        setScrollRoom(needed);
-      });
-    };
-
-    const t = setTimeout(measure, 50);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [keyboardHeight, viewportH, insets.bottom]);
+    const room =
+      Platform.OS === 'android' && windowResized
+        ? Math.max(0, KEYBOARD_DONE_BAR_HEIGHT - footerPadBottom)
+        : Math.max(0, keyboardHeight + KEYBOARD_DONE_BAR_HEIGHT - footerPadBottom);
+    setScrollRoom(room);
+  }, [footerPadBottom, keyboardHeight, keyboardOpen, windowResized]);
 
   const handleScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const y = e.nativeEvent.contentOffset.y;
-      scrollYRef.current = y;
-
-      // Hard stop — no flying past the measured room on short forms.
-      if (viewportH > 0 && scrollRoom > 0) {
-        const contentH = e.nativeEvent.contentSize.height;
-        const maxY = Math.max(0, Math.round(contentH - viewportH));
-        if (y > maxY + 0.5) {
-          localScrollRef.current?.scrollTo({ y: maxY, animated: false });
-          scrollYRef.current = maxY;
-        }
-      }
-
+      scrollYRef.current = e.nativeEvent.contentOffset.y;
       onScroll?.(e);
     },
-    [onScroll, scrollRoom, viewportH],
+    [onScroll],
   );
 
   return (
@@ -247,7 +211,7 @@ export function HealthFormSaveScroll({
         ]}
       >
         <View style={[styles.fieldsBlock, fieldsStyle]}>{children}</View>
-        <View ref={footerWrapRef} collapsable={false}>
+        <View collapsable={false}>
           <HealthKeyboardFooter {...footer} />
         </View>
       </View>
@@ -305,12 +269,16 @@ export function HealthKeyboardFooter({
   fullWidth = true,
 }: HealthKeyboardFooterProps) {
   const styles = useThemedStyles(makeStyles);
+  const keyboardOpen = useKeyboardOpen();
   const insets = useSafeAreaInsets();
   const { contentWidth } = useResponsiveLayout();
 
   const footerPadBottom = useMemo(
-    () => Math.max(insets.bottom, FOOTER.minBottom) + FOOTER.safeGap,
-    [insets.bottom],
+    () =>
+      keyboardOpen
+        ? FOOTER.minBottom + FOOTER.safeGap
+        : Math.max(insets.bottom, FOOTER.minBottom) + FOOTER.safeGap,
+    [insets.bottom, keyboardOpen],
   );
 
   const handlePress = () => {

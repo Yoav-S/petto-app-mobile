@@ -310,6 +310,18 @@ function isStoreUnavailableError(code: string | null, error: unknown): boolean {
   );
 }
 
+export async function syncPurchasesWithStore(): Promise<void> {
+  if (!(await configurePurchases())) return;
+  try {
+    await Purchases.syncPurchases();
+  } catch (error) {
+    console.log(
+      `${LOG} syncPurchases failed:`,
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
+
 export async function restorePremium(): Promise<PurchaseResult> {
   if (!(await configurePurchases())) {
     return { status: 'unavailable', message: t('settings.purchase_unavailable') };

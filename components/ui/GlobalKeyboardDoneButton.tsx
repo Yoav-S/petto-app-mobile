@@ -1,23 +1,60 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  Dimensions,
+  Keyboard,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
+  type KeyboardEvent,
 } from 'react-native';
-import {
-  dismissKeyboard,
-  useKeyboardBottomOffset,
-} from '@/components/ui/keyboardUtils';
+import { dismissKeyboard, useKeyboardOpen } from '@/components/ui/keyboardUtils';
 import { useColors } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 
+/** Lift for the full-screen Done overlay — isolated from scroll math. */
+function doneOverlayBottom(e: KeyboardEvent): number {
+  const { screenY, height } = e.endCoordinates;
+  const kbH = Math.round(height ?? 0);
+  const windowH = Dimensions.get('window').height;
+  const screenH = Dimensions.get('screen').height;
+
+  if (Platform.OS === 'android') {
+    // Root overlay spans the physical display; screenY is in screen coordinates.
+    if (typeof screenY === 'number' && Number.isFinite(screenY)) {
+      return Math.max(0, Math.round(screenH - screenY));
+    }
+    return Math.max(0, kbH);
+  }
+
+  if (typeof screenY === 'number' && Number.isFinite(screenY)) {
+    return Math.max(0, Math.round(windowH - screenY));
+  }
+  return Math.max(0, kbH);
+}
+
 /** Done pill above the keyboard — no Save here. */
 export default function GlobalKeyboardDoneButton() {
-  const bottom = useKeyboardBottomOffset();
+  const keyboardOpen = useKeyboardOpen();
+  const [bottom, setBottom] = useState(0);
   const colors = useColors();
 
-  if (bottom <= 0) return null;
+  useEffect(() => {
+    const onFrame = (e: KeyboardEvent) => setBottom(doneOverlayBottom(e));
+    const onHide = () => setBottom(0);
+
+    const showSub = Keyboard.addListener('keyboardDidShow', onFrame);
+    const changeSub = Keyboard.addListener('keyboardDidChangeFrame', onFrame);
+    const hideSub = Keyboard.addListener('keyboardDidHide', onHide);
+    return () => {
+      showSub.remove();
+      changeSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  if (!keyboardOpen || bottom <= 0) return null;
 
   return (
     <View style={styles.overlay} pointerEvents="box-none">

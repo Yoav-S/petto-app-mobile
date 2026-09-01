@@ -11,17 +11,22 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { t } from '@/i18n';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import PremiumSuccessModal from '@/components/settings/PremiumSuccessModal';
-import { getMyProfile, isPremiumPlan } from '@/services/subscription';
+import {
+  getMyProfile,
+  isPremiumPlan,
+  openManageSubscriptions,
+} from '@/services/subscription';
 import {
   getLocalizedPriceString,
   purchasePremium,
-  restorePremium,
+  syncPurchasesWithStore,
 } from '@/services/purchases';
 import { formatDisplayDateLong, formatDisplayHourMinute } from '@/utils/calendar';
 import type { UserSubscription } from '@/types/api';
@@ -59,9 +64,9 @@ export default function SubscriptionSettingsScreen() {
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
   const [priceLabel, setPriceLabel] = useState(t('settings.plan_premium_price'));
   const [successVisible, setSuccessVisible] = useState(false);
-  const [downgradeConfirmed, setDowngradeConfirmed] = useState(false);
 
   const refresh = useCallback(async () => {
+    await syncPurchasesWithStore();
     try {
       const profile = await getMyProfile();
       setSubscription(profile.subscription ?? null);
@@ -96,13 +101,32 @@ export default function SubscriptionSettingsScreen() {
     }, [refresh]),
   );
 
-  const handleSelectFree = async () => {
-    if (plan === 'free') return;
+  const openSubscriptionSettings = useCallback(async () => {
+    setBusy(true);
+    try {
+      await openManageSubscriptions(subscription?.product_id);
+    } catch {
+      Alert.alert(t('common.error'), t('settings.manage_subscription_failed'));
+    } finally {
+      setBusy(false);
+    }
+  }, [subscription?.product_id]);
+
+  const handleSelectFree = () => {
+    if (plan !== 'premium') return;
+
+    if (subscription?.will_renew === false) {
+      Alert.alert(t('settings.subscription'), t('settings.downgrade_already_scheduled'));
+      return;
+    }
+
     Alert.alert(t('settings.downgrade_title'), t('settings.downgrade_body'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('settings.downgrade_confirm'),
-        onPress: () => setDowngradeConfirmed(true),
+        onPress: () => {
+          void openSubscriptionSettings();
+        },
       },
     ]);
   };
@@ -125,40 +149,11 @@ export default function SubscriptionSettingsScreen() {
         return;
       }
       if (result.status !== 'success') return;
-      // Webhook may lag — optimistically show premium if entitlement is active.
       if (result.premium) setPlan('premium');
       setSuccessVisible(true);
-      // Soft refresh after a short delay for webhook.
       setTimeout(() => {
         void refresh();
       }, 1500);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleRestore = async () => {
-    setBusy(true);
-    try {
-      const result = await restorePremium();
-      if (result.status === 'unavailable') {
-        Alert.alert(t('settings.subscription'), result.message);
-        return;
-      }
-      if (result.status === 'error') {
-        Alert.alert(t('common.error'), result.message);
-        return;
-      }
-      if (result.status !== 'success') return;
-      if (result.premium) {
-        setPlan('premium');
-        setSuccessVisible(true);
-        setTimeout(() => {
-          void refresh();
-        }, 1500);
-      } else {
-        Alert.alert(t('settings.subscription'), t('settings.restore_none'));
-      }
     } finally {
       setBusy(false);
     }
@@ -172,8 +167,7 @@ export default function SubscriptionSettingsScreen() {
           expiresAtDate.getMinutes(),
         )}`
       : null;
-  const downgradePending =
-    plan === 'premium' && (downgradeConfirmed || subscription?.will_renew === false);
+  const downgradePending = plan === 'premium' && subscription?.will_renew === false;
 
   return (
     <>
@@ -196,82 +190,84 @@ export default function SubscriptionSettingsScreen() {
               ]}
               showsVerticalScrollIndicator={false}
             >
-          {/* Free plan */}
-          <View style={styles.cardWrap}>
-            {plan === 'free' ? <CurrentPlanBadge /> : null}
-            <Pressable
-              style={[styles.freeCard, plan === 'free' && styles.cardCurrent]}
-              onPress={() => {
-                void handleSelectFree();
-              }}
-              disabled={busy}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: plan === 'free' }}
-            >
-              <View style={styles.freeLeft}>
-                <Text style={styles.planTitle}>{t('settings.plan_free')}</Text>
-                <View style={styles.freeBullets}>
-                  <Text style={styles.bullet}>{t('settings.plan_free_pets')}</Text>
-                  <Text style={styles.bullet}>{t('settings.plan_free_reminders')}</Text>
-                </View>
-              </View>
-              <PlanCheckbox selected={plan === 'free'} />
-            </Pressable>
-          </View>
-
-          {/* Premium plan */}
-          <View style={[styles.cardWrap, styles.premiumWrap]}>
-            {plan === 'premium' ? <CurrentPlanBadge /> : null}
-            <Pressable
-              style={[styles.premiumCard, plan === 'premium' && styles.cardCurrent]}
-              onPress={() => {
-                void handleSelectPremium();
-              }}
-              disabled={busy}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: plan === 'premium' }}
-            >
-              <View style={styles.premiumInner}>
-                <View style={styles.premiumCopy}>
-                  <View style={styles.premiumHead}>
-                    <View style={styles.premiumTitles}>
-                      <Text style={styles.planTitle}>{t('settings.plan_premium')}</Text>
-                      <Text style={styles.price}>{priceLabel}</Text>
+              <View style={styles.cardWrap}>
+                {plan === 'free' ? <CurrentPlanBadge /> : null}
+                <Pressable
+                  style={[styles.freeCard, plan === 'free' && styles.cardCurrent]}
+                  onPress={handleSelectFree}
+                  disabled={busy || plan !== 'premium'}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: plan === 'free' }}
+                >
+                  <View style={styles.freeLeft}>
+                    <Text style={styles.planTitle}>{t('settings.plan_free')}</Text>
+                    <View style={styles.freeBullets}>
+                      <Text style={styles.bullet}>{t('settings.plan_free_pets')}</Text>
+                      <Text style={styles.bullet}>{t('settings.plan_free_reminders')}</Text>
                     </View>
-                    <Text style={styles.tagline}>{t('settings.plan_premium_tagline')}</Text>
                   </View>
-                  <View style={styles.premiumBullets}>
-                    <Text style={styles.bullet}>{t('settings.plan_premium_pets')}</Text>
-                    <Text style={styles.bullet}>{t('settings.plan_premium_reminders')}</Text>
-                  </View>
-                </View>
-                <PlanCheckbox selected={plan === 'premium'} />
+                  <PlanCheckbox selected={plan === 'free'} />
+                </Pressable>
               </View>
-            </Pressable>
-          </View>
 
-          {plan === 'premium' && expiryLabel ? (
-            <Text style={styles.statusNote}>
-              {downgradePending
-                ? `${t('settings.downgrade_scheduled')} ${expiryLabel}`
-                : `${t('settings.subscription_renews_on')} ${expiryLabel}`}
-            </Text>
-          ) : null}
+              <View style={[styles.cardWrap, styles.premiumWrap]}>
+                {plan === 'premium' ? <CurrentPlanBadge /> : null}
+                <Pressable
+                  style={[styles.premiumCard, plan === 'premium' && styles.cardCurrent]}
+                  onPress={() => {
+                    void handleSelectPremium();
+                  }}
+                  disabled={busy}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: plan === 'premium' }}
+                >
+                  <View style={styles.premiumInner}>
+                    <View style={styles.premiumCopy}>
+                      <View style={styles.premiumHead}>
+                        <View style={styles.premiumTitles}>
+                          <Text style={styles.planTitle}>{t('settings.plan_premium')}</Text>
+                          <Text style={styles.price}>{priceLabel}</Text>
+                        </View>
+                        <Text style={styles.tagline}>{t('settings.plan_premium_tagline')}</Text>
+                      </View>
+                      <View style={styles.premiumBullets}>
+                        <Text style={styles.bullet}>{t('settings.plan_premium_pets')}</Text>
+                        <Text style={styles.bullet}>{t('settings.plan_premium_reminders')}</Text>
+                      </View>
+                    </View>
+                    <PlanCheckbox selected={plan === 'premium'} />
+                  </View>
+                </Pressable>
+              </View>
 
-          <Pressable
-            style={styles.restoreBtn}
-            onPress={() => {
-              void handleRestore();
-            }}
-            disabled={busy}
-          >
-            {busy ? (
-              <ActivityIndicator color={colors.secondaryText} />
-            ) : (
-              <Text style={styles.restoreText}>{t('settings.restore_purchases')}</Text>
-            )}
-          </Pressable>
-        </ScrollView>
+              {plan === 'premium' && expiryLabel ? (
+                <View style={styles.statusBlock}>
+                  <Text style={styles.statusNote}>
+                    {downgradePending
+                      ? `${t('settings.downgrade_scheduled')} ${expiryLabel}`
+                      : `${t('settings.subscription_renews_on')} ${expiryLabel}`}
+                  </Text>
+                  {downgradePending ? (
+                    <>
+                      <Text style={styles.statusHint}>{t('settings.keep_premium_hint')}</Text>
+                      <Pressable
+                        style={styles.keepPremiumBtn}
+                        onPress={() => {
+                          void openSubscriptionSettings();
+                        }}
+                        disabled={busy}
+                      >
+                        {busy ? (
+                          <ActivityIndicator color={colors.button.primaryText} />
+                        ) : (
+                          <Text style={styles.keepPremiumText}>{t('settings.keep_premium')}</Text>
+                        )}
+                      </Pressable>
+                    </>
+                  ) : null}
+                </View>
+              ) : null}
+            </ScrollView>
           )
         }
       </HeaderScrollLayout>
@@ -327,7 +323,6 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: 'center',
       justifyContent: 'space-between',
       minHeight: 106,
-      // box-shadow: 0px 4px 20px 0px #2D2D2A0A
       shadowColor: '#2D2D2A',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.04,
@@ -414,18 +409,9 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.brand,
       borderColor: c.brand,
     },
-    restoreBtn: {
-      alignSelf: 'center',
-      paddingVertical: 12,
-      minHeight: 44,
-      justifyContent: 'center',
-    },
-    restoreText: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 14,
-      lineHeight: 18,
-      color: c.secondaryText,
-      textAlign: 'center',
+    statusBlock: {
+      gap: 12,
+      marginTop: -8,
     },
     statusNote: {
       fontFamily: 'Rubik-Regular',
@@ -433,6 +419,24 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 16,
       color: c.secondaryText,
       textAlign: 'center',
-      marginTop: -8,
+    },
+    statusHint: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 12,
+      lineHeight: 16,
+      color: c.secondaryText,
+      textAlign: 'center',
+    },
+    keepPremiumBtn: {
+      ...PRIMARY_BUTTON,
+      backgroundColor: c.brand,
+      alignSelf: 'center',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    keepPremiumText: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 16,
+      color: c.button.primaryText,
     },
   });

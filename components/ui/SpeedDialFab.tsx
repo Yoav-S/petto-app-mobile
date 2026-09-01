@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   type ImageSourcePropType,
   Pressable,
@@ -31,7 +31,11 @@ export const ADD_FAB = {
   right: 22,
   bottom: 38,
   menuGap: 12,
-  menuItemH: 40,
+  /** Figma menu chip — each row sizes to its label. */
+  menuItemH: 48,
+  menuItemRadius: 12,
+  menuItemPadH: 14,
+  menuItemGap: 10,
   animMs: 200,
   menuIcon: 22,
 } as const;
@@ -101,12 +105,6 @@ export default function SpeedDialFab({
   const close = () => setOpen(false);
   const toggle = () => setOpen(!open);
 
-  /** Tight chip width from the longest label — stay compact on all locales. */
-  const minMenuWidth = useMemo(() => {
-    const longest = Math.max(...items.map((it) => it.label.length), 6);
-    return Math.max(96, Math.ceil(longest * 7.2 + ADD_FAB.menuIcon + 10 + 24));
-  }, [items]);
-
   return (
     <>
       <AnimatedPressable
@@ -137,13 +135,7 @@ export default function SpeedDialFab({
           {items.map((item) => (
             <TouchableOpacity
               key={item.key}
-              style={[
-                styles.menuItem,
-                {
-                  minHeight: ADD_FAB.menuItemH * s,
-                  minWidth: minMenuWidth,
-                },
-              ]}
+              style={styles.menuItem}
               onPress={() => {
                 close();
                 item.onPress();
@@ -153,13 +145,11 @@ export default function SpeedDialFab({
               {item.icon ? (
                 <Image
                   source={item.icon}
-                  style={{ width: ADD_FAB.menuIcon, height: ADD_FAB.menuIcon }}
+                  style={styles.menuIcon}
                   contentFit="contain"
                 />
               ) : null}
-              <Text style={styles.menuLabel} numberOfLines={1}>
-                {item.label}
-              </Text>
+              <Text style={styles.menuLabel}>{item.label}</Text>
             </TouchableOpacity>
           ))}
         </Animated.View>
@@ -206,11 +196,11 @@ const makeStyles = (c: ThemeColors) =>
     menuItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
-      paddingVertical: 8,
-      paddingLeft: 12,
-      paddingRight: 12,
-      borderRadius: 12,
+      alignSelf: 'flex-end',
+      height: ADD_FAB.menuItemH,
+      gap: ADD_FAB.menuItemGap,
+      paddingHorizontal: ADD_FAB.menuItemPadH,
+      borderRadius: ADD_FAB.menuItemRadius,
       backgroundColor: c.surface,
       shadowColor: '#1F1F1F',
       shadowOffset: { width: 0, height: 3 },
@@ -218,10 +208,14 @@ const makeStyles = (c: ThemeColors) =>
       shadowRadius: 8,
       elevation: 4,
     },
+    menuIcon: {
+      width: ADD_FAB.menuIcon,
+      height: ADD_FAB.menuIcon,
+    },
     menuLabel: {
       fontFamily: 'Rubik-Medium',
       fontSize: 13,
-      lineHeight: 18,
+      lineHeight: 16,
       color: c.primaryText,
       flexShrink: 0,
     },
