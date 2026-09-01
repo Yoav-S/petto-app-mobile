@@ -16,7 +16,9 @@ import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
-import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
+import HeaderScrollLayout, {
+  type HeaderScrollInsets,
+} from '@/components/ui/HeaderScrollLayout';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
@@ -134,7 +136,10 @@ export default function VaccinesScreen() {
     [activePetId, items, setItems, toast],
   );
 
-  const renderContent = (paddingTop: number) => {
+  const renderContent = (
+    paddingTop: number,
+    scrollMetricsProps: HeaderScrollInsets['scrollMetricsProps'],
+  ) => {
     if (loading && items.length === 0) {
       return (
         <View style={[styles.centered, { paddingTop }]}>
@@ -162,6 +167,8 @@ export default function VaccinesScreen() {
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
+        onLayout={scrollMetricsProps.onLayout}
+        onContentSizeChange={scrollMetricsProps.onContentSizeChange}
         renderItem={({ item }) => (
           <SwipeToDeleteRow
             open={swipeOpenId === item.id}
@@ -231,7 +238,7 @@ export default function VaccinesScreen() {
         header={<VaccineScreenHeader title={t('vaccines.list_title')} />}
         edges={['left', 'right', 'bottom']}
       >
-        {({ paddingTop }) => renderContent(paddingTop)}
+        {({ paddingTop, scrollMetricsProps }) => renderContent(paddingTop, scrollMetricsProps)}
       </HeaderScrollLayout>
       {items.length > 0 && !loading && !(error && !items.length) ? (
         <SpeedDialFab

@@ -26,6 +26,7 @@ import {
   useKeyboardWindowResized,
   KEYBOARD_DONE_BAR_HEIGHT,
 } from '@/components/ui/keyboardUtils';
+import { useScrollFadeReporter } from '@/components/ui/scrollFadeMetrics';
 import SavingOverlay from '@/components/ui/SavingOverlay';
 
 /** Figma sticky action bar — fixed metrics. */
@@ -139,7 +140,10 @@ export function HealthFormSaveScroll({
   const keyboardOpen = useKeyboardOpen();
   const windowResized = useKeyboardWindowResized();
   const insets = useSafeAreaInsets();
+  const scrollFade = useScrollFadeReporter();
   const [viewportH, setViewportH] = useState(0);
+  const [fieldsH, setFieldsH] = useState(0);
+  const [footerH, setFooterH] = useState(0);
   const [scrollRoom, setScrollRoom] = useState(0);
   const scrollYRef = useRef(0);
   const localScrollRef = useRef<ScrollView>(null);
@@ -162,7 +166,17 @@ export function HealthFormSaveScroll({
   const onViewportLayout = (e: LayoutChangeEvent) => {
     const h = Math.round(e.nativeEvent.layout.height);
     if (h > 0 && h !== viewportH) setViewportH(h);
+    scrollFade?.reportViewport(h);
   };
+
+  useEffect(() => {
+    if (viewportH <= 0) return;
+    scrollFade?.reportPinnedFooterOverflow(fieldsH + footerH > viewportH + 8);
+  }, [fieldsH, footerH, scrollFade, viewportH]);
+
+  useEffect(() => {
+    return () => scrollFade?.reportPinnedFooterOverflow(null);
+  }, [scrollFade]);
 
   /**
    * Trailing scroll extent so max scroll parks Save on the Done chip.
@@ -205,6 +219,7 @@ export function HealthFormSaveScroll({
       overScrollMode="never"
       onScroll={handleScroll}
       scrollEventThrottle={scrollEventThrottle ?? 16}
+      onContentSizeChange={(_w, h) => scrollFade?.reportContent(h)}
     >
       <View
         style={[
@@ -212,8 +227,16 @@ export function HealthFormSaveScroll({
           viewportH > 0 ? { minHeight: viewportH } : styles.scrollContentFallback,
         ]}
       >
-        <View style={[styles.fieldsBlock, fieldsStyle]}>{children}</View>
-        <View collapsable={false}>
+        <View
+          style={[styles.fieldsBlock, fieldsStyle]}
+          onLayout={(e) => setFieldsH(e.nativeEvent.layout.height)}
+        >
+          {children}
+        </View>
+        <View
+          collapsable={false}
+          onLayout={(e) => setFooterH(e.nativeEvent.layout.height)}
+        >
           <HealthKeyboardFooter {...footer} />
         </View>
       </View>

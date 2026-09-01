@@ -59,13 +59,31 @@ export const DESIGN_HOME_HEALTH_CARD_HEIGHT = 112;
 /** Gap below safe-area inset when inset is taller than the Figma status band. */
 export const HEADER_BELOW_SAFE_AREA = 12;
 
-/** Scroll fade band above the home indicator / below the title row. */
-export const SCROLL_FADE_BAND = 56;
+/** Scroll content stops this far above the physical bottom (home-indicator zone). */
+export const SCROLL_END_ABOVE_HOME = 20;
 
-/** Extend fade start by ~one text line at top and bottom. */
-export const SCROLL_FADE_LINE_OFFSET = 18;
+/** Top fade gradient height — overlaps the bottom edge of the header chrome. */
+export const SCROLL_TOP_FADE_GRADIENT = 44;
 
-/** Figma: fade ends at ~89% — transparent → solid (bottom) or solid → transparent (top). */
+/** Bottom fade gradient height — starts this far above the screen bottom. */
+export const SCROLL_BOTTOM_FADE_GRADIENT = 50;
+
+/** Top gradient stays opaque through this fraction (seamless under header). */
+export const SCROLL_TOP_FADE_SOLID_AT = 0.35;
+
+/** Bottom gradient reaches full opacity through this fraction. */
+export const SCROLL_BOTTOM_FADE_SOLID_AT = 0.55;
+
+/** @deprecated Use SCROLL_BOTTOM_FADE_GRADIENT */
+export const SCROLL_FADE_BAND = SCROLL_BOTTOM_FADE_GRADIENT;
+
+/** @deprecated No longer added to scroll padding */
+export const SCROLL_FADE_BELOW_TITLE = 0;
+
+/** @deprecated */
+export const SCROLL_FADE_LINE_OFFSET = 0;
+
+/** @deprecated */
 export const SCROLL_FADE_SOLID_AT = 0.8913;
 
 export function clamp(value: number, min: number, max: number): number {

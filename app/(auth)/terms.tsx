@@ -7,7 +7,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { t, currentLocale } from '@/i18n';
 import { Spacing, type ThemeColors } from '@/constants/theme';
@@ -19,13 +19,9 @@ import {
   termsOfServiceBlocks,
 } from '@/constants/legalContent';
 import type { LegalBlock } from '@/components/settings/LegalScreen';
-import ScrollBottomFade from '@/components/ui/ScrollBottomFade';
+import ScrollEdgeFades from '@/components/ui/ScrollEdgeFades';
 
 type Tab = 'terms' | 'privacy';
-
-const TOP_CHROME_RADIUS = 16;
-/** Space between tab chrome and scroll content so text slips under the bg, not the buttons. */
-const SCROLL_UNDER_MARGIN = 8;
 
 function formatUpdated(iso: string): string {
   const date = new Date(iso);
@@ -71,7 +67,6 @@ export default function TermsScreen() {
   const router = useRouter();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('terms');
   const [chromeHeight, setChromeHeight] = useState(0);
 
@@ -85,13 +80,7 @@ export default function TermsScreen() {
       <View style={styles.body}>
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={[
-            styles.scrollContent,
-            {
-              paddingTop: chromeHeight + SCROLL_UNDER_MARGIN,
-              paddingBottom: Math.max(insets.bottom, Spacing.xl) + Spacing.xl,
-            },
-          ]}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: chromeHeight }]}
           showsVerticalScrollIndicator={false}
         >
           <Text style={styles.updated}>
@@ -100,14 +89,14 @@ export default function TermsScreen() {
           <Blocks blocks={blocks} styles={styles} />
         </ScrollView>
 
-        <ScrollBottomFade color={colors.surface} />
+        <ScrollEdgeFades scrollTop={chromeHeight} color={colors.surface} />
 
         <View
           style={styles.chrome}
           onLayout={(e) => setChromeHeight(e.nativeEvent.layout.height)}
           pointerEvents="box-none"
         >
-          <View style={styles.header}>
+          <View style={styles.headerRow}>
             <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
               <Ionicons name="chevron-back" size={24} color={colors.primaryText} />
             </Pressable>
@@ -154,24 +143,17 @@ const makeStyles = (c: ThemeColors) =>
       top: 0,
       left: 0,
       right: 0,
-      zIndex: 2,
+      zIndex: 4,
       backgroundColor: c.surface,
-      borderBottomLeftRadius: TOP_CHROME_RADIUS,
-      borderBottomRightRadius: TOP_CHROME_RADIUS,
       paddingBottom: Spacing.sm,
-      // Soft lift so scrolling text disappears under the chrome, not into the tabs.
-      shadowColor: '#1E1E1E',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.06,
-      shadowRadius: 10,
-      elevation: 4,
     },
-    header: {
+    headerRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       paddingVertical: Spacing.sm,
+      backgroundColor: c.surface,
     },
     backBtn: {
       width: 40,
@@ -189,6 +171,7 @@ const makeStyles = (c: ThemeColors) =>
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       paddingTop: Spacing.xs,
       gap: 8,
+      backgroundColor: c.surface,
     },
     tab: {
       flex: 1,

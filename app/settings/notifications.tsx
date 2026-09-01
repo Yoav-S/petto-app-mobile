@@ -88,14 +88,13 @@ export default function NotificationsSettingsScreen() {
 
   return (
     <HeaderScrollLayout header={<SettingsHeader title={t('settings.notifications')} />}>
-      {({ paddingTop, paddingBottom }) => (
+      {({ paddingTop, scrollMetricsProps }) => (
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={[
-            styles.content,
-            { paddingTop, paddingBottom: paddingBottom + 16 },
-          ]}
+          contentContainerStyle={[styles.content, { paddingTop }]}
           showsVerticalScrollIndicator={false}
+          onLayout={scrollMetricsProps.onLayout}
+          onContentSizeChange={scrollMetricsProps.onContentSizeChange}
         >
           {loading ? (
             <View style={styles.loader}>

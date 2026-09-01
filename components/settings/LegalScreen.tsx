@@ -54,18 +54,14 @@ export default function LegalScreen({ title, lastUpdatedISO, blocks }: LegalScre
   const styles = useThemedStyles(makeStyles);
 
   return (
-    <HeaderScrollLayout header={<SettingsHeader title={title} />} bottomFade>
-      {({ paddingTop, paddingBottom }) => (
+    <HeaderScrollLayout header={<SettingsHeader title={title} />} bottomFade fadeMode="document">
+      {({ paddingTop, scrollMetricsProps }) => (
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={[
-            styles.scrollContent,
-            {
-              paddingTop,
-              paddingBottom: paddingBottom + 30,
-            },
-          ]}
+          contentContainerStyle={[styles.scrollContent, { paddingTop }]}
           showsVerticalScrollIndicator={false}
+          onLayout={scrollMetricsProps.onLayout}
+          onContentSizeChange={scrollMetricsProps.onContentSizeChange}
         >
           <View style={styles.card}>
             <Text style={styles.docTitle}>{title}</Text>

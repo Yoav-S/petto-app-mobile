@@ -183,7 +183,7 @@ export default function SubscriptionSettingsScreen() {
         onClose={() => setSuccessVisible(false)}
       />
       <HeaderScrollLayout header={<SettingsHeader title={t('settings.subscription')} />}>
-        {({ paddingTop, paddingBottom }) =>
+        {({ paddingTop, scrollMetricsProps }) =>
           loading ? (
             <View style={[styles.loadingWrap, { paddingTop: paddingTop + 12 }]}>
               <ActivityIndicator color={colors.brand} />
@@ -193,9 +193,11 @@ export default function SubscriptionSettingsScreen() {
               style={styles.scroll}
               contentContainerStyle={[
                 styles.content,
-                { paddingTop: paddingTop + 12, paddingBottom: paddingBottom + 40 },
+                { paddingTop: paddingTop + 12 },
               ]}
               showsVerticalScrollIndicator={false}
+              onLayout={scrollMetricsProps.onLayout}
+              onContentSizeChange={scrollMetricsProps.onContentSizeChange}
             >
               <View style={styles.cardWrap}>
                 {plan === 'free' ? <CurrentPlanBadge /> : null}

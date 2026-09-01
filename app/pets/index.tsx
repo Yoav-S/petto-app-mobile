@@ -51,7 +51,7 @@ export default function PetsListScreen() {
 
   return (
     <HeaderScrollLayout header={<SettingsHeader title={t('home.pets_title')} />}>
-      {({ paddingTop, paddingBottom }) =>
+      {({ paddingTop }) =>
         loading ? (
           <View style={[styles.centered, { paddingTop }]}>
             <ActivityIndicator color={colors.brand} />
@@ -67,7 +67,7 @@ export default function PetsListScreen() {
           <ScrollView
             contentContainerStyle={[
               styles.content,
-              { paddingTop, paddingBottom: paddingBottom + 40 },
+              { paddingTop },
             ]}
             showsVerticalScrollIndicator={false}
           >

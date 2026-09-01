@@ -448,7 +448,7 @@ export default function RemindersScreen() {
   return (
     <>
       <HeaderScrollLayout header={listHeader} edges={['left', 'right', 'bottom']} bottomFade>
-        {({ paddingTop }) => (
+        {({ paddingTop, scrollMetricsProps }) => (
           <View style={[styles.screenBody, { paddingTop }]}>
             <SegmentedControl
               tabs={[...TABS]}
@@ -475,13 +475,17 @@ export default function RemindersScreen() {
             ) : (
               <View
                 style={styles.listWrap}
-                onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
+                onLayout={(e) => {
+                  setListHeight(e.nativeEvent.layout.height);
+                  scrollMetricsProps.onLayout(e);
+                }}
               >
                 <FlatList
                   style={styles.list}
                   data={items}
                   keyExtractor={(item) => item.id}
                   scrollEventThrottle={16}
+                  onContentSizeChange={scrollMetricsProps.onContentSizeChange}
                   onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
                   renderItem={({ item, index }) => {
                     return (
