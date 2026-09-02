@@ -182,8 +182,8 @@ export default function SubscriptionSettingsScreen() {
         visible={successVisible}
         onClose={() => setSuccessVisible(false)}
       />
-      <HeaderScrollLayout header={<SettingsHeader title={t('settings.subscription')} />}>
-        {({ paddingTop, scrollMetricsProps }) =>
+      <HeaderScrollLayout header={<SettingsHeader title={t('settings.subscription')} />} topFade bottomFade fadeMode="scroll">
+        {({ paddingTop, paddingBottom, scrollMetricsProps }) =>
           loading ? (
             <View style={[styles.loadingWrap, { paddingTop: paddingTop + 12 }]}>
               <ActivityIndicator color={colors.brand} />
@@ -193,7 +193,10 @@ export default function SubscriptionSettingsScreen() {
               style={styles.scroll}
               contentContainerStyle={[
                 styles.content,
-                { paddingTop: paddingTop + 12 },
+                {
+                  paddingTop: paddingTop + 12,
+                  paddingBottom: paddingBottom + 40,
+                },
               ]}
               showsVerticalScrollIndicator={false}
               onLayout={scrollMetricsProps.onLayout}

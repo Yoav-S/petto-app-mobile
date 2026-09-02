@@ -11,8 +11,8 @@ import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
-import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
-import { LIST_TABS_CONTENT_GAP, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import ListScrollLayout from '@/components/ui/ListScrollLayout';
+import { PAGE_HORIZONTAL_PADDING, LIST_HEADER_TABS_GAP } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import { TOPICS_FAB_ICON } from '@/components/home/categoryIcons';
@@ -27,7 +27,6 @@ import HealthListItem, {
 import SwipeToDeleteRow from '@/components/ui/SwipeToDeleteRow';
 import ListLoadMoreFooter from '@/components/ui/ListLoadMoreFooter';
 import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
-import { LIST_FAB_SCROLL_PADDING } from '@/constants/pagination';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { deleteRecord, listRecords } from '@/services/health';
@@ -113,8 +112,7 @@ export default function HealthScreen() {
   const getItemFadeIntensity = useCallback(
     (index: number) => {
       if (listHeight <= 0) return 0;
-      const listPaddingTop = LIST_TABS_CONTENT_GAP;
-      let itemBottom = listPaddingTop;
+      let itemBottom = 0;
       for (let i = 0; i <= index; i += 1) {
         itemBottom += estimateHealthListItemHeight(items[i]?.description);
         if (i < index) itemBottom += itemGap;
@@ -269,13 +267,13 @@ export default function HealthScreen() {
     );
   };
 
-  const listHeader = <ScreenHeader title={t('topics.title')} />;
-
   return (
     <>
-      <HeaderScrollLayout header={listHeader} edges={['left', 'right', 'bottom']} bottomFade>
-        {({ paddingTop, scrollMetricsProps }) => (
-          <View style={[styles.screenBody, { paddingTop }]}>
+      <ListScrollLayout
+        fabOverlay={hasAnyRecords}
+        chrome={
+          <>
+            <ScreenHeader title={t('topics.title')} />
             <SegmentedControl
               tabs={[...TABS]}
               activeTab={activeTab}
@@ -284,12 +282,29 @@ export default function HealthScreen() {
               width={220}
               style={styles.tabs}
             />
+          </>
+        }
+      >
+        {({ paddingTop, paddingBottom, scrollMetricsProps }) => (
+          <>
             {showSpinner ? (
-              <View style={styles.centered}>
+              <View
+                style={[styles.centered, { paddingTop }]}
+                onLayout={(e) => {
+                  scrollMetricsProps.onLayout(e);
+                  scrollMetricsProps.markNonScrollable();
+                }}
+              >
                 <ActivityIndicator color={colors.primaryText} />
               </View>
             ) : error && items.length === 0 ? (
-              <View style={styles.centered}>
+              <View
+                style={[styles.centered, { paddingTop }]}
+                onLayout={(e) => {
+                  scrollMetricsProps.onLayout(e);
+                  scrollMetricsProps.markNonScrollable();
+                }}
+              >
                 <EmptyState
                   title={t('common.error')}
                   subtitle={error}
@@ -298,6 +313,16 @@ export default function HealthScreen() {
                     void refetchAll();
                   }}
                 />
+              </View>
+            ) : items.length === 0 ? (
+              <View
+                style={[styles.centered, { paddingTop }]}
+                onLayout={(e) => {
+                  scrollMetricsProps.onLayout(e);
+                  scrollMetricsProps.markNonScrollable();
+                }}
+              >
+                {renderEmptyState()}
               </View>
             ) : (
               <View
@@ -353,10 +378,9 @@ export default function HealthScreen() {
                       />
                     </SwipeToDeleteRow>
                   )}
-                  ListEmptyComponent={renderEmptyState}
                   contentContainerStyle={[
                     styles.listContent,
-                    items.length === 0 ? styles.listContentEmpty : null,
+                    { paddingTop, paddingBottom },
                   ]}
                   showsVerticalScrollIndicator={false}
                   onEndReached={() => {
@@ -370,9 +394,9 @@ export default function HealthScreen() {
                 />
               </View>
             )}
-          </View>
+          </>
         )}
-      </HeaderScrollLayout>
+      </ListScrollLayout>
 
       {hasAnyRecords ? (
         <SpeedDialFab
@@ -399,7 +423,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   tabs: {
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-    marginBottom: LIST_TABS_CONTENT_GAP,
+    marginTop: LIST_HEADER_TABS_GAP,
   },
   centered: {
     flex: 1,
@@ -408,16 +432,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   listWrap: {
     flex: 1,
-    overflow: 'hidden',
   },
   list: {
     flex: 1,
   },
   listContent: {
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-    paddingBottom: LIST_FAB_SCROLL_PADDING,
-  },
-  listContentEmpty: {
-    flexGrow: 1,
   },
 });

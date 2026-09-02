@@ -139,7 +139,7 @@ export default function AddHealthScreen() {
   }
 
   return (
-    <HeaderScrollLayout header={header} edges={['left', 'right']}>
+    <HeaderScrollLayout header={header} edges={['left', 'right']} topFade bottomFade>
       {({ paddingTop }) => (
         <HealthFormScreen
           scrollInsetTop={paddingTop}

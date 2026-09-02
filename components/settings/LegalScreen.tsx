@@ -4,8 +4,8 @@ import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { t, currentLocale } from '@/i18n';
 import SettingsHeader from '@/components/settings/SettingsHeader';
-import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
-import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import ListScrollLayout from '@/components/ui/ListScrollLayout';
+import { LIST_HEADER_CONTENT_GAP, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
 export type LegalBlock =
   | { type: 'intro'; text: string; gap?: number }
@@ -54,11 +54,16 @@ export default function LegalScreen({ title, lastUpdatedISO, blocks }: LegalScre
   const styles = useThemedStyles(makeStyles);
 
   return (
-    <HeaderScrollLayout header={<SettingsHeader title={title} />} bottomFade fadeMode="document">
-      {({ paddingTop, scrollMetricsProps }) => (
+    <ListScrollLayout
+      edges={['left', 'right']}
+      chrome={<SettingsHeader title={title} />}
+      contentGap={LIST_HEADER_CONTENT_GAP}
+      documentFade
+    >
+      {({ paddingTop, paddingBottom, scrollMetricsProps }) => (
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={[styles.scrollContent, { paddingTop }]}
+          contentContainerStyle={[styles.scrollContent, { paddingTop, paddingBottom }]}
           showsVerticalScrollIndicator={false}
           onLayout={scrollMetricsProps.onLayout}
           onContentSizeChange={scrollMetricsProps.onContentSizeChange}
@@ -89,7 +94,7 @@ export default function LegalScreen({ title, lastUpdatedISO, blocks }: LegalScre
           </View>
         </ScrollView>
       )}
-    </HeaderScrollLayout>
+    </ListScrollLayout>
   );
 }
 

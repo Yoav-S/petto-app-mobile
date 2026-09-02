@@ -134,7 +134,7 @@ export default function AddNoteScreen() {
   }
 
   return (
-    <HeaderScrollLayout header={header} edges={['left', 'right']}>
+    <HeaderScrollLayout header={header} edges={['left', 'right']} topFade bottomFade>
       {({ paddingTop }) => (
         <>
           <HealthFormScreen

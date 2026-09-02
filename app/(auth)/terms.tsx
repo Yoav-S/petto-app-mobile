@@ -7,11 +7,14 @@ import {
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { t, currentLocale } from '@/i18n';
 import { Spacing, type ThemeColors } from '@/constants/theme';
-import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import {
+  LIST_HEADER_CONTENT_GAP,
+  LIST_HEADER_TABS_GAP,
+  PAGE_HORIZONTAL_PADDING,
+} from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import {
   LEGAL_LAST_UPDATED_ISO,
@@ -19,7 +22,7 @@ import {
   termsOfServiceBlocks,
 } from '@/constants/legalContent';
 import type { LegalBlock } from '@/components/settings/LegalScreen';
-import ScrollEdgeFades from '@/components/ui/ScrollEdgeFades';
+import ListScrollLayout from '@/components/ui/ListScrollLayout';
 
 type Tab = 'terms' | 'privacy';
 
@@ -68,7 +71,6 @@ export default function TermsScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const [tab, setTab] = useState<Tab>('terms');
-  const [chromeHeight, setChromeHeight] = useState(0);
 
   const blocks = useMemo(
     () => (tab === 'terms' ? termsOfServiceBlocks() : privacyPolicyBlocks()),
@@ -76,26 +78,13 @@ export default function TermsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
-      <View style={styles.body}>
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[styles.scrollContent, { paddingTop: chromeHeight }]}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={styles.updated}>
-            {t('settings.last_updated')}: {formatUpdated(LEGAL_LAST_UPDATED_ISO)}
-          </Text>
-          <Blocks blocks={blocks} styles={styles} />
-        </ScrollView>
-
-        <ScrollEdgeFades scrollTop={chromeHeight} color={colors.surface} />
-
-        <View
-          style={styles.chrome}
-          onLayout={(e) => setChromeHeight(e.nativeEvent.layout.height)}
-          pointerEvents="box-none"
-        >
+    <ListScrollLayout
+      backgroundColor={colors.surface}
+      fadeColor={colors.surface}
+      contentGap={LIST_HEADER_CONTENT_GAP}
+      documentFade
+      chrome={
+        <>
           <View style={styles.headerRow}>
             <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
               <Ionicons name="chevron-back" size={24} color={colors.primaryText} />
@@ -122,31 +111,29 @@ export default function TermsScreen() {
               </Text>
             </Pressable>
           </View>
-        </View>
-      </View>
-    </SafeAreaView>
+        </>
+      }
+    >
+      {({ paddingTop, paddingBottom, scrollMetricsProps }) => (
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[styles.scrollContent, { paddingTop, paddingBottom }]}
+          showsVerticalScrollIndicator={false}
+          onLayout={scrollMetricsProps.onLayout}
+          onContentSizeChange={scrollMetricsProps.onContentSizeChange}
+        >
+          <Text style={styles.updated}>
+            {t('settings.last_updated')}: {formatUpdated(LEGAL_LAST_UPDATED_ISO)}
+          </Text>
+          <Blocks blocks={blocks} styles={styles} />
+        </ScrollView>
+      )}
+    </ListScrollLayout>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: c.surface,
-    },
-    body: {
-      flex: 1,
-      position: 'relative',
-    },
-    chrome: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 4,
-      backgroundColor: c.surface,
-      paddingBottom: Spacing.sm,
-    },
     headerRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -169,7 +156,7 @@ const makeStyles = (c: ThemeColors) =>
     tabs: {
       flexDirection: 'row',
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-      paddingTop: Spacing.xs,
+      marginTop: LIST_HEADER_TABS_GAP,
       gap: 8,
       backgroundColor: c.surface,
     },

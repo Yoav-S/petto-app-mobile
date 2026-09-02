@@ -34,8 +34,14 @@ export const HEADER_SCROLL_GAP = 10;
 /** Extra space between header chrome and the first content row. */
 export const HEADER_CONTENT_GAP = 12;
 
-/** Gap between segmented tabs and the scrollable list below. */
-export const LIST_TABS_CONTENT_GAP = 12;
+/** Gap between title/back row and segmented tabs on list screens. */
+export const LIST_HEADER_TABS_GAP = 16;
+
+/** Gap between header chrome and scroll content (vaccines, legal docs). */
+export const LIST_HEADER_CONTENT_GAP = 20;
+
+/** Gap between segmented tabs and the scrollable list below (solid chrome strip). */
+export const LIST_TABS_CONTENT_GAP = 6;
 
 /** Rounded bottom corners on the floating header chrome. */
 export const HEADER_CHROME_BOTTOM_RADIUS = 16;
@@ -68,8 +74,16 @@ export const SCROLL_TOP_FADE_GRADIENT = 44;
 /** Bottom fade gradient height — starts this far above the screen bottom. */
 export const SCROLL_BOTTOM_FADE_GRADIENT = 50;
 
+/** List screen fade bands (reminders / topics — tabs to list, list bottom). */
+export const SCROLL_LIST_TOP_FADE_GRADIENT = SCROLL_TOP_FADE_GRADIENT + 16;
+export const SCROLL_LIST_BOTTOM_FADE_GRADIENT = SCROLL_BOTTOM_FADE_GRADIENT + 16;
+
+/** Taller fades for legal / document scroll screens (+24pt vs list fades). */
+export const SCROLL_DOCUMENT_TOP_FADE_GRADIENT = SCROLL_TOP_FADE_GRADIENT + 24;
+export const SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT = SCROLL_BOTTOM_FADE_GRADIENT + 24;
+
 /** Top gradient stays opaque through this fraction (seamless under header). */
-export const SCROLL_TOP_FADE_SOLID_AT = 0.35;
+export const SCROLL_TOP_FADE_SOLID_AT = 0.32;
 
 /** Bottom gradient reaches full opacity through this fraction. */
 export const SCROLL_BOTTOM_FADE_SOLID_AT = 0.55;

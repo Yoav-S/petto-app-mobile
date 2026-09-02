@@ -179,6 +179,8 @@ export default function AddVaccineScreen() {
       <HeaderScrollLayout
         header={<VaccineScreenHeader title={t('vaccines.add_title')} icon="close" />}
         edges={['left', 'right']}
+        topFade
+        bottomFade
       >
         {({ paddingTop }) => (
           <HealthFormScreen

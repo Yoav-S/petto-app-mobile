@@ -165,6 +165,8 @@ export default function AddReminderScreen() {
     <HeaderScrollLayout
       header={<VaccineScreenHeader title={t('reminders.add_title')} icon="close" />}
       edges={['left', 'right']}
+      topFade
+      bottomFade
     >
       {({ paddingTop }) => (
         <ReminderFormBody

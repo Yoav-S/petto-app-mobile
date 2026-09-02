@@ -11,8 +11,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { type ThemeColors } from '@/constants/theme';
-import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
-import { LIST_TABS_CONTENT_GAP, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import ListScrollLayout from '@/components/ui/ListScrollLayout';
+import { PAGE_HORIZONTAL_PADDING, LIST_HEADER_TABS_GAP } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -47,7 +47,7 @@ import {
 import { useCursorPagination } from '@/hooks/useCursorPagination';
 import ListLoadMoreFooter from '@/components/ui/ListLoadMoreFooter';
 import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
-import { LIST_FAB_SCROLL_PADDING, LIST_PAGE_SIZE } from '@/constants/pagination';
+import { LIST_PAGE_SIZE } from '@/constants/pagination';
 
 const TABS = ['Today', 'Upcoming', 'Recent'] as const;
 type TabName = (typeof TABS)[number];
@@ -443,13 +443,13 @@ export default function RemindersScreen() {
     );
   };
 
-  const listHeader = <ScreenHeader title={t('reminders.title')} />;
-
   return (
     <>
-      <HeaderScrollLayout header={listHeader} edges={['left', 'right', 'bottom']} bottomFade>
-        {({ paddingTop, scrollMetricsProps }) => (
-          <View style={[styles.screenBody, { paddingTop }]}>
+      <ListScrollLayout
+        fabOverlay={hasAnyReminders}
+        chrome={
+          <>
+            <ScreenHeader title={t('reminders.title')} />
             <SegmentedControl
               tabs={[...TABS]}
               activeTab={activeTab}
@@ -457,12 +457,29 @@ export default function RemindersScreen() {
               getLabel={(tab) => t(`reminders.tab_${tab.toLowerCase()}`)}
               style={styles.tabs}
             />
+          </>
+        }
+      >
+        {({ paddingTop, paddingBottom, scrollMetricsProps }) => (
+          <>
             {showSpinner ? (
-              <View style={styles.centered}>
+              <View
+                style={[styles.centered, { paddingTop }]}
+                onLayout={(e) => {
+                  scrollMetricsProps.onLayout(e);
+                  scrollMetricsProps.markNonScrollable();
+                }}
+              >
                 <ActivityIndicator color={colors.primaryText} />
               </View>
             ) : error && items.length === 0 ? (
-              <View style={styles.centered}>
+              <View
+                style={[styles.centered, { paddingTop }]}
+                onLayout={(e) => {
+                  scrollMetricsProps.onLayout(e);
+                  scrollMetricsProps.markNonScrollable();
+                }}
+              >
                 <EmptyState
                   title={t('common.error')}
                   subtitle={error}
@@ -471,6 +488,16 @@ export default function RemindersScreen() {
                     void refetchAll();
                   }}
                 />
+              </View>
+            ) : items.length === 0 ? (
+              <View
+                style={[styles.centered, { paddingTop }]}
+                onLayout={(e) => {
+                  scrollMetricsProps.onLayout(e);
+                  scrollMetricsProps.markNonScrollable();
+                }}
+              >
+                {renderEmptyState()}
               </View>
             ) : (
               <View
@@ -513,10 +540,9 @@ export default function RemindersScreen() {
                       </SwipeToDeleteRow>
                     );
                   }}
-                  ListEmptyComponent={renderEmptyState}
                   contentContainerStyle={[
                     styles.listContent,
-                    items.length === 0 ? styles.listContentEmpty : null,
+                    { paddingTop, paddingBottom },
                   ]}
                   showsVerticalScrollIndicator={false}
                   onEndReached={() => {
@@ -530,9 +556,9 @@ export default function RemindersScreen() {
                 />
               </View>
             )}
-          </View>
+          </>
         )}
-      </HeaderScrollLayout>
+      </ListScrollLayout>
 
       {hasAnyReminders ? (
         <SpeedDialFab
@@ -583,7 +609,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     tabs: {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-      marginBottom: LIST_TABS_CONTENT_GAP,
+      marginTop: LIST_HEADER_TABS_GAP,
     },
     centered: {
       flex: 1,
@@ -592,13 +618,8 @@ const makeStyles = (c: ThemeColors) =>
     },
     listWrap: {
       flex: 1,
-      overflow: 'hidden',
     },
     listContent: {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-      paddingBottom: LIST_FAB_SCROLL_PADDING,
-    },
-    listContentEmpty: {
-      flexGrow: 1,
     },
   });

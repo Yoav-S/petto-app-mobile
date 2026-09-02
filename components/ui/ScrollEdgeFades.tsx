@@ -5,7 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/context/ThemeContext';
 import {
   SCROLL_BOTTOM_FADE_GRADIENT,
+  SCROLL_BOTTOM_FADE_SOLID_AT,
   SCROLL_TOP_FADE_GRADIENT,
+  SCROLL_TOP_FADE_SOLID_AT,
 } from '@/constants/layout';
 
 interface ScrollEdgeFadesProps {
@@ -14,6 +16,8 @@ interface ScrollEdgeFadesProps {
   color?: string;
   showTop?: boolean;
   showBottom?: boolean;
+  topHeight?: number;
+  bottomHeight?: number;
 }
 
 /**
@@ -27,6 +31,8 @@ export default function ScrollEdgeFades({
   color,
   showTop = true,
   showBottom = true,
+  topHeight = SCROLL_TOP_FADE_GRADIENT,
+  bottomHeight = SCROLL_BOTTOM_FADE_GRADIENT,
 }: ScrollEdgeFadesProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -34,15 +40,16 @@ export default function ScrollEdgeFades({
 
   return (
     <>
-      {showTop && scrollTop > 0 ? (
+      {showTop ? (
         <View
-          style={[styles.edge, styles.top, { top: scrollTop, height: SCROLL_TOP_FADE_GRADIENT }]}
+          style={[styles.edge, styles.top, { top: scrollTop, height: topHeight }]}
           pointerEvents="none"
         >
           <Svg width="100%" height="100%" preserveAspectRatio="none">
             <Defs>
               <LinearGradient id="edgeFadeTop" x1="0" y1="0" x2="0" y2="1">
                 <Stop offset="0" stopColor={fadeColor} stopOpacity={1} />
+                <Stop offset={String(SCROLL_TOP_FADE_SOLID_AT)} stopColor={fadeColor} stopOpacity={1} />
                 <Stop offset="1" stopColor={fadeColor} stopOpacity={0} />
               </LinearGradient>
             </Defs>
@@ -56,18 +63,23 @@ export default function ScrollEdgeFades({
           style={[
             styles.edge,
             styles.bottom,
-            { height: SCROLL_BOTTOM_FADE_GRADIENT + insets.bottom },
+            { height: bottomHeight + insets.bottom },
           ]}
           pointerEvents="none"
         >
-          <View style={{ height: SCROLL_BOTTOM_FADE_GRADIENT }}>
+          <View style={{ height: bottomHeight }}>
             <Svg width="100%" height="100%" preserveAspectRatio="none">
-              <Defs>
-                <LinearGradient id="edgeFadeBottom" x1="0" y1="0" x2="0" y2="1">
-                  <Stop offset="0" stopColor={fadeColor} stopOpacity={0} />
-                  <Stop offset="1" stopColor={fadeColor} stopOpacity={1} />
-                </LinearGradient>
-              </Defs>
+            <Defs>
+              <LinearGradient id="edgeFadeBottom" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor={fadeColor} stopOpacity={0} />
+                <Stop
+                  offset={String(1 - SCROLL_BOTTOM_FADE_SOLID_AT)}
+                  stopColor={fadeColor}
+                  stopOpacity={0}
+                />
+                <Stop offset="1" stopColor={fadeColor} stopOpacity={1} />
+              </LinearGradient>
+            </Defs>
               <Rect x="0" y="0" width="100%" height="100%" fill="url(#edgeFadeBottom)" />
             </Svg>
           </View>

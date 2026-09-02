@@ -8,9 +8,18 @@ import {
 } from 'react-native';
 import {
   SafeAreaView,
+  useSafeAreaInsets,
   type Edge,
 } from 'react-native-safe-area-context';
-import { HEADER_SCROLL_GAP } from '@/constants/layout';
+import {
+  HEADER_CHROME_BOTTOM_RADIUS,
+  HEADER_CONTENT_GAP,
+  HEADER_SCROLL_GAP,
+  SCROLL_BOTTOM_FADE_GRADIENT,
+  SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT,
+  SCROLL_DOCUMENT_TOP_FADE_GRADIENT,
+  SCROLL_TOP_FADE_GRADIENT,
+} from '@/constants/layout';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { useKeyboardOpen } from '@/components/ui/keyboardUtils';
@@ -23,6 +32,8 @@ import {
 
 export interface HeaderScrollInsets {
   paddingTop: number;
+  paddingBottom: number;
+  fadeBottomInset: number;
   scrollMetricsProps: {
     onLayout: (e: import('react-native').LayoutChangeEvent) => void;
     onContentSizeChange: (w: number, h: number) => void;
@@ -34,14 +45,11 @@ interface HeaderScrollLayoutProps {
   children: (insets: HeaderScrollInsets) => React.ReactNode;
   edges?: Edge[];
   style?: StyleProp<ViewStyle>;
+  /** Only enable on ScrollView-based screens. */
   topFade?: boolean;
   bottomFade?: boolean;
   fadeColor?: string;
-  /**
-   * document — always show fades (legal / terms).
-   * form — hide bottom fade unless content overflows (delete/save screens).
-   */
-  fadeMode?: 'document' | 'form';
+  fadeMode?: 'document' | 'form' | 'scroll';
 }
 
 export default function HeaderScrollLayout({
@@ -49,25 +57,32 @@ export default function HeaderScrollLayout({
   children,
   edges = ['left', 'right'],
   style,
-  topFade = true,
-  bottomFade = true,
+  topFade = false,
+  bottomFade = false,
   fadeColor,
   fadeMode = 'form',
 }: HeaderScrollLayoutProps) {
   const styles = useThemedStyles(makeStyles);
+  const insets = useSafeAreaInsets();
   const keyboardOpen = useKeyboardOpen();
   const [chromeHeight, setChromeHeight] = useState(0);
   const { metrics, reportViewport, reportContent, reportPinnedFooterOverflow } =
     useScrollFadeMetricsState();
 
   const hasOverflow = hasActiveScrollOverflow(metrics);
-  const showTopFade = topFade && chromeHeight > 0;
+  const scrollActive = metrics.viewportHeight > 0;
+  const showTopFade = topFade && chromeHeight > 0 && scrollActive && hasOverflow;
   const showBottomFade =
     bottomFade &&
+    scrollActive &&
+    hasOverflow &&
     !keyboardOpen &&
-    (fadeMode === 'document' || hasOverflow);
+    (fadeMode === 'document' || fadeMode === 'scroll' || fadeMode === 'form');
 
-  const paddingTop = chromeHeight;
+  const paddingTop = chromeHeight + HEADER_CONTENT_GAP;
+  const paddingBottom = Math.max(insets.bottom, 8);
+  const fadeBottomInset =
+    fadeMode === 'document' && bottomFade ? SCROLL_BOTTOM_FADE_GRADIENT : 0;
 
   const fadeContext = useMemo(
     () => ({ reportViewport, reportContent, reportPinnedFooterOverflow }),
@@ -90,13 +105,32 @@ export default function HeaderScrollLayout({
     <SafeAreaView style={[styles.safeArea, style]} edges={edges}>
       <ScrollFadeMetricsProvider value={fadeContext}>
         <View style={styles.body}>
-          {children({ paddingTop, scrollMetricsProps })}
-          <ScrollEdgeFades
-            scrollTop={chromeHeight}
-            color={fadeColor}
-            showTop={showTopFade}
-            showBottom={showBottomFade}
-          />
+          <View style={styles.scrollSlot}>
+            {children({
+              paddingTop,
+              paddingBottom,
+              fadeBottomInset,
+              scrollMetricsProps,
+            })}
+          </View>
+          {showTopFade || showBottomFade ? (
+            <ScrollEdgeFades
+              scrollTop={chromeHeight}
+              color={fadeColor}
+              showTop={showTopFade}
+              showBottom={showBottomFade}
+              topHeight={
+                fadeMode === 'document'
+                  ? SCROLL_DOCUMENT_TOP_FADE_GRADIENT
+                  : SCROLL_TOP_FADE_GRADIENT
+              }
+              bottomHeight={
+                fadeMode === 'document'
+                  ? SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT
+                  : SCROLL_BOTTOM_FADE_GRADIENT
+              }
+            />
+          ) : null}
           <View
             style={styles.chrome}
             onLayout={(e) => setChromeHeight(e.nativeEvent.layout.height)}
@@ -118,7 +152,7 @@ interface HeaderScrollScreenProps {
   topFade?: boolean;
   bottomFade?: boolean;
   fadeColor?: string;
-  fadeMode?: 'document' | 'form';
+  fadeMode?: 'document' | 'form' | 'scroll';
 }
 
 export function HeaderScrollScreen({
@@ -129,7 +163,7 @@ export function HeaderScrollScreen({
   topFade = true,
   bottomFade = true,
   fadeColor,
-  fadeMode = 'form',
+  fadeMode = 'scroll',
 }: HeaderScrollScreenProps) {
   return (
     <HeaderScrollLayout
@@ -140,10 +174,16 @@ export function HeaderScrollScreen({
       fadeColor={fadeColor}
       fadeMode={fadeMode}
     >
-      {({ paddingTop, scrollMetricsProps }) => (
+      {({ paddingTop, paddingBottom, fadeBottomInset, scrollMetricsProps }) => (
         <ScrollView
           style={stylesScroll.scroll}
-          contentContainerStyle={[{ paddingTop }, contentContainerStyle]}
+          contentContainerStyle={[
+            {
+              paddingTop,
+              paddingBottom: paddingBottom + 16 + fadeBottomInset,
+            },
+            contentContainerStyle,
+          ]}
           showsVerticalScrollIndicator={false}
           onLayout={scrollMetricsProps.onLayout}
           onContentSizeChange={scrollMetricsProps.onContentSizeChange}
@@ -156,13 +196,25 @@ export function HeaderScrollScreen({
 }
 
 const stylesScroll = StyleSheet.create({
-  scroll: { flex: 1 },
+  scroll: {
+    flex: 1,
+  },
 });
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: c.background },
-    body: { flex: 1, position: 'relative' },
+    safeArea: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    body: {
+      flex: 1,
+      position: 'relative',
+    },
+    scrollSlot: {
+      flex: 1,
+      minHeight: 0,
+    },
     chrome: {
       position: 'absolute',
       top: 0,
@@ -171,6 +223,14 @@ const makeStyles = (c: ThemeColors) =>
       zIndex: 4,
       backgroundColor: c.background,
       paddingBottom: HEADER_SCROLL_GAP,
+      borderBottomLeftRadius: HEADER_CHROME_BOTTOM_RADIUS,
+      borderBottomRightRadius: HEADER_CHROME_BOTTOM_RADIUS,
+      overflow: 'hidden',
+      shadowColor: '#1E1E1E',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 10,
+      elevation: 4,
     },
   });
 

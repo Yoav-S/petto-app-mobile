@@ -316,7 +316,7 @@ export default function EditReminderScreen() {
 
   return (
     <>
-      <HeaderScrollLayout header={header} edges={['left', 'right', 'bottom']}>
+      <HeaderScrollLayout header={header} edges={['left', 'right', 'bottom']} topFade bottomFade>
         {({ paddingTop }) => (
           <ReminderFormBody
             scrollInsetTop={paddingTop}

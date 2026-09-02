@@ -164,6 +164,8 @@ export default function AddPetScreen() {
       <HeaderScrollLayout
         header={<VaccineScreenHeader title={t('pets.add_title')} icon="close" />}
         edges={['left', 'right']}
+        topFade
+        bottomFade
       >
         {({ paddingTop }) => (
           <HealthFormScreen

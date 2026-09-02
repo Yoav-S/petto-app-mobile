@@ -13,12 +13,10 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
-import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { PAGE_HORIZONTAL_PADDING, LIST_HEADER_CONTENT_GAP } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
-import HeaderScrollLayout, {
-  type HeaderScrollInsets,
-} from '@/components/ui/HeaderScrollLayout';
+import ListScrollLayout, { type ListScrollInsets } from '@/components/ui/ListScrollLayout';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
@@ -26,7 +24,6 @@ import EmptyState from '@/components/ui/EmptyState';
 import SwipeToDeleteRow from '@/components/ui/SwipeToDeleteRow';
 import ListLoadMoreFooter from '@/components/ui/ListLoadMoreFooter';
 import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
-import { LIST_FAB_SCROLL_PADDING } from '@/constants/pagination';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { getErrorMessage } from '@/services/errors';
@@ -138,11 +135,18 @@ export default function VaccinesScreen() {
 
   const renderContent = (
     paddingTop: number,
-    scrollMetricsProps: HeaderScrollInsets['scrollMetricsProps'],
+    paddingBottom: number,
+    scrollMetricsProps: ListScrollInsets['scrollMetricsProps'],
   ) => {
     if (loading && items.length === 0) {
       return (
-        <View style={[styles.centered, { paddingTop }]}>
+        <View
+          style={[styles.centered, { paddingTop }]}
+          onLayout={(e) => {
+            scrollMetricsProps.onLayout(e);
+            scrollMetricsProps.markNonScrollable();
+          }}
+        >
           <ActivityIndicator color={colors.primaryText} />
         </View>
       );
@@ -150,7 +154,13 @@ export default function VaccinesScreen() {
 
     if (error && !items.length) {
       return (
-        <View style={[styles.centered, { paddingTop }]}>
+        <View
+          style={[styles.centered, { paddingTop }]}
+          onLayout={(e) => {
+            scrollMetricsProps.onLayout(e);
+            scrollMetricsProps.markNonScrollable();
+          }}
+        >
           <EmptyState
             title={t('common.error')}
             subtitle={error}
@@ -163,8 +173,29 @@ export default function VaccinesScreen() {
       );
     }
 
+    if (items.length === 0) {
+      return (
+        <View
+          style={[styles.centered, { paddingTop }]}
+          onLayout={(e) => {
+            scrollMetricsProps.onLayout(e);
+            scrollMetricsProps.markNonScrollable();
+          }}
+        >
+          <EmptyState
+            title={t('vaccines.empty_title')}
+            subtitle={t('vaccines.empty_subtitle')}
+            actionTitle={t('vaccines.add')}
+            actionCompact
+            onAction={() => router.push('/vaccines/add' as never)}
+          />
+        </View>
+      );
+    }
+
     return (
       <FlatList
+        style={styles.list}
         data={items}
         keyExtractor={(item) => item.id}
         onLayout={scrollMetricsProps.onLayout}
@@ -205,20 +236,7 @@ export default function VaccinesScreen() {
             </TouchableOpacity>
           </SwipeToDeleteRow>
         )}
-        ListEmptyComponent={
-          <EmptyState
-            title={t('vaccines.empty_title')}
-            subtitle={t('vaccines.empty_subtitle')}
-            actionTitle={t('vaccines.add')}
-            actionCompact
-            onAction={() => router.push('/vaccines/add' as never)}
-          />
-        }
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingTop },
-          items.length === 0 ? styles.listContentEmpty : null,
-        ]}
+        contentContainerStyle={[styles.listContent, { paddingTop, paddingBottom }]}
         showsVerticalScrollIndicator={false}
         onEndReached={() => {
           void loadMore();
@@ -232,14 +250,19 @@ export default function VaccinesScreen() {
     );
   };
 
+  const showFab = items.length > 0 && !loading && !(error && !items.length);
+
   return (
     <>
-      <HeaderScrollLayout
-        header={<VaccineScreenHeader title={t('vaccines.list_title')} />}
-        edges={['left', 'right', 'bottom']}
+      <ListScrollLayout
+        contentGap={LIST_HEADER_CONTENT_GAP}
+        fabOverlay={showFab}
+        chrome={<VaccineScreenHeader title={t('vaccines.list_title')} />}
       >
-        {({ paddingTop, scrollMetricsProps }) => renderContent(paddingTop, scrollMetricsProps)}
-      </HeaderScrollLayout>
+        {({ paddingTop, paddingBottom, scrollMetricsProps }) =>
+          renderContent(paddingTop, paddingBottom, scrollMetricsProps)
+        }
+      </ListScrollLayout>
       {items.length > 0 && !loading && !(error && !items.length) ? (
         <SpeedDialFab
           items={[
@@ -260,6 +283,9 @@ export default function VaccinesScreen() {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    list: {
+      flex: 1,
+    },
     centered: {
       flex: 1,
       alignItems: 'center',
@@ -267,12 +293,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     listContent: {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-      paddingBottom: LIST_FAB_SCROLL_PADDING,
-    },
-    listContentEmpty: {
-      flexGrow: 1,
-      justifyContent: 'center',
-      paddingBottom: 0,
     },
     card: {
       backgroundColor: c.surface,

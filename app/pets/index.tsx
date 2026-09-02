@@ -50,8 +50,8 @@ export default function PetsListScreen() {
   };
 
   return (
-    <HeaderScrollLayout header={<SettingsHeader title={t('home.pets_title')} />}>
-      {({ paddingTop }) =>
+    <HeaderScrollLayout header={<SettingsHeader title={t('home.pets_title')} />} topFade bottomFade fadeMode="scroll">
+      {({ paddingTop, paddingBottom }) =>
         loading ? (
           <View style={[styles.centered, { paddingTop }]}>
             <ActivityIndicator color={colors.brand} />
@@ -65,9 +65,10 @@ export default function PetsListScreen() {
           </View>
         ) : (
           <ScrollView
+            style={styles.scroll}
             contentContainerStyle={[
               styles.content,
-              { paddingTop },
+              { paddingTop, paddingBottom: paddingBottom + 40 },
             ]}
             showsVerticalScrollIndicator={false}
           >
@@ -117,6 +118,9 @@ const makeStyles = (c: ThemeColors) =>
       fontFamily: 'Rubik-Medium',
       fontSize: 14,
       color: c.brand,
+    },
+    scroll: {
+      flex: 1,
     },
     content: {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
