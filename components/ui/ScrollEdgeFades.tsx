@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useEffect, useId, useRef } from 'react';
+import { Animated, StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/context/ThemeContext';
@@ -18,7 +18,11 @@ interface ScrollEdgeFadesProps {
   showBottom?: boolean;
   topHeight?: number;
   bottomHeight?: number;
+  /** Animate opacity when scroll overflow toggles. */
+  visible?: boolean;
 }
+
+const FADE_MS = 120;
 
 /**
  * Visual fades pinned to the scroll viewport edges.
@@ -33,27 +37,40 @@ export default function ScrollEdgeFades({
   showBottom = true,
   topHeight = SCROLL_TOP_FADE_GRADIENT,
   bottomHeight = SCROLL_BOTTOM_FADE_GRADIENT,
+  visible = true,
 }: ScrollEdgeFadesProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const fadeColor = color ?? colors.background;
+  const opacity = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  const gradientId = useId().replace(/:/g, '');
+
+  useEffect(() => {
+    Animated.timing(opacity, {
+      toValue: visible ? 1 : 0,
+      duration: FADE_MS,
+      useNativeDriver: true,
+    }).start();
+  }, [opacity, visible]);
 
   return (
-    <>
+    <Animated.View
+      style={[styles.wrap, { opacity }]}
+      pointerEvents="none"
+    >
       {showTop ? (
         <View
           style={[styles.edge, styles.top, { top: scrollTop, height: topHeight }]}
-          pointerEvents="none"
         >
           <Svg width="100%" height="100%" preserveAspectRatio="none">
             <Defs>
-              <LinearGradient id="edgeFadeTop" x1="0" y1="0" x2="0" y2="1">
+              <LinearGradient id={`${gradientId}-top`} x1="0" y1="0" x2="0" y2="1">
                 <Stop offset="0" stopColor={fadeColor} stopOpacity={1} />
                 <Stop offset={String(SCROLL_TOP_FADE_SOLID_AT)} stopColor={fadeColor} stopOpacity={1} />
                 <Stop offset="1" stopColor={fadeColor} stopOpacity={0} />
               </LinearGradient>
             </Defs>
-            <Rect x="0" y="0" width="100%" height="100%" fill="url(#edgeFadeTop)" />
+            <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradientId}-top)`} />
           </Svg>
         </View>
       ) : null}
@@ -65,22 +82,21 @@ export default function ScrollEdgeFades({
             styles.bottom,
             { height: bottomHeight + insets.bottom },
           ]}
-          pointerEvents="none"
         >
           <View style={{ height: bottomHeight }}>
             <Svg width="100%" height="100%" preserveAspectRatio="none">
-            <Defs>
-              <LinearGradient id="edgeFadeBottom" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor={fadeColor} stopOpacity={0} />
-                <Stop
-                  offset={String(1 - SCROLL_BOTTOM_FADE_SOLID_AT)}
-                  stopColor={fadeColor}
-                  stopOpacity={0}
-                />
-                <Stop offset="1" stopColor={fadeColor} stopOpacity={1} />
-              </LinearGradient>
-            </Defs>
-              <Rect x="0" y="0" width="100%" height="100%" fill="url(#edgeFadeBottom)" />
+              <Defs>
+                <LinearGradient id={`${gradientId}-bottom`} x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0" stopColor={fadeColor} stopOpacity={0} />
+                  <Stop
+                    offset={String(1 - SCROLL_BOTTOM_FADE_SOLID_AT)}
+                    stopColor={fadeColor}
+                    stopOpacity={0}
+                  />
+                  <Stop offset="1" stopColor={fadeColor} stopOpacity={1} />
+                </LinearGradient>
+              </Defs>
+              <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradientId}-bottom)`} />
             </Svg>
           </View>
           {insets.bottom > 0 ? (
@@ -88,16 +104,19 @@ export default function ScrollEdgeFades({
           ) : null}
         </View>
       ) : null}
-    </>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrap: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 3,
+  },
   edge: {
     position: 'absolute',
     left: 0,
     right: 0,
-    zIndex: 3,
   },
   top: {},
   bottom: {

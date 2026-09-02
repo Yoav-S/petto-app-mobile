@@ -12,7 +12,6 @@ import {
   type Edge,
 } from 'react-native-safe-area-context';
 import {
-  HEADER_CHROME_BOTTOM_RADIUS,
   HEADER_CONTENT_GAP,
   HEADER_SCROLL_GAP,
   SCROLL_BOTTOM_FADE_GRADIENT,
@@ -223,14 +222,6 @@ const makeStyles = (c: ThemeColors) =>
       zIndex: 4,
       backgroundColor: c.background,
       paddingBottom: HEADER_SCROLL_GAP,
-      borderBottomLeftRadius: HEADER_CHROME_BOTTOM_RADIUS,
-      borderBottomRightRadius: HEADER_CHROME_BOTTOM_RADIUS,
-      overflow: 'hidden',
-      shadowColor: '#1E1E1E',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.06,
-      shadowRadius: 10,
-      elevation: 4,
     },
   });
 

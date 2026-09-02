@@ -55,6 +55,7 @@ export default function LegalScreen({ title, lastUpdatedISO, blocks }: LegalScre
 
   return (
     <ListScrollLayout
+      fadeKey={`legal:${title}`}
       edges={['left', 'right']}
       chrome={<SettingsHeader title={title} />}
       contentGap={LIST_HEADER_CONTENT_GAP}

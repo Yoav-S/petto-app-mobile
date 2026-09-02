@@ -41,10 +41,10 @@ export const LIST_HEADER_TABS_GAP = 16;
 export const LIST_HEADER_CONTENT_GAP = 20;
 
 /** Gap between segmented tabs and the scrollable list below (solid chrome strip). */
-export const LIST_TABS_CONTENT_GAP = 6;
+export const LIST_TABS_CONTENT_GAP = 8;
 
-/** Rounded bottom corners on the floating header chrome. */
-export const HEADER_CHROME_BOTTOM_RADIUS = 16;
+/** Extra offset on list rows so the first row sits clear of the top fade band. */
+export const LIST_CONTENT_TOP_NUDGE = 4;
 
 /** Figma header band: row starts 56pt from screen top; row height 44pt. */
 export const HEADER_LAYOUT = {
@@ -74,9 +74,14 @@ export const SCROLL_TOP_FADE_GRADIENT = 44;
 /** Bottom fade gradient height — starts this far above the screen bottom. */
 export const SCROLL_BOTTOM_FADE_GRADIENT = 50;
 
-/** List screen fade bands (reminders / topics — tabs to list, list bottom). */
-export const SCROLL_LIST_TOP_FADE_GRADIENT = SCROLL_TOP_FADE_GRADIENT + 16;
-export const SCROLL_LIST_BOTTOM_FADE_GRADIENT = SCROLL_BOTTOM_FADE_GRADIENT + 16;
+/**
+ * List screen fade bands (reminders / topics — tabs to list, list bottom).
+ * The top band stays opaque across the margin below the tabs, then dissolves over
+ * the first row's top edge, so the row stays readable while rows scrolling up melt away.
+ */
+export const SCROLL_LIST_TOP_FADE_GRADIENT =
+  LIST_TABS_CONTENT_GAP + LIST_CONTENT_TOP_NUDGE + 24;
+export const SCROLL_LIST_BOTTOM_FADE_GRADIENT = SCROLL_BOTTOM_FADE_GRADIENT + 36;
 
 /** Taller fades for legal / document scroll screens (+24pt vs list fades). */
 export const SCROLL_DOCUMENT_TOP_FADE_GRADIENT = SCROLL_TOP_FADE_GRADIENT + 24;

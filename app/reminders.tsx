@@ -12,6 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { type ThemeColors } from '@/constants/theme';
 import ListScrollLayout from '@/components/ui/ListScrollLayout';
+import { rowFadeIntensity } from '@/components/ui/listItemFade';
 import { PAGE_HORIZONTAL_PADDING, LIST_HEADER_TABS_GAP } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
@@ -195,17 +196,19 @@ export default function RemindersScreen() {
   );
 
   const getItemFadeIntensity = useCallback(
-    (index: number) => {
-      if (listHeight <= 0) return 0;
-      let itemBottom = 0;
+    (index: number, contentTop: number, bottomFadeInset: number) => {
+      let rowBottom = 0;
       for (let i = 0; i <= index; i += 1) {
-        itemBottom += rowHeightFor(items[i]);
-        if (i < index) itemBottom += REMINDER_LIST_ITEM_GAP;
+        rowBottom += rowHeightFor(items[i]);
+        if (i < index) rowBottom += REMINDER_LIST_ITEM_GAP;
       }
-      itemBottom -= scrollY;
-      if (itemBottom <= listHeight) return 0;
-      const fadeZone = rowHeightFor(items[index]) * 0.89;
-      return Math.min(1, (itemBottom - listHeight) / fadeZone);
+      return rowFadeIntensity({
+        rowBottom,
+        contentTop,
+        scrollY,
+        fadeLine: listHeight - bottomFadeInset,
+        fadeZone: rowHeightFor(items[index]) * 0.89,
+      });
     },
     [items, listHeight, rowHeightFor, scrollY],
   );
@@ -446,6 +449,7 @@ export default function RemindersScreen() {
   return (
     <>
       <ListScrollLayout
+        fadeKey={`reminders:${activeTab}`}
         fabOverlay={hasAnyReminders}
         chrome={
           <>
@@ -460,14 +464,14 @@ export default function RemindersScreen() {
           </>
         }
       >
-        {({ paddingTop, paddingBottom, scrollMetricsProps }) => (
+        {({ paddingTop, paddingBottom, bottomFadeInset, scrollMetricsProps }) => (
           <>
             {showSpinner ? (
               <View
                 style={[styles.centered, { paddingTop }]}
                 onLayout={(e) => {
                   scrollMetricsProps.onLayout(e);
-                  scrollMetricsProps.markNonScrollable();
+                  scrollMetricsProps.markNonScrollable({ transient: true });
                 }}
               >
                 <ActivityIndicator color={colors.primaryText} />
@@ -505,6 +509,7 @@ export default function RemindersScreen() {
                 onLayout={(e) => {
                   setListHeight(e.nativeEvent.layout.height);
                   scrollMetricsProps.onLayout(e);
+                  scrollMetricsProps.markScrollable();
                 }}
               >
                 <FlatList
@@ -531,7 +536,11 @@ export default function RemindersScreen() {
                           showCompletedBar={
                             activeTab === 'Recent' && item.status === 'completed'
                           }
-                          fadeIntensity={getItemFadeIntensity(index)}
+                          fadeIntensity={getItemFadeIntensity(
+                            index,
+                            paddingTop,
+                            bottomFadeInset,
+                          )}
                           onPress={() => {
                             setSwipeOpenId(null);
                             handleReminderPress(item);

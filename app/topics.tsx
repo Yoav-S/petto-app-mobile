@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
 import ListScrollLayout from '@/components/ui/ListScrollLayout';
+import { rowFadeIntensity } from '@/components/ui/listItemFade';
 import { PAGE_HORIZONTAL_PADDING, LIST_HEADER_TABS_GAP } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
@@ -110,16 +111,19 @@ export default function HealthScreen() {
   );
 
   const getItemFadeIntensity = useCallback(
-    (index: number) => {
-      if (listHeight <= 0) return 0;
-      let itemBottom = 0;
+    (index: number, contentTop: number, bottomFadeInset: number) => {
+      let rowBottom = 0;
       for (let i = 0; i <= index; i += 1) {
-        itemBottom += estimateHealthListItemHeight(items[i]?.description);
-        if (i < index) itemBottom += itemGap;
+        rowBottom += estimateHealthListItemHeight(items[i]?.description);
+        if (i < index) rowBottom += itemGap;
       }
-      itemBottom -= scrollY;
-      if (itemBottom <= listHeight) return 0;
-      return Math.min(1, (itemBottom - listHeight) / fadeZone);
+      return rowFadeIntensity({
+        rowBottom,
+        contentTop,
+        scrollY,
+        fadeLine: listHeight - bottomFadeInset,
+        fadeZone,
+      });
     },
     [fadeZone, itemGap, items, listHeight, scrollY],
   );
@@ -270,6 +274,7 @@ export default function HealthScreen() {
   return (
     <>
       <ListScrollLayout
+        fadeKey={`topics:${activeTab}`}
         fabOverlay={hasAnyRecords}
         chrome={
           <>
@@ -285,14 +290,14 @@ export default function HealthScreen() {
           </>
         }
       >
-        {({ paddingTop, paddingBottom, scrollMetricsProps }) => (
+        {({ paddingTop, paddingBottom, bottomFadeInset, scrollMetricsProps }) => (
           <>
             {showSpinner ? (
               <View
                 style={[styles.centered, { paddingTop }]}
                 onLayout={(e) => {
                   scrollMetricsProps.onLayout(e);
-                  scrollMetricsProps.markNonScrollable();
+                  scrollMetricsProps.markNonScrollable({ transient: true });
                 }}
               >
                 <ActivityIndicator color={colors.primaryText} />
@@ -330,6 +335,7 @@ export default function HealthScreen() {
                 onLayout={(e) => {
                   setListHeight(e.nativeEvent.layout.height);
                   scrollMetricsProps.onLayout(e);
+                  scrollMetricsProps.markScrollable();
                 }}
               >
                 <FlatList
@@ -355,7 +361,11 @@ export default function HealthScreen() {
                         }
                         metaKind={activeTab === 'Resolved' ? 'resolved' : 'created'}
                         hasReminder={Boolean(item.linked_reminder_date || item.linked_reminder_time)}
-                        fadeIntensity={getItemFadeIntensity(index)}
+                        fadeIntensity={getItemFadeIntensity(
+                          index,
+                          paddingTop,
+                          bottomFadeInset,
+                        )}
                         onPress={() => {
                           setSwipeOpenId(null);
                           router.push(`/topics/${item.id}` as never);

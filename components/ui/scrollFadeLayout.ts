@@ -4,16 +4,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ADD_FAB } from '@/components/ui/SpeedDialFab';
 import {
   SCROLL_BOTTOM_FADE_SOLID_AT,
+  SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT,
+  SCROLL_DOCUMENT_TOP_FADE_GRADIENT,
+  SCROLL_LIST_BOTTOM_FADE_GRADIENT,
+  SCROLL_LIST_TOP_FADE_GRADIENT,
   structuralScale,
 } from '@/constants/layout';
-
-/** Figma 375×812 list fade bands — scaled per device via structuralScale. */
-const LIST_FADE_DESIGN = {
-  top: 88,
-  bottom: 104,
-  documentTopExtra: 28,
-  documentBottomExtra: 28,
-} as const;
 
 /** Small breathing room below the last row at the design frame (scaled per device). */
 const LIST_BOTTOM_BREATH_DESIGN = 12;
@@ -29,11 +25,15 @@ export function getListFadeHeights(
   document = false,
 ): ListFadeHeights {
   const scale = structuralScale(width, height);
-  const topExtra = document ? LIST_FADE_DESIGN.documentTopExtra : 0;
-  const bottomExtra = document ? LIST_FADE_DESIGN.documentBottomExtra : 0;
+  if (document) {
+    return {
+      topFadeHeight: Math.round(SCROLL_DOCUMENT_TOP_FADE_GRADIENT * scale),
+      bottomFadeHeight: Math.round(SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT * scale),
+    };
+  }
   return {
-    topFadeHeight: Math.round((LIST_FADE_DESIGN.top + topExtra) * scale),
-    bottomFadeHeight: Math.round((LIST_FADE_DESIGN.bottom + bottomExtra) * scale),
+    topFadeHeight: Math.round(SCROLL_LIST_TOP_FADE_GRADIENT * scale),
+    bottomFadeHeight: Math.round(SCROLL_LIST_BOTTOM_FADE_GRADIENT * scale),
   };
 }
 

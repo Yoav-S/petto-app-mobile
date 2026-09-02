@@ -79,6 +79,7 @@ export default function TermsScreen() {
 
   return (
     <ListScrollLayout
+      fadeKey={`auth-legal:${tab}`}
       backgroundColor={colors.surface}
       fadeColor={colors.surface}
       contentGap={LIST_HEADER_CONTENT_GAP}
