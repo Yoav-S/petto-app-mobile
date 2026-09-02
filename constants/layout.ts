@@ -46,6 +46,9 @@ export const LIST_TABS_CONTENT_GAP = 8;
 /** Extra offset on list rows so the first row sits clear of the top fade band. */
 export const LIST_CONTENT_TOP_NUDGE = 4;
 
+/** Documents start a little lower so the first line is clear of the deeper top fade. */
+export const DOCUMENT_CONTENT_TOP_NUDGE = 20;
+
 /** Figma header band: row starts 56pt from screen top; row height 44pt. */
 export const HEADER_LAYOUT = {
   topFromScreen: 56,
@@ -83,9 +86,12 @@ export const SCROLL_LIST_TOP_FADE_GRADIENT =
   LIST_TABS_CONTENT_GAP + LIST_CONTENT_TOP_NUDGE + 24;
 export const SCROLL_LIST_BOTTOM_FADE_GRADIENT = SCROLL_BOTTOM_FADE_GRADIENT + 36;
 
-/** Taller fades for legal / document scroll screens (+24pt vs list fades). */
-export const SCROLL_DOCUMENT_TOP_FADE_GRADIENT = SCROLL_TOP_FADE_GRADIENT + 24;
-export const SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT = SCROLL_BOTTOM_FADE_GRADIENT + 24;
+/**
+ * Long, soft fades for legal / document scroll screens (terms, privacy).
+ * Document content starts below the top band, so text only dissolves once scrolled.
+ */
+export const SCROLL_DOCUMENT_TOP_FADE_GRADIENT = SCROLL_TOP_FADE_GRADIENT + 44;
+export const SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT = SCROLL_BOTTOM_FADE_GRADIENT + 44;
 
 /** Top gradient stays opaque through this fraction (seamless under header). */
 export const SCROLL_TOP_FADE_SOLID_AT = 0.32;

@@ -18,11 +18,23 @@ interface ScrollEdgeFadesProps {
   showBottom?: boolean;
   topHeight?: number;
   bottomHeight?: number;
+  /**
+   * Solid strip below the bottom gradient — defaults to the home-indicator inset.
+   * Pass 0 when the scroll ends above a footer instead of the screen edge.
+   */
+  bottomInset?: number;
   /** Animate opacity when scroll overflow toggles. */
   visible?: boolean;
 }
 
 const FADE_MS = 120;
+
+/**
+ * The solid tail overlaps the gradient's last row. The gradient only reaches full
+ * opacity at its very end, so without this overlap layout rounding leaves a hairline
+ * of uncovered content where the fade should already be solid.
+ */
+const FADE_SEAM_OVERLAP = 1;
 
 /**
  * Visual fades pinned to the scroll viewport edges.
@@ -37,10 +49,12 @@ export default function ScrollEdgeFades({
   showBottom = true,
   topHeight = SCROLL_TOP_FADE_GRADIENT,
   bottomHeight = SCROLL_BOTTOM_FADE_GRADIENT,
+  bottomInset,
   visible = true,
 }: ScrollEdgeFadesProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const bottomStrip = bottomInset ?? insets.bottom;
   const fadeColor = color ?? colors.background;
   const opacity = useRef(new Animated.Value(visible ? 1 : 0)).current;
   const gradientId = useId().replace(/:/g, '');
@@ -80,7 +94,7 @@ export default function ScrollEdgeFades({
           style={[
             styles.edge,
             styles.bottom,
-            { height: bottomHeight + insets.bottom },
+            { height: bottomHeight + bottomStrip },
           ]}
         >
           <View style={{ height: bottomHeight }}>
@@ -99,9 +113,15 @@ export default function ScrollEdgeFades({
               <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradientId}-bottom)`} />
             </Svg>
           </View>
-          {insets.bottom > 0 ? (
-            <View style={{ height: insets.bottom, backgroundColor: fadeColor }} />
-          ) : null}
+          <View
+            style={[
+              styles.bottomSolid,
+              {
+                height: bottomStrip + FADE_SEAM_OVERLAP,
+                backgroundColor: fadeColor,
+              },
+            ]}
+          />
         </View>
       ) : null}
     </Animated.View>
@@ -120,6 +140,12 @@ const styles = StyleSheet.create({
   },
   top: {},
   bottom: {
+    bottom: 0,
+  },
+  bottomSolid: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     bottom: 0,
   },
 });

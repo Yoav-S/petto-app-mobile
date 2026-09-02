@@ -205,7 +205,7 @@ export default function VaccinesScreen() {
           <EmptyState
             title={t('vaccines.empty_title')}
             subtitle={t('vaccines.empty_subtitle')}
-            actionTitle={t('vaccines.add')}
+            actionTitle={t('common.add')}
             actionCompact
             onAction={() => router.push('/vaccines/add' as never)}
           />

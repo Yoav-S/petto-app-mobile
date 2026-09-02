@@ -50,6 +50,8 @@ export const lightColors = {
   /** Unselected profile controls */
   inactiveControl: '#F3F4F6',
   overlay: 'rgba(0, 0, 0, 0.4)',
+  /** Translucent chip for controls sitting on top of a photo */
+  photoChip: 'rgba(255, 255, 255, 0.9)',
   button: {
     primaryBg: '#004741',
     primaryText: '#FFFFFF',
@@ -86,6 +88,7 @@ export const darkColors: ThemeColors = {
   track: '#5B6168',
   inactiveControl: '#373C42',
   overlay: 'rgba(0, 0, 0, 0.6)',
+  photoChip: 'rgba(26, 29, 32, 0.9)',
   button: {
     primaryBg: '#3FA89A',
     primaryText: '#FFFFFF',

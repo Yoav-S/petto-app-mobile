@@ -78,7 +78,12 @@ export default function VaccinesCard({ latestVaccine, loading, onPress }: Vaccin
             <Text style={homeCardTypography.title}>{t('home.vaccinesCard.title')}</Text>
           </View>
 
-          <View style={styles.vaccineDetails}>
+          <View
+            style={[
+              styles.vaccineDetails,
+              latestVaccine ? null : homeCardTypography.emptyBlockCentered,
+            ]}
+          >
             {latestVaccine ? (
               <>
                 <Text style={homeCardTypography.subtitle} numberOfLines={1} ellipsizeMode="tail">
@@ -94,7 +99,11 @@ export default function VaccinesCard({ latestVaccine, loading, onPress }: Vaccin
                 ) : null}
               </>
             ) : (
-              <Text style={homeCardTypography.note} numberOfLines={1} ellipsizeMode="tail">
+              <Text
+                style={[homeCardTypography.note, homeCardTypography.noteCentered]}
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
                 {t('home.vaccinesCard.empty')}
               </Text>
             )}

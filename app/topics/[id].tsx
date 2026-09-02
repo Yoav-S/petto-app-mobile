@@ -384,8 +384,11 @@ export default function HealthDetailsScreen() {
       <HeaderScrollLayout
         header={<ScreenHeader title={record.title} right={menuButton} />}
         edges={['left', 'right']}
+        topFade
+        fadeMode="list"
+        fadeAboveFooter
       >
-        {({ paddingTop }) => (
+        {({ paddingTop, fadeBottomInset, scrollMetricsProps }) => (
           <FlatList
             data={noteListItems}
             keyExtractor={(item) => (item.type === 'header' ? item.key : item.note.id)}
@@ -395,15 +398,21 @@ export default function HealthDetailsScreen() {
               styles.content,
               { paddingTop },
               noteListItems.length === 0 ? styles.contentEmpty : null,
-              { paddingBottom: LIST_SCROLL_END_GAP },
+              { paddingBottom: LIST_SCROLL_END_GAP + fadeBottomInset },
             ]}
             showsVerticalScrollIndicator={false}
+            onLayout={scrollMetricsProps.onLayout}
+            onContentSizeChange={scrollMetricsProps.onContentSizeChange}
             onEndReached={() => {
               void loadMoreNotes();
             }}
             onEndReachedThreshold={0.35}
             ListEmptyComponent={
-              !loading ? <Text style={styles.emptyNotes}>{t('topics.no_notes_yet')}</Text> : null
+              !loading ? (
+                <Text style={styles.emptyNotes}>
+                  {isActive ? t('topics.no_notes_yet') : t('topics.no_notes_resolved')}
+                </Text>
+              ) : null
             }
             ListFooterComponent={
               <ListLoadMoreFooter loading={notesLoadingMore} hasMore={notesHasMore} />
@@ -520,6 +529,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   contentEmpty: {
     flexGrow: 1,
+    justifyContent: 'center',
   },
   scrollView: {
     flex: 1,
@@ -538,9 +548,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   emptyNotes: {
     fontFamily: 'Rubik-Regular',
     fontSize: 15,
+    lineHeight: 22,
     color: c.secondaryText,
     textAlign: 'center',
-    marginTop: Spacing.xl,
+    alignSelf: 'center',
+    maxWidth: 300,
   },
   noteCard: {
     backgroundColor: c.surface,

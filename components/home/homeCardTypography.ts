@@ -80,4 +80,14 @@ export const makeHomeCardTypography = (c: ThemeColors) => StyleSheet.create({
     lineHeight: 16,
     color: c.secondaryText,
   },
+  /** Empty cards centre the single note line in the space left under the title. */
+  emptyBlockCentered: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noteCentered: {
+    textAlign: 'center',
+  },
 });

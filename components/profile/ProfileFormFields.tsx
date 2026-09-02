@@ -154,7 +154,7 @@ export function ProfilePillField({
   options: PillOption[];
   value: string | null;
   onChange: (value: string) => void;
-  /** Figma sex row: 170×36, gap 16; male 67×36, female 87×36, pill padding 12. */
+  /** Figma sex row floors: 36 tall, gap 16; male 67, female 87 — pills grow with their label. */
   layout?: 'default' | 'sex';
 }) {
   const styles = useThemedStyles(makeStyles);
@@ -264,13 +264,12 @@ const makeStyles = (c: ThemeColors) =>
       marginTop: 10,
     },
     pillRowSex: {
-      width: 170,
-      height: 36,
+      minHeight: 36,
       gap: 16,
     },
     pillDefault: {
-      width: 87,
-      height: 36,
+      minWidth: 87,
+      minHeight: 36,
       borderRadius: 12,
       paddingVertical: 6,
       paddingHorizontal: 16,
@@ -278,8 +277,8 @@ const makeStyles = (c: ThemeColors) =>
       justifyContent: 'center',
     },
     pillSexMale: {
-      width: 67,
-      height: 36,
+      minWidth: 67,
+      minHeight: 36,
       borderRadius: 12,
       paddingVertical: 6,
       paddingHorizontal: 12,
@@ -287,8 +286,8 @@ const makeStyles = (c: ThemeColors) =>
       justifyContent: 'center',
     },
     pillSexFemale: {
-      width: 87,
-      height: 36,
+      minWidth: 87,
+      minHeight: 36,
       borderRadius: 12,
       paddingVertical: 6,
       paddingHorizontal: 12,

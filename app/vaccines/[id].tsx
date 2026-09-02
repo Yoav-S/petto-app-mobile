@@ -520,7 +520,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: c.photoChip,
     alignItems: 'center',
     justifyContent: 'center',
   },

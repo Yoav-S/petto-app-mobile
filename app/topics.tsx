@@ -238,7 +238,7 @@ export default function HealthScreen() {
         <EmptyState
           title={t('topics.empty_all_title')}
           subtitle={t('topics.empty_all_subtitle')}
-          actionTitle={t('topics.add_note')}
+          actionTitle={t('common.add')}
           actionCompact
           onAction={() => router.push('/topics/add' as never)}
         />

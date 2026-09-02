@@ -37,7 +37,9 @@ const FOOTER = {
   saveButtonHeight: PRIMARY_BUTTON.height,
   minBottom: 10,
   safeGap: 8,
-  doneButtonWidth: 100,
+  /** Floor only — the chip grows with longer localized labels. */
+  doneButtonMinWidth: 100,
+  doneButtonPadH: 16,
   doneButtonHeight: 40,
   doneSafeGap: 25,
 } as const;
@@ -361,8 +363,9 @@ export function HealthKeyboardFooter({
             style={[
               styles.doneButton,
               {
-                width: FOOTER.doneButtonWidth,
-                height: FOOTER.doneButtonHeight,
+                minWidth: FOOTER.doneButtonMinWidth,
+                minHeight: FOOTER.doneButtonHeight,
+                paddingHorizontal: FOOTER.doneButtonPadH,
                 borderRadius: PRIMARY_BUTTON.borderRadius,
               },
               busy && styles.buttonDisabled,
@@ -371,7 +374,12 @@ export function HealthKeyboardFooter({
             disabled={busy}
             activeOpacity={0.85}
           >
-            <Text style={[styles.buttonText, busy && styles.buttonTextDisabled]}>{label}</Text>
+            <Text
+              style={[styles.buttonText, busy && styles.buttonTextDisabled]}
+              numberOfLines={1}
+            >
+              {label}
+            </Text>
           </TouchableOpacity>
         </View>
       </>
@@ -471,6 +479,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
+    maxWidth: '100%',
   },
   buttonDisabled: {
     backgroundColor: c.button.disabledBg,

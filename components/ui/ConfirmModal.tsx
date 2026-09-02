@@ -7,6 +7,7 @@ import {
   Platform,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  type ViewStyle,
 } from 'react-native';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
@@ -31,9 +32,22 @@ const MODAL = {
   padV: 36,
   contentGap: 10,
   buttonRowGap: 12,
-  buttonWidth: 120,
+  /** Floor only — both buttons share the row and grow with their labels. */
+  buttonMinWidth: 120,
+  buttonPadH: 12,
   buttonHeight: 44,
 } as const;
+
+/** Both dialog buttons share the row and size themselves to their label. */
+const BUTTON_SHAPE: ViewStyle = {
+  flexGrow: 1,
+  flexShrink: 1,
+  flexBasis: 'auto',
+  minWidth: MODAL.buttonMinWidth,
+  paddingHorizontal: MODAL.buttonPadH,
+  alignItems: 'center',
+  justifyContent: 'center',
+};
 
 export default function ConfirmModal({
   visible,
@@ -83,8 +97,7 @@ export default function ConfirmModal({
                   style={[
                     styles.cancelButton,
                     {
-                      width: MODAL.buttonWidth,
-                      height: MODAL.buttonHeight,
+                      minHeight: MODAL.buttonHeight,
                       borderRadius: Radius.sm + 2,
                     },
                   ]}
@@ -98,8 +111,7 @@ export default function ConfirmModal({
                   style={[
                     variant === 'primary' ? styles.confirmButtonPrimary : styles.confirmButton,
                     {
-                      width: MODAL.buttonWidth,
-                      height: MODAL.buttonHeight,
+                      minHeight: MODAL.buttonHeight,
                       borderRadius: Radius.sm + 2,
                     },
                   ]}
@@ -164,19 +176,16 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   cancelButton: {
+    ...BUTTON_SHAPE,
     backgroundColor: c.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   confirmButton: {
+    ...BUTTON_SHAPE,
     backgroundColor: c.category.medicalBg,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   confirmButtonPrimary: {
+    ...BUTTON_SHAPE,
     backgroundColor: c.button.primaryBg,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   cancelText: {
     fontFamily: 'Rubik-Medium',

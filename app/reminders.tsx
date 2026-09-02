@@ -411,7 +411,7 @@ export default function RemindersScreen() {
         <EmptyState
           title={t('reminders.empty_all_title')}
           subtitle={t('reminders.empty_all_subtitle')}
-          actionTitle={t('reminders.add')}
+          actionTitle={t('common.add')}
           actionCompact
           onAction={() => {
             void goAddReminder();

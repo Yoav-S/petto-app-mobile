@@ -4,7 +4,11 @@ import {
   SafeAreaView,
   type Edge,
 } from 'react-native-safe-area-context';
-import { LIST_CONTENT_TOP_NUDGE, LIST_TABS_CONTENT_GAP } from '@/constants/layout';
+import {
+  DOCUMENT_CONTENT_TOP_NUDGE,
+  LIST_CONTENT_TOP_NUDGE,
+  LIST_TABS_CONTENT_GAP,
+} from '@/constants/layout';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import ScrollEdgeFades from '@/components/ui/ScrollEdgeFades';
@@ -95,7 +99,9 @@ export default function ListScrollLayout({
     metrics.contentHeight > metrics.viewportHeight + 1;
 
   const scrollActive = metrics.viewportHeight > 0;
-  const contentOffset = contentGap + (documentFade ? 0 : LIST_CONTENT_TOP_NUDGE);
+  /** Normal gap plus a small nudge — the fade band overlays content instead of clearing it. */
+  const contentOffset =
+    contentGap + (documentFade ? DOCUMENT_CONTENT_TOP_NUDGE : LIST_CONTENT_TOP_NUDGE);
   const paddingTop =
     chrome != null ? chromeContentHeight + contentOffset : contentOffset;
   const paddingBottom = bottomPadding(fabOverlay);

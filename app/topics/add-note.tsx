@@ -141,6 +141,7 @@ export default function AddNoteScreen() {
             scrollInsetTop={paddingTop}
             contentContainerStyle={{
               paddingTop: Math.max(Spacing.md, 16),
+              paddingHorizontal: PAGE_HORIZONTAL_PADDING,
             }}
             footer={{
               label: t('common.save'),
@@ -211,9 +212,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  content: {
-    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-    paddingBottom: Spacing.xl,
   },
 });

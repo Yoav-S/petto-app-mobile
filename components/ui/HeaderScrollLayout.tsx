@@ -15,8 +15,11 @@ import {
   HEADER_CONTENT_GAP,
   HEADER_SCROLL_GAP,
   SCROLL_BOTTOM_FADE_GRADIENT,
+  SCROLL_BOTTOM_FADE_SOLID_AT,
   SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT,
   SCROLL_DOCUMENT_TOP_FADE_GRADIENT,
+  SCROLL_LIST_BOTTOM_FADE_GRADIENT,
+  SCROLL_LIST_TOP_FADE_GRADIENT,
   SCROLL_TOP_FADE_GRADIENT,
 } from '@/constants/layout';
 import { type ThemeColors } from '@/constants/theme';
@@ -29,9 +32,29 @@ import {
   useScrollFadeMetricsState,
 } from '@/components/ui/scrollFadeMetrics';
 
+type FadeMode = 'document' | 'form' | 'scroll' | 'list';
+
+/** Fade band heights per mode — 'list' matches the reminders / topics lists. */
+function fadeHeights(mode: FadeMode): { top: number; bottom: number } {
+  if (mode === 'document') {
+    return {
+      top: SCROLL_DOCUMENT_TOP_FADE_GRADIENT,
+      bottom: SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT,
+    };
+  }
+  if (mode === 'list') {
+    return {
+      top: SCROLL_LIST_TOP_FADE_GRADIENT,
+      bottom: SCROLL_LIST_BOTTOM_FADE_GRADIENT,
+    };
+  }
+  return { top: SCROLL_TOP_FADE_GRADIENT, bottom: SCROLL_BOTTOM_FADE_GRADIENT };
+}
+
 export interface HeaderScrollInsets {
   paddingTop: number;
   paddingBottom: number;
+  /** Extra bottom padding so the last row clears the opaque tail of the fade. */
   fadeBottomInset: number;
   scrollMetricsProps: {
     onLayout: (e: import('react-native').LayoutChangeEvent) => void;
@@ -48,7 +71,9 @@ interface HeaderScrollLayoutProps {
   topFade?: boolean;
   bottomFade?: boolean;
   fadeColor?: string;
-  fadeMode?: 'document' | 'form' | 'scroll';
+  fadeMode?: FadeMode;
+  /** Scroll ends above a footer outside the layout — no home-indicator strip. */
+  fadeAboveFooter?: boolean;
 }
 
 export default function HeaderScrollLayout({
@@ -60,6 +85,7 @@ export default function HeaderScrollLayout({
   bottomFade = false,
   fadeColor,
   fadeMode = 'form',
+  fadeAboveFooter = false,
 }: HeaderScrollLayoutProps) {
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
@@ -71,17 +97,18 @@ export default function HeaderScrollLayout({
   const hasOverflow = hasActiveScrollOverflow(metrics);
   const scrollActive = metrics.viewportHeight > 0;
   const showTopFade = topFade && chromeHeight > 0 && scrollActive && hasOverflow;
-  const showBottomFade =
-    bottomFade &&
-    scrollActive &&
-    hasOverflow &&
-    !keyboardOpen &&
-    (fadeMode === 'document' || fadeMode === 'scroll' || fadeMode === 'form');
+  const showBottomFade = bottomFade && scrollActive && hasOverflow && !keyboardOpen;
+  const bands = fadeHeights(fadeMode);
 
   const paddingTop = chromeHeight + HEADER_CONTENT_GAP;
   const paddingBottom = Math.max(insets.bottom, 8);
-  const fadeBottomInset =
-    fadeMode === 'document' && bottomFade ? SCROLL_BOTTOM_FADE_GRADIENT : 0;
+  const fadeBottomInset = !bottomFade
+    ? 0
+    : fadeMode === 'document'
+      ? SCROLL_BOTTOM_FADE_GRADIENT
+      : fadeMode === 'list'
+        ? Math.round(bands.bottom * SCROLL_BOTTOM_FADE_SOLID_AT)
+        : 0;
 
   const fadeContext = useMemo(
     () => ({ reportViewport, reportContent, reportPinnedFooterOverflow }),
@@ -118,16 +145,9 @@ export default function HeaderScrollLayout({
               color={fadeColor}
               showTop={showTopFade}
               showBottom={showBottomFade}
-              topHeight={
-                fadeMode === 'document'
-                  ? SCROLL_DOCUMENT_TOP_FADE_GRADIENT
-                  : SCROLL_TOP_FADE_GRADIENT
-              }
-              bottomHeight={
-                fadeMode === 'document'
-                  ? SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT
-                  : SCROLL_BOTTOM_FADE_GRADIENT
-              }
+              topHeight={bands.top}
+              bottomHeight={bands.bottom}
+              bottomInset={fadeAboveFooter ? 0 : undefined}
             />
           ) : null}
           <View
@@ -151,7 +171,7 @@ interface HeaderScrollScreenProps {
   topFade?: boolean;
   bottomFade?: boolean;
   fadeColor?: string;
-  fadeMode?: 'document' | 'form' | 'scroll';
+  fadeMode?: FadeMode;
 }
 
 export function HeaderScrollScreen({

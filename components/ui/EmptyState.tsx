@@ -10,7 +10,8 @@ const EMPTY = {
   textGap: 4,
   /** Wider than Figma 256 so EN subtitles stay on one line. */
   textMaxWidth: 335,
-  btnWidth: 124,
+  /** Figma floor — the CTA grows past it for longer localized labels. */
+  btnMinWidth: 124,
   btnHeight: 48,
   btnRadius: 12,
   btnPadV: 12,
@@ -136,8 +137,9 @@ const makeStyles = (c: ThemeColors) =>
       gap: 10,
     },
     buttonCompact: {
-      width: EMPTY.btnWidth,
-      height: EMPTY.btnHeight,
+      minWidth: EMPTY.btnMinWidth,
+      minHeight: EMPTY.btnHeight,
+      maxWidth: '100%',
       paddingVertical: EMPTY.btnPadV,
       paddingHorizontal: EMPTY.btnPadH,
       alignSelf: 'center',
@@ -152,6 +154,6 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 18,
       color: c.button.primaryText,
       textAlign: 'center',
-      flexShrink: 0,
+      flexShrink: 1,
     },
   });

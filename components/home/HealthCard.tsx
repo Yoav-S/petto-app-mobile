@@ -98,7 +98,12 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
               ) : null}
             </View>
 
-            <View style={homeCardTypography.healthBodyBlock}>
+            <View
+              style={[
+                homeCardTypography.healthBodyBlock,
+                latestRecord ? null : homeCardTypography.emptyBlockCentered,
+              ]}
+            >
               {latestRecord ? (
                 <>
                   <Text style={homeCardTypography.healthSubtitle} numberOfLines={1} ellipsizeMode="tail">
@@ -111,7 +116,11 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
                   ) : null}
                 </>
               ) : (
-                <Text style={homeCardTypography.note} numberOfLines={1} ellipsizeMode="tail">
+                <Text
+                  style={[homeCardTypography.note, homeCardTypography.noteCentered]}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
                   {allDoneToday
                     ? t('home.topicsCard.allDone')
                     : t('home.topicsCard.empty')}

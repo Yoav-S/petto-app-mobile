@@ -3,6 +3,7 @@ import { useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ADD_FAB } from '@/components/ui/SpeedDialFab';
 import {
+  SCROLL_BOTTOM_FADE_GRADIENT,
   SCROLL_BOTTOM_FADE_SOLID_AT,
   SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT,
   SCROLL_DOCUMENT_TOP_FADE_GRADIENT,
@@ -56,8 +57,13 @@ export function getListScrollBottomPadding(
 ): number {
   const scale = structuralScale(width, height);
   const breath = Math.round(LIST_BOTTOM_BREATH_DESIGN * scale);
+  /** Deeper bands are visual only — clearance stays on the base gradient. */
+  const clearanceBand = Math.min(
+    bottomFadeHeight,
+    Math.round(SCROLL_BOTTOM_FADE_GRADIENT * scale),
+  );
   const fadeClearance =
-    bottomInset + Math.round(bottomFadeHeight * SCROLL_BOTTOM_FADE_SOLID_AT) + breath;
+    bottomInset + Math.round(clearanceBand * SCROLL_BOTTOM_FADE_SOLID_AT) + breath;
 
   if (fabPadding <= 0) return fadeClearance;
   return Math.max(fadeClearance, fabPadding);

@@ -85,7 +85,12 @@ export default function RemindersCard({
               <Text style={homeCardTypography.title}>{t('home.remindersCard.title')}</Text>
             </View>
 
-            <View style={styles.reminderDetails}>
+            <View
+              style={[
+                styles.reminderDetails,
+                nextReminder ? null : homeCardTypography.emptyBlockCentered,
+              ]}
+            >
               {nextReminder ? (
                 <>
                   <Text style={homeCardTypography.subtitle} numberOfLines={1} ellipsizeMode="tail">
@@ -96,7 +101,11 @@ export default function RemindersCard({
                   </Text>
                 </>
               ) : (
-                <Text style={homeCardTypography.note} numberOfLines={1} ellipsizeMode="tail">
+                <Text
+                  style={[homeCardTypography.note, homeCardTypography.noteCentered]}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
                   {allDoneToday
                     ? t('home.remindersCard.allDone')
                     : t('home.remindersCard.empty')}

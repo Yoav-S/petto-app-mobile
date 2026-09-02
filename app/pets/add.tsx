@@ -176,6 +176,7 @@ export default function AddPetScreen() {
           contentContainerStyle={{
             paddingTop: layout.formTop,
             gap: layout.formGap,
+            alignItems: 'center',
           }}
           footer={{
             label: t('home.add_pet'),
@@ -261,8 +262,8 @@ export default function AddPetScreen() {
                     style={[
                       styles.typeOption,
                       {
-                        width: TYPE_CARD.chipW,
-                        height: TYPE_CARD.optionH,
+                        minWidth: TYPE_CARD.chipW,
+                        minHeight: TYPE_CARD.optionH,
                         borderRadius: TYPE_CARD.optionRadius,
                         paddingTop: TYPE_CARD.optionPadV,
                         paddingBottom: TYPE_CARD.optionPadV,
@@ -352,10 +353,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     flex: {
       flex: 1,
-    },
-    content: {
-      paddingHorizontal: 20,
-      alignItems: 'center',
     },
     nameInput: {
       ...centeredInputText({

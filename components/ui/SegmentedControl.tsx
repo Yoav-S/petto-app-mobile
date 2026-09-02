@@ -16,7 +16,7 @@ interface SegmentedControlProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   getLabel?: (tab: string) => string;
-  /** Optional max width. Omit for full content width (lists). Compact tabs pass 220. */
+  /** Optional design width. Acts as a floor — tabs grow for longer labels. Compact tabs pass 220. */
   width?: number;
   style?: StyleProp<ViewStyle>;
 }
@@ -40,7 +40,7 @@ export default function SegmentedControl({
   const styles = useThemedStyles(makeStyles);
   const { contentWidth } = useResponsiveLayout();
 
-  const segmentWidth = useMemo(
+  const minSegmentWidth = useMemo(
     () => (designWidthCap == null ? contentWidth : Math.min(contentWidth, designWidthCap)),
     [contentWidth, designWidthCap],
   );
@@ -51,7 +51,7 @@ export default function SegmentedControl({
         style={[
           styles.container,
           {
-            width: segmentWidth,
+            minWidth: minSegmentWidth,
             maxWidth: '100%',
           },
         ]}
@@ -98,8 +98,11 @@ const makeStyles = (c: ThemeColors) =>
       elevation: 2,
     },
     tab: {
-      flex: 1,
+      flexGrow: 1,
+      flexShrink: 1,
+      flexBasis: 'auto',
       minWidth: 0,
+      paddingHorizontal: 10,
       height: 28,
       alignItems: 'center',
       justifyContent: 'center',
