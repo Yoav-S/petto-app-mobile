@@ -63,10 +63,13 @@ export interface Reminder {
   date: string;
   time: string;
   repeat: string;
+  end_date?: string | null;
+  alert?: string | null;
   status: string;
   note?: string | null;
   category?: string | null;
   notified_at?: string | null;
+  alert_notified_at?: string | null;
 }
 
 export interface MedicalRecord {

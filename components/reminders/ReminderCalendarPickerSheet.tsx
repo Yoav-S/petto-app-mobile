@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,10 @@ interface ReminderCalendarPickerSheetProps {
   value: string | null;
   onClose: () => void;
   onConfirm: (isoDate: string) => void;
+  title?: string;
+  minDate?: string;
+  allowClear?: boolean;
+  onClear?: () => void;
 }
 
 export default function ReminderCalendarPickerSheet({
@@ -27,33 +31,37 @@ export default function ReminderCalendarPickerSheet({
   value,
   onClose,
   onConfirm,
+  title,
+  minDate,
+  allowClear = false,
+  onClear,
 }: ReminderCalendarPickerSheetProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState<Date | null>(parseIsoDate(value));
   const [resetKey, setResetKey] = useState(0);
+  const earliest = minDate ?? minReminderDateIso();
 
   useEffect(() => {
     if (!visible) return;
-    const min = minReminderDateIso();
     const parsed = parseIsoDate(value);
-    if (parsed && !isIsoDateBefore(toIsoDate(parsed), min)) {
+    if (parsed && !isIsoDateBefore(toIsoDate(parsed), earliest)) {
       setDraft(parsed);
     } else {
-      setDraft(parseIsoDate(min));
+      setDraft(parseIsoDate(earliest));
     }
     setResetKey((k) => k + 1);
-  }, [visible, value]);
+  }, [visible, value, earliest]);
 
   const canConfirm = Boolean(
-    draft && !isIsoDateBefore(toIsoDate(draft), minReminderDateIso()),
+    draft && !isIsoDateBefore(toIsoDate(draft), earliest),
   );
 
   const handleConfirm = () => {
     if (!draft) return;
     const iso = toIsoDate(draft);
-    if (isIsoDateBefore(iso, minReminderDateIso())) return;
+    if (isIsoDateBefore(iso, earliest)) return;
     onConfirm(iso);
     onClose();
   };
@@ -63,7 +71,7 @@ export default function ReminderCalendarPickerSheet({
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.header}>
             <View style={styles.headerSpacer} />
-            <Text style={styles.title}>{t('reminders.field_date')}</Text>
+            <Text style={styles.title}>{title ?? t('reminders.field_date')}</Text>
             <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
               <Ionicons name="close" size={24} color={colors.primaryText} />
             </Pressable>
@@ -73,9 +81,21 @@ export default function ReminderCalendarPickerSheet({
             value={draft}
             onChange={setDraft}
             allowFuture
-            minDate={minReminderDateIso()}
+            minDate={earliest}
             resetKey={resetKey}
           />
+
+          {allowClear ? (
+            <Pressable
+              style={styles.offButton}
+              onPress={() => {
+                onClear?.();
+                onClose();
+              }}
+            >
+              <Text style={styles.offText}>{t('reminders.field_end_off')}</Text>
+            </Pressable>
+          ) : null}
 
           <Pressable
             style={[styles.doneButton, !canConfirm && styles.doneButtonDisabled]}
@@ -131,6 +151,17 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.surface,
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    offButton: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 8,
+    },
+    offText: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 16,
+      lineHeight: 20,
+      color: c.secondaryText,
     },
     doneButton: {
       ...PRIMARY_BUTTON,

@@ -138,6 +138,11 @@ export function addDaysToIsoDate(iso: string, days: number): string {
   return toIsoDate(next);
 }
 
+/** Tomorrow as YYYY-MM-DD in the device local calendar. */
+export function tomorrowIsoDate(): string {
+  return addDaysToIsoDate(todayIsoDate(), 1);
+}
+
 export function isIsoDateTomorrow(iso: string | null | undefined): boolean {
   const datePart = normalizeToDatePart(iso);
   if (!datePart) return false;

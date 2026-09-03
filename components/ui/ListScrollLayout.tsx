@@ -54,6 +54,10 @@ interface ListScrollLayoutProps {
   /** Solid strip below tabs before list content. */
   contentGap?: number;
   documentFade?: boolean;
+  /** Override the top fade band height (defaults to the list/document preset). */
+  topFadeHeight?: number;
+  /** Start content at the end of the top fade band so nothing is dimmed at rest. */
+  clearTopFade?: boolean;
   /** When true, bottom padding also clears the speed-dial FAB. */
   fabOverlay?: boolean;
   /**
@@ -74,6 +78,8 @@ export default function ListScrollLayout({
   fadeColor,
   contentGap = LIST_TABS_CONTENT_GAP,
   documentFade = false,
+  topFadeHeight: topFadeHeightOverride,
+  clearTopFade = false,
   fabOverlay = false,
   fadeKey,
 }: ListScrollLayoutProps) {
@@ -88,8 +94,13 @@ export default function ListScrollLayout({
   const overflowLatch = useRef(false);
   /** Loading placeholders should not erase what we know about this list. */
   const transientStatic = useRef(false);
-  const { topFadeHeight, bottomFadeHeight, bottomInset, bottomPadding } =
-    useListScrollFadeLayout(documentFade);
+  const {
+    topFadeHeight: presetTopFadeHeight,
+    bottomFadeHeight,
+    bottomInset,
+    bottomPadding,
+  } = useListScrollFadeLayout(documentFade);
+  const topFadeHeight = topFadeHeightOverride ?? presetTopFadeHeight;
   const { metrics, reportViewport, reportContent, reportPinnedFooterOverflow } =
     useScrollFadeMetricsState();
 
@@ -100,8 +111,9 @@ export default function ListScrollLayout({
 
   const scrollActive = metrics.viewportHeight > 0;
   /** Normal gap plus a small nudge — the fade band overlays content instead of clearing it. */
-  const contentOffset =
-    contentGap + (documentFade ? DOCUMENT_CONTENT_TOP_NUDGE : LIST_CONTENT_TOP_NUDGE);
+  const contentOffset = clearTopFade
+    ? topFadeHeight + LIST_CONTENT_TOP_NUDGE
+    : contentGap + (documentFade ? DOCUMENT_CONTENT_TOP_NUDGE : LIST_CONTENT_TOP_NUDGE);
   const paddingTop =
     chrome != null ? chromeContentHeight + contentOffset : contentOffset;
   const paddingBottom = bottomPadding(fabOverlay);

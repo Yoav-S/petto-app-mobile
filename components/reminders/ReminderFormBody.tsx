@@ -15,6 +15,7 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import ReminderCalendarPickerSheet from '@/components/reminders/ReminderCalendarPickerSheet';
 import TimePickerSheet from '@/components/pickers/TimePickerSheet';
 import RepeatPickerSheet from '@/components/pickers/RepeatPickerSheet';
+import AlertPickerSheet from '@/components/pickers/AlertPickerSheet';
 import CategoryPickerSheet, {
   categoryLabel,
 } from '@/components/pickers/CategoryPickerSheet';
@@ -25,14 +26,22 @@ import {
   type HealthKeyboardFooterProps,
 } from '@/components/health/HealthKeyboardFooter';
 import { t } from '@/i18n';
-import type { RepeatOption } from '@/services/reminders';
+import type { AlertOption, RepeatOption } from '@/services/reminders';
 import {
   CARD_SHADOW,
+  alertFieldLabel,
   formatTimeDisplay,
   repeatToggleLabel,
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
-import { formatDisplayDate, isIsoDateToday, soonestValidReminderTime } from '@/utils/calendar';
+import {
+  addDaysToIsoDate,
+  formatDisplayDate,
+  isIsoDateToday,
+  minReminderDateIso,
+  soonestValidReminderTime,
+  todayIsoDate,
+} from '@/utils/calendar';
 import { centeredInputText, NAME_FIELD_TEXT } from '@/constants/textField';
 import {
   reminderCategoryIconFor,
@@ -64,8 +73,10 @@ interface ReminderFormBodyProps {
   category: ReminderCategory;
   onCategorySelect: (value: ReminderCategory) => void;
   date: string | null;
+  endDate: string | null;
   time: string | null;
   repeat: RepeatOption;
+  alert: AlertOption;
   note: string;
   onNoteChange: (value: string) => void;
   noteFocused: boolean;
@@ -74,8 +85,11 @@ interface ReminderFormBodyProps {
   sheet: ReminderSheet;
   onSheetChange: (sheet: ReminderSheet) => void;
   onDateConfirm: (iso: string) => void;
+  onEndDateConfirm: (iso: string) => void;
+  onEndDateClear: () => void;
   onTimeConfirm: (value: string) => void;
   onRepeatSelect: (value: RepeatOption) => void;
+  onAlertConfirm: (value: AlertOption) => void;
   autoFocus?: boolean;
   /** Disable all field edits (view completed/missed reminder). */
   readOnly?: boolean;
@@ -100,8 +114,10 @@ export default function ReminderFormBody({
   category,
   onCategorySelect,
   date,
+  endDate,
   time,
   repeat,
+  alert,
   note,
   onNoteChange,
   onNoteFocus,
@@ -109,8 +125,11 @@ export default function ReminderFormBody({
   sheet,
   onSheetChange,
   onDateConfirm,
+  onEndDateConfirm,
+  onEndDateClear,
   onTimeConfirm,
   onRepeatSelect,
+  onAlertConfirm,
   autoFocus = false,
   readOnly = false,
   footer,
@@ -200,65 +219,96 @@ export default function ReminderFormBody({
             ) : null}
           </TouchableOpacity>
 
-          <View
-            style={[
-              styles.card,
-              CARD_SHADOW,
-              {
-                width: layout.cardWidth,
-                borderRadius: layout.cardRadius,
-                paddingHorizontal: layout.cardPadH,
-                paddingVertical: layout.cardPadV,
-                minHeight: layout.scheduleHeight,
-                gap: layout.innerGap,
-              },
-            ]}
-          >
-            <TouchableOpacity
-              style={[styles.scheduleRow, { minHeight: layout.rowHeight }]}
-              onPress={() => openSheet('date')}
-              activeOpacity={0.6}
-              disabled={readOnly}
+          <View style={{ width: layout.cardWidth, gap: 20 }}>
+            <View
+              style={[
+                styles.card,
+                CARD_SHADOW,
+                {
+                  width: layout.cardWidth,
+                  borderRadius: layout.cardRadius,
+                  paddingHorizontal: layout.cardPadH,
+                  paddingVertical: 0,
+                },
+              ]}
             >
-              <View style={styles.scheduleLeft}>
-                <Ionicons name="calendar-outline" size={20} color={colors.primaryText} />
-                <Text style={styles.scheduleLabel}>{t('reminders.field_date')}</Text>
-              </View>
-              <Text style={[styles.scheduleValue, !date && styles.placeholder]}>
-                {date ? formatDisplayDate(date) : t('reminders.field_date_placeholder')}
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.scheduleRow, { paddingVertical: layout.cardPadV }]}
+                onPress={() => openSheet('start')}
+                activeOpacity={0.6}
+                disabled={readOnly}
+              >
+                <Text style={styles.scheduleLabel}>{t('reminders.field_start')}</Text>
+                <Text style={[styles.scheduleValue, !date && styles.placeholder]}>
+                  {date ? formatDisplayDate(date) : t('reminders.field_date_placeholder')}
+                </Text>
+              </TouchableOpacity>
 
-            <View style={styles.scheduleDivider} />
+              <View style={styles.scheduleDivider} />
 
-            <TouchableOpacity
-              style={[styles.scheduleRow, { minHeight: layout.rowHeight }]}
-              onPress={() => openSheet('time')}
-              activeOpacity={0.6}
-              disabled={readOnly}
-            >
-              <View style={styles.scheduleLeft}>
-                <Ionicons name="time-outline" size={20} color={colors.primaryText} />
+              <TouchableOpacity
+                style={[styles.scheduleRow, { paddingVertical: layout.cardPadV }]}
+                onPress={() => openSheet('end')}
+                activeOpacity={0.6}
+                disabled={readOnly}
+              >
+                <Text style={styles.scheduleLabel}>{t('reminders.field_end')}</Text>
+                <Text style={endDate ? styles.scheduleValue : styles.scheduleRepeatValue}>
+                  {endDate ? formatDisplayDate(endDate) : t('reminders.field_end_off')}
+                </Text>
+              </TouchableOpacity>
+
+              <View style={styles.scheduleDivider} />
+
+              <TouchableOpacity
+                style={[styles.scheduleRow, { paddingVertical: layout.cardPadV }]}
+                onPress={() => openSheet('time')}
+                activeOpacity={0.6}
+                disabled={readOnly}
+              >
                 <Text style={styles.scheduleLabel}>{t('reminders.field_time')}</Text>
-              </View>
-              <Text style={[styles.scheduleValue, !time && styles.placeholder]}>
-                {time ? formatTimeDisplay(time) : t('reminders.field_time_placeholder')}
-              </Text>
-            </TouchableOpacity>
+                <Text style={[styles.scheduleValue, !time && styles.placeholder]}>
+                  {time ? formatTimeDisplay(time) : t('reminders.field_time_placeholder')}
+                </Text>
+              </TouchableOpacity>
 
-            <View style={styles.scheduleDivider} />
+              <View style={styles.scheduleDivider} />
+
+              <TouchableOpacity
+                style={[styles.scheduleRow, { paddingVertical: layout.cardPadV }]}
+                onPress={() => openSheet('repeat')}
+                activeOpacity={0.6}
+                disabled={readOnly}
+              >
+                <Text style={styles.scheduleLabel}>{t('reminders.field_repeat')}</Text>
+                <Text style={styles.scheduleRepeatValue}>{repeatToggleLabel(repeat)}</Text>
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
-              style={[styles.scheduleRow, { minHeight: layout.rowHeight }]}
-              onPress={() => openSheet('repeat')}
+              style={[
+                styles.card,
+                styles.scheduleRow,
+                CARD_SHADOW,
+                {
+                  width: layout.cardWidth,
+                  borderRadius: layout.cardRadius,
+                  paddingHorizontal: layout.cardPadH,
+                  paddingVertical: layout.cardPadV,
+                },
+              ]}
+              onPress={() => openSheet('alert')}
               activeOpacity={0.6}
               disabled={readOnly}
             >
-              <View style={styles.scheduleLeft}>
-                <Ionicons name="repeat-outline" size={20} color={colors.primaryText} />
-                <Text style={styles.scheduleLabel}>{t('reminders.field_repeat')}</Text>
-              </View>
-              <Text style={styles.scheduleRepeatValue}>{repeatToggleLabel(repeat)}</Text>
+              <Text style={styles.scheduleLabel}>{t('reminders.field_alert')}</Text>
+              <Text
+                style={
+                  alert === 'off' ? styles.scheduleRepeatValue : styles.scheduleValue
+                }
+              >
+                {alertFieldLabel(alert)}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -340,10 +390,22 @@ export default function ReminderFormBody({
       {!readOnly ? (
         <>
           <ReminderCalendarPickerSheet
-            visible={sheet === 'date'}
+            visible={sheet === 'start'}
             value={date}
+            title={t('reminders.field_start')}
+            minDate={minReminderDateIso()}
             onClose={() => onSheetChange(null)}
             onConfirm={onDateConfirm}
+          />
+          <ReminderCalendarPickerSheet
+            visible={sheet === 'end'}
+            value={endDate}
+            title={t('reminders.field_end')}
+            minDate={addDaysToIsoDate(date ?? todayIsoDate(), 1)}
+            allowClear
+            onClear={onEndDateClear}
+            onClose={() => onSheetChange(null)}
+            onConfirm={onEndDateConfirm}
           />
           <TimePickerSheet
             visible={sheet === 'time'}
@@ -360,6 +422,12 @@ export default function ReminderFormBody({
               onRepeatSelect(value);
               onSheetChange(null);
             }}
+          />
+          <AlertPickerSheet
+            visible={sheet === 'alert'}
+            value={alert}
+            onClose={() => onSheetChange(null)}
+            onConfirm={onAlertConfirm}
           />
           <CategoryPickerSheet
             visible={sheet === 'category'}
@@ -443,11 +511,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  scheduleLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
   },
   scheduleLabel: {
     fontFamily: 'Rubik-Medium',

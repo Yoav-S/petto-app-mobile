@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,16 +6,19 @@ import {
   Pressable,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { t, currentLocale } from '@/i18n';
-import { Spacing, type ThemeColors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
 import {
-  LIST_HEADER_CONTENT_GAP,
-  LIST_HEADER_TABS_GAP,
+  LEGAL_TAB_BAR,
+  LEGAL_TABS_TOP_FADE_GRADIENT,
   PAGE_HORIZONTAL_PADDING,
 } from '@/constants/layout';
+import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useThemedStatusBar } from '@/context/SystemBarsContext';
 import {
   LEGAL_LAST_UPDATED_ISO,
   privacyPolicyBlocks,
@@ -25,6 +28,11 @@ import type { LegalBlock } from '@/components/settings/LegalScreen';
 import ListScrollLayout from '@/components/ui/ListScrollLayout';
 
 type Tab = 'terms' | 'privacy';
+
+const TABS: { key: Tab; labelKey: string }[] = [
+  { key: 'terms', labelKey: 'onboarding.tab_terms' },
+  { key: 'privacy', labelKey: 'onboarding.tab_privacy' },
+];
 
 function formatUpdated(iso: string): string {
   const date = new Date(iso);
@@ -70,6 +78,8 @@ export default function TermsScreen() {
   const router = useRouter();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const insets = useSafeAreaInsets();
+  useThemedStatusBar();
   const [tab, setTab] = useState<Tab>('terms');
 
   const blocks = useMemo(
@@ -77,42 +87,57 @@ export default function TermsScreen() {
     [tab],
   );
 
+  /** Bar swallows the status bar, then keeps a full row of breathing space. */
+  const barTopPad = Math.max(insets.top, LEGAL_TAB_BAR.statusCover);
+
   return (
     <ListScrollLayout
       fadeKey={`auth-legal:${tab}`}
       backgroundColor={colors.surface}
       fadeColor={colors.surface}
-      contentGap={LIST_HEADER_CONTENT_GAP}
+      topFadeHeight={LEGAL_TABS_TOP_FADE_GRADIENT}
+      clearTopFade
       documentFade
       chrome={
-        <>
-          <View style={styles.headerRow}>
-            <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-              <Ionicons name="chevron-back" size={24} color={colors.primaryText} />
-            </Pressable>
-            <Text style={styles.headerTitle}>{t('onboarding.terms_screen_title')}</Text>
-            <View style={styles.backBtn} />
+        <View>
+          <View style={[styles.tabBar, { paddingTop: barTopPad }]}>
+            {TABS.map(({ key, labelKey }) => {
+              const active = tab === key;
+              return (
+                <Pressable
+                  key={key}
+                  style={[styles.tab, active && styles.tabActive]}
+                  onPress={() => setTab(key)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text
+                    style={[styles.tabText, active && styles.tabTextActive]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
+                  >
+                    {t(labelKey)}
+                  </Text>
+                  {active ? <View style={styles.tabIndicator} /> : null}
+                </Pressable>
+              );
+            })}
           </View>
 
-          <View style={styles.tabs}>
-            <Pressable
-              style={[styles.tab, tab === 'terms' && styles.tabActive]}
-              onPress={() => setTab('terms')}
-            >
-              <Text style={[styles.tabText, tab === 'terms' && styles.tabTextActive]}>
-                {t('settings.terms')}
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[styles.tab, tab === 'privacy' && styles.tabActive]}
-              onPress={() => setTab('privacy')}
-            >
-              <Text style={[styles.tabText, tab === 'privacy' && styles.tabTextActive]}>
-                {t('settings.privacy')}
-              </Text>
-            </Pressable>
-          </View>
-        </>
+          {/* Floats over the leading tab so both halves stay full width. */}
+          <HeaderIconButton
+            onPress={() => router.back()}
+            accessibilityLabel={t('petOnboarding.back')}
+            style={styles.backBtn}
+          >
+            <Ionicons
+              name="chevron-back"
+              size={HEADER_ICON_BTN.iconSize}
+              color={colors.primaryText}
+            />
+          </HeaderIconButton>
+        </View>
       }
     >
       {({ paddingTop, paddingBottom, scrollMetricsProps }) => (
@@ -135,50 +160,50 @@ export default function TermsScreen() {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    headerRow: {
+    /** Full-bleed, flush with the top edge — the two halves are the only chrome. */
+    tabBar: {
       flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-      paddingVertical: Spacing.sm,
-      backgroundColor: c.surface,
-    },
-    backBtn: {
-      width: 40,
-      height: 40,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    headerTitle: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 16,
-      color: c.primaryText,
-    },
-    tabs: {
-      flexDirection: 'row',
-      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-      marginTop: LIST_HEADER_TABS_GAP,
-      gap: 8,
-      backgroundColor: c.surface,
+      backgroundColor: c.background,
+      borderTopLeftRadius: LEGAL_TAB_BAR.radius,
+      borderTopRightRadius: LEGAL_TAB_BAR.radius,
+      overflow: 'hidden',
     },
     tab: {
       flex: 1,
-      height: 40,
-      borderRadius: 10,
+      height: LEGAL_TAB_BAR.rowHeight,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: c.inactiveControl,
+      paddingHorizontal: 12,
     },
+    /** Active half matches the page so it reads as the open tab. */
     tabActive: {
-      backgroundColor: c.brand,
+      backgroundColor: c.surface,
     },
     tabText: {
       fontFamily: 'Rubik-Medium',
       fontSize: 14,
-      color: c.primaryText,
+      lineHeight: 18,
+      color: c.tabInactiveText,
     },
     tabTextActive: {
-      color: c.button.primaryText,
+      color: c.primaryText,
+    },
+    tabIndicator: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: 2,
+      backgroundColor: c.brand,
+    },
+    /** Centered in the 40pt row; `start` so it follows the reading direction. */
+    backBtn: {
+      position: 'absolute',
+      start: PAGE_HORIZONTAL_PADDING,
+      bottom: (LEGAL_TAB_BAR.rowHeight - HEADER_ICON_BTN.size) / 2,
+      /** Hairline keeps the surface chip readable on the active (surface) half. */
+      borderWidth: 1,
+      borderColor: c.border,
     },
     scroll: {
       flex: 1,

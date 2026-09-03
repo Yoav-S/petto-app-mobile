@@ -9,7 +9,7 @@ import {
   soonestValidReminderTime,
 } from '@/utils/calendar';
 import { t } from '@/i18n';
-import type { RepeatOption } from '@/services/reminders';
+import type { AlertOption, RepeatOption } from '@/services/reminders';
 
 export const DESIGN_WIDTH = 375;
 export const DESIGN_HEIGHT = 812;
@@ -22,7 +22,7 @@ export const CARD_SHADOW = {
   elevation: 3,
 };
 
-export type ReminderSheet = 'category' | 'date' | 'time' | 'repeat' | null;
+export type ReminderSheet = 'category' | 'start' | 'end' | 'time' | 'repeat' | 'alert' | null;
 
 export function normalizeTime(time: string): string {
   const [h, m] = time.split(':').map(Number);
@@ -73,6 +73,10 @@ export function isActiveReminderStatus(status: string): boolean {
 
 export function repeatToggleLabel(repeat: RepeatOption): string {
   return repeat === 'off' ? t('reminders.repeat_toggle_off') : t('reminders.repeat_toggle_on');
+}
+
+export function alertFieldLabel(alert: AlertOption): string {
+  return t(`reminders.alert_${alert}`);
 }
 
 export function hasDuplicateInList(

@@ -1,4 +1,4 @@
-﻿import { SINGLE_LINE_FIELD } from '@/constants/textField';
+import { SINGLE_LINE_FIELD } from '@/constants/textField';
 
 /** Figma reference frame 375Ã—812 â€” pet creation onboarding */
 export const PET_ONBOARDING_DESIGN_WIDTH = 375;

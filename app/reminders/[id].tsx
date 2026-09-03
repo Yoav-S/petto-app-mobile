@@ -34,6 +34,8 @@ import {
   getReminder,
   updateReminder,
   deleteReminder,
+  parseAlert,
+  type AlertOption,
   type RepeatOption,
 } from '@/services/reminders';
 import { getErrorMessage } from '@/services/errors';
@@ -77,8 +79,10 @@ export default function EditReminderScreen() {
   const [category, setCategory] = useState<ReminderCategory>('general');
   const [categoryManual, setCategoryManual] = useState(false);
   const [date, setDate] = useState<string | null>(null);
+  const [endDate, setEndDate] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [repeat, setRepeat] = useState<RepeatOption>('off');
+  const [alert, setAlert] = useState<AlertOption>('off');
   const [note, setNote] = useState('');
   const [noteFocused, setNoteFocused] = useState(false);
   const [sheet, setSheet] = useState<ReminderSheet>(null);
@@ -107,7 +111,7 @@ export default function EditReminderScreen() {
       categoryHeight: 52,
       scheduleHeight: 120,
       noteHeight: 78,
-      innerGap: 8,
+      innerGap: 0,
       rowHeight: 20,
       footerHeight: 48,
     }),
@@ -120,11 +124,13 @@ export default function EditReminderScreen() {
         title: title.trim(),
         category,
         date,
+        endDate,
         time,
         repeat,
+        alert,
         note: note.trim(),
       }),
-    [title, category, date, time, repeat, note],
+    [title, category, date, endDate, time, repeat, alert, note],
   );
 
   const fetchData = useCallback(async () => {
@@ -143,8 +149,10 @@ export default function EditReminderScreen() {
       setCategory(parseCategory(reminder.category, reminder.title));
       setCategoryManual(Boolean(reminder.category));
       setDate(reminder.date);
+      setEndDate(reminder.end_date?.slice(0, 10) || null);
       setTime(reminder.time);
       setRepeat((reminder.repeat as RepeatOption) ?? 'off');
+      setAlert(parseAlert(reminder.alert));
       setNote(reminder.note ?? '');
       originalDateRef.current = reminder.date;
       originalTimeRef.current = reminder.time;
@@ -152,8 +160,10 @@ export default function EditReminderScreen() {
         title: reminder.title.trim(),
         category: parseCategory(reminder.category, reminder.title),
         date: reminder.date,
+        endDate: reminder.end_date?.slice(0, 10) || null,
         time: reminder.time,
         repeat: reminder.repeat,
+        alert: parseAlert(reminder.alert),
         note: (reminder.note ?? '').trim(),
       });
       hydratedRef.current = true;
@@ -209,6 +219,11 @@ export default function EditReminderScreen() {
 
     if (warnPastDate(date)) return;
 
+    if (endDate && date && endDate <= date) {
+      toast.showError(t('reminders.end_before_start'));
+      return;
+    }
+
     const saveTime = clampReminderTimeForDate(date.slice(0, 10), time);
     if (!saveTime) return;
 
@@ -223,6 +238,8 @@ export default function EditReminderScreen() {
         date: date.slice(0, 10),
         time: saveTime,
         repeat,
+        end_date: endDate,
+        alert,
         note: note.trim() || undefined,
         category,
       });
@@ -238,8 +255,10 @@ export default function EditReminderScreen() {
     readOnly,
     title,
     date,
+    endDate,
     time,
     repeat,
+    alert,
     note,
     category,
     warnPastDate,
@@ -271,7 +290,7 @@ export default function EditReminderScreen() {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [title, date, time, repeat, note, category, buildSnapshot, readOnly]);
+  }, [title, date, endDate, time, repeat, alert, note, category, buildSnapshot, readOnly]);
 
   /** Writes the pending edit now instead of waiting out the debounce. */
   const flushSave = useCallback(async () => {
@@ -307,9 +326,21 @@ export default function EditReminderScreen() {
 
   const handleDateConfirm = (iso: string) => {
     if (warnPastDate(iso)) return;
-    const nextTime = clampReminderTimeForDate(iso, time);
-    setDate(iso);
+    const nextDate = iso.slice(0, 10);
+    const nextTime = clampReminderTimeForDate(nextDate, time);
+    setDate(nextDate);
     setTime(nextTime);
+    if (endDate && endDate <= nextDate) setEndDate(null);
+    setSheet(null);
+  };
+
+  const handleEndDateConfirm = (iso: string) => {
+    const nextEnd = iso.slice(0, 10);
+    if (date && nextEnd <= date) {
+      toast.showError(t('reminders.end_before_start'));
+      return;
+    }
+    setEndDate(nextEnd);
     setSheet(null);
   };
 
@@ -388,8 +419,10 @@ export default function EditReminderScreen() {
         category={category}
         onCategorySelect={handleCategorySelect}
         date={date}
+        endDate={endDate}
         time={time}
         repeat={repeat}
+        alert={alert}
         note={note}
         onNoteChange={setNote}
         noteFocused={noteFocused}
@@ -401,8 +434,14 @@ export default function EditReminderScreen() {
         sheet={sheet}
         onSheetChange={setSheet}
         onDateConfirm={handleDateConfirm}
+        onEndDateConfirm={handleEndDateConfirm}
+        onEndDateClear={() => {
+          setEndDate(null);
+          setSheet(null);
+        }}
         onTimeConfirm={handleTimeConfirm}
         onRepeatSelect={setRepeat}
+        onAlertConfirm={setAlert}
         readOnly={readOnly}
         pinFooterToBottom
         footerBottomInset={deleteBottomPad}

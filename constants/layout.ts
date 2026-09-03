@@ -99,6 +99,26 @@ export const SCROLL_TOP_FADE_SOLID_AT = 0.32;
 /** Bottom gradient reaches full opacity through this fraction. */
 export const SCROLL_BOTTOM_FADE_SOLID_AT = 0.55;
 
+/**
+ * Full-bleed legal tab bar (auth Terms / Privacy).
+ * Covers the status bar and keeps 40pt of readable row below it, so the labels
+ * never crowd the clock. `radius` follows the device's top screen corners.
+ */
+export const LEGAL_TAB_BAR = {
+  statusCover: 20,
+  rowHeight: 40,
+  radius: 24,
+} as const;
+
+/**
+ * Legal tabs fade: opaque for this many points below the bar, then dissolves.
+ * Content starts at the band's end, so nothing is dimmed on mount.
+ */
+export const LEGAL_TABS_FADE_SOLID_STRIP = 12;
+export const LEGAL_TABS_TOP_FADE_GRADIENT = Math.round(
+  LEGAL_TABS_FADE_SOLID_STRIP / SCROLL_TOP_FADE_SOLID_AT,
+);
+
 /** @deprecated Use SCROLL_BOTTOM_FADE_GRADIENT */
 export const SCROLL_FADE_BAND = SCROLL_BOTTOM_FADE_GRADIENT;
 
