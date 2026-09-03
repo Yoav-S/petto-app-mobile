@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -30,6 +30,7 @@ import {
 } from '@/services/healthReminder';
 import { uploadHealthNotePhoto } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
+import { presentPremiumLimitFromError } from '@/services/subscription';
 import { formatDisplayDate } from '@/utils/calendar';
 import { normalizeRouteParam } from '@/utils/routeParams';
 
@@ -120,7 +121,9 @@ export default function AddNoteScreen() {
 
       skipPrompt(() => router.back());
     } catch (err) {
-      toast.showError(getErrorMessage(err));
+      if (!presentPremiumLimitFromError(err)) {
+        toast.showError(getErrorMessage(err));
+      }
     } finally {
       setSubmitting(false);
     }

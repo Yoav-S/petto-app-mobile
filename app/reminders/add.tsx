@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard } from 'react-native';
+import { Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { useToast } from '@/context/ToastContext';
@@ -14,7 +14,7 @@ import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { createReminder, type RepeatOption } from '@/services/reminders';
 import { getErrorMessage } from '@/services/errors';
-import { guardAddReminder } from '@/services/subscription';
+import { guardAddReminder, presentPremiumLimitFromError } from '@/services/subscription';
 import { registerForPushNotifications } from '@/services/notifications';
 import { usePetsQuery } from '@/hooks/useCachedQueries';
 import {
@@ -152,17 +152,8 @@ export default function AddReminderScreen() {
       });
       skipPrompt(() => router.back());
     } catch (err) {
-      const message = getErrorMessage(err);
-      if (message === t('errors.premium_required_reminder')) {
-        Alert.alert(t('settings.limit_reminder_title'), message, [
-          { text: t('common.cancel'), style: 'cancel' },
-          {
-            text: t('settings.upgrade'),
-            onPress: () => router.push('/settings/subscription' as never),
-          },
-        ]);
-      } else {
-        toast.showError(message);
+      if (!presentPremiumLimitFromError(err)) {
+        toast.showError(getErrorMessage(err));
       }
       setSubmitting(false);
     }

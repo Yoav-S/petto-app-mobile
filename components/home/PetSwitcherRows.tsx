@@ -23,13 +23,14 @@ interface PetSwitcherRowProps {
 export function PetSwitcherRow({ pet, selected, onPress }: PetSwitcherRowProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
+  const locked = Boolean(pet.locked);
 
   return (
     <Pressable
-      style={styles.row}
+      style={[styles.row, locked && styles.rowLocked]}
       onPress={onPress}
       accessibilityRole="radio"
-      accessibilityState={{ selected }}
+      accessibilityState={{ selected, disabled: locked }}
     >
       <View style={styles.left}>
         <PetPhotoImage
@@ -47,11 +48,15 @@ export function PetSwitcherRow({ pet, selected, onPress }: PetSwitcherRowProps) 
           </Text>
         </View>
       </View>
-      <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
-        {selected ? (
-          <Ionicons name="checkmark" size={16} color={colors.button.primaryText} />
-        ) : null}
-      </View>
+      {locked ? (
+        <Ionicons name="lock-closed" size={18} color={colors.secondaryText} />
+      ) : (
+        <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
+          {selected ? (
+            <Ionicons name="checkmark" size={16} color={colors.button.primaryText} />
+          ) : null}
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -90,6 +95,9 @@ const makeStyles = (c: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+    },
+    rowLocked: {
+      opacity: 0.55,
     },
     left: {
       flex: 1,

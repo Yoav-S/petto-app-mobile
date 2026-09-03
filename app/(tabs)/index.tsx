@@ -10,7 +10,7 @@ import { useThemedStyles } from '@/context/ThemeContext';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
-import { guardAddPet, guardAddReminder } from '@/services/subscription';
+import { firstIncludedPet, guardAddPet, guardAddReminder, guardSelectPet } from '@/services/subscription';
 import type { MedicalRecord, Reminder } from '@/types/api';
 import { isIsoDateToday, normalizeToDatePart, todayIsoDate, truncateHealthDescription } from '@/utils/calendar';
 import { prefetchPetPhoto } from '@/utils/petPhotoSource';
@@ -130,8 +130,12 @@ export default function HomeScreen() {
 
   const resolvedPetId = useMemo(() => {
     if (!pets.length) return null;
-    if (activePetId && pets.some((p) => p.id === activePetId)) return activePetId;
-    return pets[0].id;
+    const included = firstIncludedPet(pets);
+    if (activePetId) {
+      const current = pets.find((p) => p.id === activePetId);
+      if (current && !current.locked) return current.id;
+    }
+    return included?.id ?? pets[0].id;
   }, [activePetId, pets]);
 
   useEffect(() => {
@@ -257,9 +261,13 @@ export default function HomeScreen() {
   }, [effectiveMode, fabOpen]);
 
   const handleSelectPet = async (petId: string) => {
+    const nextPet = pets.find((p) => p.id === petId);
+    if (!(await guardSelectPet(router, nextPet))) {
+      setSwitchVisible(false);
+      return;
+    }
     setSwitchVisible(false);
     if (petId !== activePetId) {
-      const nextPet = pets.find((p) => p.id === petId);
       void prefetchPetPhoto(nextPet?.photo_url);
       await setActivePetId(petId);
     }

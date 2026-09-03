@@ -12,7 +12,7 @@ import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import { getErrorMessage } from '@/services/errors';
-import { guardAddPet } from '@/services/subscription';
+import { guardAddPet, guardSelectPet } from '@/services/subscription';
 import { useActivePet } from '@/store/petStore';
 import { usePetsQuery } from '@/hooks/useCachedQueries';
 import SettingsHeader from '@/components/settings/SettingsHeader';
@@ -38,6 +38,8 @@ export default function PetsListScreen() {
   );
 
   const handleSelect = async (petId: string) => {
+    const nextPet = pets.find((p) => p.id === petId);
+    if (!(await guardSelectPet(router, nextPet))) return;
     if (petId !== activePetId) {
       await setActivePetId(petId);
     }

@@ -7,26 +7,30 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  AppState,
+  type AppStateStatus,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
-import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { t } from '@/i18n';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import PremiumSuccessModal from '@/components/settings/PremiumSuccessModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import {
   getMyProfile,
   isPremiumPlan,
-  openManageSubscriptions,
+  syncSubscriptionFromStore,
 } from '@/services/subscription';
 import {
   getLocalizedPriceString,
-  getPremiumWillRenewFromStore,
+  getPremiumStoreSnapshot,
+  openSubscriptionManagement,
   purchasePremium,
+  subscribeToPremiumStoreUpdates,
   syncPurchasesWithStore,
 } from '@/services/purchases';
 import { formatDisplayDateLong, formatDisplayHourMinute } from '@/utils/calendar';
@@ -65,19 +69,44 @@ export default function SubscriptionSettingsScreen() {
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
   const [priceLabel, setPriceLabel] = useState(t('settings.plan_premium_price'));
   const [successVisible, setSuccessVisible] = useState(false);
+  const [downgradeVisible, setDowngradeVisible] = useState(false);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (opts?: { fresh?: boolean }) => {
     await syncPurchasesWithStore();
     try {
       const profile = await getMyProfile();
       const sub = profile.subscription ?? null;
-      const storeWillRenew = await getPremiumWillRenewFromStore();
-      if (sub && storeWillRenew !== null) {
-        setSubscription({ ...sub, will_renew: storeWillRenew });
-      } else {
-        setSubscription(sub);
+      const snapshot = await getPremiumStoreSnapshot({ fresh: opts?.fresh });
+      const merged: UserSubscription | null =
+        sub && snapshot
+          ? {
+              ...sub,
+              will_renew: snapshot.willRenew,
+              expires_at: snapshot.expirationISO ?? sub.expires_at,
+            }
+          : sub;
+      setSubscription(merged);
+      setPlan(isPremiumPlan(merged) ? 'premium' : 'free');
+      const expirationChanged =
+        Boolean(snapshot?.expirationISO) &&
+        Date.parse(snapshot?.expirationISO ?? '') !== Date.parse(sub?.expires_at ?? '');
+      if (
+        sub &&
+        merged &&
+        snapshot &&
+        isPremiumPlan(merged) &&
+        (snapshot.willRenew !== Boolean(sub.will_renew) || expirationChanged)
+      ) {
+        try {
+          await syncSubscriptionFromStore({
+            will_renew: snapshot.willRenew,
+            expires_at: snapshot.expirationISO ?? sub.expires_at ?? null,
+            product_id: sub.product_id ?? null,
+          });
+        } catch {
+          // Webhook / next focus still reconciles Mongo.
+        }
       }
-      setPlan(isPremiumPlan(sub) ? 'premium' : 'free');
     } catch {
       setSubscription(null);
       setPlan('free');
@@ -108,34 +137,32 @@ export default function SubscriptionSettingsScreen() {
     }, [refresh]),
   );
 
+  useEffect(() => {
+    const onChange = (next: AppStateStatus) => {
+      if (next === 'active') void refresh({ fresh: true });
+    };
+    const sub = AppState.addEventListener('change', onChange);
+    return () => sub.remove();
+  }, [refresh]);
+
+  useEffect(() => subscribeToPremiumStoreUpdates(() => void refresh()), [refresh]);
+
   const openSubscriptionSettings = useCallback(async () => {
     setBusy(true);
     try {
-      await openManageSubscriptions(subscription?.product_id);
+      await openSubscriptionManagement(subscription?.product_id);
     } catch {
       Alert.alert(t('common.error'), t('settings.manage_subscription_failed'));
     } finally {
       setBusy(false);
+      void refresh({ fresh: true });
     }
-  }, [subscription?.product_id]);
+  }, [refresh, subscription?.product_id]);
 
   const handleSelectFree = () => {
-    if (plan !== 'premium') return;
-
-    if (subscription?.will_renew === false) {
-      Alert.alert(t('settings.subscription'), t('settings.downgrade_already_scheduled'));
-      return;
-    }
-
-    Alert.alert(t('settings.downgrade_title'), t('settings.downgrade_body'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('settings.downgrade_confirm'),
-        onPress: () => {
-          void openSubscriptionSettings();
-        },
-      },
-    ]);
+    if (plan !== 'premium' || busy) return;
+    if (subscription?.will_renew === false) return;
+    setDowngradeVisible(true);
   };
 
   const handleSelectPremium = async () => {
@@ -254,13 +281,12 @@ export default function SubscriptionSettingsScreen() {
 
               {plan === 'premium' && expiryLabel ? (
                 <View style={styles.statusBlock}>
-                  <Text style={styles.statusNote}>
-                    {downgradePending
-                      ? `${t('settings.downgrade_scheduled')} ${expiryLabel}`
-                      : `${t('settings.subscription_renews_on')} ${expiryLabel}`}
-                  </Text>
                   {downgradePending ? (
                     <>
+                      <Text style={styles.statusNote}>
+                        {`${t('settings.downgrade_until')} ${expiryLabel}`}
+                      </Text>
+                      <Text style={styles.statusHint}>{t('settings.downgrade_until_tail')}</Text>
                       <Text style={styles.statusHint}>{t('settings.keep_premium_hint')}</Text>
                       <Pressable
                         style={styles.keepPremiumBtn}
@@ -268,6 +294,7 @@ export default function SubscriptionSettingsScreen() {
                           void openSubscriptionSettings();
                         }}
                         disabled={busy}
+                        accessibilityRole="button"
                       >
                         {busy ? (
                           <ActivityIndicator color={colors.button.primaryText} />
@@ -276,13 +303,30 @@ export default function SubscriptionSettingsScreen() {
                         )}
                       </Pressable>
                     </>
-                  ) : null}
+                  ) : (
+                    <Text style={styles.statusNote}>
+                      {`${t('settings.subscription_renews_on')} ${expiryLabel}`}
+                    </Text>
+                  )}
                 </View>
               ) : null}
             </ScrollView>
           )
         }
       </HeaderScrollLayout>
+      <ConfirmModal
+        visible={downgradeVisible}
+        title={t('settings.downgrade_title')}
+        message={t('settings.downgrade_body')}
+        confirmText={t('settings.downgrade_confirm')}
+        cancelText={t('settings.downgrade_stay')}
+        variant="primary"
+        onCancel={() => setDowngradeVisible(false)}
+        onConfirm={() => {
+          setDowngradeVisible(false);
+          void openSubscriptionSettings();
+        }}
+      />
     </>
   );
 }
@@ -422,33 +466,43 @@ const makeStyles = (c: ThemeColors) =>
       borderColor: c.brand,
     },
     statusBlock: {
-      gap: 12,
-      marginTop: -8,
+      gap: 8,
+      marginTop: -4,
+      alignItems: 'center',
     },
     statusNote: {
-      fontFamily: 'Rubik-Regular',
-      fontSize: 12,
-      lineHeight: 16,
-      color: c.secondaryText,
+      fontFamily: 'Rubik-Medium',
+      fontSize: 14,
+      lineHeight: 20,
+      color: c.primaryText,
       textAlign: 'center',
     },
     statusHint: {
       fontFamily: 'Rubik-Regular',
-      fontSize: 12,
-      lineHeight: 16,
+      fontSize: 14,
+      lineHeight: 20,
       color: c.secondaryText,
       textAlign: 'center',
     },
     keepPremiumBtn: {
-      ...PRIMARY_BUTTON,
-      backgroundColor: c.brand,
+      marginTop: 8,
+      minHeight: 44,
+      minWidth: 168,
+      maxWidth: '100%',
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: 10,
+      backgroundColor: c.button.primaryBg,
       alignSelf: 'center',
       alignItems: 'center',
       justifyContent: 'center',
     },
     keepPremiumText: {
       fontFamily: 'Rubik-Medium',
-      fontSize: 16,
+      fontSize: 14,
+      lineHeight: 18,
       color: c.button.primaryText,
+      textAlign: 'center',
+      flexShrink: 1,
     },
   });

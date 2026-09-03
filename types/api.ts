@@ -34,6 +34,9 @@ export interface Pet {
   chip_id?: string | null;
   passport_number?: string | null;
   notes?: string | null;
+  created_at?: string | null;
+  /** True on free plan for every pet after the oldest one. */
+  locked?: boolean;
 }
 
 export interface Vaccination {

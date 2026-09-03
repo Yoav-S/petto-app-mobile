@@ -22,6 +22,7 @@ import { uploadPetPhoto } from '@/services/storage';
 import { setOnboardingComplete } from '@/services/onboarding';
 import { useAuth } from '@/context/AuthContext';
 import { getErrorMessage } from '@/services/errors';
+import { presentPremiumLimitFromError } from '@/services/subscription';
 import { t } from '@/i18n';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -95,17 +96,8 @@ export default function PetBirthOnboardingScreen() {
       setActivePetId(pet.id);
       router.replace('/(tabs)' as never);
     } catch (err: unknown) {
-      const message = getErrorMessage(err);
-      if (message === t('errors.premium_required_pet')) {
-        Alert.alert(t('settings.limit_pet_title'), message, [
-          { text: t('common.cancel'), style: 'cancel' },
-          {
-            text: t('settings.upgrade'),
-            onPress: () => router.push('/settings/subscription' as never),
-          },
-        ]);
-      } else {
-        Alert.alert(t('errors.load_failed'), message);
+      if (!presentPremiumLimitFromError(err)) {
+        Alert.alert(t('errors.load_failed'), getErrorMessage(err));
       }
     } finally {
       setIsSubmitting(false);

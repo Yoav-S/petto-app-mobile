@@ -1,9 +1,11 @@
 import { Alert } from 'react-native';
 import { Router } from 'expo-router';
-import { apiGet } from '@/services/api';
+import { apiGet, apiPost, ApiError } from '@/services/api';
 import { listReminders } from '@/services/reminders';
 import { waitForBottomSheetsToSettle } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
+import { invalidateProfile } from '@/services/queryClient';
+import { presentUpgradeLimit, type UpgradeKind } from '@/services/upgradeLimit';
 import type { Pet, UserProfile, UserSubscription } from '@/types/api';
 import {
   isTestStorePurchases,
@@ -11,10 +13,20 @@ import {
 } from '@/services/purchases';
 
 export const FREE_MAX_PETS = 1;
-export const FREE_MAX_ACTIVE_REMINDERS = 10;
+export const FREE_MAX_ACTIVE_REMINDERS = 50;
 
 export async function getMyProfile(): Promise<UserProfile> {
   return apiGet<UserProfile>('/users/me');
+}
+
+/** Push store-observed auto-renew into Mongo. Does not grant or revoke premium. */
+export async function syncSubscriptionFromStore(payload: {
+  will_renew: boolean;
+  expires_at?: string | null;
+  product_id?: string | null;
+}): Promise<void> {
+  await apiPost('/subscriptions/sync', payload);
+  invalidateProfile();
 }
 
 export function isPremiumPlan(sub?: UserSubscription | null): boolean {
@@ -33,7 +45,15 @@ export async function fetchIsPremium(): Promise<boolean> {
   }
 }
 
-/** Count today + upcoming reminders across all owned pets. */
+export function isPetLocked(pet: Pet | null | undefined): boolean {
+  return Boolean(pet?.locked);
+}
+
+export function firstIncludedPet(pets: Pet[]): Pet | null {
+  return pets.find((p) => !p.locked) ?? pets[0] ?? null;
+}
+
+/** Count today + upcoming reminders. Pass only included pets on the free plan. */
 export async function countActiveReminders(pets: Pet[]): Promise<number> {
   let total = 0;
   await Promise.all(
@@ -53,25 +73,29 @@ export async function countActiveReminders(pets: Pet[]): Promise<number> {
 }
 
 export function showUpgradeAlert(
-  router: Router,
-  kind: 'pet' | 'reminder',
+  _router: Router,
+  kind: UpgradeKind,
   options?: { onBeforeNavigate?: () => void },
 ): void {
-  const title =
-    kind === 'pet' ? t('settings.limit_pet_title') : t('settings.limit_reminder_title');
-  const body =
-    kind === 'pet' ? t('settings.limit_pet_body') : t('settings.limit_reminder_body');
+  presentUpgradeLimit(kind, options);
+}
 
-  Alert.alert(title, body, [
-    { text: t('common.cancel'), style: 'cancel' },
-    {
-      text: t('settings.upgrade'),
-      onPress: () => {
-        options?.onBeforeNavigate?.();
-        router.push('/settings/subscription' as never);
-      },
-    },
-  ]);
+/** True when the error was shown as an upgrade modal. */
+export function presentPremiumLimitFromError(err: unknown): boolean {
+  if (!(err instanceof ApiError) || !err.code) return false;
+  if (err.code === 'premium_required_reminder') {
+    presentUpgradeLimit('reminder');
+    return true;
+  }
+  if (err.code === 'premium_required_pet') {
+    presentUpgradeLimit('pet');
+    return true;
+  }
+  if (err.code === 'premium_required_pet_access') {
+    presentUpgradeLimit('pet_switch');
+    return true;
+  }
+  return false;
 }
 
 export async function openManageSubscriptions(productId?: string | null): Promise<void> {
@@ -87,7 +111,7 @@ export function isTestStoreEnvironment(): boolean {
 }
 
 /**
- * Returns false if the user is at the free pet limit (and shows upgrade alert).
+ * Returns false if the user is at the free pet limit (and shows upgrade modal).
  * Premium / under limit → true.
  *
  * Call after closing any parent bottom sheet so Upgrade navigation does not
@@ -114,9 +138,23 @@ export async function guardAddReminder(
   options?: { onBeforeNavigate?: () => void },
 ): Promise<boolean> {
   if (await fetchIsPremium()) return true;
-  const active = await countActiveReminders(pets);
+  const countable = pets.filter((p) => !p.locked);
+  const active = await countActiveReminders(countable.length ? countable : pets);
   if (active < FREE_MAX_ACTIVE_REMINDERS) return true;
   await waitForBottomSheetsToSettle();
   showUpgradeAlert(router, 'reminder', options);
+  return false;
+}
+
+/** Returns false if this pet is locked on the free plan. */
+export async function guardSelectPet(
+  router: Router,
+  pet: Pet | null | undefined,
+  options?: { onBeforeNavigate?: () => void },
+): Promise<boolean> {
+  if (!isPetLocked(pet)) return true;
+  if (await fetchIsPremium()) return true;
+  await waitForBottomSheetsToSettle();
+  showUpgradeAlert(router, 'pet_switch', options);
   return false;
 }

@@ -39,6 +39,7 @@ import {
 } from '@/services/healthReminder';
 import { uploadHealthNotePhoto } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
+import { presentPremiumLimitFromError } from '@/services/subscription';
 import { formatDisplayDate, formatDisplayTime } from '@/utils/calendar';
 import { normalizeRouteParam } from '@/utils/routeParams';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
@@ -327,7 +328,9 @@ export default function EditNoteScreen() {
           linked_reminder_id: nextLinkedReminderId,
         });
       } catch (err) {
-        toast.showError(getErrorMessage(err));
+        if (!presentPremiumLimitFromError(err)) {
+          toast.showError(getErrorMessage(err));
+        }
       } finally {
         setSaving(false);
       }

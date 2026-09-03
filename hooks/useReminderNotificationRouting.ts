@@ -6,8 +6,10 @@ import {
   type ReminderPushData,
 } from '@/services/notifications';
 import { listReminders } from '@/services/reminders';
+import { listPets } from '@/services/pets';
 import { needsStatusPrompt } from '@/components/reminders/reminderFormShared';
 import { useActivePet } from '@/store/petStore';
+import { presentUpgradeLimit } from '@/services/upgradeLimit';
 
 /**
  * Routes reminder push taps into /reminders and, on cold/warm app open,
@@ -32,6 +34,17 @@ export function useReminderNotificationRouting(enabled: boolean) {
       try {
         launchedPromptRef.current = true;
         if (data.petId) {
+          try {
+            const pets = await listPets();
+            const target = pets.find((p) => p.id === data.petId);
+            if (target?.locked) {
+              presentUpgradeLimit('pet_switch');
+              return;
+            }
+          } catch {
+            // If we cannot confirm access, do not switch onto a possibly locked pet.
+            return;
+          }
           await setActivePetId(data.petId);
         }
         const focus = data.reminderId ? `&focusId=${encodeURIComponent(data.reminderId)}` : '';

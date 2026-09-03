@@ -27,7 +27,7 @@ import { t } from '@/i18n';
 import { createPet } from '@/services/pets';
 import { uploadPetPhoto } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
-import { guardAddPet } from '@/services/subscription';
+import { guardAddPet, presentPremiumLimitFromError } from '@/services/subscription';
 import { usePetsQuery } from '@/hooks/useCachedQueries';
 import { useActivePet } from '@/store/petStore';
 import { formatDisplayDate, parseIsoDate } from '@/utils/calendar';
@@ -155,17 +155,8 @@ export default function AddPetScreen() {
       await setActivePetId(pet.id);
       skipPrompt(() => router.back());
     } catch (err) {
-      const message = getErrorMessage(err);
-      if (message === t('errors.premium_required_pet')) {
-        Alert.alert(t('settings.limit_pet_title'), message, [
-          { text: t('common.cancel'), style: 'cancel' },
-          {
-            text: t('settings.upgrade'),
-            onPress: () => router.push('/settings/subscription' as never),
-          },
-        ]);
-      } else {
-        toast.showError(message);
+      if (!presentPremiumLimitFromError(err)) {
+        toast.showError(getErrorMessage(err));
       }
       setSubmitting(false);
     }

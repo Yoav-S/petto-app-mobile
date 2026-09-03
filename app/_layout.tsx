@@ -17,8 +17,9 @@ import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { LocaleProvider, useLocale } from '@/context/LocaleContext';
 import { ToastProvider } from '@/context/ToastContext';
 import QueryProvider from '@/context/QueryProvider';
-import { PetStoreProvider } from '@/store/petStore';
+import { PetStoreProvider, useSnapActivePetToIncluded } from '@/store/petStore';
 import { PetOnboardingDraftProvider, usePetOnboardingDraft } from '@/store/petOnboardingDraft';
+import { UpgradeLimitProvider } from '@/context/UpgradeLimitContext';
 import { useReminderNotificationRouting } from '@/hooks/useReminderNotificationRouting';
 import GlobalKeyboardDoneButton from '@/components/ui/GlobalKeyboardDoneButton';
 import AppSplash from '@/components/ui/AppSplash';
@@ -77,6 +78,7 @@ function RootLayoutNav() {
     (group != null && group !== '(auth)');
 
   useReminderNotificationRouting(emailVerified);
+  useSnapActivePetToIncluded(loggedInVerified && hasPets === true);
 
   useEffect(() => {
     const elapsed = Date.now() - mountedAtRef.current;
@@ -197,12 +199,14 @@ function ThemedApp() {
     <NavThemeProvider value={navTheme}>
       <SystemBarsProvider isDark={isDark}>
         <ToastProvider>
+            <UpgradeLimitProvider>
             <View style={{ flex: 1 }}>
               <View key={locale} style={{ flex: 1, backgroundColor: colors.background }}>
                 <RootLayoutNav />
               </View>
               <GlobalKeyboardDoneButton />
             </View>
+            </UpgradeLimitProvider>
         </ToastProvider>
       </SystemBarsProvider>
     </NavThemeProvider>

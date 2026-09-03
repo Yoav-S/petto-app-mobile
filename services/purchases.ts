@@ -322,19 +322,57 @@ export async function syncPurchasesWithStore(): Promise<void> {
   }
 }
 
-/** Live renewal flag from the store — used to refresh will_renew after manage-subscriptions. */
-export async function getPremiumWillRenewFromStore(): Promise<boolean | null> {
+/** Live entitlement flags from the store — used after manage-subscriptions. */
+export async function getPremiumStoreSnapshot(options?: {
+  fresh?: boolean;
+}): Promise<{
+  willRenew: boolean;
+  expirationISO: string | null;
+} | null> {
   if (!(await configurePurchases())) return null;
   try {
+    if (options?.fresh) {
+      try {
+        await Purchases.invalidateCustomerInfoCache();
+      } catch {
+        // Older SDK / Test Store — syncPurchases still refreshes entitlements.
+      }
+    }
     const info = await Purchases.getCustomerInfo();
     const entitlement = info.entitlements.active[PREMIUM_ENTITLEMENT] as
-      | { willRenew?: boolean }
+      | { willRenew?: boolean; expirationDate?: string | null }
       | undefined;
     if (!entitlement) return null;
-    return entitlement.willRenew ?? true;
+    return {
+      willRenew: entitlement.willRenew ?? true,
+      expirationISO: entitlement.expirationDate ?? null,
+    };
   } catch {
     return null;
   }
+}
+
+/** Refresh subscription UI when RevenueCat pushes a new CustomerInfo. */
+export function subscribeToPremiumStoreUpdates(onChange: () => void): () => void {
+  let active = true;
+  void (async () => {
+    if (!(await configurePurchases()) || !active) return;
+    Purchases.addCustomerInfoUpdateListener(onChange);
+  })();
+  return () => {
+    active = false;
+    try {
+      Purchases.removeCustomerInfoUpdateListener(onChange);
+    } catch {
+      // Listener may not have been added yet.
+    }
+  };
+}
+
+/** Live renewal flag from the store — used to refresh will_renew after manage-subscriptions. */
+export async function getPremiumWillRenewFromStore(): Promise<boolean | null> {
+  const snapshot = await getPremiumStoreSnapshot();
+  return snapshot ? snapshot.willRenew : null;
 }
 
 export async function restorePremium(): Promise<PurchaseResult> {
