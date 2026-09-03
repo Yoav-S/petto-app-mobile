@@ -28,6 +28,7 @@ import HealthCard from '@/components/home/HealthCard';
 import FABMenu from '@/components/home/FABMenu';
 import PetProfilePanel from '@/components/home/PetProfilePanel';
 import PetSwitcherSheet from '@/components/home/PetSwitcherSheet';
+import { SignOutModal } from '@/components/ui/ConfirmModal';
 
 function reminderToScheduledAt(reminder: Reminder): string {
   return `${reminder.date}T${reminder.time}:00`;
@@ -122,6 +123,7 @@ export default function HomeScreen() {
   const [fabOpen, setFabOpen] = useState(false);
   const [switchVisible, setSwitchVisible] = useState(false);
   const [panelMode, setPanelMode] = useState<'home' | 'profile'>('home');
+  const [signOutVisible, setSignOutVisible] = useState(false);
 
   const petsQuery = usePetsQuery(Boolean(user) && !authLoading);
   const pets = petsQuery.data ?? [];
@@ -278,9 +280,7 @@ export default function HomeScreen() {
             petCount={pets.length}
             loading={loading}
             onSwitchPress={() => setSwitchVisible(true)}
-            onLogout={() => {
-              void signOut();
-            }}
+            onLogout={() => setSignOutVisible(true)}
             onCoverPress={
               pet
                 ? () => setPanelMode((mode) => (mode === 'home' ? 'profile' : 'home'))
@@ -376,6 +376,14 @@ export default function HomeScreen() {
         }}
         onAddPet={() => {
           void handleAddPet();
+        }}
+      />
+      <SignOutModal
+        visible={signOutVisible}
+        onCancel={() => setSignOutVisible(false)}
+        onConfirm={() => {
+          setSignOutVisible(false);
+          void signOut();
         }}
       />
     </SafeAreaView>

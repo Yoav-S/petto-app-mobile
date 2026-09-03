@@ -1,6 +1,9 @@
 import {
+  PET_ONBOARDING_CARD_PADDING_H,
   PET_ONBOARDING_DESIGN_HEIGHT,
   PET_ONBOARDING_DESIGN_WIDTH,
+  PET_ONBOARDING_HERO,
+  PET_ONBOARDING_HERO_ASPECT,
 } from '@/constants/petOnboarding';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { fluidContentWidth } from '@/utils/responsive';
@@ -23,6 +26,17 @@ export function getPetOnboardingLayoutMetrics(
   const heightRatio = availableHeight / PET_ONBOARDING_DESIGN_HEIGHT;
   const heroSize = Math.min(222, contentWidth * 0.66, availableHeight * 0.28);
 
+  /**
+   * One hero footprint for every step: the full card column at the Figma
+   * aspect. Fixed 303 art looked smaller than the fluid fields and buttons
+   * around it on anything wider than the 375 design frame.
+   */
+  const cardInnerWidth = Math.max(0, contentWidth - PET_ONBOARDING_CARD_PADDING_H * 2);
+  const heroWidth = Math.round(cardInnerWidth);
+  const heroHeight = Math.round(heroWidth / PET_ONBOARDING_HERO_ASPECT);
+  /** Rendered hero vs the 303-wide design — for overlays anchored to the art. */
+  const heroScale = heroWidth / PET_ONBOARDING_HERO.width;
+
   let cardPaddingTop = CARD_PADDING_TOP_DESIGN;
   if (heightRatio < 0.92) {
     cardPaddingTop = 0;
@@ -34,8 +48,12 @@ export function getPetOnboardingLayoutMetrics(
   return {
     horizontalPadding,
     contentWidth,
+    cardInnerWidth,
     availableHeight,
     heroSize,
+    heroWidth,
+    heroHeight,
+    heroScale,
     cardPaddingTop,
     designWidth: PET_ONBOARDING_DESIGN_WIDTH,
     designHeight: PET_ONBOARDING_DESIGN_HEIGHT,

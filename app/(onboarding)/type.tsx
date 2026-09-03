@@ -15,7 +15,7 @@ import { usePetOnboardingDraft, type PetType } from '@/store/petOnboardingDraft'
 import { t } from '@/i18n';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
-import { PET_TYPE_STEP } from '@/constants/petOnboarding';
+import { PET_ONBOARDING_HERO, PET_TYPE_STEP } from '@/constants/petOnboarding';
 import { getPetOnboardingScale } from '@/utils/petOnboardingScale';
 
 export default function PetTypeOnboardingScreen() {
@@ -24,7 +24,7 @@ export default function PetTypeOnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const { contentWidth } = getPetOnboardingScale(
+  const { contentWidth, heroWidth, heroHeight } = getPetOnboardingScale(
     width,
     height,
     insets.top,
@@ -89,11 +89,8 @@ export default function PetTypeOnboardingScreen() {
             },
           ]}
         >
-          <View style={{ alignSelf: 'center' }}>
-            <OnboardingBed
-              width={PET_TYPE_STEP.bedWidth}
-              height={PET_TYPE_STEP.bedHeight}
-            />
+          <View style={styles.heroFrame}>
+            <OnboardingBed width={heroWidth} height={heroHeight} />
           </View>
 
           <Text
@@ -206,6 +203,11 @@ const makeStyles = (c: ThemeColors) =>
       alignSelf: 'center',
       backgroundColor: c.surface,
       alignItems: 'center',
+    },
+    heroFrame: {
+      alignSelf: 'center',
+      borderRadius: PET_ONBOARDING_HERO.radius,
+      overflow: 'hidden',
     },
     title: {
       fontFamily: 'Rubik-Regular',

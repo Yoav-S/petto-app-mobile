@@ -25,7 +25,7 @@ import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
-import { PET_BIRTH_STEP } from '@/constants/petOnboarding';
+import { PET_BIRTH_STEP, PET_ONBOARDING_HERO } from '@/constants/petOnboarding';
 import { getPetOnboardingScale } from '@/utils/petOnboardingScale';
 import { parseIsoDate } from '@/utils/calendar';
 
@@ -41,7 +41,7 @@ export default function PetBirthOnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const { contentWidth } = getPetOnboardingScale(
+  const { contentWidth, heroWidth, heroHeight } = getPetOnboardingScale(
     width,
     height,
     insets.top,
@@ -162,11 +162,8 @@ export default function PetBirthOnboardingScreen() {
             },
           ]}
         >
-          <View style={{ alignSelf: 'center' }}>
-            <OnboardingCalendar
-              width={PET_BIRTH_STEP.heroWidth}
-              height={PET_BIRTH_STEP.heroHeight}
-            />
+          <View style={styles.heroFrame}>
+            <OnboardingCalendar width={heroWidth} height={heroHeight} />
           </View>
 
           <View
@@ -298,6 +295,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: c.surface,
     alignItems: 'center',
+  },
+  heroFrame: {
+    alignSelf: 'center',
+    borderRadius: PET_ONBOARDING_HERO.radius,
+    overflow: 'hidden',
   },
   copyBlock: {
     alignSelf: 'center',

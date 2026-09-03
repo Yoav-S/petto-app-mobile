@@ -13,29 +13,64 @@ export const NAME_FIELD_TEXT = {
 } as const;
 
 /**
- * Single-line field text. Keep the TextInput height equal to lineHeight and
- * let the parent card center it — that pins the placeholder instead of
- * sitting it at the top (especially on Android / tall iOS fields).
+ * Standalone bordered field shell (auth email, standalone name fields).
+ * Fixed height — the row must never grow once the first character lands.
+ */
+export const SINGLE_LINE_FIELD = {
+  height: 48,
+  borderRadius: 16,
+  borderWidth: 1,
+  paddingHorizontal: 16,
+  /** Text ↔ trailing affordance (clear button). */
+  innerGap: 6,
+} as const;
+
+/** Label above a field — Figma: Rubik Regular 14/20, secondary text. */
+export const FIELD_LABEL_TEXT = {
+  fontFamily: 'Rubik-Regular',
+  fontSize: 14,
+  lineHeight: 20,
+} as const;
+
+/** Label → field gap, so label + field measures 76 with a 48 tall field. */
+export const FIELD_LABEL_GAP = 8;
+
+/** Field group → primary action gap (Figma stack: 76 + 32 + 48 = 156). */
+export const FIELD_TO_ACTION_GAP = 32;
+
+/** Room over the font size so descenders (g, y, p) are never clipped. */
+const DESCENDER_RATIO = 1.45;
+
+/** Constant text-row height for a single-line input. */
+export function singleLineTextHeight(fontSize: number, lineHeight?: number): number {
+  return Math.max(lineHeight ?? 0, Math.round(fontSize * DESCENDER_RATIO));
+}
+
+/**
+ * Single-line field text with a constant height, so the field keeps the exact
+ * same size empty, focused and filled. `lineHeight` is intentionally dropped:
+ * a tight line height clips Rubik descenders on Android, and the fixed height
+ * already centers the text (natively on iOS, via textAlignVertical elsewhere).
  *
- * Do not stretch a TextInput with flex:1 inside a tall card. The input stays
- * still; the native placeholder disappears only when there is text.
+ * Pass a `height` to opt into a specific row height (e.g. `'100%'` to fill a
+ * fixed-height shell); anything else gets the descender-safe default.
  */
 export function centeredInputText(extra?: TextStyle): TextStyle {
-  const fontSize = extra?.fontSize ?? 16;
-  const lineHeight = extra?.lineHeight ?? fontSize;
-  const explicitHeight = extra?.height;
+  const { height, minHeight: _growable, lineHeight, ...rest } = extra ?? {};
+  const fontSize = typeof rest.fontSize === 'number' ? rest.fontSize : 16;
+  const rowHeight =
+    height === undefined
+      ? singleLineTextHeight(fontSize, typeof lineHeight === 'number' ? lineHeight : undefined)
+      : height;
   return {
     paddingVertical: 0,
     paddingTop: 0,
     paddingBottom: 0,
     margin: 0,
-    // Prefer minHeight so descenders (g, y, p) are not clipped when lineHeight is tight.
-    ...(explicitHeight === undefined
-      ? { minHeight: lineHeight }
-      : { height: explicitHeight }),
     textAlignVertical: 'center',
     ...(Platform.OS === 'android' ? { textAlignVertical: 'center' as const } : null),
-    ...extra,
+    ...rest,
+    height: rowHeight,
     includeFontPadding: extra?.includeFontPadding ?? false,
   };
 }

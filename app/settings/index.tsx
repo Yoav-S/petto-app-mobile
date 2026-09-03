@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { t, currentLocale } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import { HeaderScrollScreen } from '@/components/ui/HeaderScrollLayout';
+import { SignOutModal } from '@/components/ui/ConfirmModal';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
 interface SettingsRow {
@@ -32,10 +33,12 @@ export default function SettingsScreen() {
   const { signOut } = useAuth();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const [signOutVisible, setSignOutVisible] = useState(false);
 
   const languageLabel = t(`settings.language_${currentLocale}`);
 
   return (
+    <>
     <HeaderScrollScreen
       header={<SettingsHeader title={t('settings.title')} />}
       contentContainerStyle={styles.content}
@@ -66,7 +69,7 @@ export default function SettingsScreen() {
 
       <TouchableOpacity
         style={styles.signOut}
-        onPress={() => void signOut()}
+        onPress={() => setSignOutVisible(true)}
         activeOpacity={0.7}
         accessibilityRole="button"
       >
@@ -74,6 +77,15 @@ export default function SettingsScreen() {
         <Text style={styles.signOutText}>{t('common.sign_out')}</Text>
       </TouchableOpacity>
     </HeaderScrollScreen>
+    <SignOutModal
+      visible={signOutVisible}
+      onCancel={() => setSignOutVisible(false)}
+      onConfirm={() => {
+        setSignOutVisible(false);
+        void signOut();
+      }}
+    />
+    </>
   );
 }
 

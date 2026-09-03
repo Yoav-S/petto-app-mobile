@@ -250,9 +250,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     ...centeredInputText({
       ...NAME_FIELD_TEXT,
       color: c.primaryText,
-      // Avoid clipping Rubik descenders (e.g. "g") on Android.
-      height: undefined,
-      minHeight: NAME_FIELD_TEXT.lineHeight,
     }),
   },
   descriptionInput: {

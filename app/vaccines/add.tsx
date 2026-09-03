@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -38,6 +38,8 @@ import {
   todayIsoDate,
 } from '@/utils/calendar';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { DiscardChangesModal } from '@/components/ui/ConfirmModal';
 
 type DateSheet = 'date' | 'next' | null;
 
@@ -54,6 +56,13 @@ export default function AddVaccineScreen() {
   const [nextDate, setNextDate] = useState(() => addYearsToIsoDate(todayIsoDate(), 1));
   const [clinic, setClinic] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const originalRef = useRef({
+    name: '',
+    date: todayIsoDate(),
+    nextDate: addYearsToIsoDate(todayIsoDate(), 1),
+    clinic: '',
+    photoUri: null as string | null,
+  });
 
   const layout = useMemo(() => {
     const innerGap = 10;
@@ -67,7 +76,7 @@ export default function AddVaccineScreen() {
     );
 
     return {
-      formTop: 16,
+      formTop: 0,
       formGap: 22,
       cardWidth: contentWidth,
       cardRadius: 12,
@@ -109,6 +118,16 @@ export default function AddVaccineScreen() {
   };
 
   const canSave = name.trim().length > 0 && !submitting;
+  const isDirty =
+    name !== originalRef.current.name ||
+    date !== originalRef.current.date ||
+    nextDate !== originalRef.current.nextDate ||
+    clinic !== originalRef.current.clinic ||
+    photoUri !== originalRef.current.photoUri;
+  const { discardVisible, onDiscard, onStay, skipPrompt } = useUnsavedChangesGuard(
+    isDirty,
+    submitting,
+  );
 
   const handleVaccinatedDateChange = (iso: string) => {
     setDate(iso);
@@ -167,7 +186,7 @@ export default function AddVaccineScreen() {
         photo_url: photoUrl,
         vet_clinic: clinic.trim() || undefined,
       });
-      router.back();
+      skipPrompt(() => router.back());
     } catch (err) {
       toast.showError(getErrorMessage(err));
       setSubmitting(false);
@@ -352,6 +371,12 @@ export default function AddVaccineScreen() {
         visible={viewerVisible}
         uri={photoUri}
         onClose={() => setViewerVisible(false)}
+      />
+
+      <DiscardChangesModal
+        visible={discardVisible}
+        onDiscard={onDiscard}
+        onStay={onStay}
       />
     </>
   );

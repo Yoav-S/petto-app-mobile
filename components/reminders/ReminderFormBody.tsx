@@ -6,7 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   Keyboard,
-  ActivityIndicator,
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -60,6 +59,8 @@ interface ReminderFormBodyProps {
   layout: ReminderFormLayout;
   title: string;
   onTitleChange: (value: string) => void;
+  /** Autosave screens flush the pending write when the field loses focus. */
+  onTitleBlur?: () => void;
   category: ReminderCategory;
   onCategorySelect: (value: ReminderCategory) => void;
   date: string | null;
@@ -95,6 +96,7 @@ export default function ReminderFormBody({
   layout,
   title,
   onTitleChange,
+  onTitleBlur,
   category,
   onCategorySelect,
   date,
@@ -158,6 +160,7 @@ export default function ReminderFormBody({
               style={styles.nameInput}
               value={title}
               onChangeText={onTitleChange}
+              onBlur={onTitleBlur}
               placeholder={t('reminders.field_name_placeholder')}
               placeholderTextColor={colors.secondaryText}
               autoFocus={autoFocus && !readOnly}
@@ -411,36 +414,6 @@ export function ReminderSaveButton({
   );
 }
 
-export function ReminderAutosaveStatus({
-  layout,
-  state,
-}: {
-  layout: ReminderFormLayout;
-  state: 'idle' | 'saving' | 'saved' | 'error';
-}) {
-  const colors = useColors();
-  const styles = useThemedStyles(makeStyles);
-  if (state === 'idle') return null;
-  const label =
-    state === 'saving'
-      ? t('reminders.saving')
-      : state === 'saved'
-        ? t('reminders.saved')
-        : t('reminders.save_failed');
-
-  return (
-    <View
-      style={[
-        styles.autosaveRow,
-        { width: layout.cardWidth, height: layout.footerHeight, borderRadius: layout.cardRadius },
-      ]}
-    >
-      {state === 'saving' ? <ActivityIndicator size="small" color={colors.secondaryText} /> : null}
-      <Text style={styles.autosaveText}>{label}</Text>
-    </View>
-  );
-}
-
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 0 },
@@ -531,18 +504,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.button.primaryText,
   },
   saveTextDisabled: { color: c.button.disabledText },
-  autosaveRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: c.surface,
-  },
-  autosaveText: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: c.secondaryText,
-  },
   footerSpacer: {
     flexGrow: 1,
     minHeight: 16,

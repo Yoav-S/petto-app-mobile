@@ -42,6 +42,8 @@ export const lightColors = {
   tabInactiveText: '#4F4F4F',
   border: '#E5E7EB',
   error: '#EF4444',
+  /** Soft fill behind destructive dialog actions (delete / discard). */
+  dangerSoft: '#FEE2E2',
   success: '#84CC9D',
   /** Neutral disabled controls (not the green disabled CTA) */
   disabled: '#D1D5DB',
@@ -83,6 +85,7 @@ export const darkColors: ThemeColors = {
   tabInactiveText: '#C2C6CB',
   border: '#373C42',
   error: '#E46A6A',
+  dangerSoft: '#4B3135',
   success: '#58C78A',
   disabled: '#5B6168',
   track: '#5B6168',

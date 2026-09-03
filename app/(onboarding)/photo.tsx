@@ -34,21 +34,36 @@ export default function PetPhotoOnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const { contentWidth } = getPetOnboardingScale(width, height, insets.top, insets.bottom);
+  const { contentWidth, heroWidth, heroHeight, heroScale } = getPetOnboardingScale(
+    width,
+    height,
+    insets.top,
+    insets.bottom,
+  );
 
   const { draft, setPhotoUri } = usePetOnboardingDraft();
   const [photoUri, setLocalPhotoUri] = useState<string | null>(draft.photoUri);
   const [sheetVisible, setSheetVisible] = useState(false);
 
-  const heroW = PET_PHOTO_STEP.heroWidth;
-  const heroH = PET_PHOTO_STEP.heroHeight;
+  const heroW = heroWidth;
+  const heroH = heroHeight;
   const sheetHeight = PET_PHOTO_SHEET.height;
   const hasPhoto = Boolean(photoUri);
   // Dog with no user pick → show bundled default in the polaroid frame.
   const showDefaultDog = !hasPhoto && draft.type === 'dog';
-  const actionBtnWidth = (
-    hasPhoto ? PET_PHOTO_STEP.changeBtnWidth : PET_PHOTO_STEP.addBtnWidth
-  );
+  /** Polaroid slot inside the illustration — follows the hero as it scales. */
+  const photoSlot = {
+    width: Math.round(PET_PHOTO_STEP.userPhotoWidth * heroScale),
+    height: Math.round(PET_PHOTO_STEP.userPhotoHeight * heroScale),
+    top: Math.round(PET_PHOTO_STEP.userPhotoTop * heroScale),
+    left: Math.round(PET_PHOTO_STEP.userPhotoLeft * heroScale),
+  };
+  const maskSlot = {
+    width: Math.round(PET_PHOTO_STEP.maskWidth * heroScale),
+    height: Math.round(PET_PHOTO_STEP.maskHeight * heroScale),
+    top: Math.round(PET_PHOTO_STEP.maskTop * heroScale),
+    left: Math.round(PET_PHOTO_STEP.maskLeft * heroScale),
+  };
 
   const closeSheet = () => setSheetVisible(false);
 
@@ -172,10 +187,7 @@ export default function PetPhotoOnboardingScreen() {
                   source={{ uri: photoUri! }}
                   style={{
                     position: 'absolute',
-                    width: PET_PHOTO_STEP.userPhotoWidth,
-                    height: PET_PHOTO_STEP.userPhotoHeight,
-                    top: PET_PHOTO_STEP.userPhotoTop,
-                    left: PET_PHOTO_STEP.userPhotoLeft,
+                    ...photoSlot,
                     zIndex: 2,
                   }}
                   contentFit="cover"
@@ -184,10 +196,7 @@ export default function PetPhotoOnboardingScreen() {
                 <View
                   style={{
                     position: 'absolute',
-                    width: PET_PHOTO_STEP.userPhotoWidth,
-                    height: PET_PHOTO_STEP.userPhotoHeight,
-                    top: PET_PHOTO_STEP.userPhotoTop,
-                    left: PET_PHOTO_STEP.userPhotoLeft,
+                    ...photoSlot,
                     zIndex: 2,
                     elevation: 2,
                     overflow: 'hidden',
@@ -195,8 +204,8 @@ export default function PetPhotoOnboardingScreen() {
                   pointerEvents="none"
                 >
                   <OnboardingDefaultPetPhoto
-                    width={PET_PHOTO_STEP.userPhotoWidth}
-                    height={PET_PHOTO_STEP.userPhotoHeight}
+                    width={photoSlot.width}
+                    height={photoSlot.height}
                   />
                 </View>
               ) : null}
@@ -204,17 +213,14 @@ export default function PetPhotoOnboardingScreen() {
                 <View
                   style={{
                     position: 'absolute',
-                    top: PET_PHOTO_STEP.maskTop,
-                    left: PET_PHOTO_STEP.maskLeft,
+                    top: maskSlot.top,
+                    left: maskSlot.left,
                     zIndex: 3,
                     elevation: 3,
                   }}
                   pointerEvents="none"
                 >
-                  <OnboardingPhotoMask
-                    width={PET_PHOTO_STEP.maskWidth}
-                    height={PET_PHOTO_STEP.maskHeight}
-                  />
+                  <OnboardingPhotoMask width={maskSlot.width} height={maskSlot.height} />
                 </View>
               ) : null}
             </Pressable>
@@ -222,7 +228,7 @@ export default function PetPhotoOnboardingScreen() {
             <View
               style={[
                 styles.copyBlock,
-                { width: PET_PHOTO_STEP.copyWidth, gap: PET_PHOTO_STEP.copyGap },
+                { width: '100%', gap: PET_PHOTO_STEP.copyGap },
               ]}
             >
               <Text
@@ -254,8 +260,8 @@ export default function PetPhotoOnboardingScreen() {
               style={[
                 styles.addPhotoBtn,
                 {
-                  width: actionBtnWidth,
-                  height: PET_PHOTO_STEP.addBtnHeight,
+                  minWidth: PET_PHOTO_STEP.addBtnMinWidth,
+                  minHeight: PET_PHOTO_STEP.addBtnHeight,
                   borderRadius: PET_PHOTO_STEP.addBtnRadius,
                   paddingHorizontal: PET_PHOTO_STEP.addBtnPaddingH,
                   paddingVertical: PET_PHOTO_STEP.addBtnPaddingV,

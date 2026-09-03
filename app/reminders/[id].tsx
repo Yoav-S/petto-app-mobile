@@ -8,14 +8,21 @@ import {
 } from 'react-native';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import {
+  useFocusEffect,
+  useNavigation,
+  usePreventRemove,
+  type NavigationProp,
+  type ParamListBase,
+} from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmModal from '@/components/ui/ConfirmModal';
-import ReminderFormBody, { ReminderAutosaveStatus } from '@/components/reminders/ReminderFormBody';
+import ReminderFormBody from '@/components/reminders/ReminderFormBody';
+import SavingOverlay from '@/components/ui/SavingOverlay';
 import {
   clampReminderTimeForDate,
   type ReminderSheet,
@@ -38,7 +45,7 @@ import {
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { todayIsoDate } from '@/utils/calendar';
 
-type AutosaveState = 'idle' | 'saving' | 'saved' | 'error';
+type PendingLeave = Parameters<Parameters<typeof usePreventRemove>[1]>[0]['data']['action'];
 
 const AUTOSAVE_MS = 700;
 const DELETE_BOTTOM_GAP = 16;
@@ -55,6 +62,7 @@ export default function EditReminderScreen() {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const router = useRouter();
+  const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { activePetId } = useActivePet();
   const { contentWidth } = useResponsiveLayout();
@@ -74,18 +82,22 @@ export default function EditReminderScreen() {
   const [note, setNote] = useState('');
   const [noteFocused, setNoteFocused] = useState(false);
   const [sheet, setSheet] = useState<ReminderSheet>(null);
-  const [autosaveState, setAutosaveState] = useState<AutosaveState>('idle');
   const [deleteVisible, setDeleteVisible] = useState(false);
+  /** Only set while a pending write is being flushed on the way out. */
+  const [flushing, setFlushing] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [pendingLeave, setPendingLeave] = useState<PendingLeave | null>(null);
 
   const hydratedRef = useRef(false);
   const snapshotRef = useRef('');
   const originalDateRef = useRef<string | null>(null);
   const originalTimeRef = useRef<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dirtyRef = useRef(false);
 
   const layout = useMemo(
     () => ({
-      formTop: 16,
+      formTop: 0,
       formGap: 22,
       cardWidth: contentWidth,
       cardRadius: 12,
@@ -145,7 +157,8 @@ export default function EditReminderScreen() {
         note: (reminder.note ?? '').trim(),
       });
       hydratedRef.current = true;
-      setAutosaveState('idle');
+      dirtyRef.current = false;
+      setDirty(false);
     } catch (err) {
       setError(getErrorMessage(err));
       setNotFound(true);
@@ -194,18 +207,17 @@ export default function EditReminderScreen() {
     if (!activePetId || !id || !hydratedRef.current || readOnly) return;
     if (!title.trim() || !date || !time) return;
 
-    if (warnPastDate(date)) {
-      setAutosaveState('error');
-      return;
-    }
+    if (warnPastDate(date)) return;
+
+    const saveTime = clampReminderTimeForDate(date.slice(0, 10), time);
+    if (!saveTime) return;
+
+    /** Cleared up front so a blur or exit does not re-send the same write. */
+    const sentSnapshot = buildSnapshot();
+    dirtyRef.current = false;
+    setDirty(false);
 
     try {
-      setAutosaveState('saving');
-      const saveTime = clampReminderTimeForDate(date.slice(0, 10), time);
-      if (!saveTime) {
-        setAutosaveState('error');
-        return;
-      }
       await updateReminder(activePetId, id, {
         title: title.trim(),
         date: date.slice(0, 10),
@@ -214,10 +226,10 @@ export default function EditReminderScreen() {
         note: note.trim() || undefined,
         category,
       });
-      snapshotRef.current = buildSnapshot();
-      setAutosaveState('saved');
+      snapshotRef.current = sentSnapshot;
     } catch (err) {
-      setAutosaveState('error');
+      dirtyRef.current = true;
+      setDirty(true);
       toast.showError(getErrorMessage(err));
     }
   }, [
@@ -235,21 +247,63 @@ export default function EditReminderScreen() {
     toast,
   ]);
 
+  /** Keeps the flush helpers off the render-identity treadmill of `persist`. */
+  const persistRef = useRef(persist);
+  useEffect(() => {
+    persistRef.current = persist;
+  }, [persist]);
+
   useEffect(() => {
     if (!hydratedRef.current || readOnly) return;
     const nextSnapshot = buildSnapshot();
     if (nextSnapshot === snapshotRef.current) return;
     if (!title.trim() || !date || !time) return;
 
+    dirtyRef.current = true;
+    setDirty(true);
+
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      persist();
+      saveTimerRef.current = null;
+      void persistRef.current();
     }, AUTOSAVE_MS);
 
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [title, date, time, repeat, note, category, buildSnapshot, persist, readOnly]);
+  }, [title, date, time, repeat, note, category, buildSnapshot, readOnly]);
+
+  /** Writes the pending edit now instead of waiting out the debounce. */
+  const flushSave = useCallback(async () => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    if (!dirtyRef.current) return;
+    await persistRef.current();
+  }, []);
+
+  const handleFieldBlur = useCallback(() => {
+    void flushSave();
+  }, [flushSave]);
+
+  /** Leaving stores first: the veil blocks the screen only for that write. */
+  usePreventRemove(dirty && !readOnly && pendingLeave == null, ({ data }) => {
+    void (async () => {
+      setFlushing(true);
+      try {
+        await flushSave();
+      } finally {
+        setFlushing(false);
+      }
+      setPendingLeave(data.action);
+    })();
+  });
+
+  useEffect(() => {
+    if (!pendingLeave) return;
+    navigation.dispatch(pendingLeave);
+  }, [navigation, pendingLeave]);
 
   const handleDateConfirm = (iso: string) => {
     if (warnPastDate(iso)) return;
@@ -268,6 +322,13 @@ export default function EditReminderScreen() {
   const handleDelete = () => {
     if (!activePetId || !id) return;
     setDeleteVisible(false);
+    /** Pending edits die with the reminder — never flush them on the way out. */
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    dirtyRef.current = false;
+    setDirty(false);
     toast.showUndo({
       message: t('reminders.deleted'),
       onUndo: () => {},
@@ -323,6 +384,7 @@ export default function EditReminderScreen() {
             layout={layout}
         title={title}
         onTitleChange={handleTitleChange}
+        onTitleBlur={handleFieldBlur}
         category={category}
         onCategorySelect={handleCategorySelect}
         date={date}
@@ -332,7 +394,10 @@ export default function EditReminderScreen() {
         onNoteChange={setNote}
         noteFocused={noteFocused}
         onNoteFocus={() => setNoteFocused(true)}
-        onNoteBlur={() => setNoteFocused(false)}
+        onNoteBlur={() => {
+          setNoteFocused(false);
+          handleFieldBlur();
+        }}
         sheet={sheet}
         onSheetChange={setSheet}
         onDateConfirm={handleDateConfirm}
@@ -344,7 +409,6 @@ export default function EditReminderScreen() {
         footer={
           readOnly ? undefined : (
             <View>
-              <ReminderAutosaveStatus layout={layout} state={autosaveState} />
               <TouchableOpacity
                 style={styles.deleteButton}
                 onPress={() => {
@@ -370,6 +434,8 @@ export default function EditReminderScreen() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteVisible(false)}
       />
+
+      <SavingOverlay visible={flushing} />
     </>
   );
 }

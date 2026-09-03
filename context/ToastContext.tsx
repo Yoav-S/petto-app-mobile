@@ -8,7 +8,7 @@ import React, {
   useState,
 } from 'react';
 import { StyleSheet, View } from 'react-native';
-import BottomToast from '@/components/ui/BottomToast';
+import { ToastStack, type ToastItem } from '@/components/ui/BottomToast';
 import { t } from '@/i18n';
 
 const DEFAULT_DURATION_MS = 3500;
@@ -40,94 +40,142 @@ interface ToastContextValue {
   hide: () => void;
 }
 
-const ToastContext = createContext<ToastContextValue | null>(null);
+type ToastKind = 'undo' | 'message';
 
-interface ToastState {
-  message: string;
-  actionText?: string;
-  onAction?: () => void;
-  aboveFab: boolean;
-  countdownSec: number | null;
-  token: number;
+interface ActiveToast extends ToastItem {
+  kind: ToastKind;
 }
 
+interface ToastTimers {
+  tick: ReturnType<typeof setInterval> | null;
+  hide: ReturnType<typeof setTimeout> | null;
+  onTimeout: (() => void) | null;
+}
+
+const ToastContext = createContext<ToastContextValue | null>(null);
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [toast, setToast] = useState<ToastState | null>(null);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const tickTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const onTimeoutRef = useRef<(() => void) | null>(null);
+  const [toasts, setToasts] = useState<ActiveToast[]>([]);
+  const timersRef = useRef(new Map<number, ToastTimers>());
   const tokenRef = useRef(0);
 
-  const clearTimers = useCallback(() => {
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
-    }
-    if (tickTimerRef.current) {
-      clearInterval(tickTimerRef.current);
-      tickTimerRef.current = null;
-    }
+  const clearToastTimers = useCallback((id: number) => {
+    const timers = timersRef.current.get(id);
+    if (!timers) return;
+    if (timers.tick) clearInterval(timers.tick);
+    if (timers.hide) clearTimeout(timers.hide);
+    timersRef.current.delete(id);
   }, []);
 
+  const removeToast = useCallback(
+    (id: number) => {
+      clearToastTimers(id);
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    },
+    [clearToastTimers],
+  );
+
+  /** Drop a toast without running its timeout (undo tap, or a message replace). */
+  const dismissToast = useCallback(
+    (id: number) => {
+      const timers = timersRef.current.get(id);
+      if (timers) timers.onTimeout = null;
+      removeToast(id);
+    },
+    [removeToast],
+  );
+
   const hide = useCallback(() => {
-    clearTimers();
-    onTimeoutRef.current = null;
-    setToast(null);
-  }, [clearTimers]);
+    for (const id of [...timersRef.current.keys()]) {
+      const timers = timersRef.current.get(id);
+      if (timers?.onTimeout) {
+        const commit = timers.onTimeout;
+        timers.onTimeout = null;
+        clearToastTimers(id);
+        void commit();
+      } else {
+        dismissToast(id);
+      }
+    }
+    setToasts([]);
+  }, [clearToastTimers, dismissToast]);
 
   const show = useCallback(
     (options: ShowToastOptions) => {
-      clearTimers();
       tokenRef.current += 1;
-      const token = tokenRef.current;
-
+      const id = tokenRef.current;
       const seconds = options.countdown
         ? Math.max(1, options.countdownSeconds ?? 5)
         : null;
+      const kind: ToastKind = options.countdown ? 'undo' : 'message';
 
-      onTimeoutRef.current = options.onTimeout ?? null;
+      const onAction = options.onAction
+        ? () => {
+            dismissToast(id);
+            options.onAction?.();
+          }
+        : undefined;
 
-      setToast({
+      const nextToast: ActiveToast = {
+        id,
+        kind,
         message: options.message,
         actionText: options.actionText,
-        onAction: options.onAction
-          ? () => {
-              const action = options.onAction;
-              hide();
-              action?.();
-            }
-          : undefined,
+        onAction,
         aboveFab: Boolean(options.aboveFab),
         countdownSec: seconds,
-        token,
+      };
+
+      setToasts((prev) => {
+        const kept =
+          kind === 'message'
+            ? prev.filter((toast) => {
+                if (toast.kind !== 'message') return true;
+                const existing = timersRef.current.get(toast.id);
+                if (existing) {
+                  existing.onTimeout = null;
+                  if (existing.tick) clearInterval(existing.tick);
+                  if (existing.hide) clearTimeout(existing.hide);
+                  timersRef.current.delete(toast.id);
+                }
+                return false;
+              })
+            : prev;
+        return [...kept, nextToast];
       });
+
+      const timers: ToastTimers = {
+        tick: null,
+        hide: null,
+        onTimeout: options.onTimeout ?? null,
+      };
+      timersRef.current.set(id, timers);
 
       if (seconds != null) {
         let remaining = seconds;
-        tickTimerRef.current = setInterval(() => {
+        timers.tick = setInterval(() => {
           remaining -= 1;
-          if (tokenRef.current !== token) return;
           if (remaining <= 0) {
-            clearTimers();
-            const commit = onTimeoutRef.current;
-            onTimeoutRef.current = null;
-            setToast(null);
+            const commit = timers.onTimeout;
+            timers.onTimeout = null;
+            removeToast(id);
             void commit?.();
             return;
           }
-          setToast((prev) =>
-            prev && prev.token === token ? { ...prev, countdownSec: remaining } : prev,
+          setToasts((prev) =>
+            prev.map((toast) =>
+              toast.id === id ? { ...toast, countdownSec: remaining } : toast,
+            ),
           );
         }, 1000);
       } else {
         const duration = options.duration ?? DEFAULT_DURATION_MS;
-        hideTimerRef.current = setTimeout(() => {
-          if (tokenRef.current !== token) return;
-          setToast(null);
+        timers.hide = setTimeout(() => {
+          removeToast(id);
         }, duration);
       }
     },
-    [clearTimers, hide],
+    [dismissToast, removeToast],
   );
 
   const showError = useCallback(
@@ -159,25 +207,41 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     [show],
   );
 
-  useEffect(() => () => clearTimers(), [clearTimers]);
+  useEffect(
+    () => () => {
+      for (const [id, timers] of timersRef.current.entries()) {
+        if (timers.tick) clearInterval(timers.tick);
+        if (timers.hide) clearTimeout(timers.hide);
+        const commit = timers.onTimeout;
+        timers.onTimeout = null;
+        timersRef.current.delete(id);
+        void commit?.();
+      }
+    },
+    [],
+  );
 
   const value = useMemo(
     () => ({ show, showError, showUndo, hide }),
     [show, showError, showUndo, hide],
   );
 
+  const stackItems: ToastItem[] = toasts.map(
+    ({ id, message, countdownSec, actionText, onAction, aboveFab }) => ({
+      id,
+      message,
+      countdownSec,
+      actionText,
+      onAction,
+      aboveFab,
+    }),
+  );
+
   return (
     <ToastContext.Provider value={value}>
       <View style={styles.host} pointerEvents="box-none">
         {children}
-        <BottomToast
-          visible={toast != null}
-          message={toast?.message ?? ''}
-          countdownSec={toast?.countdownSec}
-          actionText={toast?.actionText}
-          onAction={toast?.onAction}
-          aboveFab={toast?.aboveFab ?? false}
-        />
+        <ToastStack toasts={stackItems} />
       </View>
     </ToastContext.Provider>
   );

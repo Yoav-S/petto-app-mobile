@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
@@ -22,6 +22,8 @@ import {
   type ReminderCategory,
 } from '@/utils/reminderCategory';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { DiscardChangesModal } from '@/components/ui/ConfirmModal';
 import { todayIsoDate } from '@/utils/calendar';
 
 export default function AddReminderScreen() {
@@ -44,10 +46,18 @@ export default function AddReminderScreen() {
   const [noteFocused, setNoteFocused] = useState(false);
   const [sheet, setSheet] = useState<ReminderSheet>(null);
   const [submitting, setSubmitting] = useState(false);
+  const originalRef = useRef({
+    title: '',
+    category: 'general' as ReminderCategory,
+    date: todayIsoDate() as string | null,
+    time: clampReminderTimeForDate(todayIsoDate(), null) as string | null,
+    repeat: 'off' as RepeatOption,
+    note: '',
+  });
 
   const layout = useMemo(
     () => ({
-      formTop: 16,
+      formTop: 0,
       formGap: 22,
       cardWidth: contentWidth,
       cardRadius: 12,
@@ -72,6 +82,17 @@ export default function AddReminderScreen() {
   }, [toast]);
 
   const canSave = title.trim().length > 0 && !!date && !!time && !submitting;
+  const isDirty =
+    title !== originalRef.current.title ||
+    category !== originalRef.current.category ||
+    date !== originalRef.current.date ||
+    time !== originalRef.current.time ||
+    repeat !== originalRef.current.repeat ||
+    note !== originalRef.current.note;
+  const { discardVisible, onDiscard, onStay, skipPrompt } = useUnsavedChangesGuard(
+    isDirty,
+    submitting,
+  );
 
   const handleTitleChange = (value: string) => {
     setTitle(value);
@@ -129,7 +150,7 @@ export default function AddReminderScreen() {
         note: note.trim() || undefined,
         category,
       });
-      router.back();
+      skipPrompt(() => router.back());
     } catch (err) {
       const message = getErrorMessage(err);
       if (message === t('errors.premium_required_reminder')) {
@@ -162,6 +183,7 @@ export default function AddReminderScreen() {
   };
 
   return (
+    <>
     <HeaderScrollLayout
       header={<VaccineScreenHeader title={t('reminders.add_title')} icon="close" />}
       edges={['left', 'right']}
@@ -199,5 +221,11 @@ export default function AddReminderScreen() {
         />
       )}
     </HeaderScrollLayout>
+    <DiscardChangesModal
+      visible={discardVisible}
+      onDiscard={onDiscard}
+      onStay={onStay}
+    />
+    </>
   );
 }

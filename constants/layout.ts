@@ -32,7 +32,7 @@ export const LayoutBreakpoint = {
 export const HEADER_SCROLL_GAP = 10;
 
 /** Extra space between header chrome and the first content row. */
-export const HEADER_CONTENT_GAP = 12;
+export const HEADER_CONTENT_GAP = 20;
 
 /** Gap between title/back row and segmented tabs on list screens. */
 export const LIST_HEADER_TABS_GAP = 16;

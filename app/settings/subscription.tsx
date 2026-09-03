@@ -185,7 +185,7 @@ export default function SubscriptionSettingsScreen() {
       <HeaderScrollLayout header={<SettingsHeader title={t('settings.subscription')} />} topFade bottomFade fadeMode="scroll">
         {({ paddingTop, paddingBottom, scrollMetricsProps }) =>
           loading ? (
-            <View style={[styles.loadingWrap, { paddingTop: paddingTop + 12 }]}>
+            <View style={[styles.loadingWrap, { paddingTop }]}>
               <ActivityIndicator color={colors.brand} />
             </View>
           ) : (
@@ -194,7 +194,7 @@ export default function SubscriptionSettingsScreen() {
               contentContainerStyle={[
                 styles.content,
                 {
-                  paddingTop: paddingTop + 12,
+                  paddingTop,
                   paddingBottom: paddingBottom + 40,
                 },
               ]}

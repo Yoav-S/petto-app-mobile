@@ -316,19 +316,17 @@ export function HealthKeyboardFooter({
 
   const busy = disabled || loading;
 
-  if (tone === 'destructive-text' && fullWidth) {
+  if (tone === 'destructive-text') {
     return (
       <>
         <SavingOverlay visible={loading} />
         <View
           style={[
-            styles.saveFooter,
+            styles.destructiveFooter,
             {
               paddingTop: FOOTER.padTop,
               paddingHorizontal: FOOTER.padH,
               paddingBottom: footerPadBottom,
-              borderTopLeftRadius: FOOTER.radius,
-              borderTopRightRadius: FOOTER.radius,
             },
           ]}
         >
@@ -461,6 +459,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 6,
+  },
+  destructiveFooter: {
+    width: '100%',
+    flexShrink: 0,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
   },
   doneFooter: {
     width: '100%',

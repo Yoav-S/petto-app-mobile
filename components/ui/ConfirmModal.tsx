@@ -30,21 +30,28 @@ const MODAL = {
   maxWidth: 316,
   padH: 20,
   padV: 36,
-  contentGap: 10,
+  /** Title → subtitle. */
+  copyGap: 6,
+  /** Subtitle → buttons: ~3× the title/subtitle gap (Figma inner 20). */
+  copyToButtonsGap: 20,
   buttonRowGap: 12,
-  /** Floor only — both buttons share the row and grow with their labels. */
-  buttonMinWidth: 120,
-  buttonPadH: 12,
+  buttonPadH: 16,
+  buttonPadV: 12,
   buttonHeight: 44,
+  buttonRadius: 10,
 } as const;
 
 /** Both dialog buttons share the row and size themselves to their label. */
 const BUTTON_SHAPE: ViewStyle = {
   flexGrow: 1,
   flexShrink: 1,
-  flexBasis: 'auto',
-  minWidth: MODAL.buttonMinWidth,
+  flexBasis: 0,
+  minWidth: 0,
+  maxWidth: '100%',
+  minHeight: MODAL.buttonHeight,
   paddingHorizontal: MODAL.buttonPadH,
+  paddingVertical: MODAL.buttonPadV,
+  borderRadius: MODAL.buttonRadius,
   alignItems: 'center',
   justifyContent: 'center',
 };
@@ -85,22 +92,18 @@ export default function ConfirmModal({
                   maxWidth: '100%',
                   paddingHorizontal: MODAL.padH,
                   paddingVertical: MODAL.padV,
-                  gap: MODAL.contentGap,
+                  gap: MODAL.copyToButtonsGap,
                 },
               ]}
             >
-              <Text style={styles.title}>{title}</Text>
-              <Text style={styles.message}>{message}</Text>
+              <View style={[styles.copyBlock, { gap: MODAL.copyGap }]}>
+                <Text style={styles.title}>{title}</Text>
+                <Text style={styles.message}>{message}</Text>
+              </View>
 
               <View style={[styles.buttonRow, { gap: MODAL.buttonRowGap }]}>
                 <TouchableOpacity
-                  style={[
-                    styles.cancelButton,
-                    {
-                      minHeight: MODAL.buttonHeight,
-                      borderRadius: Radius.sm + 2,
-                    },
-                  ]}
+                  style={styles.cancelButton}
                   onPress={onCancel}
                   activeOpacity={0.7}
                 >
@@ -108,13 +111,9 @@ export default function ConfirmModal({
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[
-                    variant === 'primary' ? styles.confirmButtonPrimary : styles.confirmButton,
-                    {
-                      minHeight: MODAL.buttonHeight,
-                      borderRadius: Radius.sm + 2,
-                    },
-                  ]}
+                  style={
+                    variant === 'primary' ? styles.confirmButtonPrimary : styles.confirmButton
+                  }
                   onPress={onConfirm}
                   activeOpacity={0.7}
                 >
@@ -135,6 +134,49 @@ export default function ConfirmModal({
   );
 }
 
+/** Save-button screens: leave without writing the current edits. */
+export function DiscardChangesModal({
+  visible,
+  onDiscard,
+  onStay,
+}: {
+  visible: boolean;
+  onDiscard: () => void;
+  onStay: () => void;
+}) {
+  return (
+    <ConfirmModal
+      visible={visible}
+      title={t('common.discard_title')}
+      message={t('common.discard_body')}
+      confirmText={t('common.discard')}
+      onConfirm={onDiscard}
+      onCancel={onStay}
+    />
+  );
+}
+
+export function SignOutModal({
+  visible,
+  onConfirm,
+  onCancel,
+}: {
+  visible: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <ConfirmModal
+      visible={visible}
+      title={t('common.sign_out_title')}
+      message={t('common.sign_out_body')}
+      confirmText={t('common.sign_out')}
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+    />
+  );
+}
+
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   overlay: {
     flex: 1,
@@ -145,13 +187,17 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   modalContainer: {
     backgroundColor: c.surface,
-    alignItems: 'center',
+    alignItems: 'stretch',
     borderRadius: Radius.lg,
-    shadowColor: '#000',
+    shadowColor: '#2D2D2A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
     elevation: 8,
+  },
+  copyBlock: {
+    width: '100%',
+    alignItems: 'center',
   },
   title: {
     width: '100%',
@@ -172,40 +218,47 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   buttonRow: {
     width: '100%',
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
     justifyContent: 'center',
+    flexWrap: 'wrap',
   },
   cancelButton: {
     ...BUTTON_SHAPE,
-    backgroundColor: c.surface,
+    backgroundColor: c.panel,
   },
   confirmButton: {
     ...BUTTON_SHAPE,
-    backgroundColor: c.category.medicalBg,
+    backgroundColor: c.dangerSoft,
   },
   confirmButtonPrimary: {
     ...BUTTON_SHAPE,
     backgroundColor: c.button.primaryBg,
   },
   cancelText: {
+    width: '100%',
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 18,
     color: c.primaryText,
     textAlign: 'center',
+    flexShrink: 1,
   },
   confirmText: {
+    width: '100%',
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 18,
     color: c.error,
     textAlign: 'center',
+    flexShrink: 1,
   },
   confirmTextPrimary: {
+    width: '100%',
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 18,
     color: c.button.primaryText,
     textAlign: 'center',
+    flexShrink: 1,
   },
 });

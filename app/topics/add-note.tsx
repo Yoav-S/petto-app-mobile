@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,11 +9,13 @@ import {
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
-import { Spacing, type ThemeColors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import { DiscardChangesModal } from '@/components/ui/ConfirmModal';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import HealthNoteEditorCard from '@/components/health/HealthNoteEditorCard';
 import { HealthFormScreen } from '@/components/health/HealthKeyboardFooter';
 import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
@@ -70,6 +72,11 @@ export default function AddNoteScreen() {
   }, [activePetId, recordId, router]);
 
   const canSave = note.trim().length > 0 && !submitting && !loadingRecord;
+  const isDirty = note.length > 0 || Boolean(photoUri) || reminderDraft != null;
+  const { discardVisible, onDiscard, onStay, skipPrompt } = useUnsavedChangesGuard(
+    isDirty,
+    submitting,
+  );
 
   const handlePickedPhoto = async (source: 'camera' | 'library') => {
     setReminderSheetVisible(false);
@@ -111,7 +118,7 @@ export default function AddNoteScreen() {
         linked_reminder_id: linkedReminderId,
       });
 
-      router.back();
+      skipPrompt(() => router.back());
     } catch (err) {
       toast.showError(getErrorMessage(err));
     } finally {
@@ -134,13 +141,13 @@ export default function AddNoteScreen() {
   }
 
   return (
+    <>
     <HeaderScrollLayout header={header} edges={['left', 'right']} topFade bottomFade>
       {({ paddingTop }) => (
         <>
           <HealthFormScreen
             scrollInsetTop={paddingTop}
             contentContainerStyle={{
-              paddingTop: Math.max(Spacing.md, 16),
               paddingHorizontal: PAGE_HORIZONTAL_PADDING,
             }}
             footer={{
@@ -204,6 +211,12 @@ export default function AddNoteScreen() {
         </>
       )}
     </HeaderScrollLayout>
+    <DiscardChangesModal
+      visible={discardVisible}
+      onDiscard={onDiscard}
+      onStay={onStay}
+    />
+    </>
   );
 }
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -14,6 +14,8 @@ import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import HealthRecordFormFields from '@/components/health/HealthRecordFormFields';
 import { HealthFormScreen } from '@/components/health/HealthKeyboardFooter';
 import EmptyState from '@/components/ui/EmptyState';
+import { DiscardChangesModal } from '@/components/ui/ConfirmModal';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { createRecord, getRecord, updateRecord } from '@/services/health';
@@ -39,10 +41,11 @@ export default function AddHealthScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(isEditing);
   const [notFound, setNotFound] = useState(false);
+  const originalRef = useRef({ name: '', description: '' });
 
   const layout = useMemo(
     () => ({
-      formTop: 16,
+      formTop: 0,
       cardWidth: contentWidth,
       cardRadius: 12,
       cardPadH: 16,
@@ -68,8 +71,11 @@ export default function AddHealthScreen() {
       try {
         const record = await getRecord(activePetId, recordId);
         if (cancelled) return;
-        setName(record.title ?? '');
-        setDescription(record.description ?? '');
+        const nextName = record.title ?? '';
+        const nextDescription = record.description ?? '';
+        originalRef.current = { name: nextName, description: nextDescription };
+        setName(nextName);
+        setDescription(nextDescription);
         setNotFound(false);
       } catch {
         if (!cancelled) setNotFound(true);
@@ -83,6 +89,15 @@ export default function AddHealthScreen() {
   }, [activePetId, isEditing, recordId]);
 
   const canSave = name.trim().length > 0 && !submitting && !loading;
+
+  const isDirty =
+    !loading &&
+    !notFound &&
+    (name !== originalRef.current.name || description !== originalRef.current.description);
+  const { discardVisible, onDiscard, onStay, skipPrompt } = useUnsavedChangesGuard(
+    isDirty,
+    submitting,
+  );
 
   const handleSave = async () => {
     Keyboard.dismiss();
@@ -98,7 +113,7 @@ export default function AddHealthScreen() {
       } else {
         await createRecord(activePetId, payload);
       }
-      router.back();
+      skipPrompt(() => router.back());
     } catch (err) {
       toast.showError(getErrorMessage(err));
       setSubmitting(false);
@@ -139,6 +154,7 @@ export default function AddHealthScreen() {
   }
 
   return (
+    <>
     <HeaderScrollLayout header={header} edges={['left', 'right']} topFade bottomFade>
       {({ paddingTop }) => (
         <HealthFormScreen
@@ -172,6 +188,12 @@ export default function AddHealthScreen() {
         </HealthFormScreen>
       )}
     </HeaderScrollLayout>
+    <DiscardChangesModal
+      visible={discardVisible}
+      onDiscard={onDiscard}
+      onStay={onStay}
+    />
+    </>
   );
 }
 

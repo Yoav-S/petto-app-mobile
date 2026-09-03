@@ -18,6 +18,15 @@ import { isRTL } from '@/i18n';
 import { ADD_FAB } from '@/components/ui/SpeedDialFab';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
+export interface ToastItem {
+  id: number;
+  message: string;
+  countdownSec?: number | null;
+  actionText?: string;
+  onAction?: () => void;
+  aboveFab?: boolean;
+}
+
 export interface BottomToastProps {
   visible: boolean;
   message: string;
@@ -28,49 +37,38 @@ export interface BottomToastProps {
 }
 
 const TOAST = {
-  maxWidth: '100%',
   minHeight: 48,
   padV: 14,
   padH: 16,
   gap: 10,
+  stackGap: 8,
   bottomWithFab: 106,
   bottomPlain: 50,
   messageMaxWidth: 248,
   actionMinWidth: 36,
 } as const;
 
-export default function BottomToast({
-  visible,
+function ToastChip({
   message,
   countdownSec,
   actionText,
   onAction,
-  aboveFab = false,
-}: BottomToastProps) {
+  width,
+}: {
+  message: string;
+  countdownSec?: number | null;
+  actionText?: string;
+  onAction?: () => void;
+  width: number;
+}) {
   const styles = useThemedStyles(makeStyles);
-  const insets = useSafeAreaInsets();
-  const { contentWidth } = useResponsiveLayout();
-  const translateY = useSharedValue(120);
+  const translateY = useSharedValue(24);
   const opacity = useSharedValue(0);
 
-  const toastWidth = contentWidth;
-
-  const bottom = useMemo(() => {
-    const withFab = ADD_FAB.bottom + ADD_FAB.size + 12 + Math.max(0, insets.bottom);
-    return aboveFab
-      ? Math.max(TOAST.bottomWithFab, withFab)
-      : TOAST.bottomPlain + Math.max(0, insets.bottom);
-  }, [aboveFab, insets.bottom]);
-
   useEffect(() => {
-    if (visible) {
-      translateY.value = withSpring(0, { damping: 16, stiffness: 180 });
-      opacity.value = withTiming(1, { duration: 180 });
-    } else {
-      translateY.value = withTiming(120, { duration: 220 });
-      opacity.value = withTiming(0, { duration: 180 });
-    }
-  }, [visible, opacity, translateY]);
+    translateY.value = withSpring(0, { damping: 16, stiffness: 180 });
+    opacity.value = withTiming(1, { duration: 180 });
+  }, [opacity, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
@@ -82,18 +80,12 @@ export default function BottomToast({
       ? `${message} (${countdownSec}s)`
       : message;
 
-  if (!visible) return null;
-
   return (
-    <Animated.View
-      pointerEvents="box-none"
-      style={[styles.wrap, animatedStyle, { bottom, paddingHorizontal: Spacing.lg }]}
-    >
+    <Animated.View style={[{ width }, animatedStyle]}>
       <View
         style={[
           styles.container,
           {
-            width: toastWidth,
             minHeight: TOAST.minHeight,
             borderRadius: Radius.md,
             paddingVertical: TOAST.padV,
@@ -135,13 +127,82 @@ export default function BottomToast({
   );
 }
 
+/** One or more chips stacked above the home indicator / FAB. Newest sits at the bottom. */
+export function ToastStack({ toasts }: { toasts: ToastItem[] }) {
+  const styles = useThemedStyles(makeStyles);
+  const insets = useSafeAreaInsets();
+  const { contentWidth } = useResponsiveLayout();
+
+  const aboveFab = toasts.some((toast) => toast.aboveFab);
+  const bottom = useMemo(() => {
+    const withFab = ADD_FAB.bottom + ADD_FAB.size + 12 + Math.max(0, insets.bottom);
+    return aboveFab
+      ? Math.max(TOAST.bottomWithFab, withFab)
+      : TOAST.bottomPlain + Math.max(0, insets.bottom);
+  }, [aboveFab, insets.bottom]);
+
+  if (toasts.length === 0) return null;
+
+  return (
+    <View
+      pointerEvents="box-none"
+      style={[
+        styles.stack,
+        {
+          bottom,
+          paddingHorizontal: Spacing.lg,
+          gap: TOAST.stackGap,
+        },
+      ]}
+    >
+      {toasts.map((toast) => (
+        <ToastChip
+          key={toast.id}
+          message={toast.message}
+          countdownSec={toast.countdownSec}
+          actionText={toast.actionText}
+          onAction={toast.onAction}
+          width={contentWidth}
+        />
+      ))}
+    </View>
+  );
+}
+
+/** @deprecated Use ToastStack — kept for a single-chip call site. */
+export default function BottomToast({
+  visible,
+  message,
+  countdownSec,
+  actionText,
+  onAction,
+  aboveFab = false,
+}: BottomToastProps) {
+  if (!visible) return null;
+  return (
+    <ToastStack
+      toasts={[
+        {
+          id: 0,
+          message,
+          countdownSec,
+          actionText,
+          onAction,
+          aboveFab,
+        },
+      ]}
+    />
+  );
+}
+
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    wrap: {
+    stack: {
       position: 'absolute',
       left: 0,
       right: 0,
       alignItems: 'center',
+      justifyContent: 'flex-end',
       zIndex: 2000,
       elevation: 20,
     },

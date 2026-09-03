@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -34,7 +34,7 @@ import { formatDisplayDateLong, parseIsoDate } from '@/utils/calendar';
 import { useHeaderTopPadding } from '@/utils/headerLayout';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import EditPhotoSheet from '@/components/health/EditPhotoSheet';
-import ConfirmModal from '@/components/ui/ConfirmModal';
+import ConfirmModal, { DiscardChangesModal } from '@/components/ui/ConfirmModal';
 import {
   ProfileNameField,
   ProfileTextField,
@@ -48,6 +48,7 @@ import { defaultPetPhotoSource } from '@/utils/petPhotoSource';
 import PetPhotoImage from '@/components/ui/PetPhotoImage';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 
 const PHOTO_DESIGN = { size: 128, radius: 22 } as const;
 const PHOTO_EDIT_BTN = {
@@ -64,6 +65,32 @@ const PHOTO_EDIT_BTN = {
 function trimOrNull(value: string): string | null {
   const trimmed = value.trim();
   return trimmed.length ? trimmed : null;
+}
+
+type ProfileSnapshot = {
+  name: string;
+  sex: string | null;
+  birthDate: string | null;
+  breed: string;
+  color: string;
+  weight: string;
+  isNeutered: boolean | null;
+  chipId: string;
+  photoUri: string | null;
+};
+
+function snapshotFromPet(pet: Pet): ProfileSnapshot {
+  return {
+    name: pet.name ?? '',
+    sex: pet.sex ?? null,
+    birthDate: pet.birth_date ?? null,
+    breed: pet.breed ?? '',
+    color: pet.color ?? '',
+    weight: pet.weight != null ? String(pet.weight) : '',
+    isNeutered: pet.is_neutered ?? null,
+    chipId: pet.chip_id ?? '',
+    photoUri: pet.photo_url ?? null,
+  };
 }
 
 export default function EditProfileScreen() {
@@ -116,6 +143,7 @@ export default function EditProfileScreen() {
   const [dateSheetVisible, setDateSheetVisible] = useState(false);
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
+  const originalRef = useRef<ProfileSnapshot | null>(null);
 
   const petsQuery = usePetsQuery();
 
@@ -149,6 +177,7 @@ export default function EditProfileScreen() {
           setPetType(pet.type ?? null);
           setPhotoUri(pet.photo_url ?? null);
           setPhotoChanged(false);
+          originalRef.current = snapshotFromPet(pet);
           setNotFound(false);
           return true;
         };
@@ -214,6 +243,9 @@ export default function EditProfileScreen() {
       try {
         await updatePet(activePetId, { photo_url: null });
         setPhotoChanged(false);
+        if (originalRef.current) {
+          originalRef.current = { ...originalRef.current, photoUri: null };
+        }
       } catch (err) {
         toast.showError(getErrorMessage(err));
         setPhotoUri(previousUri);
@@ -221,6 +253,25 @@ export default function EditProfileScreen() {
       }
     })();
   };
+
+  const isDirty = Boolean(
+    !loading &&
+      !notFound &&
+      originalRef.current &&
+      (name !== originalRef.current.name ||
+        sex !== originalRef.current.sex ||
+        birthDate !== originalRef.current.birthDate ||
+        breed !== originalRef.current.breed ||
+        color !== originalRef.current.color ||
+        weight !== originalRef.current.weight ||
+        isNeutered !== originalRef.current.isNeutered ||
+        chipId !== originalRef.current.chipId ||
+        photoChanged),
+  );
+  const { discardVisible, onDiscard, onStay, skipPrompt } = useUnsavedChangesGuard(
+    isDirty,
+    saving,
+  );
 
   const handleSave = async () => {
     dismissKeyboard();
@@ -258,7 +309,7 @@ export default function EditProfileScreen() {
         chip_id: trimOrNull(chipId),
         ...(photoChanged ? { photo_url: photoUrl ?? null } : {}),
       });
-      router.back();
+      skipPrompt(() => router.back());
     } catch (err) {
       toast.showError(getErrorMessage(err));
     } finally {
@@ -284,7 +335,7 @@ export default function EditProfileScreen() {
     setDeleteVisible(false);
     try {
       await deletePet(activePetId);
-      router.replace('/(tabs)' as never);
+      skipPrompt(() => router.replace('/(tabs)' as never));
     } catch (err) {
       toast.showError(getErrorMessage(err));
     }
@@ -472,6 +523,12 @@ export default function EditProfileScreen() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteVisible(false)}
       />
+
+      <DiscardChangesModal
+        visible={discardVisible}
+        onDiscard={onDiscard}
+        onStay={onStay}
+      />
     </SafeAreaView>
   );
 }
@@ -513,7 +570,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.secondaryText,
   },
   content: {
-    paddingTop: 22,
+    paddingTop: 20,
     alignItems: 'center',
   },
 

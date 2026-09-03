@@ -38,6 +38,8 @@ interface HealthNoteEditorCardProps {
   placeholder?: string;
   autoFocus?: boolean;
   onNoteFocus?: TextFieldFocusHandler;
+  /** Autosave screens flush the pending write when the field loses focus. */
+  onNoteBlur?: () => void;
 }
 
 export default function HealthNoteEditorCard({
@@ -50,6 +52,7 @@ export default function HealthNoteEditorCard({
   placeholder,
   autoFocus = false,
   onNoteFocus,
+  onNoteBlur,
 }: HealthNoteEditorCardProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
@@ -109,6 +112,7 @@ export default function HealthNoteEditorCard({
           value={noteText}
           onChangeText={onChangeNoteText}
           onFocus={onNoteFocus}
+          onBlur={onNoteBlur}
           multiline
           autoFocus={autoFocus}
           placeholder={placeholder ?? t('topics.note_placeholder')}

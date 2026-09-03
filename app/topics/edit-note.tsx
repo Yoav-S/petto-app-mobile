@@ -9,8 +9,14 @@ import {
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
-import { useFocusEffect } from '@react-navigation/native';
-import { Spacing, type ThemeColors } from '@/constants/theme';
+import {
+  useFocusEffect,
+  useNavigation,
+  usePreventRemove,
+  type NavigationProp,
+  type ParamListBase,
+} from '@react-navigation/native';
+import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -37,6 +43,10 @@ import { formatDisplayDate, formatDisplayTime } from '@/utils/calendar';
 import { normalizeRouteParam } from '@/utils/routeParams';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
+type PendingLeave = Parameters<Parameters<typeof usePreventRemove>[1]>[0]['data']['action'];
+
+const AUTOSAVE_MS = 700;
+
 function reminderLabel(draft: HealthReminderDraft): string {
   return `${formatDisplayDate(draft.date)}, ${formatDisplayTime(draft.time)}`;
 }
@@ -46,6 +56,7 @@ export default function EditNoteScreen() {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const router = useRouter();
+  const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const { recordId: recordIdParam, noteId: noteIdParam, open: openParam } = useLocalSearchParams<{
     recordId: string;
     noteId: string;
@@ -75,6 +86,17 @@ export default function EditNoteScreen() {
   const [deleteVisible, setDeleteVisible] = useState(false);
   const loadedRef = useRef(false);
   const savedTextRef = useRef<string | null>(null);
+  const noteTextRef = useRef('');
+  const textTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const textDirtyRef = useRef(false);
+  const [textDirty, setTextDirty] = useState(false);
+  /** Only set while a pending write is being flushed on the way out. */
+  const [flushing, setFlushing] = useState(false);
+  const [pendingLeave, setPendingLeave] = useState<PendingLeave | null>(null);
+
+  useEffect(() => {
+    noteTextRef.current = noteText;
+  }, [noteText]);
 
   useFocusEffect(
     useCallback(() => {
@@ -105,6 +127,8 @@ export default function EditNoteScreen() {
             setRecordTitle(detail.title ?? '');
             setNoteText(note.text);
             savedTextRef.current = note.text.trim();
+            textDirtyRef.current = false;
+            setTextDirty(false);
             setPhotoUri(note.photo_url ?? null);
             setPhotoMime(null);
             setPhotoChanged(false);
@@ -209,23 +233,75 @@ export default function EditNoteScreen() {
     }
   }, [loading, notFound, open]);
 
-  /** Auto-save note text — debounced while typing, flushed on blur / unmount. */
+  const persistText = useCallback(async () => {
+    if (!activePetId || !recordId || !noteId) return;
+    const trimmed = noteTextRef.current.trim();
+    if (!trimmed || trimmed === savedTextRef.current) return;
+
+    /** Cleared up front so a blur or exit does not re-send the same write. */
+    const previousSaved = savedTextRef.current;
+    savedTextRef.current = trimmed;
+    textDirtyRef.current = false;
+    setTextDirty(false);
+
+    try {
+      await updateNote(activePetId, recordId, noteId, { text: trimmed });
+    } catch (err) {
+      savedTextRef.current = previousSaved;
+      textDirtyRef.current = true;
+      setTextDirty(true);
+      toast.showError(getErrorMessage(err));
+    }
+  }, [activePetId, noteId, recordId, toast]);
+
+  /** Auto-save note text — debounced while typing, flushed on blur and on exit. */
   useEffect(() => {
     if (loading || notFound || !loadedRef.current) return;
     const trimmed = noteText.trim();
     if (!trimmed || trimmed === savedTextRef.current) return;
     if (!activePetId || !recordId || !noteId) return;
 
-    const timer = setTimeout(() => {
-      savedTextRef.current = trimmed;
-      void updateNote(activePetId, recordId, noteId, { text: trimmed }).catch((err) => {
-        savedTextRef.current = null;
-        toast.showError(getErrorMessage(err));
-      });
-    }, 700);
+    textDirtyRef.current = true;
+    setTextDirty(true);
 
-    return () => clearTimeout(timer);
-  }, [activePetId, loading, noteId, noteText, notFound, recordId, toast]);
+    if (textTimerRef.current) clearTimeout(textTimerRef.current);
+    textTimerRef.current = setTimeout(() => {
+      textTimerRef.current = null;
+      void persistText();
+    }, AUTOSAVE_MS);
+
+    return () => {
+      if (textTimerRef.current) clearTimeout(textTimerRef.current);
+    };
+  }, [activePetId, loading, noteId, noteText, notFound, persistText, recordId]);
+
+  /** Writes the pending edit now instead of waiting out the debounce. */
+  const flushText = useCallback(async () => {
+    if (textTimerRef.current) {
+      clearTimeout(textTimerRef.current);
+      textTimerRef.current = null;
+    }
+    if (!textDirtyRef.current) return;
+    await persistText();
+  }, [persistText]);
+
+  /** Leaving stores first: the veil blocks the screen only for that write. */
+  usePreventRemove(textDirty && pendingLeave == null, ({ data }) => {
+    void (async () => {
+      setFlushing(true);
+      try {
+        await flushText();
+      } finally {
+        setFlushing(false);
+      }
+      setPendingLeave(data.action);
+    })();
+  });
+
+  useEffect(() => {
+    if (!pendingLeave) return;
+    navigation.dispatch(pendingLeave);
+  }, [navigation, pendingLeave]);
 
   /** Reminder changes save immediately — the sheet is an explicit confirm. */
   const persistReminder = useCallback(
@@ -262,6 +338,13 @@ export default function EditNoteScreen() {
   const handleDelete = () => {
     if (!activePetId || !recordId || !noteId) return;
     setDeleteVisible(false);
+    /** Pending edits die with the note — never flush them on the way out. */
+    if (textTimerRef.current) {
+      clearTimeout(textTimerRef.current);
+      textTimerRef.current = null;
+    }
+    textDirtyRef.current = false;
+    setTextDirty(false);
     toast.showUndo({
       message: t('topics.deleted'),
       onUndo: () => {},
@@ -310,11 +393,10 @@ export default function EditNoteScreen() {
   return (
     <HeaderScrollLayout header={header} edges={['left', 'right']} topFade bottomFade>
       {({ paddingTop }) => (
-        <>
+        <View style={styles.flex}>
           <HealthFormScreen
             scrollInsetTop={paddingTop}
             contentContainerStyle={{
-              paddingTop: Math.max(Spacing.md, 16),
               paddingHorizontal: PAGE_HORIZONTAL_PADDING,
             }}
             footer={{
@@ -330,6 +412,9 @@ export default function EditNoteScreen() {
             <HealthNoteEditorCard
               noteText={noteText}
               onChangeNoteText={setNoteText}
+              onNoteBlur={() => {
+                void flushText();
+              }}
               photoUri={photoUri}
               onPickImage={() => {
                 Keyboard.dismiss();
@@ -388,14 +473,17 @@ export default function EditNoteScreen() {
             onConfirm={handleDelete}
             onCancel={() => setDeleteVisible(false)}
           />
-          <SavingOverlay visible={saving || savingPhoto} />
-        </>
+          <SavingOverlay visible={saving || savingPhoto || flushing} />
+        </View>
       )}
     </HeaderScrollLayout>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   centered: {
     flex: 1,
     alignItems: 'center',

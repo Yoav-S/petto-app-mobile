@@ -33,6 +33,8 @@ import { useActivePet } from '@/store/petStore';
 import { formatDisplayDate, parseIsoDate } from '@/utils/calendar';
 import type { PetType } from '@/store/petOnboardingDraft';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { DiscardChangesModal } from '@/components/ui/ConfirmModal';
 
 const TYPE_DOG_EMOJI = require('@/assets/images/pets/type-dog.png');
 const TYPE_CAT_EMOJI = require('@/assets/images/pets/type-cat.png');
@@ -83,7 +85,7 @@ export default function AddPetScreen() {
 
   const layout = useMemo(
     () => ({
-      formTop: 16,
+      formTop: 0,
       formGap: 22,
       cardWidth: contentWidth,
       photoSize: 128,
@@ -96,6 +98,16 @@ export default function AddPetScreen() {
   );
 
   const canSave = name.trim().length > 0 && !!petType && !submitting;
+  const isDirty =
+    Boolean(photoUri) ||
+    name.length > 0 ||
+    petType != null ||
+    birthDate != null ||
+    sex != null;
+  const { discardVisible, onDiscard, onStay, skipPrompt } = useUnsavedChangesGuard(
+    isDirty,
+    submitting,
+  );
 
   const pickImage = async (source: 'camera' | 'library') => {
     setPhotoSheetVisible(false);
@@ -141,7 +153,7 @@ export default function AddPetScreen() {
         sex,
       });
       await setActivePetId(pet.id);
-      router.back();
+      skipPrompt(() => router.back());
     } catch (err) {
       const message = getErrorMessage(err);
       if (message === t('errors.premium_required_pet')) {
@@ -340,6 +352,12 @@ export default function AddPetScreen() {
         onTake={() => void pickImage('camera')}
         onChoose={() => void pickImage('library')}
         onRemove={photoUri ? handleRemovePhoto : undefined}
+      />
+
+      <DiscardChangesModal
+        visible={discardVisible}
+        onDiscard={onDiscard}
+        onStay={onStay}
       />
     </>
   );

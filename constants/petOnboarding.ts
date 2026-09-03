@@ -1,4 +1,6 @@
-﻿/** Figma reference frame 375Ã—812 â€” pet creation onboarding */
+﻿import { SINGLE_LINE_FIELD } from '@/constants/textField';
+
+/** Figma reference frame 375Ã—812 â€” pet creation onboarding */
 export const PET_ONBOARDING_DESIGN_WIDTH = 375;
 export const PET_ONBOARDING_DESIGN_HEIGHT = 812;
 export const PET_ONBOARDING_STEPS = 4;
@@ -9,6 +11,13 @@ export const PET_ONBOARDING_HERO = {
   height: 168,
   radius: 12,
 } as const;
+
+/** Every step's card uses the same inner padding, so all steps share one column. */
+export const PET_ONBOARDING_CARD_PADDING_H = 16;
+
+/** Hero art aspect — the four hero assets are all 909Ã—504 (303Ã—168 at 3x). */
+export const PET_ONBOARDING_HERO_ASPECT =
+  PET_ONBOARDING_HERO.width / PET_ONBOARDING_HERO.height;
 
 export const PET_NAME_STEP = {
   progressTop: 56,
@@ -21,17 +30,14 @@ export const PET_NAME_STEP = {
   cardPaddingH: 16,
   cardPaddingBottom: 22,
   cardGap: 22,
-  heroWidth: 303,
-  heroHeight: 168,
-  copyWidth: 303,
   copyGap: 12,
   titleSize: 24,
   titleLine: 28,
   subtitleSize: 14,
   subtitleLine: 20,
   inputWidth: 303,
-  inputHeight: 48,
-  inputRadius: 12,
+  inputHeight: SINGLE_LINE_FIELD.height,
+  inputRadius: SINGLE_LINE_FIELD.borderRadius,
 } as const;
 
 export const PET_TYPE_STEP = {
@@ -45,9 +51,6 @@ export const PET_TYPE_STEP = {
   cardPaddingH: 16,
   cardPaddingBottom: 32,
   cardGap: 22,
-  bedWidth: 303,
-  bedHeight: 168,
-  copyWidth: 269,
   titleSize: 24,
   titleLine: 28,
   pickerWidth: 303,
@@ -71,17 +74,13 @@ export const PET_PHOTO_STEP = {
   cardPaddingH: 16,
   cardPaddingBottom: 32,
   cardGap: 22,
-  innerWidth: 303,
   innerGap: 22,
-  copyWidth: 303,
   copyGap: 12,
   titleSize: 24,
   titleLine: 28,
   subtitleSize: 14,
   subtitleLine: 20,
-  heroWidth: 303,
-  heroHeight: 168,
-  /** User photo sitting on the hero illustration */
+  /** Overlay metrics below are anchored to the 303-wide hero and scale with it. */
   userPhotoWidth: 67,
   userPhotoHeight: 68,
   userPhotoTop: 42,
@@ -91,9 +90,8 @@ export const PET_PHOTO_STEP = {
   maskHeight: 21,
   maskTop: 25,
   maskLeft: 147,
-  /** Add-photo chip under the hero */
-  addBtnWidth: 126,
-  changeBtnWidth: 151,
+  /** Add-photo chip under the hero — width is a floor, the label may be longer. */
+  addBtnMinWidth: 126,
   addBtnHeight: 48,
   addBtnRadius: 12,
   addBtnPaddingH: 16,
@@ -144,18 +142,14 @@ export const PET_BIRTH_STEP = {
   cardPaddingH: 16,
   cardPaddingBottom: 32,
   cardGap: 22,
-  heroWidth: 303,
-  heroHeight: 168,
-  copyWidth: 303,
   copyGap: 32,
   titleBlockGap: 12,
   titleSize: 24,
   titleLine: 28,
   subtitleSize: 14,
   subtitleLine: 20,
-  selectBtnWidth: 303,
-  selectBtnHeight: 48,
-  selectBtnRadius: 12,
+  selectBtnHeight: SINGLE_LINE_FIELD.height,
+  selectBtnRadius: SINGLE_LINE_FIELD.borderRadius,
   continuePaddingH: 20,
   continueBtnHeight: 48,
   continueBtnRadius: 12,

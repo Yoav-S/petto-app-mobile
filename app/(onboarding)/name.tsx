@@ -18,7 +18,7 @@ import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
 import { centeredInputText } from '@/constants/textField';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
-import { PET_NAME_STEP } from '@/constants/petOnboarding';
+import { PET_NAME_STEP, PET_ONBOARDING_HERO } from '@/constants/petOnboarding';
 import { getPetOnboardingScale } from '@/utils/petOnboardingScale';
 
 const PET_NAME_REGEX = /^[\p{L}]+$/u;
@@ -34,7 +34,7 @@ export default function PetNameOnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const { contentWidth } = getPetOnboardingScale(
+  const { contentWidth, heroWidth, heroHeight } = getPetOnboardingScale(
     width,
     height,
     insets.top,
@@ -66,8 +66,6 @@ export default function PetNameOnboardingScreen() {
   };
 
   const cardRadius = PET_NAME_STEP.cardRadius;
-  const heroW = PET_NAME_STEP.heroWidth;
-  const heroH = PET_NAME_STEP.heroHeight;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -106,8 +104,8 @@ export default function PetNameOnboardingScreen() {
               },
             ]}
           >
-            <View style={{ alignSelf: 'center' }}>
-              <OnboardingCollar width={heroW} height={heroH} />
+            <View style={styles.heroFrame}>
+              <OnboardingCollar width={heroWidth} height={heroHeight} />
             </View>
 
             <View
@@ -233,6 +231,11 @@ const makeStyles = (c: ThemeColors) =>
       alignSelf: 'center',
       backgroundColor: c.surface,
       alignItems: 'center',
+    },
+    heroFrame: {
+      alignSelf: 'center',
+      borderRadius: PET_ONBOARDING_HERO.radius,
+      overflow: 'hidden',
     },
     copyBlock: {
       alignSelf: 'center',

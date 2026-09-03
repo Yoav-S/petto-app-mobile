@@ -13,7 +13,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { pickImageFromLibrary } from '@/services/imagePicker';
-import { useFocusEffect } from '@react-navigation/native';
+import {
+  useFocusEffect,
+  useNavigation,
+  usePreventRemove,
+  type NavigationProp,
+  type ParamListBase,
+} from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
@@ -23,6 +29,7 @@ import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import SavingOverlay from '@/components/ui/SavingOverlay';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import VaccinePhotoViewer from '@/components/vaccines/VaccinePhotoViewer';
 import VaccineClinicField from '@/components/vaccines/VaccineClinicField';
@@ -46,8 +53,11 @@ const DELETE_ROW_H = 42;
 /** Small gap above the home indicator / screen bottom. */
 const DELETE_BOTTOM_GAP = 16;
 
+type PendingLeave = Parameters<Parameters<typeof usePreventRemove>[1]>[0]['data']['action'];
+
 export default function VaccineDetailsScreen() {
   const router = useRouter();
+  const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
@@ -63,6 +73,9 @@ export default function VaccineDetailsScreen() {
   const [clinic, setClinic] = useState('');
   const [picker, setPicker] = useState<PickerTarget>(null);
   const [uploading, setUploading] = useState(false);
+  /** Only set while a pending field edit is being flushed on the way out. */
+  const [flushing, setFlushing] = useState(false);
+  const [pendingLeave, setPendingLeave] = useState<PendingLeave | null>(null);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
   const [bodyH, setBodyH] = useState(0);
@@ -141,6 +154,43 @@ export default function VaccineDetailsScreen() {
     save({ vet_clinic: trimmed || null });
   };
 
+  const trimmedName = name.trim();
+  const trimmedClinic = clinic.trim();
+  const fieldsDirty = Boolean(
+    vaccine &&
+      ((trimmedName.length > 0 && trimmedName !== vaccine.name) ||
+        trimmedClinic !== (vaccine.vet_clinic ?? '')),
+  );
+
+  /** Leaving stores first: the veil blocks the screen only for that write. */
+  const flushFields = useCallback(async () => {
+    if (!vaccine) return;
+    const patch: Partial<Vaccination> = {};
+    const nextName = name.trim();
+    if (nextName.length > 0 && nextName !== vaccine.name) patch.name = nextName;
+    const nextClinic = clinic.trim();
+    if (nextClinic !== (vaccine.vet_clinic ?? '')) patch.vet_clinic = nextClinic || null;
+    if (Object.keys(patch).length === 0) return;
+    await save(patch);
+  }, [clinic, name, save, vaccine]);
+
+  usePreventRemove(fieldsDirty && pendingLeave == null, ({ data }) => {
+    void (async () => {
+      setFlushing(true);
+      try {
+        await flushFields();
+      } finally {
+        setFlushing(false);
+      }
+      setPendingLeave(data.action);
+    })();
+  });
+
+  useEffect(() => {
+    if (!pendingLeave) return;
+    navigation.dispatch(pendingLeave);
+  }, [navigation, pendingLeave]);
+
   const pickImage = async () => {
     const picked = await pickImageFromLibrary();
     if (picked === 'denied') {
@@ -162,6 +212,9 @@ export default function VaccineDetailsScreen() {
   const handleDelete = () => {
     if (!activePetId || !id) return;
     setDeleteVisible(false);
+    /** Pending edits die with the vaccine — never flush them on the way out. */
+    setName(vaccine?.name ?? '');
+    setClinic(vaccine?.vet_clinic ?? '');
     toast.showUndo({
       message: t('vaccines.deleted'),
       onUndo: () => {},
@@ -413,6 +466,8 @@ export default function VaccineDetailsScreen() {
         uri={vaccine.photo_url}
         onClose={() => setViewerVisible(false)}
       />
+
+      <SavingOverlay visible={flushing} />
     </SafeAreaView>
   );
 }
@@ -432,7 +487,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   content: {
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-    paddingTop: Spacing.md,
+    paddingTop: 20,
   },
   scrollContentGrow: {
     flexGrow: 1,
