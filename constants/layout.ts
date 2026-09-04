@@ -100,12 +100,14 @@ export const SCROLL_TOP_FADE_SOLID_AT = 0.32;
 export const SCROLL_BOTTOM_FADE_SOLID_AT = 0.55;
 
 /**
- * Full-bleed legal tab bar (auth Terms / Privacy).
- * Covers the status bar and keeps 40pt of readable row below it, so the labels
- * never crowd the clock. `radius` follows the device's top screen corners.
+ * Full-bleed legal header (auth Terms / Privacy): status cover, then the back
+ * chip, then the tab row sitting directly on the page. `radius` follows the
+ * device's top screen corners.
  */
 export const LEGAL_TAB_BAR = {
   statusCover: 20,
+  /** Between the back chip and the tab row. */
+  backRowGap: 8,
   rowHeight: 40,
   radius: 24,
 } as const;

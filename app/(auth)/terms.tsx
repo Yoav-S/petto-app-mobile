@@ -87,8 +87,8 @@ export default function TermsScreen() {
     [tab],
   );
 
-  /** Bar swallows the status bar, then keeps a full row of breathing space. */
-  const barTopPad = Math.max(insets.top, LEGAL_TAB_BAR.statusCover);
+  /** Header swallows the status bar before the back chip starts. */
+  const headerTopPad = Math.max(insets.top, LEGAL_TAB_BAR.statusCover);
 
   return (
     <ListScrollLayout
@@ -99,8 +99,21 @@ export default function TermsScreen() {
       clearTopFade
       documentFade
       chrome={
-        <View>
-          <View style={[styles.tabBar, { paddingTop: barTopPad }]}>
+        <View style={[styles.header, { paddingTop: headerTopPad }]}>
+          <View style={styles.backRow}>
+            <HeaderIconButton
+              onPress={() => router.back()}
+              accessibilityLabel={t('petOnboarding.back')}
+            >
+              <Ionicons
+                name="chevron-back"
+                size={HEADER_ICON_BTN.iconSize}
+                color={colors.primaryText}
+              />
+            </HeaderIconButton>
+          </View>
+
+          <View style={styles.tabBar}>
             {TABS.map(({ key, labelKey }) => {
               const active = tab === key;
               return (
@@ -124,19 +137,6 @@ export default function TermsScreen() {
               );
             })}
           </View>
-
-          {/* Floats over the leading tab so both halves stay full width. */}
-          <HeaderIconButton
-            onPress={() => router.back()}
-            accessibilityLabel={t('petOnboarding.back')}
-            style={styles.backBtn}
-          >
-            <Ionicons
-              name="chevron-back"
-              size={HEADER_ICON_BTN.iconSize}
-              color={colors.primaryText}
-            />
-          </HeaderIconButton>
         </View>
       }
     >
@@ -160,13 +160,20 @@ export default function TermsScreen() {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    /** Full-bleed, flush with the top edge — the two halves are the only chrome. */
-    tabBar: {
-      flexDirection: 'row',
+    /** Flush with the top edge; its fill is also the inactive tab's fill. */
+    header: {
       backgroundColor: c.background,
       borderTopLeftRadius: LEGAL_TAB_BAR.radius,
       borderTopRightRadius: LEGAL_TAB_BAR.radius,
-      overflow: 'hidden',
+    },
+    /** `flex-start` follows the reading direction, so the chip flips in RTL. */
+    backRow: {
+      alignItems: 'flex-start',
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+      paddingBottom: LEGAL_TAB_BAR.backRowGap,
+    },
+    tabBar: {
+      flexDirection: 'row',
     },
     tab: {
       flex: 1,
@@ -195,15 +202,6 @@ const makeStyles = (c: ThemeColors) =>
       bottom: 0,
       height: 2,
       backgroundColor: c.brand,
-    },
-    /** Centered in the 40pt row; `start` so it follows the reading direction. */
-    backBtn: {
-      position: 'absolute',
-      start: PAGE_HORIZONTAL_PADDING,
-      bottom: (LEGAL_TAB_BAR.rowHeight - HEADER_ICON_BTN.size) / 2,
-      /** Hairline keeps the surface chip readable on the active (surface) half. */
-      borderWidth: 1,
-      borderColor: c.border,
     },
     scroll: {
       flex: 1,
