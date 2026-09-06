@@ -30,6 +30,30 @@ let sheetGapPending = false;
 const sheetWaiters: SheetWaiter[] = [];
 const idleResolvers: (() => void)[] = [];
 
+type OverlaySetter = (node: React.ReactNode | null) => void;
+const overlaySetters = new Set<OverlaySetter>();
+const sheetStateListeners = new Set<() => void>();
+
+function notifySheetState() {
+  sheetStateListeners.forEach((listener) => listener());
+}
+
+export function subscribeBottomSheetState(listener: () => void): () => void {
+  sheetStateListeners.add(listener);
+  return () => {
+    sheetStateListeners.delete(listener);
+  };
+}
+
+export function isBottomSheetMounted(): boolean {
+  return activeSheetId !== null;
+}
+
+/** Render a dialog inside the open sheet Modal so it stacks above the sheet. */
+export function setActiveSheetOverlay(node: React.ReactNode | null): void {
+  overlaySetters.forEach((set) => set(node));
+}
+
 function resolveIdleWaiters() {
   if (activeSheetId !== null || sheetGapPending || sheetWaiters.length > 0) return;
   idleResolvers.splice(0).forEach((resolve) => resolve());
@@ -72,6 +96,7 @@ export function useSettledModalVisible(requested: boolean): boolean {
 function acquireSheet(id: symbol): Promise<void> {
   if ((activeSheetId === null && !sheetGapPending) || activeSheetId === id) {
     activeSheetId = id;
+    notifySheetState();
     return Promise.resolve();
   }
 
@@ -94,6 +119,7 @@ function releaseSheet(id: symbol) {
   cancelWaitingSheet(id);
   if (activeSheetId !== id) return;
   activeSheetId = null;
+  notifySheetState();
 
   const grantNext = () => {
     sheetGapPending = false;
@@ -103,6 +129,7 @@ function releaseSheet(id: symbol) {
       return;
     }
     activeSheetId = next.id;
+    notifySheetState();
     next.resolve();
   };
 
@@ -133,9 +160,17 @@ export default function BottomSheetModal({
 }: BottomSheetModalProps) {
   const styles = useThemedStyles(makeStyles);
   const [mounted, setMounted] = useState(false);
+  const [overlay, setOverlay] = useState<React.ReactNode | null>(null);
   const mountedRef = useRef(false);
   const sheetIdRef = useRef(Symbol('bottom-sheet'));
   const progress = useSharedValue(0);
+
+  useEffect(() => {
+    overlaySetters.add(setOverlay);
+    return () => {
+      overlaySetters.delete(setOverlay);
+    };
+  }, []);
 
   const markUnmounted = () => {
     mountedRef.current = false;
@@ -231,6 +266,7 @@ export default function BottomSheetModal({
         <Animated.View style={[styles.sheetHost, sheetStyle]} pointerEvents="box-none">
           {children}
         </Animated.View>
+        {overlay ? <View style={styles.stackOverlay}>{overlay}</View> : null}
       </View>
     </Modal>
   );
@@ -248,5 +284,10 @@ const makeStyles = (c: ThemeColors) =>
     },
     sheetHost: {
       width: '100%',
+    },
+    stackOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 20,
+      elevation: 20,
     },
   });

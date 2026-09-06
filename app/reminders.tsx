@@ -29,7 +29,7 @@ import { needsStatusPrompt, formatSheetClockTime } from '@/components/reminders/
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import { deleteReminder, updateReminderStatus, listReminders } from '@/services/reminders';
+import { deleteReminder, getReminder, updateReminderStatus, listReminders } from '@/services/reminders';
 import { getErrorMessage } from '@/services/errors';
 import { invalidateReminders } from '@/services/queryClient';
 import { queryKeys } from '@/services/queryKeys';
@@ -236,10 +236,10 @@ export default function RemindersScreen() {
   }, [activePetId, recentPagination.refresh, todayPagination.refresh, upcomingPagination.refresh]);
 
   const openPromptQueue = useCallback(
-    (today: Reminder[], recent: Reminder[], focusId?: string | null, force = false) => {
+    (items: Reminder[], focusId?: string | null, force = false) => {
       if (force) sessionSkipRef.current = false;
       if (sessionSkipRef.current && !force) return;
-      const queue = sortPromptQueue([...today, ...recent], focusId);
+      const queue = sortPromptQueue(items, focusId);
       setPromptQueue(queue);
       setPromptTotal(queue.length);
       if (queue.length) setActiveTab('Today');
@@ -248,22 +248,33 @@ export default function RemindersScreen() {
   );
 
   const maybeAutoPromptStatus = useCallback(
-    (today: Reminder[], recent: Reminder[]) => {
+    async (today: Reminder[], recent: Reminder[]) => {
       const force = params.prompt === '1' || Boolean(params.focusId);
       if (!force) {
         if (autoPromptCheckedRef.current) return;
         autoPromptCheckedRef.current = true;
       }
-      openPromptQueue(today, recent, params.focusId, force);
+      const items = [...today, ...recent];
+      if (params.focusId && activePetId) {
+        try {
+          const focused = await getReminder(activePetId, params.focusId);
+          const idx = items.findIndex((row) => row.id === focused.id);
+          if (idx >= 0) items[idx] = focused;
+          else items.push(focused);
+        } catch {
+          /* list pages already cover the common case */
+        }
+      }
+      openPromptQueue(items, params.focusId, force);
     },
-    [openPromptQueue, params.focusId, params.prompt],
+    [activePetId, openPromptQueue, params.focusId, params.prompt],
   );
 
   useFocusEffect(
     useCallback(() => {
       autoPromptCheckedRef.current = false;
       void refetchAll().then(({ today, recent }) => {
-        maybeAutoPromptStatus(today, recent);
+        void maybeAutoPromptStatus(today, recent);
       });
     }, [refetchAll, maybeAutoPromptStatus]),
   );
@@ -299,20 +310,14 @@ export default function RemindersScreen() {
 
   const handleReminderPress = useCallback(
     (item: Reminder) => {
-      if (activeTab === 'Upcoming') {
-        router.push(`/reminders/${item.id}` as never);
-        return;
-      }
-      if (activeTab === 'Recent') {
-        router.push(`/reminders/${item.id}` as never);
-        return;
-      }
-      if (activeTab === 'Today') {
+      if (needsStatusPrompt(item)) {
         sessionSkipRef.current = false;
-        openPromptQueue([item], [], item.id, true);
+        openPromptQueue([item], item.id, true);
+        return;
       }
+      router.push(`/reminders/${item.id}` as never);
     },
-    [activeTab, openPromptQueue, router],
+    [openPromptQueue, router],
   );
 
   const handleStatus = async (status: 'completed' | 'missed') => {

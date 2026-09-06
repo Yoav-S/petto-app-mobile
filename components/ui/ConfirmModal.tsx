@@ -56,8 +56,8 @@ const BUTTON_SHAPE: ViewStyle = {
   justifyContent: 'center',
 };
 
-export default function ConfirmModal({
-  visible,
+/** Dialog chrome only — can sit in a root Modal or inside an open bottom sheet. */
+export function ConfirmDialogSurface({
   title,
   message,
   confirmText,
@@ -65,10 +65,68 @@ export default function ConfirmModal({
   onCancel,
   cancelText,
   variant = 'danger',
-}: ConfirmModalProps) {
+}: Omit<ConfirmModalProps, 'visible'>) {
   const styles = useThemedStyles(makeStyles);
   const { contentWidth } = useResponsiveLayout();
   const modalWidth = Math.min(contentWidth + Spacing.lg * 2, MODAL.maxWidth);
+
+  return (
+    <TouchableWithoutFeedback onPress={onCancel}>
+      <View style={styles.overlay}>
+        <TouchableWithoutFeedback>
+          <View
+            style={[
+              styles.modalContainer,
+              {
+                width: modalWidth,
+                maxWidth: '100%',
+                paddingHorizontal: MODAL.padH,
+                paddingVertical: MODAL.padV,
+                gap: MODAL.copyToButtonsGap,
+              },
+            ]}
+          >
+            <View style={[styles.copyBlock, { gap: MODAL.copyGap }]}>
+              <Text style={styles.title}>{title}</Text>
+              <Text style={styles.message}>{message}</Text>
+            </View>
+
+            <View style={[styles.buttonRow, { gap: MODAL.buttonRowGap }]}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={onCancel}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.cancelText}>{cancelText ?? t('common.cancel')}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={
+                  variant === 'primary' ? styles.confirmButtonPrimary : styles.confirmButton
+                }
+                onPress={onConfirm}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={
+                    variant === 'primary' ? styles.confirmTextPrimary : styles.confirmText
+                  }
+                >
+                  {confirmText}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </View>
+    </TouchableWithoutFeedback>
+  );
+}
+
+export default function ConfirmModal({
+  visible,
+  ...dialogProps
+}: ConfirmModalProps) {
   const presented = useSettledModalVisible(visible);
 
   if (!presented) return null;
@@ -78,58 +136,10 @@ export default function ConfirmModal({
       transparent
       visible
       animationType="fade"
-      onRequestClose={onCancel}
+      onRequestClose={dialogProps.onCancel}
       presentationStyle={Platform.OS === 'ios' ? 'overFullScreen' : undefined}
     >
-      <TouchableWithoutFeedback onPress={onCancel}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <View
-              style={[
-                styles.modalContainer,
-                {
-                  width: modalWidth,
-                  maxWidth: '100%',
-                  paddingHorizontal: MODAL.padH,
-                  paddingVertical: MODAL.padV,
-                  gap: MODAL.copyToButtonsGap,
-                },
-              ]}
-            >
-              <View style={[styles.copyBlock, { gap: MODAL.copyGap }]}>
-                <Text style={styles.title}>{title}</Text>
-                <Text style={styles.message}>{message}</Text>
-              </View>
-
-              <View style={[styles.buttonRow, { gap: MODAL.buttonRowGap }]}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={onCancel}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.cancelText}>{cancelText ?? t('common.cancel')}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={
-                    variant === 'primary' ? styles.confirmButtonPrimary : styles.confirmButton
-                  }
-                  onPress={onConfirm}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={
-                      variant === 'primary' ? styles.confirmTextPrimary : styles.confirmText
-                    }
-                  >
-                    {confirmText}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
+      <ConfirmDialogSurface {...dialogProps} />
     </Modal>
   );
 }

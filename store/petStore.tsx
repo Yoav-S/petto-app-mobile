@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePetsQuery } from '@/hooks/useCachedQueries';
+import { queryClient } from '@/services/queryClient';
+import { queryKeys } from '@/services/queryKeys';
 import { firstIncludedPet } from '@/services/subscription';
+import type { Pet } from '@/types/api';
 
 const ACTIVE_PET_KEY = '@petto_active_pet_id';
 
@@ -22,8 +25,13 @@ export function PetStoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   async function setActivePetId(id: string) {
-    setActivePetIdState(id);
-    await AsyncStorage.setItem(ACTIVE_PET_KEY, id);
+    const cached = queryClient.getQueryData<Pet[]>(queryKeys.pets.all);
+    const requested = cached?.find((p) => p.id === id);
+    const nextId =
+      requested?.locked ? firstIncludedPet(cached ?? [])?.id ?? null : id;
+    if (!nextId) return;
+    setActivePetIdState(nextId);
+    await AsyncStorage.setItem(ACTIVE_PET_KEY, nextId);
   }
 
   return (

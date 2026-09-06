@@ -6,10 +6,15 @@ import {
   isIsoDateToday,
   isReminderDateTimeInPast,
   minReminderDateIso,
+  parseIsoDate,
   soonestValidReminderTime,
 } from '@/utils/calendar';
 import { t } from '@/i18n';
-import type { AlertOption, RepeatOption } from '@/services/reminders';
+import {
+  ALERT_OFFSET_MINUTES,
+  type AlertOption,
+  type RepeatOption,
+} from '@/services/reminders';
 
 export const DESIGN_WIDTH = 375;
 export const DESIGN_HEIGHT = 812;
@@ -105,9 +110,45 @@ export function isReminderScheduleInPast(nextDate: string, nextTime?: string | n
   return isReminderDateTimeInPast(nextDate.slice(0, 10), normalizeTime(nextTime));
 }
 
+export function reminderLocalDateTime(isoDate: string, time: string): Date | null {
+  const date = parseIsoDate(isoDate);
+  if (!date) return null;
+  const [h, m] = normalizeTime(time).split(':').map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), h, m, 0, 0);
+}
+
+/** Alert must fire after now and strictly before the reminder time. */
+export function isAlertOptionPossible(
+  alert: AlertOption,
+  date: string | null | undefined,
+  time: string | null | undefined,
+  now = new Date(),
+): boolean {
+  if (alert === 'off') return true;
+  if (!date || !time) return false;
+  const minutes = ALERT_OFFSET_MINUTES[alert];
+  if (!minutes) return false;
+  const scheduled = reminderLocalDateTime(date, time);
+  if (!scheduled) return false;
+  const alertAt = new Date(scheduled.getTime() - minutes * 60_000);
+  const nowFloor = new Date(now);
+  nowFloor.setSeconds(0, 0);
+  return alertAt.getTime() >= nowFloor.getTime() && alertAt.getTime() < scheduled.getTime();
+}
+
+export function clampAlertForSchedule(
+  alert: AlertOption,
+  date: string | null | undefined,
+  time: string | null | undefined,
+): AlertOption {
+  return isAlertOptionPossible(alert, date, time) ? alert : 'off';
+}
+
 export function needsStatusPrompt(reminder: Reminder): boolean {
-  if (!reminder.notified_at) return false;
-  return reminder.status === 'today';
+  if (reminder.status === 'completed') return false;
+  if (typeof reminder.awaiting_ack === 'boolean') return reminder.awaiting_ack;
+  return Boolean(reminder.notified_at);
 }
 
 /** Compact clock for list rows and action sheet (e.g. "4:46"). */

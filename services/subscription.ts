@@ -2,7 +2,6 @@ import { Alert } from 'react-native';
 import { Router } from 'expo-router';
 import { apiGet, apiPost, ApiError } from '@/services/api';
 import { listReminders } from '@/services/reminders';
-import { waitForBottomSheetsToSettle } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 import { invalidateProfile } from '@/services/queryClient';
 import { presentUpgradeLimit, type UpgradeKind } from '@/services/upgradeLimit';
@@ -50,7 +49,7 @@ export function isPetLocked(pet: Pet | null | undefined): boolean {
 }
 
 export function firstIncludedPet(pets: Pet[]): Pet | null {
-  return pets.find((p) => !p.locked) ?? pets[0] ?? null;
+  return pets.find((p) => !p.locked) ?? null;
 }
 
 /** Count today + upcoming reminders. Pass only included pets on the free plan. */
@@ -114,8 +113,7 @@ export function isTestStoreEnvironment(): boolean {
  * Returns false if the user is at the free pet limit (and shows upgrade modal).
  * Premium / under limit → true.
  *
- * Call after closing any parent bottom sheet so Upgrade navigation does not
- * leave a half-dismissed modal underneath.
+ * Shows the upgrade dialog above an open pet sheet when one is mounted.
  */
 export async function guardAddPet(
   router: Router,
@@ -124,7 +122,6 @@ export async function guardAddPet(
 ): Promise<boolean> {
   if (petCount < FREE_MAX_PETS) return true;
   if (await fetchIsPremium()) return true;
-  await waitForBottomSheetsToSettle();
   showUpgradeAlert(router, 'pet', options);
   return false;
 }
@@ -141,7 +138,6 @@ export async function guardAddReminder(
   const countable = pets.filter((p) => !p.locked);
   const active = await countActiveReminders(countable.length ? countable : pets);
   if (active < FREE_MAX_ACTIVE_REMINDERS) return true;
-  await waitForBottomSheetsToSettle();
   showUpgradeAlert(router, 'reminder', options);
   return false;
 }
@@ -154,7 +150,6 @@ export async function guardSelectPet(
 ): Promise<boolean> {
   if (!isPetLocked(pet)) return true;
   if (await fetchIsPremium()) return true;
-  await waitForBottomSheetsToSettle();
   showUpgradeAlert(router, 'pet_switch', options);
   return false;
 }

@@ -15,6 +15,7 @@ export interface ReminderPushData {
   type: 'reminder';
   reminderId?: string;
   petId?: string;
+  kind?: 'alert' | 'main';
 }
 
 export async function getNotificationPrefs(): Promise<NotificationPrefs> {
@@ -56,8 +57,9 @@ export function parseReminderPushData(data: unknown): ReminderPushData | null {
   const raw = data as Record<string, unknown>;
   const reminderId = typeof raw.reminderId === 'string' ? raw.reminderId : undefined;
   const petId = typeof raw.petId === 'string' ? raw.petId : undefined;
+  const kind = raw.kind === 'alert' || raw.kind === 'main' ? raw.kind : undefined;
   if (!reminderId && !petId) return null;
-  return { type: 'reminder', reminderId, petId };
+  return { type: 'reminder', reminderId, petId, kind };
 }
 
 async function ensureNotificationHandler(): Promise<typeof import('expo-notifications') | null> {

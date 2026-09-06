@@ -367,6 +367,7 @@
     "already_resolved": "Acest element a fost deja finalizat.",
     "duplicate_reminder_datetime": "Ai deja un memento la această dată și oră.",
     "end_date_before_start": "Data de sfârșit trebuie să fie după data de început.",
+    "alert_not_possible": "Această alertă este prea devreme pentru ora mementoului.",
     "reminder_datetime_in_past": "Alege astăzi sau o dată viitoare.",
     "cannot_delete_last_pet": "Ai nevoie de cel puțin un animal. Adaugă alt animal înainte de a-l elimina pe acesta.",
     "premium_required_pet": "Planul gratuit include 1 animal. Treci la Premium pentru a adăuga mai multe.",

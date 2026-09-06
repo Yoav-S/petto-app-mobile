@@ -135,7 +135,7 @@ export default function HomeScreen() {
       const current = pets.find((p) => p.id === activePetId);
       if (current && !current.locked) return current.id;
     }
-    return included?.id ?? pets[0].id;
+    return included?.id ?? null;
   }, [activePetId, pets]);
 
   useEffect(() => {
@@ -262,8 +262,11 @@ export default function HomeScreen() {
 
   const handleSelectPet = async (petId: string) => {
     const nextPet = pets.find((p) => p.id === petId);
-    if (!(await guardSelectPet(router, nextPet))) {
-      setSwitchVisible(false);
+    if (
+      !(await guardSelectPet(router, nextPet, {
+        onBeforeNavigate: () => setSwitchVisible(false),
+      }))
+    ) {
       return;
     }
     setSwitchVisible(false);
@@ -274,8 +277,14 @@ export default function HomeScreen() {
   };
 
   const handleAddPet = async () => {
+    if (
+      !(await guardAddPet(router, pets.length, {
+        onBeforeNavigate: () => setSwitchVisible(false),
+      }))
+    ) {
+      return;
+    }
     setSwitchVisible(false);
-    if (!(await guardAddPet(router, pets.length))) return;
     router.push('/pets/add' as never);
   };
 

@@ -33,6 +33,17 @@ export const ALERT_OPTIONS = [
 
 export type AlertOption = (typeof ALERT_OPTIONS)[number];
 
+/** Minutes before the reminder. Must stay in sync with server ALERT_OFFSET_MINUTES. */
+export const ALERT_OFFSET_MINUTES: Record<Exclude<AlertOption, 'off'>, number> = {
+  '5m': 5,
+  '10m': 10,
+  '15m': 15,
+  '30m': 30,
+  '1h': 60,
+  '2h': 120,
+  '1d': 1440,
+};
+
 export const DEFAULT_REMINDER_TIME = '09:00';
 
 export function parseAlert(value: string | null | undefined): AlertOption {

@@ -426,6 +426,8 @@ export default function ReminderFormBody({
           <AlertPickerSheet
             visible={sheet === 'alert'}
             value={alert}
+            scheduledDate={date}
+            scheduledTime={time}
             onClose={() => onSheetChange(null)}
             onConfirm={onAlertConfirm}
           />

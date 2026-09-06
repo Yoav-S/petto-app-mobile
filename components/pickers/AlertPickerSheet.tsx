@@ -15,6 +15,7 @@ import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import { ALERT_OPTIONS, type AlertOption } from '@/services/reminders';
+import { isAlertOptionPossible } from '@/components/reminders/reminderFormShared';
 
 const SHEET_HEIGHT_RATIO = 0.75;
 const ROW_PAD_V = 16;
@@ -28,6 +29,8 @@ const SHEET_PAD_TOP = Spacing.lg;
 interface AlertPickerSheetProps {
   visible: boolean;
   value: AlertOption;
+  scheduledDate?: string | null;
+  scheduledTime?: string | null;
   onClose: () => void;
   onConfirm: (value: AlertOption) => void;
 }
@@ -39,6 +42,8 @@ export function alertLabel(value: AlertOption): string {
 export default function AlertPickerSheet({
   visible,
   value,
+  scheduledDate,
+  scheduledTime,
   onClose,
   onConfirm,
 }: AlertPickerSheetProps) {
@@ -49,8 +54,9 @@ export default function AlertPickerSheet({
   const [draft, setDraft] = useState<AlertOption>(value);
 
   useEffect(() => {
-    if (visible) setDraft(value);
-  }, [visible, value]);
+    if (!visible) return;
+    setDraft(isAlertOptionPossible(value, scheduledDate, scheduledTime) ? value : 'off');
+  }, [visible, value, scheduledDate, scheduledTime]);
 
   const sheetMaxHeight = Math.round(windowHeight * SHEET_HEIGHT_RATIO);
   const bottomPad = Math.max(insets.bottom, 16);
@@ -65,11 +71,20 @@ export default function AlertPickerSheet({
     () => (
       <View style={styles.list}>
         {ALERT_OPTIONS.map((option, index) => {
-          const isActive = option === draft;
+          const enabled = isAlertOptionPossible(option, scheduledDate, scheduledTime);
+          const isActive = option === draft && enabled;
           return (
             <View key={option}>
-              <Pressable style={styles.row} onPress={() => setDraft(option)}>
-                <Text style={styles.rowText}>{alertLabel(option)}</Text>
+              <Pressable
+                style={styles.row}
+                disabled={!enabled}
+                onPress={() => {
+                  if (enabled) setDraft(option);
+                }}
+              >
+                <Text style={[styles.rowText, !enabled && styles.rowTextDisabled]}>
+                  {alertLabel(option)}
+                </Text>
                 {isActive ? (
                   <Ionicons name="checkmark" size={20} color={colors.primaryText} />
                 ) : null}
@@ -80,7 +95,17 @@ export default function AlertPickerSheet({
         })}
       </View>
     ),
-    [colors.primaryText, draft, styles.divider, styles.list, styles.row, styles.rowText],
+    [
+      colors.primaryText,
+      draft,
+      scheduledDate,
+      scheduledTime,
+      styles.divider,
+      styles.list,
+      styles.row,
+      styles.rowText,
+      styles.rowTextDisabled,
+    ],
   );
 
   return (
@@ -117,7 +142,10 @@ export default function AlertPickerSheet({
         <Pressable
           style={styles.doneButton}
           onPress={() => {
-            onConfirm(draft);
+            const next = isAlertOptionPossible(draft, scheduledDate, scheduledTime)
+              ? draft
+              : 'off';
+            onConfirm(next);
             onClose();
           }}
         >
@@ -172,6 +200,9 @@ const makeStyles = (c: ThemeColors) =>
       fontSize: 16,
       lineHeight: ROW_LINE,
       color: c.primaryText,
+    },
+    rowTextDisabled: {
+      color: c.secondaryText,
     },
     divider: {
       height: DIVIDER_H,

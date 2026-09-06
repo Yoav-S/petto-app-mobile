@@ -48,6 +48,8 @@ export function useReminderNotificationRouting(enabled: boolean) {
           await setActivePetId(data.petId);
         }
         const focus = data.reminderId ? `&focusId=${encodeURIComponent(data.reminderId)}` : '';
+        // Always request the sheet. The list only opens it when awaiting_ack
+        // is true (due / main push). An early alert tap stays on the list.
         router.push(`/reminders?prompt=1${focus}` as never);
       } finally {
         setTimeout(() => {

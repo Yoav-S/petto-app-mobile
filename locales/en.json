@@ -434,6 +434,7 @@
     "already_resolved": "This item was already completed.",
     "duplicate_reminder_datetime": "You already have a reminder at this date and time.",
     "end_date_before_start": "End date must be after the start date.",
+    "alert_not_possible": "That alert is too early for this reminder time.",
     "reminder_datetime_in_past": "Choose today or a future date.",
     "cannot_delete_last_pet": "You need at least one pet. Add another pet before removing this one.",
     "premium_required_pet": "Free includes 1 pet. Upgrade to Premium to add more.",

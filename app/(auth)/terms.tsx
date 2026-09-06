@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { t, currentLocale } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
 import {
+  HEADER_BELOW_SAFE_AREA,
   LEGAL_TAB_BAR,
   LEGAL_TABS_TOP_FADE_GRADIENT,
   PAGE_HORIZONTAL_PADDING,
@@ -87,8 +88,9 @@ export default function TermsScreen() {
     [tab],
   );
 
-  /** Header swallows the status bar before the back chip starts. */
-  const headerTopPad = Math.max(insets.top, LEGAL_TAB_BAR.statusCover);
+  /** Cover the status bar, then the same gap other headers use before the chip. */
+  const headerTopPad =
+    Math.max(insets.top, LEGAL_TAB_BAR.statusCover) + HEADER_BELOW_SAFE_AREA;
 
   return (
     <ListScrollLayout

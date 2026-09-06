@@ -6,6 +6,7 @@ import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import ReminderFormBody from '@/components/reminders/ReminderFormBody';
 import {
+  clampAlertForSchedule,
   clampReminderTimeForDate,
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
@@ -145,6 +146,7 @@ export default function AddReminderScreen() {
       toast.showError(t('reminders.past_datetime'));
       return;
     }
+    const saveAlert = clampAlertForSchedule(alert, date.slice(0, 10), saveTime);
 
     try {
       setSubmitting(true);
@@ -156,7 +158,7 @@ export default function AddReminderScreen() {
         time: saveTime,
         repeat,
         end_date: endDate,
-        alert,
+        alert: saveAlert,
         note: note.trim() || undefined,
         category,
       });
@@ -172,8 +174,10 @@ export default function AddReminderScreen() {
   const handleDateConfirm = (iso: string) => {
     const nextDate = iso.slice(0, 10);
     if (warnPastDate(nextDate)) return;
+    const nextTime = clampReminderTimeForDate(nextDate, time) ?? DEFAULT_REMINDER_TIME;
     setDate(nextDate);
-    setTime(clampReminderTimeForDate(nextDate, time) ?? DEFAULT_REMINDER_TIME);
+    setTime(nextTime);
+    setAlert(clampAlertForSchedule(alert, nextDate, nextTime));
     if (endDate && endDate <= nextDate) setEndDate(null);
     setSheet(null);
   };
@@ -190,7 +194,9 @@ export default function AddReminderScreen() {
 
   const handleTimeConfirm = (value: string) => {
     if (!date) return;
-    setTime(clampReminderTimeForDate(date, value) ?? value);
+    const nextTime = clampReminderTimeForDate(date, value) ?? value;
+    setTime(nextTime);
+    setAlert(clampAlertForSchedule(alert, date, nextTime));
     setSheet(null);
   };
 

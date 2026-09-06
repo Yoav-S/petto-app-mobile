@@ -24,6 +24,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import ReminderFormBody from '@/components/reminders/ReminderFormBody';
 import SavingOverlay from '@/components/ui/SavingOverlay';
 import {
+  clampAlertForSchedule,
   clampReminderTimeForDate,
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
@@ -226,9 +227,20 @@ export default function EditReminderScreen() {
 
     const saveTime = clampReminderTimeForDate(date.slice(0, 10), time);
     if (!saveTime) return;
+    const saveAlert = clampAlertForSchedule(alert, date.slice(0, 10), saveTime);
+    if (saveAlert !== alert) setAlert(saveAlert);
 
     /** Cleared up front so a blur or exit does not re-send the same write. */
-    const sentSnapshot = buildSnapshot();
+    const sentSnapshot = JSON.stringify({
+      title: title.trim(),
+      category,
+      date,
+      endDate,
+      time: saveTime,
+      repeat,
+      alert: saveAlert,
+      note: note.trim(),
+    });
     dirtyRef.current = false;
     setDirty(false);
 
@@ -239,7 +251,7 @@ export default function EditReminderScreen() {
         time: saveTime,
         repeat,
         end_date: endDate,
-        alert,
+        alert: saveAlert,
         note: note.trim() || undefined,
         category,
       });
@@ -330,6 +342,7 @@ export default function EditReminderScreen() {
     const nextTime = clampReminderTimeForDate(nextDate, time);
     setDate(nextDate);
     setTime(nextTime);
+    setAlert(clampAlertForSchedule(alert, nextDate, nextTime));
     if (endDate && endDate <= nextDate) setEndDate(null);
     setSheet(null);
   };
@@ -346,7 +359,9 @@ export default function EditReminderScreen() {
 
   const handleTimeConfirm = (value: string) => {
     if (!date) return;
-    setTime(clampReminderTimeForDate(date, value) ?? value);
+    const nextTime = clampReminderTimeForDate(date, value) ?? value;
+    setTime(nextTime);
+    setAlert(clampAlertForSchedule(alert, date, nextTime));
     setSheet(null);
   };
 
