@@ -25,7 +25,11 @@ import ReminderListItem, {
 } from '@/components/reminders/ReminderListItem';
 import ReminderActionSheet from '@/components/reminders/ReminderActionSheet';
 import SwipeToDeleteRow from '@/components/ui/SwipeToDeleteRow';
-import { needsStatusPrompt, formatSheetClockTime } from '@/components/reminders/reminderFormShared';
+import {
+  needsStatusPrompt,
+  shouldPromptFromPush,
+  formatSheetClockTime,
+} from '@/components/reminders/reminderFormShared';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
@@ -74,10 +78,20 @@ function reminderRelativeDate(date: string): string {
   return formatDisplayDate(date);
 }
 
-function sortPromptQueue(items: Reminder[], focusId?: string | null): Reminder[] {
+function sortPromptQueue(
+  items: Reminder[],
+  focusId?: string | null,
+  forceFocus = false,
+): Reminder[] {
   const unique = new Map<string, Reminder>();
   for (const item of items) {
     if (needsStatusPrompt(item)) unique.set(item.id, item);
+  }
+  if (forceFocus && focusId) {
+    const focused = items.find((row) => row.id === focusId);
+    if (focused && shouldPromptFromPush(focused)) {
+      unique.set(focused.id, focused);
+    }
   }
   const list = Array.from(unique.values()).sort((a, b) => {
     if (a.date !== b.date) return a.date.localeCompare(b.date);
@@ -85,7 +99,8 @@ function sortPromptQueue(items: Reminder[], focusId?: string | null): Reminder[]
   });
   if (!focusId) return list;
   const idx = list.findIndex((r) => r.id === focusId);
-  if (idx <= 0) return list;
+  if (idx < 0) return list;
+  if (idx === 0) return list;
   const [focused] = list.splice(idx, 1);
   return [focused, ...list];
 }
@@ -100,6 +115,8 @@ export default function RemindersScreen() {
     deletedId?: string;
     prompt?: string;
     focusId?: string;
+    petId?: string;
+    n?: string;
   }>();
 
   const [activeTab, setActiveTab] = useState<TabName>('Today');
@@ -239,7 +256,7 @@ export default function RemindersScreen() {
     (items: Reminder[], focusId?: string | null, force = false) => {
       if (force) sessionSkipRef.current = false;
       if (sessionSkipRef.current && !force) return;
-      const queue = sortPromptQueue(items, focusId);
+      const queue = sortPromptQueue(items, focusId, force);
       setPromptQueue(queue);
       setPromptTotal(queue.length);
       if (queue.length) setActiveTab('Today');
@@ -255,9 +272,10 @@ export default function RemindersScreen() {
         autoPromptCheckedRef.current = true;
       }
       const items = [...today, ...recent];
-      if (params.focusId && activePetId) {
+      const petId = params.petId || activePetId;
+      if (params.focusId && petId) {
         try {
-          const focused = await getReminder(activePetId, params.focusId);
+          const focused = await getReminder(petId, params.focusId);
           const idx = items.findIndex((row) => row.id === focused.id);
           if (idx >= 0) items[idx] = focused;
           else items.push(focused);
@@ -267,7 +285,7 @@ export default function RemindersScreen() {
       }
       openPromptQueue(items, params.focusId, force);
     },
-    [activePetId, openPromptQueue, params.focusId, params.prompt],
+    [activePetId, openPromptQueue, params.focusId, params.petId, params.prompt],
   );
 
   useFocusEffect(
@@ -278,6 +296,18 @@ export default function RemindersScreen() {
       });
     }, [refetchAll, maybeAutoPromptStatus]),
   );
+
+  // A second notification tap while already on this screen does not refocus.
+  // Re-open the sheet whenever a new push lands (unique `n`).
+  React.useEffect(() => {
+    if (params.prompt !== '1' && !params.focusId) return;
+    if (!params.n) return;
+    autoPromptCheckedRef.current = false;
+    sessionSkipRef.current = false;
+    void refetchAll().then(({ today, recent }) => {
+      void maybeAutoPromptStatus(today, recent);
+    });
+  }, [maybeAutoPromptStatus, params.focusId, params.n, params.prompt, refetchAll]);
 
   const onRefresh = useCallback(async () => {
     if (loadingMore) return;
@@ -295,10 +325,15 @@ export default function RemindersScreen() {
     sessionSkipRef.current = true;
     setPromptQueue([]);
     setPromptTotal(0);
-    if (params.prompt || params.focusId) {
-      router.setParams({ prompt: undefined, focusId: undefined } as never);
+    if (params.prompt || params.focusId || params.n) {
+      router.setParams({
+        prompt: undefined,
+        focusId: undefined,
+        petId: undefined,
+        n: undefined,
+      } as never);
     }
-  }, [params.focusId, params.prompt, router]);
+  }, [params.focusId, params.n, params.petId, params.prompt, router]);
 
   const advanceOrCloseQueue = useCallback(() => {
     setPromptQueue((prev) => {
@@ -310,7 +345,7 @@ export default function RemindersScreen() {
 
   const handleReminderPress = useCallback(
     (item: Reminder) => {
-      if (needsStatusPrompt(item)) {
+      if (needsStatusPrompt(item) || shouldPromptFromPush(item)) {
         sessionSkipRef.current = false;
         openPromptQueue([item], item.id, true);
         return;

@@ -19,8 +19,9 @@ export function useReminderNotificationRouting(enabled: boolean) {
   const router = useRouter();
   const segments = useSegments();
   const { activePetId, setActivePetId } = useActivePet();
-  const handlingRef = useRef(false);
   const launchedPromptRef = useRef(false);
+  const segmentsRef = useRef(segments);
+  segmentsRef.current = segments;
 
   useEffect(() => {
     if (!enabled) return;
@@ -29,32 +30,35 @@ export function useReminderNotificationRouting(enabled: boolean) {
     let cancelled = false;
 
     const openFromPush = async (data: ReminderPushData) => {
-      if (handlingRef.current) return;
-      handlingRef.current = true;
-      try {
-        launchedPromptRef.current = true;
-        if (data.petId) {
-          try {
-            const pets = await listPets();
-            const target = pets.find((p) => p.id === data.petId);
-            if (target?.locked) {
-              presentUpgradeLimit('pet_switch');
-              return;
-            }
-          } catch {
-            // If we cannot confirm access, do not switch onto a possibly locked pet.
+      launchedPromptRef.current = true;
+      if (data.petId) {
+        try {
+          const pets = await listPets();
+          const target = pets.find((p) => p.id === data.petId);
+          if (target?.locked) {
+            presentUpgradeLimit('pet_switch');
             return;
           }
-          await setActivePetId(data.petId);
+        } catch {
+          return;
         }
-        const focus = data.reminderId ? `&focusId=${encodeURIComponent(data.reminderId)}` : '';
-        // Always request the sheet. The list only opens it when awaiting_ack
-        // is true (due / main push). An early alert tap stays on the list.
-        router.push(`/reminders?prompt=1${focus}` as never);
-      } finally {
-        setTimeout(() => {
-          handlingRef.current = false;
-        }, 800);
+        await setActivePetId(data.petId);
+      }
+      const focus = data.reminderId ? `&focusId=${encodeURIComponent(data.reminderId)}` : '';
+      const pet = data.petId ? `&petId=${encodeURIComponent(data.petId)}` : '';
+      // Unique `n` so tapping the alert or the reminder while already on
+      // /reminders still re-opens the Done/Missed sheet.
+      const href = `/reminders?prompt=1${focus}${pet}&n=${Date.now()}`;
+      const onReminders = segmentsRef.current.some((s) => s === 'reminders');
+      if (onReminders) {
+        router.setParams({
+          prompt: '1',
+          focusId: data.reminderId,
+          petId: data.petId,
+          n: String(Date.now()),
+        } as never);
+      } else {
+        router.push(href as never);
       }
     };
 
