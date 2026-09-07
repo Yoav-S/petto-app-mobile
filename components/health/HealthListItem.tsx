@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import CardBottomFadeOverlay from '@/components/ui/CardBottomFadeOverlay';
+import ListRowPressable from '@/components/ui/ListRowPressable';
 import { t } from '@/i18n';
 import { formatHealthDateMeta, truncatePreviewText } from '@/utils/calendar';
 
@@ -102,15 +103,14 @@ export default function HealthListItem({
             {displayTitle}
           </Text>
           {hasReminder ? (
-            <TouchableOpacity
+            <ListRowPressable
               onPress={onReminderPress}
               hitSlop={8}
-              activeOpacity={0.7}
               disabled={!onReminderPress}
               style={styles.reminderIconBtn}
             >
               <Ionicons name="notifications-outline" size={16} color={colors.secondaryText} />
-            </TouchableOpacity>
+            </ListRowPressable>
           ) : (
             <View style={styles.reminderSpacer} />
           )}

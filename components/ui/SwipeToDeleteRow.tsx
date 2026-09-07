@@ -8,6 +8,7 @@ import {
   BackHandler,
   Platform,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Trash2 } from 'lucide-react-native';
 import { type ThemeColors } from '@/constants/theme';
@@ -107,6 +108,12 @@ export default function SwipeToDeleteRow({
     }
   }, []);
 
+  const resetWash = useCallback(() => {
+    clearPressTimer();
+    wash.stopAnimation();
+    wash.setValue(0);
+  }, [clearPressTimer, wash]);
+
   const onGestureBegan = useCallback(() => {
     clearPressTimer();
     pressTimer.current = setTimeout(() => fadeWash(1), PRESS_IN_DELAY);
@@ -125,9 +132,22 @@ export default function SwipeToDeleteRow({
 
   useEffect(() => {
     if (open === false) {
+      resetWash();
       ref.current?.close();
     }
-  }, [open]);
+  }, [open, resetWash]);
+
+  // iOS: pushing a screen cancels the swipe gesture without onEnded, so the
+  // disabled wash stays on the card until we clear it on blur / focus.
+  useFocusEffect(
+    useCallback(() => {
+      resetWash();
+      return () => {
+        resetWash();
+        if (revealedRef.current) ref.current?.close();
+      };
+    }, [resetWash]),
+  );
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {

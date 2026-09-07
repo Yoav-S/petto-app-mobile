@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import ListRowPressable from '@/components/ui/ListRowPressable';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -303,9 +304,8 @@ export default function HealthDetailsScreen() {
 
       const note = item.note;
       return (
-        <TouchableOpacity
+        <ListRowPressable
           style={styles.noteCard}
-          activeOpacity={0.85}
           onPress={() => openNote(note.id)}
         >
           {note.photo_url && !failedPhotoIds[note.id] ? (
@@ -333,7 +333,7 @@ export default function HealthDetailsScreen() {
               />
             </View>
           ) : null}
-        </TouchableOpacity>
+        </ListRowPressable>
       );
     },
     [failedPhotoIds, openNote, styles],
