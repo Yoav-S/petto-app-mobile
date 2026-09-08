@@ -8,8 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
-import { DESIGN_HOME_HEALTH_CARD_HEIGHT } from '@/constants/layout';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { useHomePanelLayout } from '@/hooks/useHomePanelLayout';
 
 interface HealthCardProps {
   latestRecord: {
@@ -39,9 +38,7 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
   const colors = useColors();
   const homeCardTypography = useThemedStyles(makeHomeCardTypography);
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
-  const { structuralScale } = useResponsiveLayout();
-  const cardHeight = Math.round(DESIGN_HOME_HEALTH_CARD_HEIGHT * structuralScale);
-  const rowHeight = Math.round(80 * structuralScale);
+  const { healthCardHeight: cardHeight, healthRowHeight: rowHeight } = useHomePanelLayout();
 
   useEffect(() => {
     if (loading) {

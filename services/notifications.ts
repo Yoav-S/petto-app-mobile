@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { apiPost, apiGet, apiPatch } from './api';
 
@@ -67,12 +67,21 @@ async function ensureNotificationHandler(): Promise<typeof import('expo-notifica
   const Notifications = await import('expo-notifications');
   if (!handlerConfigured) {
     Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-      }),
+      handleNotification: async (notification) => {
+        const data = parseReminderPushData(notification.request.content.data);
+        const isMainReminder = Boolean(data) && data.kind !== 'alert';
+        const appOpen = AppState.currentState === 'active';
+        // Logged-in + app in foreground: skip the OS tray for the on-time
+        // reminder and show the Done/Missed sheet instead. Alerts still banner.
+        const showTray = !(appOpen && isMainReminder);
+        return {
+          shouldShowAlert: showTray,
+          shouldShowBanner: showTray,
+          shouldShowList: showTray,
+          shouldPlaySound: showTray,
+          shouldSetBadge: false,
+        };
+      },
     });
     handlerConfigured = true;
   }
@@ -180,6 +189,29 @@ export async function subscribeToReminderNotificationResponses(
   } catch (err) {
     if (__DEV__) console.log('[push] last response unavailable:', err);
   }
+
+  return () => {
+    sub.remove();
+  };
+}
+
+/**
+ * Foreground delivery (app already open). Used to open the Done/Missed sheet
+ * without showing a system notification for the on-time reminder.
+ */
+export async function subscribeToForegroundReminderNotifications(
+  onReceive: (data: ReminderPushData) => void,
+): Promise<() => void> {
+  const Notifications = await ensureNotificationHandler();
+  if (!Notifications) return () => {};
+
+  const sub = Notifications.addNotificationReceivedListener((notification) => {
+    if (AppState.currentState !== 'active') return;
+    const parsed = parseReminderPushData(notification.request.content.data);
+    if (!parsed) return;
+    if (parsed.kind === 'alert') return;
+    onReceive(parsed);
+  });
 
   return () => {
     sub.remove();

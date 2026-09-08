@@ -24,7 +24,7 @@ import PetPhotoImage from '@/components/ui/PetPhotoImage';
 import HeaderIconButton, {
   HEADER_ICON_BTN,
 } from '@/components/ui/HeaderIconButton';
-import { ADD_FAB } from '@/components/ui/SpeedDialFab';
+import { useHomePanelLayout } from '@/hooks/useHomePanelLayout';
 
 import {
   DESIGN_COVER_HEIGHT,
@@ -88,17 +88,13 @@ export default function PetHeader({
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { width: screenWidth, structuralScale, contentWidth } = useResponsiveLayout();
+  const { gapAfterName, cardsBottomInset } = useHomePanelLayout();
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
 
   const coverHeight = Math.round(DESIGN_COVER_HEIGHT * structuralScale);
   const panelOverlap = Math.round((DESIGN_COVER_HEIGHT - DESIGN_PANEL_TOP) * structuralScale);
   const panelRadius = Math.round(DESIGN_PANEL_RADIUS * structuralScale);
   const nameBlockWidth = Math.min(screenWidth - PAGE_HORIZONTAL_PADDING * 2, contentWidth);
-  /** Match FAB bottom edge so Topics card and FAB sit on the same baseline. */
-  const cardsBottomInset = Math.max(
-    ADD_FAB.bottom * structuralScale,
-    16 + insets.bottom,
-  );
   const coverSource = useMemo(
     () => petPhotoSource(pet),
     [pet?.id, pet?.photo_url, pet?.type],
@@ -259,8 +255,9 @@ export default function PetHeader({
           style={[
             styles.panelBody,
             {
-              paddingBottom: cardsBottomInset,
-              justifyContent: profileActive ? 'flex-start' : 'flex-end',
+              paddingTop: profileActive ? 0 : gapAfterName,
+              paddingBottom: profileActive ? 16 : cardsBottomInset,
+              justifyContent: 'flex-start',
             },
           ]}
         >
@@ -339,7 +336,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 0,
     paddingBottom: 0,
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
   },

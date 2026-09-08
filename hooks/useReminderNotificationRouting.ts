@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import {
+  subscribeToForegroundReminderNotifications,
   subscribeToReminderNotificationResponses,
   type ReminderPushData,
 } from '@/services/notifications';
@@ -26,7 +27,8 @@ export function useReminderNotificationRouting(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
 
-    let unsubscribe: (() => void) | undefined;
+    let unsubscribeTap: (() => void) | undefined;
+    let unsubscribeForeground: (() => void) | undefined;
     let cancelled = false;
 
     const openFromPush = async (data: ReminderPushData) => {
@@ -70,12 +72,24 @@ export function useReminderNotificationRouting(enabled: boolean) {
         unsub();
         return;
       }
-      unsubscribe = unsub;
+      unsubscribeTap = unsub;
+    });
+
+    void subscribeToForegroundReminderNotifications((data) => {
+      if (cancelled) return;
+      void openFromPush(data);
+    }).then((unsub) => {
+      if (cancelled) {
+        unsub();
+        return;
+      }
+      unsubscribeForeground = unsub;
     });
 
     return () => {
       cancelled = true;
-      unsubscribe?.();
+      unsubscribeTap?.();
+      unsubscribeForeground?.();
     };
   }, [enabled, router, setActivePetId]);
 

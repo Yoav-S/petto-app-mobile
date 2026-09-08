@@ -76,6 +76,7 @@ export default function SpeedDialFab({
   const s = structuralScale;
 
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const [blockTouches, setBlockTouches] = useState(false);
   const controlled = openProp !== undefined;
   const open = controlled ? openProp : uncontrolledOpen;
 
@@ -83,6 +84,20 @@ export default function SpeedDialFab({
     if (!controlled) setUncontrolledOpen(next);
     onOpenChange?.(next);
   };
+
+  // iOS retargets the same tap onto the home card after the menu drops
+  // pointerEvents, which opens the list instead of add. Keep a full-screen
+  // catcher until the close animation finishes.
+  useEffect(() => {
+    if (open) {
+      setBlockTouches(true);
+      return;
+    }
+    const timeout = setTimeout(() => setBlockTouches(false), ADD_FAB.animMs);
+    return () => clearTimeout(timeout);
+  }, [open]);
+
+  const interceptTouches = open || blockTouches;
 
   const progress = useSharedValue(open ? 1 : 0);
   useEffect(() => {
@@ -106,10 +121,13 @@ export default function SpeedDialFab({
   const toggle = () => setOpen(!open);
 
   return (
-    <>
+    <View
+      style={styles.layer}
+      pointerEvents={interceptTouches ? 'box-none' : 'none'}
+    >
       <AnimatedPressable
         style={[styles.scrim, scrimStyle]}
-        pointerEvents={open ? 'auto' : 'none'}
+        pointerEvents={interceptTouches ? 'auto' : 'none'}
         onPress={close}
       />
 
@@ -137,8 +155,8 @@ export default function SpeedDialFab({
               key={item.key}
               style={styles.menuItem}
               onPress={() => {
-                close();
                 item.onPress();
+                requestAnimationFrame(() => close());
               }}
               activeOpacity={0.85}
             >
@@ -174,21 +192,23 @@ export default function SpeedDialFab({
           </Animated.View>
         </TouchableOpacity>
       </View>
-    </>
+    </View>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    layer: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 100,
+    },
     scrim: {
       ...StyleSheet.absoluteFillObject,
       backgroundColor: c.overlay,
-      zIndex: 90,
     },
     anchor: {
       position: 'absolute',
       alignItems: 'flex-end',
-      zIndex: 100,
     },
     menu: {
       alignItems: 'flex-end',

@@ -29,6 +29,7 @@ import FABMenu from '@/components/home/FABMenu';
 import PetProfilePanel from '@/components/home/PetProfilePanel';
 import PetSwitcherSheet from '@/components/home/PetSwitcherSheet';
 import { SignOutModal } from '@/components/ui/ConfirmModal';
+import { pushDirect } from '@/utils/navigation';
 
 function reminderToScheduledAt(reminder: Reminder): string {
   return `${reminder.date}T${reminder.time}:00`;
@@ -371,12 +372,12 @@ export default function HomeScreen() {
           <FABMenu
             open={fabOpen}
             onOpenChange={setFabOpen}
-            onVaccinePress={() => router.push('/vaccines/add' as never)}
-            onHealthPress={() => router.push('/topics/add' as never)}
+            onVaccinePress={() => pushDirect('/vaccines/add')}
+            onHealthPress={() => pushDirect('/topics/add')}
             onReminderPress={() => {
               void (async () => {
                 if (!(await guardAddReminder(router, pets))) return;
-                router.push('/reminders/add' as never);
+                pushDirect('/reminders/add');
               })();
             }}
           />
