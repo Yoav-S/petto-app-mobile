@@ -56,12 +56,12 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
 
   return (
     <TouchableOpacity
-      style={[styles.card, { height: cardHeight }]}
+      style={[styles.card, { minHeight: cardHeight }]}
       onPress={onPress}
       activeOpacity={0.85}
     >
       {loading ? (
-        <View style={[styles.cardRow, { height: rowHeight }]}>
+        <View style={[styles.cardRow, { minHeight: rowHeight }]}>
           <Animated.View style={[styles.skeletonIcon, { opacity: fadeAnim }]} />
           <View style={styles.skeletonContent}>
             <Animated.View style={[styles.skeletonLine, { width: '70%', opacity: fadeAnim }]} />
@@ -70,7 +70,7 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
           </View>
         </View>
       ) : (
-        <View style={[styles.cardRow, { height: rowHeight }]}>
+        <View style={[styles.cardRow, { minHeight: rowHeight }]}>
           <CategoryIcon />
           <View style={homeCardTypography.healthContent}>
             <View style={homeCardTypography.healthTitleRow}>

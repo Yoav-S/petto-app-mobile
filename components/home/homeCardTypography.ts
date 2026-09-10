@@ -46,7 +46,7 @@ export const makeHomeCardTypography = (c: ThemeColors) => StyleSheet.create({
   healthContent: {
     flex: 1,
     minWidth: 0,
-    height: 80,
+    minHeight: 80,
     gap: 12,
   },
   healthTitleRow: {
@@ -64,9 +64,8 @@ export const makeHomeCardTypography = (c: ThemeColors) => StyleSheet.create({
     maxWidth: 120,
   },
   healthBodyBlock: {
-    height: 42,
+    minHeight: 42,
     gap: 6,
-    overflow: 'hidden',
   },
   healthSubtitle: {
     fontFamily: 'Rubik-Regular',

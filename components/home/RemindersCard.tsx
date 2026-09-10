@@ -65,7 +65,7 @@ export default function RemindersCard({
 
   return (
     <TouchableOpacity
-      style={[styles.card, { height: cardHeight, minHeight: cardHeight, maxHeight: cardHeight }]}
+      style={[styles.card, { minHeight: cardHeight }]}
       onPress={onPress}
       activeOpacity={0.85}
     >
@@ -151,24 +151,20 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     width: '100%',
     flex: 1,
     justifyContent: 'space-between',
-    overflow: 'hidden',
     minWidth: 0,
   },
   topContent: {
     width: '100%',
     gap: Spacing.md,
-    overflow: 'hidden',
     flex: 1,
   },
   iconTitleBlock: {
     width: '100%',
     gap: Spacing.sm,
-    overflow: 'hidden',
   },
   reminderDetails: {
     width: '100%',
     gap: 6,
-    overflow: 'hidden',
   },
   iconContainer: {
     width: 36,

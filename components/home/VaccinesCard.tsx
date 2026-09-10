@@ -59,7 +59,7 @@ export default function VaccinesCard({ latestVaccine, loading, onPress }: Vaccin
 
   return (
     <TouchableOpacity
-      style={[styles.card, { height: cardHeight, minHeight: cardHeight, maxHeight: cardHeight }]}
+      style={[styles.card, { minHeight: cardHeight }]}
       onPress={onPress}
       activeOpacity={0.85}
     >
@@ -135,18 +135,15 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     width: '100%',
     flex: 1,
     gap: Spacing.md,
-    overflow: 'hidden',
     minWidth: 0,
   },
   iconTitleBlock: {
     width: '100%',
     gap: Spacing.sm,
-    overflow: 'hidden',
   },
   vaccineDetails: {
     width: '100%',
     gap: 6,
-    overflow: 'hidden',
     flex: 1,
   },
   iconContainer: {
