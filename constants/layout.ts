@@ -62,8 +62,10 @@ export const DESIGN_COVER_HEIGHT = 352;
 export const DESIGN_PANEL_TOP = 328;
 export const DESIGN_PANEL_HEIGHT = 484;
 export const DESIGN_PANEL_RADIUS = 24;
-export const DESIGN_HOME_HALF_CARD_HEIGHT = 198;
+export const DESIGN_HOME_HALF_CARD_HEIGHT = 194;
 export const DESIGN_HOME_HEALTH_CARD_HEIGHT = 112;
+/** Figma: topics bottom covers 25% of the 56px FAB (14px). */
+export const DESIGN_FAB_TOPICS_OVERLAP = 14;
 
 /** Gap below safe-area inset when inset is taller than the Figma status band. */
 export const HEADER_BELOW_SAFE_AREA = 12;

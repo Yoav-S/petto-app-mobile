@@ -18,18 +18,19 @@ import Animated, {
 } from 'react-native-reanimated';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-/** Figma 375×812 FAB metrics. Size/offset use bounded structural scale; type stays fixed. */
+/** Figma 375×812: 56×56 at left 299 / top 728 → right 20, bottom 28. */
 export const ADD_FAB = {
   size: 56,
   radius: 16,
   padding: 16,
   iconSize: 24,
-  right: 22,
-  bottom: 38,
+  right: 20,
+  bottom: 28,
   menuGap: 12,
   /** Figma menu chip — each row sizes to its label. */
   menuItemH: 48,
@@ -122,8 +123,8 @@ export default function SpeedDialFab({
 
   return (
     <View
-      style={styles.layer}
-      pointerEvents={interceptTouches ? 'box-none' : 'none'}
+      style={[styles.layer, { zIndex: interceptTouches ? 100 : 1 }]}
+      pointerEvents="box-none"
     >
       <AnimatedPressable
         style={[styles.scrim, scrimStyle]}
@@ -135,7 +136,7 @@ export default function SpeedDialFab({
         style={[
           styles.anchor,
           {
-            right: ADD_FAB.right * s,
+            right: PAGE_HORIZONTAL_PADDING,
             bottom: Math.max(ADD_FAB.bottom * s, 16 + insets.bottom),
           },
           style,
@@ -200,7 +201,6 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     layer: {
       ...StyleSheet.absoluteFillObject,
-      zIndex: 100,
     },
     scrim: {
       ...StyleSheet.absoluteFillObject,

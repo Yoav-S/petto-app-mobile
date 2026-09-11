@@ -125,8 +125,8 @@ export default function PetHeader({
   const petAge = calculateAge(pet?.birth_date ?? undefined);
 
   return (
-    <View style={styles.wrapper}>
-      <View style={[styles.cover, { height: coverHeight }]}>
+    <View style={styles.wrapper} pointerEvents="box-none">
+      <View style={[styles.cover, { height: coverHeight }]} pointerEvents="auto">
         <Pressable
           style={styles.coverPressable}
           onPress={onCoverPress}
@@ -197,7 +197,7 @@ export default function PetHeader({
         </View>
       </View>
 
-      <View style={[styles.panelOuter, { marginTop: -panelOverlap }]}>
+      <View style={[styles.panelOuter, { marginTop: -panelOverlap }]} pointerEvents="box-none">
         <View
           style={[
             styles.panelHeaderClip,
@@ -206,6 +206,7 @@ export default function PetHeader({
               borderTopRightRadius: panelRadius,
             },
           ]}
+          pointerEvents="auto"
         >
           {loading ? (
             <View style={[styles.nameSection, { maxWidth: nameBlockWidth }]}>
@@ -260,6 +261,7 @@ export default function PetHeader({
               justifyContent: 'flex-start',
             },
           ]}
+          pointerEvents="box-none"
         >
           {children}
         </View>
@@ -272,6 +274,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   wrapper: {
     flex: 1,
     backgroundColor: c.panel,
+    zIndex: 2,
   },
   cover: {
     width: '100%',

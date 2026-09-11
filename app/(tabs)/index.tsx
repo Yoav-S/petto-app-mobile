@@ -13,7 +13,7 @@ import { t } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
 import { firstIncludedPet, guardAddPet, guardAddReminder, guardSelectPet } from '@/services/subscription';
 import type { MedicalRecord, Reminder } from '@/types/api';
-import { isIsoDateToday, normalizeToDatePart, todayIsoDate, truncateHealthDescription } from '@/utils/calendar';
+import { isIsoDateToday, normalizeToDatePart, todayIsoDate } from '@/utils/calendar';
 import { prefetchPetPhoto } from '@/utils/petPhotoSource';
 import {
   usePetsQuery,
@@ -182,7 +182,7 @@ export default function HomeScreen() {
       latestRecord: record
         ? {
             type: record.title,
-            description: truncateHealthDescription(record.description) || undefined,
+            description: record.description?.trim() || undefined,
             date: record.created_at,
             reminder_date: record.linked_reminder_date ?? undefined,
             reminder_time: record.linked_reminder_time ?? undefined,
@@ -313,7 +313,7 @@ export default function HomeScreen() {
             {effectiveMode === 'profile' ? (
               <PetProfilePanel pet={pet} />
             ) : (
-              <View style={styles.cardsGrid}>
+              <View style={styles.cardsGrid} pointerEvents="auto">
                 <View style={styles.row}>
                   <VaccinesCard
                     latestVaccine={
@@ -425,6 +425,7 @@ const makeStyles = (c: ThemeColors) =>
       position: 'relative',
       width: '100%',
       overflow: 'visible',
+      zIndex: 0,
     },
     errorBanner: {
       position: 'absolute',

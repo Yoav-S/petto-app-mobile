@@ -1,6 +1,6 @@
 import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
 import { homeCategoryIconBg, HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
-import { Spacing, type ThemeColors } from '@/constants/theme';
+import TopicsWrapDescription from '@/components/home/TopicsWrapDescription';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import HealthReminderLine from '@/components/health/HealthReminderLine';
@@ -9,6 +9,20 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useHomePanelLayout } from '@/hooks/useHomePanelLayout';
+import { type ThemeColors } from '@/constants/theme';
+
+/** Figma Topics card inner metrics (335×112 → 303×80 after 16 padding). */
+const TOPICS = {
+  padding: 16,
+  radius: 20,
+  innerGap: 8,
+  icon: 36,
+  columnGap: 4,
+  headerH: 20,
+  titleDescGap: 8,
+  titleH: 16,
+  descH: 32,
+} as const;
 
 interface HealthCardProps {
   latestRecord: {
@@ -38,7 +52,7 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
   const colors = useColors();
   const homeCardTypography = useThemedStyles(makeHomeCardTypography);
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
-  const { topicsEndPadding } = useHomePanelLayout();
+  const { secondLineInset } = useHomePanelLayout();
 
   useEffect(() => {
     if (loading) {
@@ -56,12 +70,12 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
 
   return (
     <TouchableOpacity
-      style={[styles.card, { paddingRight: topicsEndPadding }]}
+      style={styles.card}
       onPress={onPress}
       activeOpacity={0.85}
     >
       {loading ? (
-        <View style={styles.cardRow}>
+        <View style={styles.inner}>
           <Animated.View style={[styles.skeletonIcon, { opacity: fadeAnim }]} />
           <View style={styles.skeletonContent}>
             <Animated.View style={[styles.skeletonLine, { width: '70%', opacity: fadeAnim }]} />
@@ -70,11 +84,11 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
           </View>
         </View>
       ) : (
-        <View style={styles.cardRow}>
+        <View style={styles.inner}>
           <CategoryIcon />
-          <View style={homeCardTypography.healthContent}>
-            <View style={homeCardTypography.healthTitleRow}>
-              <Text style={[homeCardTypography.title, styles.healthTitle]} numberOfLines={1}>
+          <View style={styles.column}>
+            <View style={styles.headerRow}>
+              <Text style={[homeCardTypography.title, styles.headerTitle]} numberOfLines={1}>
                 {t('home.topicsCard.title')}
               </Text>
               {latestRecord?.reminder_date || latestRecord?.reminder_time ? (
@@ -97,19 +111,21 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
 
             <View
               style={[
-                homeCardTypography.healthBodyBlock,
-                latestRecord ? null : homeCardTypography.emptyBlockCentered,
+                styles.body,
+                latestRecord ? null : styles.bodyEmpty,
               ]}
             >
               {latestRecord ? (
                 <>
-                  <Text style={homeCardTypography.healthSubtitle} numberOfLines={1} ellipsizeMode="tail">
+                  <Text style={styles.recordTitle} numberOfLines={1} ellipsizeMode="tail">
                     {latestRecord.type}
                   </Text>
                   {latestRecord.description ? (
-                    <Text style={homeCardTypography.note} numberOfLines={1} ellipsizeMode="tail">
-                      {latestRecord.description}
-                    </Text>
+                    <TopicsWrapDescription
+                      text={latestRecord.description}
+                      secondLineInset={secondLineInset}
+                      style={homeCardTypography.note}
+                    />
                   ) : null}
                 </>
               ) : (
@@ -143,32 +159,77 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: c.surface,
-    borderRadius: 20,
-    padding: Spacing.lg,
+    borderRadius: TOPICS.radius,
+    padding: TOPICS.padding,
     width: '100%',
+    overflow: 'hidden',
     ...cardShadow,
   },
-  cardRow: {
+  inner: {
     flex: 1,
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: TOPICS.innerGap,
+    minHeight: 0,
+    overflow: 'hidden',
+  },
+  column: {
+    flex: 1,
+    minWidth: 0,
+    height: '100%',
+    gap: TOPICS.columnGap,
+    overflow: 'hidden',
+  },
+  headerRow: {
+    height: TOPICS.headerH,
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    flexShrink: 0,
+    overflow: 'hidden',
+  },
+  headerTitle: {
+    flexShrink: 1,
+    includeFontPadding: false,
+  },
+  body: {
+    flexGrow: 1,
+    flexShrink: 0,
+    width: '100%',
+    gap: TOPICS.titleDescGap,
+    overflow: 'hidden',
+  },
+  bodyEmpty: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  recordTitle: {
+    width: '100%',
+    height: TOPICS.titleH,
+    fontFamily: 'Rubik-Regular',
+    fontSize: 16,
+    lineHeight: 16,
+    color: c.primaryText,
+    flexShrink: 0,
+    includeFontPadding: false,
+    overflow: 'hidden',
   },
   iconContainer: {
-    width: 36,
-    height: 36,
+    width: TOPICS.icon,
+    height: TOPICS.icon,
     borderRadius: 10,
     padding: 4,
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
   },
   iconImage: {
     width: 24,
     height: 24,
   },
   skeletonIcon: {
-    width: 36,
-    height: 36,
+    width: TOPICS.icon,
+    height: TOPICS.icon,
     borderRadius: 10,
     backgroundColor: c.border,
   },
@@ -180,9 +241,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     height: 14,
     backgroundColor: c.border,
     borderRadius: 6,
-  },
-  healthTitle: {
-    flexShrink: 1,
   },
   reminderLine: {
     flexShrink: 1,
