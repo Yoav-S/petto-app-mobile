@@ -6,7 +6,6 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
 import { homeCategoryIconBg, HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { t } from '@/i18n';
-import { useHomePanelLayout } from '@/hooks/useHomePanelLayout';
 
 interface VaccinesCardProps {
   latestVaccine: {
@@ -41,7 +40,6 @@ export default function VaccinesCard({ latestVaccine, loading, onPress }: Vaccin
   const styles = useThemedStyles(makeStyles);
   const homeCardTypography = useThemedStyles(makeHomeCardTypography);
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
-  const { halfCardHeight: cardHeight } = useHomePanelLayout();
 
   useEffect(() => {
     if (loading) {
@@ -59,7 +57,7 @@ export default function VaccinesCard({ latestVaccine, loading, onPress }: Vaccin
 
   return (
     <TouchableOpacity
-      style={[styles.card, { minHeight: cardHeight }]}
+      style={styles.card}
       onPress={onPress}
       activeOpacity={0.85}
     >

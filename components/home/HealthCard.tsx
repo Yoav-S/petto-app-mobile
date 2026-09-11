@@ -1,6 +1,6 @@
 import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
 import { homeCategoryIconBg, HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
-import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import HealthReminderLine from '@/components/health/HealthReminderLine';
@@ -38,7 +38,7 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
   const colors = useColors();
   const homeCardTypography = useThemedStyles(makeHomeCardTypography);
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
-  const { healthCardHeight: cardHeight, healthRowHeight: rowHeight } = useHomePanelLayout();
+  const { topicsEndPadding } = useHomePanelLayout();
 
   useEffect(() => {
     if (loading) {
@@ -56,12 +56,12 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
 
   return (
     <TouchableOpacity
-      style={[styles.card, { minHeight: cardHeight }]}
+      style={[styles.card, { paddingRight: topicsEndPadding }]}
       onPress={onPress}
       activeOpacity={0.85}
     >
       {loading ? (
-        <View style={[styles.cardRow, { minHeight: rowHeight }]}>
+        <View style={styles.cardRow}>
           <Animated.View style={[styles.skeletonIcon, { opacity: fadeAnim }]} />
           <View style={styles.skeletonContent}>
             <Animated.View style={[styles.skeletonLine, { width: '70%', opacity: fadeAnim }]} />
@@ -70,7 +70,7 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
           </View>
         </View>
       ) : (
-        <View style={[styles.cardRow, { minHeight: rowHeight }]}>
+        <View style={styles.cardRow}>
           <CategoryIcon />
           <View style={homeCardTypography.healthContent}>
             <View style={homeCardTypography.healthTitleRow}>
@@ -132,24 +132,26 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
 }
 
 const cardShadow = {
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.06,
-  shadowRadius: 10,
+  shadowColor: '#2D2D2A',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.08,
+  shadowRadius: 20,
   elevation: 2,
 };
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
+    flex: 1,
     backgroundColor: c.surface,
-    borderRadius: Radius.lg,
+    borderRadius: 20,
     padding: Spacing.lg,
     width: '100%',
     ...cardShadow,
   },
   cardRow: {
+    flex: 1,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 8,
   },
   iconContainer: {
@@ -173,7 +175,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   skeletonContent: {
     flex: 1,
     gap: 8,
-    paddingTop: 4,
   },
   skeletonLine: {
     height: 14,

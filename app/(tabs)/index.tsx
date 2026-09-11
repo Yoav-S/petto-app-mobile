@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useActivePet } from '@/store/petStore';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { HOME_HALF_ROW_FLEX, HOME_TOPICS_ROW_FLEX } from '@/hooks/useHomePanelLayout';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { getErrorMessage } from '@/services/errors';
@@ -457,15 +458,18 @@ const makeStyles = (c: ThemeColors) =>
       color: c.primaryText,
     },
     cardsGrid: {
+      flex: 1,
       width: '100%',
       gap: Spacing.sm,
       overflow: 'visible',
     },
     row: {
+      flex: HOME_HALF_ROW_FLEX,
       flexDirection: 'row',
       gap: 8,
     },
     healthWrap: {
+      flex: HOME_TOPICS_ROW_FLEX,
       position: 'relative',
       overflow: 'visible',
       zIndex: 50,
