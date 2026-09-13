@@ -358,6 +358,13 @@ export default function RemindersScreen() {
   const handleStatus = async (status: 'completed' | 'missed') => {
     if (!activePetId || !selectedReminder) return;
     const reminder = selectedReminder;
+    const marked: Reminder = { ...reminder, status, awaiting_ack: false };
+    todayPagination.setItems((prev) => prev.filter((row) => row.id !== reminder.id));
+    upcomingPagination.setItems((prev) => prev.filter((row) => row.id !== reminder.id));
+    recentPagination.setItems((prev) => [
+      marked,
+      ...prev.filter((row) => row.id !== reminder.id),
+    ]);
     try {
       await updateReminderStatus(activePetId, reminder.id, status);
       advanceOrCloseQueue();

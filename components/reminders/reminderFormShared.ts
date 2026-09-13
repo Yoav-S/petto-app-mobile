@@ -148,23 +148,19 @@ export function clampAlertForSchedule(
 export function needsStatusPrompt(reminder: Reminder): boolean {
   if (reminder.status === 'completed') return false;
   if (typeof reminder.awaiting_ack === 'boolean') return reminder.awaiting_ack;
-  if (reminder.notified_at) return true;
-  return Boolean(reminder.alert_notified_at) && isReminderScheduleInPast(reminder.date, reminder.time);
+  return Boolean(reminder.notified_at);
 }
 
 /**
- * Push tap (alert or on-time): show Done/Missed unless the user already answered.
- * Do not use display status — after the clock passes it is already "missed".
+ * Main reminder push only. Alert banners must not open Done/Missed.
  */
 export function shouldPromptFromPush(reminder: Reminder): boolean {
   if (reminder.status === 'completed') return false;
   if (reminder.awaiting_ack === true) return true;
   if (reminder.notified_at) return true;
-  if (reminder.alert_notified_at) return true;
   if (isReminderScheduleInPast(reminder.date, reminder.time) && reminder.status !== 'missed') {
     return true;
   }
-  // Auto-missed still-scheduled rows come back as display "missed" with no ack yet.
   if (reminder.status === 'missed' && reminder.awaiting_ack !== false) return true;
   return false;
 }

@@ -48,7 +48,7 @@ export function useReminderNotificationRouting(enabled: boolean) {
       }
       const focus = data.reminderId ? `&focusId=${encodeURIComponent(data.reminderId)}` : '';
       const pet = data.petId ? `&petId=${encodeURIComponent(data.petId)}` : '';
-      // Unique `n` so tapping the alert or the reminder while already on
+      // Unique `n` so tapping the main reminder while already on
       // /reminders still re-opens the Done/Missed sheet.
       const href = `/reminders?prompt=1${focus}${pet}&n=${Date.now()}`;
       const onReminders = segmentsRef.current.some((s) => s === 'reminders');

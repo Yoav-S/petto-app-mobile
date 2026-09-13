@@ -170,6 +170,8 @@ export async function subscribeToReminderNotificationResponses(
   const deliver = (data: unknown) => {
     const parsed = parseReminderPushData(data);
     if (!parsed) return;
+    // Alert is a banner only. Done/Missed opens on the main reminder.
+    if (parsed.kind === 'alert') return;
     onOpen(parsed);
   };
 
