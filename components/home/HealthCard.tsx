@@ -171,14 +171,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'flex-start',
     gap: TOPICS.innerGap,
     minHeight: 0,
-    overflow: 'hidden',
   },
   column: {
     flex: 1,
     minWidth: 0,
     height: '100%',
     gap: TOPICS.columnGap,
-    overflow: 'hidden',
+    justifyContent: 'space-between',
   },
   headerRow: {
     height: TOPICS.headerH,
@@ -193,11 +192,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     includeFontPadding: false,
   },
   body: {
-    flexGrow: 1,
-    flexShrink: 0,
     width: '100%',
+    flexShrink: 0,
     gap: TOPICS.titleDescGap,
-    overflow: 'hidden',
   },
   bodyEmpty: {
     justifyContent: 'center',
