@@ -6,15 +6,32 @@ import {
   subscribeToReminderNotificationResponses,
   type ReminderPushData,
 } from '@/services/notifications';
-import { listReminders } from '@/services/reminders';
+import { getReminder, listReminders } from '@/services/reminders';
 import { listPets } from '@/services/pets';
-import { needsStatusPrompt } from '@/components/reminders/reminderFormShared';
+import {
+  needsStatusPrompt,
+  reminderAlreadyAnswered,
+  reminderHasFired,
+} from '@/components/reminders/reminderFormShared';
 import { useActivePet } from '@/store/petStore';
 import { presentUpgradeLimit } from '@/services/upgradeLimit';
 
+function firedListHref(data: ReminderPushData): string {
+  const focus = data.reminderId ? `&focusId=${encodeURIComponent(data.reminderId)}` : '';
+  const pet = data.petId ? `&petId=${encodeURIComponent(data.petId)}` : '';
+  return `/reminders?prompt=1&tab=Recent${focus}${pet}&n=${Date.now()}`;
+}
+
+function recentListHref(): string {
+  return `/reminders?prompt=0&tab=Recent&n=${Date.now()}`;
+}
+
 /**
- * Routes reminder push taps into /reminders and, on cold/warm app open,
- * sends the user there when unanswered notified reminders are waiting.
+ * Alert tap before fire → edit screen.
+ * Alert or reminder tap after fire → Recent list + Done/Missed queue of every
+ * unanswered fired occurrence (not only the tapped id).
+ * Foreground main fire → same Recent queue. Alert receive never opens the sheet.
+ * Already answered → Recent with no sheet, even from leftover tray banners.
  */
 export function useReminderNotificationRouting(enabled: boolean) {
   const router = useRouter();
@@ -31,30 +48,45 @@ export function useReminderNotificationRouting(enabled: boolean) {
     let unsubscribeForeground: (() => void) | undefined;
     let cancelled = false;
 
-    const openFromPush = async (data: ReminderPushData) => {
-      launchedPromptRef.current = true;
-      if (data.petId) {
-        try {
-          const pets = await listPets();
-          const target = pets.find((p) => p.id === data.petId);
-          if (target?.locked) {
-            presentUpgradeLimit('pet_switch');
-            return;
-          }
-        } catch {
-          return;
-        }
-        await setActivePetId(data.petId);
+    const onRemindersList = () => {
+      const segs = segmentsRef.current as string[];
+      const idx = segs.indexOf('reminders');
+      if (idx < 0) return false;
+      return segs[idx + 1] == null;
+    };
+
+    const switchPetIfNeeded = async (petId?: string) => {
+      if (!petId) return;
+      const pets = await listPets();
+      const target = pets.find((p) => p.id === petId);
+      if (target?.locked) {
+        presentUpgradeLimit('pet_switch');
+        throw new Error('locked');
       }
-      const focus = data.reminderId ? `&focusId=${encodeURIComponent(data.reminderId)}` : '';
-      const pet = data.petId ? `&petId=${encodeURIComponent(data.petId)}` : '';
-      // Unique `n` so tapping the main reminder while already on
-      // /reminders still re-opens the Done/Missed sheet.
-      const href = `/reminders?prompt=1${focus}${pet}&n=${Date.now()}`;
-      const onReminders = segmentsRef.current.some((s) => s === 'reminders');
-      if (onReminders) {
+      await setActivePetId(petId);
+    };
+
+    const goRecentNoPrompt = () => {
+      if (onRemindersList()) {
+        router.setParams({
+          prompt: '0',
+          tab: 'Recent',
+          focusId: undefined,
+          petId: undefined,
+          n: String(Date.now()),
+        } as never);
+        return;
+      }
+      router.push(recentListHref() as never);
+    };
+
+    const openFiredQueue = (data: ReminderPushData) => {
+      launchedPromptRef.current = true;
+      const href = firedListHref(data);
+      if (onRemindersList()) {
         router.setParams({
           prompt: '1',
+          tab: 'Recent',
           focusId: data.reminderId,
           petId: data.petId,
           n: String(Date.now()),
@@ -64,9 +96,40 @@ export function useReminderNotificationRouting(enabled: boolean) {
       }
     };
 
+    const openFromPush = async (data: ReminderPushData, fromForeground = false) => {
+      if (fromForeground && data.kind === 'alert') return;
+
+      try {
+        await switchPetIfNeeded(data.petId);
+      } catch {
+        return;
+      }
+
+      const petId = data.petId;
+      const reminderId = data.reminderId;
+
+      if (reminderId && petId) {
+        try {
+          const reminder = await getReminder(petId, reminderId);
+          if (reminderAlreadyAnswered(reminder)) {
+            goRecentNoPrompt();
+            return;
+          }
+          if (data.kind === 'alert' && !reminderHasFired(reminder)) {
+            router.push(`/reminders/${reminderId}` as never);
+            return;
+          }
+        } catch {
+          if (data.kind === 'alert') return;
+        }
+      }
+
+      openFiredQueue(data);
+    };
+
     void subscribeToReminderNotificationResponses((data) => {
       if (cancelled) return;
-      void openFromPush(data);
+      void openFromPush(data, false);
     }).then((unsub) => {
       if (cancelled) {
         unsub();
@@ -77,7 +140,7 @@ export function useReminderNotificationRouting(enabled: boolean) {
 
     void subscribeToForegroundReminderNotifications((data) => {
       if (cancelled) return;
-      void openFromPush(data);
+      void openFromPush(data, true);
     }).then((unsub) => {
       if (cancelled) {
         unsub();
@@ -113,7 +176,7 @@ export function useReminderNotificationRouting(enabled: boolean) {
         const pending = [...today, ...recent].some(needsStatusPrompt);
         if (!pending) return;
         launchedPromptRef.current = true;
-        router.push('/reminders?prompt=1' as never);
+        router.push('/reminders?prompt=1&tab=Recent' as never);
       } catch {
         /* ignore — reminders screen will retry on focus */
       }

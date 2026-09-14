@@ -52,12 +52,19 @@ function getProjectId(): string | undefined {
   );
 }
 
+function asDataString(value: unknown): string | undefined {
+  if (typeof value === 'string' && value.length > 0) return value;
+  if (typeof value === 'number') return String(value);
+  return undefined;
+}
+
 export function parseReminderPushData(data: unknown): ReminderPushData | null {
   if (!data || typeof data !== 'object') return null;
   const raw = data as Record<string, unknown>;
-  const reminderId = typeof raw.reminderId === 'string' ? raw.reminderId : undefined;
-  const petId = typeof raw.petId === 'string' ? raw.petId : undefined;
-  const kind = raw.kind === 'alert' || raw.kind === 'main' ? raw.kind : undefined;
+  const reminderId = asDataString(raw.reminderId) ?? asDataString(raw.reminder_id);
+  const petId = asDataString(raw.petId) ?? asDataString(raw.pet_id);
+  const kindRaw = asDataString(raw.kind);
+  const kind = kindRaw === 'alert' || kindRaw === 'main' ? kindRaw : undefined;
   if (!reminderId && !petId) return null;
   return { type: 'reminder', reminderId, petId, kind };
 }
@@ -68,17 +75,13 @@ async function ensureNotificationHandler(): Promise<typeof import('expo-notifica
   if (!handlerConfigured) {
     Notifications.setNotificationHandler({
       handleNotification: async (notification) => {
-        const data = parseReminderPushData(notification.request.content.data);
-        const isMainReminder = Boolean(data) && data.kind !== 'alert';
-        const appOpen = AppState.currentState === 'active';
-        // Logged-in + app in foreground: skip the OS tray for the on-time
-        // reminder and show the Done/Missed sheet instead. Alerts still banner.
-        const showTray = !(appOpen && isMainReminder);
+        // Always show both OS pushes (alert + main). The sheet is opened
+        // separately, and only for the main reminder.
         return {
-          shouldShowAlert: showTray,
-          shouldShowBanner: showTray,
-          shouldShowList: showTray,
-          shouldPlaySound: showTray,
+          shouldShowAlert: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: true,
           shouldSetBadge: false,
         };
       },
@@ -170,8 +173,6 @@ export async function subscribeToReminderNotificationResponses(
   const deliver = (data: unknown) => {
     const parsed = parseReminderPushData(data);
     if (!parsed) return;
-    // Alert is a banner only. Done/Missed opens on the main reminder.
-    if (parsed.kind === 'alert') return;
     onOpen(parsed);
   };
 
@@ -198,8 +199,8 @@ export async function subscribeToReminderNotificationResponses(
 }
 
 /**
- * Foreground delivery (app already open). Used to open the Done/Missed sheet
- * without showing a system notification for the on-time reminder.
+ * Foreground delivery (app already open). Alert banners are ignored here so
+ * only the main reminder fire opens the Done/Missed queue.
  */
 export async function subscribeToForegroundReminderNotifications(
   onReceive: (data: ReminderPushData) => void,

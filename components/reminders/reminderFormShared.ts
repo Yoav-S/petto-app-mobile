@@ -145,23 +145,32 @@ export function clampAlertForSchedule(
   return isAlertOptionPossible(alert, date, time) ? alert : 'off';
 }
 
+export function reminderAlreadyAnswered(reminder: Reminder): boolean {
+  if (reminder.status === 'completed') return true;
+  return reminder.status === 'missed' && reminder.awaiting_ack === false;
+}
+
+export function reminderHasFired(reminder: Reminder): boolean {
+  if (reminder.notified_at) return true;
+  if (reminder.awaiting_ack === true) return true;
+  if (reminder.status === 'missed' || reminder.status === 'completed') return true;
+  return isReminderScheduleInPast(reminder.date, reminder.time);
+}
+
 export function needsStatusPrompt(reminder: Reminder): boolean {
-  if (reminder.status === 'completed') return false;
-  if (typeof reminder.awaiting_ack === 'boolean') return reminder.awaiting_ack;
+  if (reminderAlreadyAnswered(reminder)) return false;
+  if (reminder.awaiting_ack === true) return true;
   return Boolean(reminder.notified_at);
 }
 
 /**
- * Main reminder push only. Alert banners must not open Done/Missed.
+ * Sheet only after the main reminder has fired, and only if not already answered.
  */
 export function shouldPromptFromPush(reminder: Reminder): boolean {
-  if (reminder.status === 'completed') return false;
+  if (reminderAlreadyAnswered(reminder)) return false;
   if (reminder.awaiting_ack === true) return true;
   if (reminder.notified_at) return true;
-  if (isReminderScheduleInPast(reminder.date, reminder.time) && reminder.status !== 'missed') {
-    return true;
-  }
-  if (reminder.status === 'missed' && reminder.awaiting_ack !== false) return true;
+  if (isReminderScheduleInPast(reminder.date, reminder.time)) return true;
   return false;
 }
 

@@ -78,20 +78,26 @@ function reminderRelativeDate(date: string): string {
   return formatDisplayDate(date);
 }
 
+function firstParam(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value[0];
+  return value;
+}
+
+function parseTabParam(value: string | string[] | undefined): TabName | null {
+  const tab = firstParam(value);
+  if (tab === 'Today' || tab === 'Upcoming' || tab === 'Recent') return tab;
+  return null;
+}
+
 function sortPromptQueue(
   items: Reminder[],
   focusId?: string | null,
-  forceFocus = false,
+  answeredIds?: Set<string>,
 ): Reminder[] {
   const unique = new Map<string, Reminder>();
   for (const item of items) {
+    if (answeredIds?.has(item.id)) continue;
     if (needsStatusPrompt(item)) unique.set(item.id, item);
-  }
-  if (forceFocus && focusId) {
-    const focused = items.find((row) => row.id === focusId);
-    if (focused && shouldPromptFromPush(focused)) {
-      unique.set(focused.id, focused);
-    }
   }
   const list = Array.from(unique.values()).sort((a, b) => {
     if (a.date !== b.date) return a.date.localeCompare(b.date);
@@ -99,8 +105,7 @@ function sortPromptQueue(
   });
   if (!focusId) return list;
   const idx = list.findIndex((r) => r.id === focusId);
-  if (idx < 0) return list;
-  if (idx === 0) return list;
+  if (idx <= 0) return list;
   const [focused] = list.splice(idx, 1);
   return [focused, ...list];
 }
@@ -117,6 +122,7 @@ export default function RemindersScreen() {
     focusId?: string;
     petId?: string;
     n?: string;
+    tab?: string | string[];
   }>();
 
   const [activeTab, setActiveTab] = useState<TabName>('Today');
@@ -129,6 +135,9 @@ export default function RemindersScreen() {
   const [promptTotal, setPromptTotal] = useState(0);
   const sessionSkipRef = useRef(false);
   const autoPromptCheckedRef = useRef(false);
+  const answeredIdsRef = useRef(new Set<string>());
+  const promptQueueRef = useRef<Reminder[]>([]);
+  promptQueueRef.current = promptQueue;
 
   const todayPagination = useCursorPagination<Reminder>({
     fetchPage: useCallback(
@@ -243,39 +252,53 @@ export default function RemindersScreen() {
       recentPagination.refresh(),
     ]);
     if (!activePetId) {
-      return { today: [] as Reminder[], recent: [] as Reminder[] };
+      return { today: [] as Reminder[], upcoming: [] as Reminder[], recent: [] as Reminder[] };
     }
-    const [today, recent] = await Promise.all([
-      listReminders(activePetId, 'today', { limit: LIST_PAGE_SIZE }),
-      listReminders(activePetId, 'recent', { limit: LIST_PAGE_SIZE }),
+    const scanLimit = Math.max(LIST_PAGE_SIZE, 50);
+    const [today, upcoming, recent] = await Promise.all([
+      listReminders(activePetId, 'today', { limit: scanLimit }),
+      listReminders(activePetId, 'upcoming', { limit: scanLimit }),
+      listReminders(activePetId, 'recent', { limit: scanLimit }),
     ]);
-    return { today, recent };
+    return { today, upcoming, recent };
   }, [activePetId, recentPagination.refresh, todayPagination.refresh, upcomingPagination.refresh]);
+
+  const moveToRecent = useCallback((item: Reminder, status: 'completed' | 'missed') => {
+    const marked: Reminder = { ...item, status, awaiting_ack: false };
+    answeredIdsRef.current.add(item.id);
+    todayPagination.setItems((prev) => prev.filter((row) => row.id !== item.id));
+    upcomingPagination.setItems((prev) => prev.filter((row) => row.id !== item.id));
+    recentPagination.setItems((prev) => [
+      marked,
+      ...prev.filter((row) => row.id !== item.id),
+    ]);
+  }, [recentPagination.setItems, todayPagination.setItems, upcomingPagination.setItems]);
 
   const openPromptQueue = useCallback(
     (items: Reminder[], focusId?: string | null, force = false) => {
       if (force) sessionSkipRef.current = false;
       if (sessionSkipRef.current && !force) return;
-      const queue = sortPromptQueue(items, focusId, force);
+      const queue = sortPromptQueue(items, focusId, answeredIdsRef.current);
       setPromptQueue(queue);
       setPromptTotal(queue.length);
-      if (queue.length) setActiveTab('Today');
+      if (force || queue.length) setActiveTab('Recent');
     },
     [],
   );
 
   const maybeAutoPromptStatus = useCallback(
-    async (today: Reminder[], recent: Reminder[]) => {
-      const force = params.prompt === '1' || Boolean(params.focusId);
+    async (today: Reminder[], recent: Reminder[], upcoming: Reminder[] = []) => {
+      const force = firstParam(params.prompt) === '1';
       if (!force) {
         if (autoPromptCheckedRef.current) return;
         autoPromptCheckedRef.current = true;
       }
-      const items = [...today, ...recent];
-      const petId = params.petId || activePetId;
-      if (params.focusId && petId) {
+      const items = [...today, ...upcoming, ...recent];
+      const petId = firstParam(params.petId) || activePetId;
+      const focusId = firstParam(params.focusId);
+      if (focusId && petId) {
         try {
-          const focused = await getReminder(petId, params.focusId);
+          const focused = await getReminder(petId, focusId);
           const idx = items.findIndex((row) => row.id === focused.id);
           if (idx >= 0) items[idx] = focused;
           else items.push(focused);
@@ -283,30 +306,44 @@ export default function RemindersScreen() {
           /* list pages already cover the common case */
         }
       }
-      openPromptQueue(items, params.focusId, force);
+      openPromptQueue(items, focusId, force);
     },
     [activePetId, openPromptQueue, params.focusId, params.petId, params.prompt],
   );
 
+  React.useEffect(() => {
+    const tab = parseTabParam(params.tab);
+    if (tab) setActiveTab(tab);
+  }, [params.tab]);
+
   useFocusEffect(
     useCallback(() => {
       autoPromptCheckedRef.current = false;
-      void refetchAll().then(({ today, recent }) => {
-        void maybeAutoPromptStatus(today, recent);
+      void refetchAll().then(({ today, upcoming, recent }) => {
+        void maybeAutoPromptStatus(today, recent, upcoming);
       });
     }, [refetchAll, maybeAutoPromptStatus]),
   );
 
-  // A second notification tap while already on this screen does not refocus.
-  // Re-open the sheet whenever a new push lands (unique `n`).
+  // Re-open / refresh the queue when a reminder push lands (unique `n`).
   React.useEffect(() => {
-    if (params.prompt !== '1' && !params.focusId) return;
+    if (firstParam(params.prompt) !== '1' && !firstParam(params.focusId)) return;
     if (!params.n) return;
     autoPromptCheckedRef.current = false;
     sessionSkipRef.current = false;
-    void refetchAll().then(({ today, recent }) => {
-      void maybeAutoPromptStatus(today, recent);
-    });
+    let cancelled = false;
+    const run = () =>
+      refetchAll().then(({ today, upcoming, recent }) => {
+        if (!cancelled) void maybeAutoPromptStatus(today, recent, upcoming);
+      });
+    void run();
+    const retry = setTimeout(() => {
+      if (!cancelled) void run();
+    }, 1600);
+    return () => {
+      cancelled = true;
+      clearTimeout(retry);
+    };
   }, [maybeAutoPromptStatus, params.focusId, params.n, params.prompt, refetchAll]);
 
   const onRefresh = useCallback(async () => {
@@ -319,21 +356,31 @@ export default function RemindersScreen() {
     }
   }, [loadingMore, refetchAll]);
 
-  const closeActionSheet = useCallback(() => {
-    // X dismisses the rest of the queue for this session; next cold open / force
-    // (notification tap) will show unanswered items again.
-    sessionSkipRef.current = true;
-    setPromptQueue([]);
-    setPromptTotal(0);
+  const clearPromptParams = useCallback(() => {
     if (params.prompt || params.focusId || params.n) {
       router.setParams({
-        prompt: undefined,
+        prompt: '0',
         focusId: undefined,
         petId: undefined,
         n: undefined,
       } as never);
     }
   }, [params.focusId, params.n, params.petId, params.prompt, router]);
+
+  const closeActionSheet = useCallback(() => {
+    const remaining = promptQueueRef.current;
+    sessionSkipRef.current = true;
+    setPromptQueue([]);
+    setPromptTotal(0);
+    clearPromptParams();
+    if (!activePetId || remaining.length === 0) return;
+    for (const item of remaining) {
+      if (answeredIdsRef.current.has(item.id) || !needsStatusPrompt(item)) continue;
+      moveToRecent(item, 'missed');
+      void updateReminderStatus(activePetId, item.id, 'missed');
+    }
+    void refetchAll();
+  }, [activePetId, clearPromptParams, moveToRecent, refetchAll]);
 
   const advanceOrCloseQueue = useCallback(() => {
     setPromptQueue((prev) => {
@@ -345,6 +392,10 @@ export default function RemindersScreen() {
 
   const handleReminderPress = useCallback(
     (item: Reminder) => {
+      if (answeredIdsRef.current.has(item.id)) {
+        router.push(`/reminders/${item.id}` as never);
+        return;
+      }
       if (needsStatusPrompt(item) || shouldPromptFromPush(item)) {
         sessionSkipRef.current = false;
         openPromptQueue([item], item.id, true);
@@ -358,16 +409,17 @@ export default function RemindersScreen() {
   const handleStatus = async (status: 'completed' | 'missed') => {
     if (!activePetId || !selectedReminder) return;
     const reminder = selectedReminder;
-    const marked: Reminder = { ...reminder, status, awaiting_ack: false };
-    todayPagination.setItems((prev) => prev.filter((row) => row.id !== reminder.id));
-    upcomingPagination.setItems((prev) => prev.filter((row) => row.id !== reminder.id));
-    recentPagination.setItems((prev) => [
-      marked,
-      ...prev.filter((row) => row.id !== reminder.id),
-    ]);
+    const lastInQueue = promptQueue.length <= 1;
+    if (answeredIdsRef.current.has(reminder.id)) {
+      advanceOrCloseQueue();
+      if (lastInQueue) clearPromptParams();
+      return;
+    }
+    moveToRecent(reminder, status);
     try {
       await updateReminderStatus(activePetId, reminder.id, status);
       advanceOrCloseQueue();
+      if (lastInQueue) clearPromptParams();
       void refetchAll();
     } catch {
       /* keep list as-is; a transient error shouldn't block the UI */
