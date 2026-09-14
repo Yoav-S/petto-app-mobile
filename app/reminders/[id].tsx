@@ -22,10 +22,14 @@ import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import ReminderFormBody from '@/components/reminders/ReminderFormBody';
+import ReminderFireHistoryList, {
+  HISTORY_LIST_FADE_HEIGHT,
+} from '@/components/reminders/ReminderFireHistoryList';
 import SavingOverlay from '@/components/ui/SavingOverlay';
 import {
   clampAlertForSchedule,
   clampReminderTimeForDate,
+  isRecentOccurrence,
   type ReminderSheet,
 } from '@/components/reminders/reminderFormShared';
 import { categoryLabel } from '@/components/pickers/CategoryPickerSheet';
@@ -35,6 +39,7 @@ import {
   getReminder,
   updateReminder,
   deleteReminder,
+  listReminderHistory,
   parseAlert,
   type AlertOption,
   type RepeatOption,
@@ -45,6 +50,7 @@ import {
   REMINDER_CATEGORIES,
   type ReminderCategory,
 } from '@/utils/reminderCategory';
+import type { Reminder } from '@/types/api';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { todayIsoDate } from '@/utils/calendar';
 
@@ -92,6 +98,7 @@ export default function EditReminderScreen() {
   const [flushing, setFlushing] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [pendingLeave, setPendingLeave] = useState<PendingLeave | null>(null);
+  const [fireHistory, setFireHistory] = useState<Reminder[]>([]);
 
   const hydratedRef = useRef(false);
   const snapshotRef = useRef('');
@@ -146,6 +153,17 @@ export default function EditReminderScreen() {
       const editable = reminder.status === 'scheduled' || reminder.status === 'today';
       setReadOnly(!editable);
 
+      let history: Reminder[] = [];
+      if (isRecentOccurrence(reminder)) {
+        try {
+          history = await listReminderHistory(activePetId, id);
+        } catch {
+          history = [reminder];
+        }
+        if (history.length === 0) history = [reminder];
+      }
+      setFireHistory(history);
+
       setTitle(reminder.title);
       setCategory(parseCategory(reminder.category, reminder.title));
       setCategoryManual(Boolean(reminder.category));
@@ -173,6 +191,7 @@ export default function EditReminderScreen() {
     } catch (err) {
       setError(getErrorMessage(err));
       setNotFound(true);
+      setFireHistory([]);
     } finally {
       setLoading(false);
     }
@@ -391,6 +410,8 @@ export default function EditReminderScreen() {
 
   const headerTitle = readOnly ? t('reminders.detail_title') : t('reminders.edit_title');
   const header = <VaccineScreenHeader title={headerTitle} icon="close" />;
+  const historyOverlap =
+    fireHistory.length >= 2 ? -(HISTORY_LIST_FADE_HEIGHT - 76) : 0;
 
   if (loading) {
     return (
@@ -423,7 +444,12 @@ export default function EditReminderScreen() {
 
   return (
     <>
-      <HeaderScrollLayout header={header} edges={['left', 'right', 'bottom']} topFade bottomFade>
+      <HeaderScrollLayout
+        header={header}
+        edges={['left', 'right', 'bottom']}
+        topFade
+        bottomFade={fireHistory.length === 0}
+      >
         {({ paddingTop }) => (
           <ReminderFormBody
             scrollInsetTop={paddingTop}
@@ -460,21 +486,25 @@ export default function EditReminderScreen() {
         readOnly={readOnly}
         pinFooterToBottom
         footerBottomInset={deleteBottomPad}
+        afterFields={
+          fireHistory.length > 0 ? (
+            <ReminderFireHistoryList items={fireHistory} width={layout.cardWidth} />
+          ) : null
+        }
         footer={
-          readOnly ? undefined : (
-            <View>
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => {
-                  setSheet(null);
-                  setDeleteVisible(true);
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.deleteText}>{t('reminders.delete')}</Text>
-              </TouchableOpacity>
-            </View>
-          )
+          <View style={historyOverlap ? { marginTop: historyOverlap } : undefined}>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => {
+                setSheet(null);
+                setDeleteVisible(true);
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.deleteText}>{t('reminders.delete')}</Text>
+            </TouchableOpacity>
+            <View style={styles.belowDelete} />
+          </View>
         }
           />
         )}
@@ -509,5 +539,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 16,
     lineHeight: 18,
     color: c.error,
+  },
+  belowDelete: {
+    height: 160,
+    width: '100%',
   },
 });

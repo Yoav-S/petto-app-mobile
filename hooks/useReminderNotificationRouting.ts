@@ -12,6 +12,7 @@ import {
   needsStatusPrompt,
   reminderAlreadyAnswered,
   reminderHasFired,
+  shouldPromptFromPush,
 } from '@/components/reminders/reminderFormShared';
 import { useActivePet } from '@/store/petStore';
 import { presentUpgradeLimit } from '@/services/upgradeLimit';
@@ -97,6 +98,8 @@ export function useReminderNotificationRouting(enabled: boolean) {
     };
 
     const openFromPush = async (data: ReminderPushData, fromForeground = false) => {
+      // Foreground *receive* of the alert banner must not steal the UI.
+      // A *tap* on that same alert after the reminder fired must open the sheet.
       if (fromForeground && data.kind === 'alert') return;
 
       try {
@@ -115,12 +118,13 @@ export function useReminderNotificationRouting(enabled: boolean) {
             goRecentNoPrompt();
             return;
           }
-          if (data.kind === 'alert' && !reminderHasFired(reminder)) {
+          const fired = reminderHasFired(reminder) || shouldPromptFromPush(reminder);
+          if (data.kind === 'alert' && !fired) {
             router.push(`/reminders/${reminderId}` as never);
             return;
           }
         } catch {
-          if (data.kind === 'alert') return;
+          // Tap must still open the queue if the reminder already fired.
         }
       }
 
@@ -170,7 +174,7 @@ export function useReminderNotificationRouting(enabled: boolean) {
       try {
         const [today, recent] = await Promise.all([
           listReminders(activePetId, 'today'),
-          listReminders(activePetId, 'recent'),
+          listReminders(activePetId, 'recent', { collapse: false }),
         ]);
         if (cancelled || launchedPromptRef.current) return;
         const pending = [...today, ...recent].some(needsStatusPrompt);

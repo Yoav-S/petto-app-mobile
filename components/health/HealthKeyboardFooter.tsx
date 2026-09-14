@@ -90,7 +90,7 @@ export function HealthFormFields({ children }: { children: React.ReactNode }) {
   return <View style={styles.fieldsGrow}>{children}</View>;
 }
 
-interface HealthFormScrollProps extends Pick<ScrollViewProps, 'onScroll' | 'scrollEventThrottle'> {
+interface HealthFormScrollProps extends Pick<ScrollViewProps, 'onScroll' | 'scrollEventThrottle' | 'nestedScrollEnabled'> {
   children: React.ReactNode;
   contentContainerStyle?: StyleProp<ViewStyle>;
   scrollRef?: React.RefObject<ScrollView | null>;
@@ -103,6 +103,7 @@ export function HealthFormScroll({
   scrollRef,
   onScroll,
   scrollEventThrottle,
+  nestedScrollEnabled,
 }: HealthFormScrollProps) {
   return (
     <ScrollView
@@ -112,6 +113,7 @@ export function HealthFormScroll({
       keyboardShouldPersistTaps="always"
       keyboardDismissMode="none"
       showsVerticalScrollIndicator={false}
+      nestedScrollEnabled={nestedScrollEnabled}
       onScroll={onScroll}
       scrollEventThrottle={scrollEventThrottle}
     >

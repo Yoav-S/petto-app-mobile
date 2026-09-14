@@ -145,6 +145,13 @@ export function clampAlertForSchedule(
   return isAlertOptionPossible(alert, date, time) ? alert : 'off';
 }
 
+export function isRecentOccurrence(reminder: Reminder): boolean {
+  if (reminder.status === 'completed' || reminder.status === 'missed') return true;
+  if (reminder.awaiting_ack === true) return true;
+  if (reminder.notified_at) return true;
+  return false;
+}
+
 export function reminderAlreadyAnswered(reminder: Reminder): boolean {
   if (reminder.status === 'completed') return true;
   return reminder.status === 'missed' && reminder.awaiting_ack === false;
@@ -153,25 +160,25 @@ export function reminderAlreadyAnswered(reminder: Reminder): boolean {
 export function reminderHasFired(reminder: Reminder): boolean {
   if (reminder.notified_at) return true;
   if (reminder.awaiting_ack === true) return true;
-  if (reminder.status === 'missed' || reminder.status === 'completed') return true;
+  if (reminder.status === 'completed') return true;
+  if (reminder.status === 'missed') return true;
   return isReminderScheduleInPast(reminder.date, reminder.time);
 }
 
 export function needsStatusPrompt(reminder: Reminder): boolean {
   if (reminderAlreadyAnswered(reminder)) return false;
   if (reminder.awaiting_ack === true) return true;
-  return Boolean(reminder.notified_at);
+  if (reminder.notified_at) return true;
+  return isReminderScheduleInPast(reminder.date, reminder.time);
 }
 
 /**
- * Sheet only after the main reminder has fired, and only if not already answered.
+ * Sheet after the main reminder has fired, and only if not already answered.
+ * Used for both reminder taps and alert taps once that fire has happened.
  */
 export function shouldPromptFromPush(reminder: Reminder): boolean {
   if (reminderAlreadyAnswered(reminder)) return false;
-  if (reminder.awaiting_ack === true) return true;
-  if (reminder.notified_at) return true;
-  if (isReminderScheduleInPast(reminder.date, reminder.time)) return true;
-  return false;
+  return reminderHasFired(reminder);
 }
 
 /** Compact clock for list rows and action sheet (e.g. "4:46"). */

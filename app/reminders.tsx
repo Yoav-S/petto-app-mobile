@@ -28,6 +28,8 @@ import SwipeToDeleteRow from '@/components/ui/SwipeToDeleteRow';
 import {
   needsStatusPrompt,
   shouldPromptFromPush,
+  reminderAlreadyAnswered,
+  reminderHasFired,
   formatSheetClockTime,
 } from '@/components/reminders/reminderFormShared';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
@@ -93,11 +95,23 @@ function sortPromptQueue(
   items: Reminder[],
   focusId?: string | null,
   answeredIds?: Set<string>,
+  forceFocus = false,
 ): Reminder[] {
   const unique = new Map<string, Reminder>();
   for (const item of items) {
     if (answeredIds?.has(item.id)) continue;
-    if (needsStatusPrompt(item)) unique.set(item.id, item);
+    if (needsStatusPrompt(item) || shouldPromptFromPush(item)) unique.set(item.id, item);
+  }
+  if (forceFocus && focusId) {
+    const focused = items.find((row) => row.id === focusId);
+    if (
+      focused &&
+      !answeredIds?.has(focused.id) &&
+      !reminderAlreadyAnswered(focused) &&
+      (needsStatusPrompt(focused) || shouldPromptFromPush(focused) || reminderHasFired(focused))
+    ) {
+      unique.set(focused.id, focused);
+    }
   }
   const list = Array.from(unique.values()).sort((a, b) => {
     if (a.date !== b.date) return a.date.localeCompare(b.date);
@@ -159,12 +173,15 @@ export default function RemindersScreen() {
   });
   const recentPagination = useCursorPagination<Reminder>({
     fetchPage: useCallback(
-      (params) => (activePetId ? listReminders(activePetId, 'recent', params) : Promise.resolve([])),
+      (params) =>
+        activePetId
+          ? listReminders(activePetId, 'recent', { ...params, collapse: true })
+          : Promise.resolve([]),
       [activePetId],
     ),
     enabled: Boolean(activePetId),
     resetKey: activePetId,
-    cacheKey: [...queryKeys.reminders.tab(activePetId ?? '', 'recent'), 'page1'],
+    cacheKey: [...queryKeys.reminders.tab(activePetId ?? '', 'recent'), 'page1', 'collapsed'],
   });
 
   const paginationByTab = {
@@ -258,7 +275,7 @@ export default function RemindersScreen() {
     const [today, upcoming, recent] = await Promise.all([
       listReminders(activePetId, 'today', { limit: scanLimit }),
       listReminders(activePetId, 'upcoming', { limit: scanLimit }),
-      listReminders(activePetId, 'recent', { limit: scanLimit }),
+      listReminders(activePetId, 'recent', { limit: scanLimit, collapse: false }),
     ]);
     return { today, upcoming, recent };
   }, [activePetId, recentPagination.refresh, todayPagination.refresh, upcomingPagination.refresh]);
@@ -278,12 +295,21 @@ export default function RemindersScreen() {
     (items: Reminder[], focusId?: string | null, force = false) => {
       if (force) sessionSkipRef.current = false;
       if (sessionSkipRef.current && !force) return;
-      const queue = sortPromptQueue(items, focusId, answeredIdsRef.current);
+      const queue = sortPromptQueue(items, focusId, answeredIdsRef.current, force);
       setPromptQueue(queue);
       setPromptTotal(queue.length);
       if (force || queue.length) setActiveTab('Recent');
+      if (queue.length) {
+        const queuedIds = new Set(queue.map((row) => row.id));
+        todayPagination.setItems((prev) => prev.filter((row) => !queuedIds.has(row.id)));
+        upcomingPagination.setItems((prev) => prev.filter((row) => !queuedIds.has(row.id)));
+        recentPagination.setItems((prev) => {
+          const rest = prev.filter((row) => !queuedIds.has(row.id));
+          return [...queue, ...rest];
+        });
+      }
     },
-    [],
+    [recentPagination.setItems, todayPagination.setItems, upcomingPagination.setItems],
   );
 
   const maybeAutoPromptStatus = useCallback(

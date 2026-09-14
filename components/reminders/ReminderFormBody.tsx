@@ -104,6 +104,8 @@ interface ReminderFormBodyProps {
   footerBottomInset?: number;
   /** Extra top inset when the header floats above scroll content. */
   scrollInsetTop?: number;
+  /** Content under the description card (fire history on recent occurrences). */
+  afterFields?: React.ReactNode;
 }
 
 export default function ReminderFormBody({
@@ -138,6 +140,7 @@ export default function ReminderFormBody({
   pinFooterToBottom = false,
   footerBottomInset = 32,
   scrollInsetTop = 0,
+  afterFields,
 }: ReminderFormBodyProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -344,6 +347,8 @@ export default function ReminderFormBody({
               />
             </View>
           </View>
+
+          {afterFields}
     </View>
   );
 
@@ -372,6 +377,7 @@ export default function ReminderFormBody({
               ...formFieldsStyle,
               pinFooterToBottom ? styles.scrollWithSave : null,
             ]}
+            nestedScrollEnabled
           >
             {formFields}
             {!pinFooterToBottom && footer ? (

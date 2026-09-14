@@ -72,6 +72,7 @@ export interface Reminder {
   alert_notified_at?: string | null;
   /** Stored status is still scheduled and this occurrence is due / was pushed. */
   awaiting_ack?: boolean;
+  series_id?: string | null;
 }
 
 export interface MedicalRecord {

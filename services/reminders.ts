@@ -69,15 +69,21 @@ export type UpdateReminderInput = Partial<CreateReminderInput>;
 export function listReminders(
   petId: string,
   tab: ReminderTab,
-  params?: CursorListParams,
+  params?: CursorListParams & { collapse?: boolean },
 ): Promise<Reminder[]> {
+  const base: Record<string, string> = { tab };
+  if (params?.collapse === false) base.collapse = 'false';
   return apiGet<Reminder[]>(
-    `/pets/${petId}/reminders${buildCursorQueryWithBase({ tab }, params)}`,
+    `/pets/${petId}/reminders${buildCursorQueryWithBase(base, params)}`,
   );
 }
 
 export function getReminder(petId: string, id: string): Promise<Reminder> {
   return apiGet<Reminder>(`/pets/${petId}/reminders/${id}`);
+}
+
+export function listReminderHistory(petId: string, id: string): Promise<Reminder[]> {
+  return apiGet<Reminder[]>(`/pets/${petId}/reminders/${id}/history`);
 }
 
 export async function createReminder(petId: string, input: CreateReminderInput): Promise<Reminder> {
