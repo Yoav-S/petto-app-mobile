@@ -80,11 +80,12 @@ export function ReminderPromptProvider({ children }: { children: React.ReactNode
   const present = useCallback((items: Reminder[], focusId?: string | null) => {
     const next = buildPromptQueue(items, focusId, answeredIdsRef.current, Boolean(focusId));
     // Never let an empty rebuild close a sheet that is already on screen.
-    // Reminders-tab refetch often misses the row for a few hundred ms.
     if (next.length === 0) return;
     setQueue(next);
     setTotal(next.length);
-  }, []);
+    const petId = next[0]?.pet_id || activePetId;
+    if (petId) invalidateReminders(petId);
+  }, [activePetId]);
 
   const goRecent = useCallback(
     (prompt: boolean, data?: ReminderPushData) => {
@@ -152,20 +153,25 @@ export function ReminderPromptProvider({ children }: { children: React.ReactNode
           }
           if (
             focused &&
-            (reminderHasFired(focused) ||
-              shouldPromptFromPush(focused) ||
-              data.kind !== 'alert')
+            (shouldPromptFromPush(focused) || data.kind !== 'alert')
           ) {
             break;
           }
-          if (data.kind === 'alert' && focused && !reminderHasFired(focused)) {
+          if (data.kind === 'alert' && focused && !shouldPromptFromPush(focused)) {
             break;
           }
           await sleep(400);
         }
 
-        if (data.kind === 'alert' && focused && !reminderHasFired(focused)) {
-          if (!reminderAlreadyAnswered(focused)) {
+        // Alert tap only goes to edit when the main reminder has not fired yet.
+        // After fire, Alert tap and Reminder tap both open Done/Missed.
+        if (
+          data.kind === 'alert' &&
+          focused &&
+          !shouldPromptFromPush(focused) &&
+          !reminderHasFired(focused)
+        ) {
+          if (source === 'tap' && !reminderAlreadyAnswered(focused)) {
             router.push(`/reminders/${reminderId}` as never);
           }
           return;
@@ -193,9 +199,11 @@ export function ReminderPromptProvider({ children }: { children: React.ReactNode
       }
 
       present(items, reminderId);
-      // Foreground: keep the user on the current screen and only jump the sheet.
-      // Tap: open Recent so leftover tray banners land on the history tab.
-      if (source === 'tap') goRecent(true, data);
+      if (source === 'tap') {
+        goRecent(true, data);
+        // Navigation can dismiss a just-opened RN Modal; present again after settle.
+        setTimeout(() => present(items, reminderId), 500);
+      }
     },
     [activePetId, goRecent, present, router, setActivePetId],
   );

@@ -149,7 +149,7 @@ export function isRecentOccurrence(reminder: Reminder): boolean {
   if (reminder.status === 'completed' || reminder.status === 'missed') return true;
   if (reminder.awaiting_ack === true) return true;
   if (reminder.notified_at) return true;
-  return false;
+  return isReminderScheduleInPast(reminder.date, reminder.time);
 }
 
 export function reminderAlreadyAnswered(reminder: Reminder): boolean {
