@@ -6,7 +6,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { useRouter, useSegments } from 'expo-router';
+import { useRouter } from 'expo-router';
 import ReminderActionSheet from '@/components/reminders/ReminderActionSheet';
 import {
   buildPromptQueue,
@@ -69,7 +69,6 @@ function relativeDate(date: string): string {
 
 export function ReminderPromptProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const segments = useSegments();
   const { activePetId, setActivePetId } = useActivePet();
   const [queue, setQueue] = useState<Reminder[]>([]);
   const [total, setTotal] = useState(0);
@@ -79,42 +78,10 @@ export function ReminderPromptProvider({ children }: { children: React.ReactNode
 
   const present = useCallback((items: Reminder[], focusId?: string | null) => {
     const next = buildPromptQueue(items, focusId, answeredIdsRef.current, Boolean(focusId));
-    // Never let an empty rebuild close a sheet that is already on screen.
     if (next.length === 0) return;
     setQueue(next);
     setTotal(next.length);
-    const petId = next[0]?.pet_id || activePetId;
-    if (petId) invalidateReminders(petId);
-  }, [activePetId]);
-
-  const goRecent = useCallback(
-    (prompt: boolean, data?: ReminderPushData) => {
-      const n = String(Date.now());
-      const onList =
-        (segments as string[]).includes('reminders') &&
-        (segments as string[])[(segments as string[]).indexOf('reminders') + 1] == null;
-      if (onList) {
-        router.setParams({
-          prompt: prompt ? '1' : '0',
-          tab: 'Recent',
-          focusId: prompt ? data?.reminderId : undefined,
-          petId: prompt ? data?.petId : undefined,
-          n,
-        } as never);
-        return;
-      }
-      if (prompt && data) {
-        const focus = data.reminderId
-          ? `&focusId=${encodeURIComponent(data.reminderId)}`
-          : '';
-        const pet = data.petId ? `&petId=${encodeURIComponent(data.petId)}` : '';
-        router.push(`/reminders?prompt=1&tab=Recent${focus}${pet}&n=${n}` as never);
-        return;
-      }
-      router.push(`/reminders?prompt=0&tab=Recent&n=${n}` as never);
-    },
-    [router, segments],
-  );
+  }, []);
 
   const presentFromPush = useCallback(
     async (data: ReminderPushData, source: 'tap' | 'foreground') => {
@@ -148,7 +115,6 @@ export function ReminderPromptProvider({ children }: { children: React.ReactNode
             focused = null;
           }
           if (focused && reminderAlreadyAnswered(focused)) {
-            goRecent(false);
             return;
           }
           if (
@@ -199,13 +165,13 @@ export function ReminderPromptProvider({ children }: { children: React.ReactNode
       }
 
       present(items, reminderId);
+      // Stay on the current screen. The sheet is global; jumping to Recent
+      // was leaving tab=Recent in the URL so back from edit landed on Recent.
       if (source === 'tap') {
-        goRecent(true, data);
-        // Navigation can dismiss a just-opened RN Modal; present again after settle.
-        setTimeout(() => present(items, reminderId), 500);
+        setTimeout(() => present(items, reminderId), 400);
       }
     },
-    [activePetId, goRecent, present, router, setActivePetId],
+    [activePetId, present, router, setActivePetId],
   );
 
   const close = useCallback(() => {

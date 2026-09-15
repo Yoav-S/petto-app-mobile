@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -32,7 +32,7 @@ import {
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import { deleteReminder, getReminder, listReminders } from '@/services/reminders';
+import { deleteReminder, listReminders } from '@/services/reminders';
 import { getErrorMessage } from '@/services/errors';
 import { invalidateReminders } from '@/services/queryClient';
 import { queryKeys } from '@/services/queryKeys';
@@ -53,6 +53,9 @@ import { LIST_PAGE_SIZE } from '@/constants/pagination';
 const TABS = ['Today', 'Upcoming', 'Recent'] as const;
 type TabName = (typeof TABS)[number];
 const PREVIEW_CHARS = 20;
+
+/** Survive push to edit/add so back returns to Upcoming/Today, not Recent. */
+let lastRemindersTab: TabName = 'Today';
 
 /** Truncate to first N chars with … when there is more. */
 function previewText(value: string | null | undefined, max = PREVIEW_CHARS): string {
@@ -75,12 +78,6 @@ function firstParam(value: string | string[] | undefined): string | undefined {
   return value;
 }
 
-function parseTabParam(value: string | string[] | undefined): TabName | null {
-  const tab = firstParam(value);
-  if (tab === 'Today' || tab === 'Upcoming' || tab === 'Recent') return tab;
-  return null;
-}
-
 export default function RemindersScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -97,14 +94,16 @@ export default function RemindersScreen() {
     tab?: string | string[];
   }>();
 
-  const [activeTab, setActiveTab] = useState<TabName>('Today');
+  const [activeTab, setActiveTabState] = useState<TabName>(lastRemindersTab);
+
+  const setActiveTab = useCallback((tab: TabName) => {
+    lastRemindersTab = tab;
+    setActiveTabState(tab);
+  }, []);
   const [refreshing, setRefreshing] = useState(false);
   const [swipeOpenId, setSwipeOpenId] = useState<string | null>(null);
   const [scrollY, setScrollY] = useState(0);
   const [listHeight, setListHeight] = useState(0);
-
-  const sessionSkipRef = useRef(false);
-  const autoPromptCheckedRef = useRef(false);
 
   const todayPagination = useCursorPagination<Reminder>({
     fetchPage: useCallback(
@@ -230,75 +229,40 @@ export default function RemindersScreen() {
   }, [activePetId, recentPagination.refresh, todayPagination.refresh, upcomingPagination.refresh]);
 
   const openPromptQueue = useCallback(
-    (items: Reminder[], focusId?: string | null, force = false) => {
-      if (force) sessionSkipRef.current = false;
-      if (sessionSkipRef.current && !force) return;
+    (items: Reminder[], focusId?: string | null) => {
       present(items, focusId);
-      if (force || items.length) setActiveTab('Recent');
     },
     [present],
   );
 
-  const maybeAutoPromptStatus = useCallback(
-    async (today: Reminder[], recent: Reminder[], upcoming: Reminder[] = []) => {
-      if (promptVisible) return;
-      const force = firstParam(params.prompt) === '1';
-      if (!force) {
-        if (autoPromptCheckedRef.current) return;
-        autoPromptCheckedRef.current = true;
-      }
-      const items = [...today, ...upcoming, ...recent];
-      const petId = firstParam(params.petId) || activePetId;
-      const focusId = firstParam(params.focusId);
-      if (focusId && petId) {
-        try {
-          const focused = await getReminder(petId, focusId);
-          const idx = items.findIndex((row) => row.id === focused.id);
-          if (idx >= 0) items[idx] = focused;
-          else items.push(focused);
-        } catch {
-          /* list pages already cover the common case */
-        }
-      }
-      openPromptQueue(items, focusId, force);
-    },
-    [activePetId, openPromptQueue, params.focusId, params.petId, params.prompt, promptVisible],
-  );
-
-  React.useEffect(() => {
-    const tab = parseTabParam(params.tab);
-    if (tab) setActiveTab(tab);
-  }, [params.tab]);
-
   useFocusEffect(
     useCallback(() => {
-      autoPromptCheckedRef.current = false;
-      void refetchAll().then(({ today, upcoming, recent }) => {
-        void maybeAutoPromptStatus(today, recent, upcoming);
-      });
-    }, [refetchAll, maybeAutoPromptStatus]),
+      void refetchAll();
+      // Drop leftover notification query params so back from edit keeps Upcoming/Today.
+      if (
+        firstParam(params.prompt) ||
+        firstParam(params.tab) ||
+        firstParam(params.focusId) ||
+        firstParam(params.n)
+      ) {
+        router.setParams({
+          prompt: '',
+          tab: '',
+          focusId: '',
+          petId: '',
+          n: '',
+        } as never);
+      }
+    }, [
+      params.focusId,
+      params.n,
+      params.petId,
+      params.prompt,
+      params.tab,
+      refetchAll,
+      router,
+    ]),
   );
-
-  // Re-open / refresh the queue when a reminder push lands (unique `n`).
-  React.useEffect(() => {
-    if (firstParam(params.prompt) !== '1' && !firstParam(params.focusId)) return;
-    if (!params.n) return;
-    autoPromptCheckedRef.current = false;
-    sessionSkipRef.current = false;
-    let cancelled = false;
-    const run = () =>
-      refetchAll().then(({ today, upcoming, recent }) => {
-        if (!cancelled) void maybeAutoPromptStatus(today, recent, upcoming);
-      });
-    void run();
-    const retry = setTimeout(() => {
-      if (!cancelled) void run();
-    }, 1600);
-    return () => {
-      cancelled = true;
-      clearTimeout(retry);
-    };
-  }, [maybeAutoPromptStatus, params.focusId, params.n, params.prompt, refetchAll]);
 
   const onRefresh = useCallback(async () => {
     if (loadingMore) return;
@@ -317,8 +281,7 @@ export default function RemindersScreen() {
   const handleReminderPress = useCallback(
     (item: Reminder) => {
       if (needsStatusPrompt(item) || shouldPromptFromPush(item)) {
-        sessionSkipRef.current = false;
-        openPromptQueue([item], item.id, true);
+        openPromptQueue([item], item.id);
         return;
       }
       router.push(`/reminders/${item.id}` as never);

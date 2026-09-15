@@ -58,18 +58,51 @@ function asDataString(value: unknown): string | undefined {
   return undefined;
 }
 
+function coercePushRecord(data: unknown): Record<string, unknown> | null {
+  if (typeof data === 'string') {
+    try {
+      return coercePushRecord(JSON.parse(data));
+    } catch {
+      return null;
+    }
+  }
+  if (!data || typeof data !== 'object') return null;
+  const raw = data as Record<string, unknown>;
+  let merged: Record<string, unknown> = { ...raw };
+  if (typeof raw.body === 'string' && raw.body.startsWith('{')) {
+    try {
+      merged = { ...merged, ...(JSON.parse(raw.body) as Record<string, unknown>) };
+    } catch {
+      /* body is plain text */
+    }
+  } else if (raw.body && typeof raw.body === 'object') {
+    merged = { ...merged, ...(raw.body as Record<string, unknown>) };
+  }
+  if (raw.data && typeof raw.data === 'object') {
+    merged = { ...merged, ...(raw.data as Record<string, unknown>) };
+  } else if (typeof raw.data === 'string' && raw.data.startsWith('{')) {
+    try {
+      merged = { ...merged, ...(JSON.parse(raw.data) as Record<string, unknown>) };
+    } catch {
+      /* ignore */
+    }
+  }
+  return merged;
+}
+
 export function parseReminderPushData(
   data: unknown,
   title?: string,
 ): ReminderPushData | null {
-  if (!data || typeof data !== 'object') return null;
-  const raw = data as Record<string, unknown>;
+  const raw = coercePushRecord(data);
+  if (!raw) return null;
   const reminderId = asDataString(raw.reminderId) ?? asDataString(raw.reminder_id);
   const petId = asDataString(raw.petId) ?? asDataString(raw.pet_id);
   const kindRaw = asDataString(raw.kind);
   let kind = kindRaw === 'alert' || kindRaw === 'main' ? kindRaw : undefined;
-  if (!kind && title === 'Alert') kind = 'alert';
-  if (!kind && title === 'Reminder') kind = 'main';
+  const normalizedTitle = (title ?? asDataString(raw.title) ?? '').trim();
+  if (!kind && normalizedTitle === 'Alert') kind = 'alert';
+  if (!kind && normalizedTitle === 'Reminder') kind = 'main';
   if (!reminderId && !petId) return null;
   return { type: 'reminder', reminderId, petId, kind };
 }
