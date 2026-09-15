@@ -1,44 +1,38 @@
 import { useEffect, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
-import { useRouter, useSegments } from 'expo-router';
+import { useSegments } from 'expo-router';
 import {
   subscribeToForegroundReminderNotifications,
   subscribeToReminderNotificationResponses,
-  type ReminderPushData,
 } from '@/services/notifications';
-import { getReminder, listReminders } from '@/services/reminders';
-import { listPets } from '@/services/pets';
-import {
-  needsStatusPrompt,
-  reminderAlreadyAnswered,
-  reminderHasFired,
-  shouldPromptFromPush,
-} from '@/components/reminders/reminderFormShared';
+import { listReminders } from '@/services/reminders';
+import { needsStatusPrompt } from '@/components/reminders/reminderFormShared';
 import { useActivePet } from '@/store/petStore';
-import { presentUpgradeLimit } from '@/services/upgradeLimit';
+import { useReminderPrompt } from '@/context/ReminderPromptContext';
+import type { Reminder } from '@/types/api';
 
-function firedListHref(data: ReminderPushData): string {
-  const focus = data.reminderId ? `&focusId=${encodeURIComponent(data.reminderId)}` : '';
-  const pet = data.petId ? `&petId=${encodeURIComponent(data.petId)}` : '';
-  return `/reminders?prompt=1&tab=Recent${focus}${pet}&n=${Date.now()}`;
-}
-
-function recentListHref(): string {
-  return `/reminders?prompt=0&tab=Recent&n=${Date.now()}`;
+function mergeReminderRows(today: Reminder[], recent: Reminder[]): Reminder[] {
+  const byId = new Map<string, Reminder>();
+  for (const row of [...today, ...recent]) byId.set(row.id, row);
+  return Array.from(byId.values());
 }
 
 /**
- * Alert tap before fire → edit screen.
- * Alert or reminder tap after fire → Recent list + Done/Missed queue of every
- * unanswered fired occurrence (not only the tapped id).
- * Foreground main fire → same Recent queue. Alert receive never opens the sheet.
- * Already answered → Recent with no sheet, even from leftover tray banners.
+ * Alert tap before fire → edit screen (handled in presentFromPush).
+ * Reminder fire (foreground or tap) and alert tap after fire → Done/Missed sheet
+ * on any screen. Alert receive never opens the sheet.
+ *
+ * Local clock + list scan open the sheet even when Expo Go cannot deliver
+ * remote push, and even before the server writes notified_at.
  */
 export function useReminderNotificationRouting(enabled: boolean) {
-  const router = useRouter();
   const segments = useSegments();
-  const { activePetId, setActivePetId } = useActivePet();
-  const launchedPromptRef = useRef(false);
+  const { activePetId } = useActivePet();
+  const { present, presentFromPush, visible } = useReminderPrompt();
+  const visibleRef = useRef(visible);
+  visibleRef.current = visible;
+  const cacheRef = useRef<Reminder[]>([]);
+  const scanningRef = useRef(false);
   const segmentsRef = useRef(segments);
   segmentsRef.current = segments;
 
@@ -49,91 +43,9 @@ export function useReminderNotificationRouting(enabled: boolean) {
     let unsubscribeForeground: (() => void) | undefined;
     let cancelled = false;
 
-    const onRemindersList = () => {
-      const segs = segmentsRef.current as string[];
-      const idx = segs.indexOf('reminders');
-      if (idx < 0) return false;
-      return segs[idx + 1] == null;
-    };
-
-    const switchPetIfNeeded = async (petId?: string) => {
-      if (!petId) return;
-      const pets = await listPets();
-      const target = pets.find((p) => p.id === petId);
-      if (target?.locked) {
-        presentUpgradeLimit('pet_switch');
-        throw new Error('locked');
-      }
-      await setActivePetId(petId);
-    };
-
-    const goRecentNoPrompt = () => {
-      if (onRemindersList()) {
-        router.setParams({
-          prompt: '0',
-          tab: 'Recent',
-          focusId: undefined,
-          petId: undefined,
-          n: String(Date.now()),
-        } as never);
-        return;
-      }
-      router.push(recentListHref() as never);
-    };
-
-    const openFiredQueue = (data: ReminderPushData) => {
-      launchedPromptRef.current = true;
-      const href = firedListHref(data);
-      if (onRemindersList()) {
-        router.setParams({
-          prompt: '1',
-          tab: 'Recent',
-          focusId: data.reminderId,
-          petId: data.petId,
-          n: String(Date.now()),
-        } as never);
-      } else {
-        router.push(href as never);
-      }
-    };
-
-    const openFromPush = async (data: ReminderPushData, fromForeground = false) => {
-      // Foreground *receive* of the alert banner must not steal the UI.
-      // A *tap* on that same alert after the reminder fired must open the sheet.
-      if (fromForeground && data.kind === 'alert') return;
-
-      try {
-        await switchPetIfNeeded(data.petId);
-      } catch {
-        return;
-      }
-
-      const petId = data.petId;
-      const reminderId = data.reminderId;
-
-      if (reminderId && petId) {
-        try {
-          const reminder = await getReminder(petId, reminderId);
-          if (reminderAlreadyAnswered(reminder)) {
-            goRecentNoPrompt();
-            return;
-          }
-          const fired = reminderHasFired(reminder) || shouldPromptFromPush(reminder);
-          if (data.kind === 'alert' && !fired) {
-            router.push(`/reminders/${reminderId}` as never);
-            return;
-          }
-        } catch {
-          // Tap must still open the queue if the reminder already fired.
-        }
-      }
-
-      openFiredQueue(data);
-    };
-
     void subscribeToReminderNotificationResponses((data) => {
       if (cancelled) return;
-      void openFromPush(data, false);
+      void presentFromPush(data, 'tap');
     }).then((unsub) => {
       if (cancelled) {
         unsub();
@@ -144,7 +56,7 @@ export function useReminderNotificationRouting(enabled: boolean) {
 
     void subscribeToForegroundReminderNotifications((data) => {
       if (cancelled) return;
-      void openFromPush(data, true);
+      void presentFromPush(data, 'foreground');
     }).then((unsub) => {
       if (cancelled) {
         unsub();
@@ -158,43 +70,66 @@ export function useReminderNotificationRouting(enabled: boolean) {
       unsubscribeTap?.();
       unsubscribeForeground?.();
     };
-  }, [enabled, router, setActivePetId]);
+  }, [enabled, presentFromPush]);
 
   useEffect(() => {
-    if (!enabled || !activePetId || launchedPromptRef.current) return;
-
-    const root = segments[0] as string | undefined;
-    if (root === '(auth)' || root === '(onboarding)') return;
-    if (segments.some((s) => s === 'reminders')) return;
+    if (!enabled || !activePetId) return;
 
     let cancelled = false;
 
-    const checkPending = async () => {
-      if (launchedPromptRef.current || cancelled) return;
+    const onAuthedSurface = () => {
+      const root = segmentsRef.current[0] as string | undefined;
+      return root !== '(auth)' && root !== '(onboarding)';
+    };
+
+    const presentDue = (items: Reminder[], focusId?: string) => {
+      if (cancelled || visibleRef.current || !onAuthedSurface()) return;
+      const pending = items.filter(needsStatusPrompt);
+      if (!pending.length && !focusId) return;
+      present(items, focusId);
+    };
+
+    const refreshCache = async () => {
+      if (cancelled || scanningRef.current || !onAuthedSurface()) return;
+      scanningRef.current = true;
       try {
         const [today, recent] = await Promise.all([
-          listReminders(activePetId, 'today'),
-          listReminders(activePetId, 'recent', { collapse: false }),
+          listReminders(activePetId, 'today', { limit: 50 }),
+          listReminders(activePetId, 'recent', { limit: 50, collapse: false }),
         ]);
-        if (cancelled || launchedPromptRef.current) return;
-        const pending = [...today, ...recent].some(needsStatusPrompt);
-        if (!pending) return;
-        launchedPromptRef.current = true;
-        router.push('/reminders?prompt=1&tab=Recent' as never);
+        if (cancelled) return;
+        const items = mergeReminderRows(today, recent);
+        cacheRef.current = items;
+        presentDue(items);
       } catch {
-        /* ignore — reminders screen will retry on focus */
+        /* next tick / interval retries */
+      } finally {
+        scanningRef.current = false;
       }
     };
 
-    const onAppState = (state: AppStateStatus) => {
-      if (state === 'active') void checkPending();
+    const onLocalClock = () => {
+      if (cancelled || visibleRef.current || !onAuthedSurface()) return;
+      const due = cacheRef.current.filter(needsStatusPrompt);
+      if (!due.length) return;
+      present(due);
     };
 
-    void checkPending();
+    const onAppState = (state: AppStateStatus) => {
+      if (state === 'active') void refreshCache();
+    };
+
+    void refreshCache();
+    const clock = setInterval(onLocalClock, 1000);
+    const poll = setInterval(() => {
+      if (AppState.currentState === 'active') void refreshCache();
+    }, 8000);
     const sub = AppState.addEventListener('change', onAppState);
     return () => {
       cancelled = true;
+      clearInterval(clock);
+      clearInterval(poll);
       sub.remove();
     };
-  }, [activePetId, enabled, router, segments]);
+  }, [activePetId, enabled, present]);
 }

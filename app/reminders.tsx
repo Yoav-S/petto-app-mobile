@@ -23,19 +23,16 @@ import ReminderListItem, {
   estimateReminderListItemHeight,
   REMINDER_LIST_ITEM_GAP,
 } from '@/components/reminders/ReminderListItem';
-import ReminderActionSheet from '@/components/reminders/ReminderActionSheet';
 import SwipeToDeleteRow from '@/components/ui/SwipeToDeleteRow';
 import {
   needsStatusPrompt,
   shouldPromptFromPush,
-  reminderAlreadyAnswered,
-  reminderHasFired,
   formatSheetClockTime,
 } from '@/components/reminders/reminderFormShared';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
-import { deleteReminder, getReminder, updateReminderStatus, listReminders } from '@/services/reminders';
+import { deleteReminder, getReminder, listReminders } from '@/services/reminders';
 import { getErrorMessage } from '@/services/errors';
 import { invalidateReminders } from '@/services/queryClient';
 import { queryKeys } from '@/services/queryKeys';
@@ -47,11 +44,8 @@ import {
 import { guardAddReminder } from '@/services/subscription';
 import { listPets } from '@/services/pets';
 import type { Reminder } from '@/types/api';
-import {
-  resolveReminderCategory,
-  type ReminderCategory,
-} from '@/utils/reminderCategory';
 import { useCursorPagination } from '@/hooks/useCursorPagination';
+import { useReminderPrompt } from '@/context/ReminderPromptContext';
 import ListLoadMoreFooter from '@/components/ui/ListLoadMoreFooter';
 import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
 import { LIST_PAGE_SIZE } from '@/constants/pagination';
@@ -59,10 +53,6 @@ import { LIST_PAGE_SIZE } from '@/constants/pagination';
 const TABS = ['Today', 'Upcoming', 'Recent'] as const;
 type TabName = (typeof TABS)[number];
 const PREVIEW_CHARS = 20;
-
-function reminderCategory(item: Reminder): ReminderCategory {
-  return (item.category as ReminderCategory | undefined) ?? resolveReminderCategory(item.title);
-}
 
 /** Truncate to first N chars with … when there is more. */
 function previewText(value: string | null | undefined, max = PREVIEW_CHARS): string {
@@ -91,45 +81,13 @@ function parseTabParam(value: string | string[] | undefined): TabName | null {
   return null;
 }
 
-function sortPromptQueue(
-  items: Reminder[],
-  focusId?: string | null,
-  answeredIds?: Set<string>,
-  forceFocus = false,
-): Reminder[] {
-  const unique = new Map<string, Reminder>();
-  for (const item of items) {
-    if (answeredIds?.has(item.id)) continue;
-    if (needsStatusPrompt(item) || shouldPromptFromPush(item)) unique.set(item.id, item);
-  }
-  if (forceFocus && focusId) {
-    const focused = items.find((row) => row.id === focusId);
-    if (
-      focused &&
-      !answeredIds?.has(focused.id) &&
-      !reminderAlreadyAnswered(focused) &&
-      (needsStatusPrompt(focused) || shouldPromptFromPush(focused) || reminderHasFired(focused))
-    ) {
-      unique.set(focused.id, focused);
-    }
-  }
-  const list = Array.from(unique.values()).sort((a, b) => {
-    if (a.date !== b.date) return a.date.localeCompare(b.date);
-    return a.time.localeCompare(b.time);
-  });
-  if (!focusId) return list;
-  const idx = list.findIndex((r) => r.id === focusId);
-  if (idx <= 0) return list;
-  const [focused] = list.splice(idx, 1);
-  return [focused, ...list];
-}
-
 export default function RemindersScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const toast = useToast();
   const { activePetId } = useActivePet();
+  const { present, visible: promptVisible } = useReminderPrompt();
   const params = useLocalSearchParams<{
     deletedId?: string;
     prompt?: string;
@@ -145,13 +103,8 @@ export default function RemindersScreen() {
   const [scrollY, setScrollY] = useState(0);
   const [listHeight, setListHeight] = useState(0);
 
-  const [promptQueue, setPromptQueue] = useState<Reminder[]>([]);
-  const [promptTotal, setPromptTotal] = useState(0);
   const sessionSkipRef = useRef(false);
   const autoPromptCheckedRef = useRef(false);
-  const answeredIdsRef = useRef(new Set<string>());
-  const promptQueueRef = useRef<Reminder[]>([]);
-  promptQueueRef.current = promptQueue;
 
   const todayPagination = useCursorPagination<Reminder>({
     fetchPage: useCallback(
@@ -208,10 +161,6 @@ export default function RemindersScreen() {
     }),
     [todayPagination.items, upcomingPagination.items, recentPagination.items],
   );
-  const selectedReminder = promptQueue[0] ?? null;
-  const actionSheetVisible = selectedReminder != null;
-  const promptPosition =
-    promptTotal > 1 ? promptTotal - promptQueue.length + 1 : undefined;
 
   const tabPresence = useMemo(
     () => ({
@@ -280,40 +229,19 @@ export default function RemindersScreen() {
     return { today, upcoming, recent };
   }, [activePetId, recentPagination.refresh, todayPagination.refresh, upcomingPagination.refresh]);
 
-  const moveToRecent = useCallback((item: Reminder, status: 'completed' | 'missed') => {
-    const marked: Reminder = { ...item, status, awaiting_ack: false };
-    answeredIdsRef.current.add(item.id);
-    todayPagination.setItems((prev) => prev.filter((row) => row.id !== item.id));
-    upcomingPagination.setItems((prev) => prev.filter((row) => row.id !== item.id));
-    recentPagination.setItems((prev) => [
-      marked,
-      ...prev.filter((row) => row.id !== item.id),
-    ]);
-  }, [recentPagination.setItems, todayPagination.setItems, upcomingPagination.setItems]);
-
   const openPromptQueue = useCallback(
     (items: Reminder[], focusId?: string | null, force = false) => {
       if (force) sessionSkipRef.current = false;
       if (sessionSkipRef.current && !force) return;
-      const queue = sortPromptQueue(items, focusId, answeredIdsRef.current, force);
-      setPromptQueue(queue);
-      setPromptTotal(queue.length);
-      if (force || queue.length) setActiveTab('Recent');
-      if (queue.length) {
-        const queuedIds = new Set(queue.map((row) => row.id));
-        todayPagination.setItems((prev) => prev.filter((row) => !queuedIds.has(row.id)));
-        upcomingPagination.setItems((prev) => prev.filter((row) => !queuedIds.has(row.id)));
-        recentPagination.setItems((prev) => {
-          const rest = prev.filter((row) => !queuedIds.has(row.id));
-          return [...queue, ...rest];
-        });
-      }
+      present(items, focusId);
+      if (force || items.length) setActiveTab('Recent');
     },
-    [recentPagination.setItems, todayPagination.setItems, upcomingPagination.setItems],
+    [present],
   );
 
   const maybeAutoPromptStatus = useCallback(
     async (today: Reminder[], recent: Reminder[], upcoming: Reminder[] = []) => {
+      if (promptVisible) return;
       const force = firstParam(params.prompt) === '1';
       if (!force) {
         if (autoPromptCheckedRef.current) return;
@@ -334,7 +262,7 @@ export default function RemindersScreen() {
       }
       openPromptQueue(items, focusId, force);
     },
-    [activePetId, openPromptQueue, params.focusId, params.petId, params.prompt],
+    [activePetId, openPromptQueue, params.focusId, params.petId, params.prompt, promptVisible],
   );
 
   React.useEffect(() => {
@@ -382,46 +310,12 @@ export default function RemindersScreen() {
     }
   }, [loadingMore, refetchAll]);
 
-  const clearPromptParams = useCallback(() => {
-    if (params.prompt || params.focusId || params.n) {
-      router.setParams({
-        prompt: '0',
-        focusId: undefined,
-        petId: undefined,
-        n: undefined,
-      } as never);
-    }
-  }, [params.focusId, params.n, params.petId, params.prompt, router]);
-
-  const closeActionSheet = useCallback(() => {
-    const remaining = promptQueueRef.current;
-    sessionSkipRef.current = true;
-    setPromptQueue([]);
-    setPromptTotal(0);
-    clearPromptParams();
-    if (!activePetId || remaining.length === 0) return;
-    for (const item of remaining) {
-      if (answeredIdsRef.current.has(item.id) || !needsStatusPrompt(item)) continue;
-      moveToRecent(item, 'missed');
-      void updateReminderStatus(activePetId, item.id, 'missed');
-    }
-    void refetchAll();
-  }, [activePetId, clearPromptParams, moveToRecent, refetchAll]);
-
-  const advanceOrCloseQueue = useCallback(() => {
-    setPromptQueue((prev) => {
-      const next = prev.slice(1);
-      if (next.length === 0) setPromptTotal(0);
-      return next;
-    });
-  }, []);
+  React.useEffect(() => {
+    if (!promptVisible) void refetchAll();
+  }, [promptVisible, refetchAll]);
 
   const handleReminderPress = useCallback(
     (item: Reminder) => {
-      if (answeredIdsRef.current.has(item.id)) {
-        router.push(`/reminders/${item.id}` as never);
-        return;
-      }
       if (needsStatusPrompt(item) || shouldPromptFromPush(item)) {
         sessionSkipRef.current = false;
         openPromptQueue([item], item.id, true);
@@ -431,26 +325,6 @@ export default function RemindersScreen() {
     },
     [openPromptQueue, router],
   );
-
-  const handleStatus = async (status: 'completed' | 'missed') => {
-    if (!activePetId || !selectedReminder) return;
-    const reminder = selectedReminder;
-    const lastInQueue = promptQueue.length <= 1;
-    if (answeredIdsRef.current.has(reminder.id)) {
-      advanceOrCloseQueue();
-      if (lastInQueue) clearPromptParams();
-      return;
-    }
-    moveToRecent(reminder, status);
-    try {
-      await updateReminderStatus(activePetId, reminder.id, status);
-      advanceOrCloseQueue();
-      if (lastInQueue) clearPromptParams();
-      void refetchAll();
-    } catch {
-      /* keep list as-is; a transient error shouldn't block the UI */
-    }
-  };
 
   const handleDeleteReminder = useCallback(
     (id: string) => {
@@ -709,24 +583,6 @@ export default function RemindersScreen() {
           accessibilityLabel={t('reminders.add')}
         />
       ) : null}
-
-      <ReminderActionSheet
-        visible={actionSheetVisible}
-        title={selectedReminder?.title}
-        subtitle={selectedReminder?.note ?? undefined}
-        category={selectedReminder ? reminderCategory(selectedReminder) : undefined}
-        time={selectedReminder?.time}
-        dateLabel={selectedReminder ? reminderRelativeDate(selectedReminder.date) : undefined}
-        currentIndex={promptPosition}
-        totalCount={promptTotal > 1 ? promptTotal : undefined}
-        onClose={closeActionSheet}
-        onDone={() => {
-          void handleStatus('completed');
-        }}
-        onMissed={() => {
-          void handleStatus('missed');
-        }}
-      />
 
       <ListFetchBlocker visible={loadingMore} />
     </>

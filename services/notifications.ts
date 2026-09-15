@@ -58,13 +58,18 @@ function asDataString(value: unknown): string | undefined {
   return undefined;
 }
 
-export function parseReminderPushData(data: unknown): ReminderPushData | null {
+export function parseReminderPushData(
+  data: unknown,
+  title?: string,
+): ReminderPushData | null {
   if (!data || typeof data !== 'object') return null;
   const raw = data as Record<string, unknown>;
   const reminderId = asDataString(raw.reminderId) ?? asDataString(raw.reminder_id);
   const petId = asDataString(raw.petId) ?? asDataString(raw.pet_id);
   const kindRaw = asDataString(raw.kind);
-  const kind = kindRaw === 'alert' || kindRaw === 'main' ? kindRaw : undefined;
+  let kind = kindRaw === 'alert' || kindRaw === 'main' ? kindRaw : undefined;
+  if (!kind && title === 'Alert') kind = 'alert';
+  if (!kind && title === 'Reminder') kind = 'main';
   if (!reminderId && !petId) return null;
   return { type: 'reminder', reminderId, petId, kind };
 }
@@ -170,14 +175,17 @@ export async function subscribeToReminderNotificationResponses(
   const Notifications = await ensureNotificationHandler();
   if (!Notifications) return () => {};
 
-  const deliver = (data: unknown) => {
-    const parsed = parseReminderPushData(data);
+  const deliver = (data: unknown, title?: string) => {
+    const parsed = parseReminderPushData(data, title);
     if (!parsed) return;
     onOpen(parsed);
   };
 
   const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-    deliver(response.notification.request.content.data);
+    deliver(
+      response.notification.request.content.data,
+      response.notification.request.content.title,
+    );
   });
 
   try {
@@ -186,7 +194,7 @@ export async function subscribeToReminderNotificationResponses(
       const id = last.notification.request.identifier;
       if (handledColdStartResponseId !== id) {
         handledColdStartResponseId = id;
-        deliver(last.notification.request.content.data);
+        deliver(last.notification.request.content.data, last.notification.request.content.title);
       }
     }
   } catch (err) {
@@ -210,7 +218,10 @@ export async function subscribeToForegroundReminderNotifications(
 
   const sub = Notifications.addNotificationReceivedListener((notification) => {
     if (AppState.currentState !== 'active') return;
-    const parsed = parseReminderPushData(notification.request.content.data);
+    const parsed = parseReminderPushData(
+      notification.request.content.data,
+      notification.request.content.title,
+    );
     if (!parsed) return;
     if (parsed.kind === 'alert') return;
     onReceive(parsed);

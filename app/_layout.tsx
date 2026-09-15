@@ -20,6 +20,7 @@ import QueryProvider from '@/context/QueryProvider';
 import { PetStoreProvider, useSnapActivePetToIncluded } from '@/store/petStore';
 import { PetOnboardingDraftProvider, usePetOnboardingDraft } from '@/store/petOnboardingDraft';
 import { UpgradeLimitProvider } from '@/context/UpgradeLimitContext';
+import { ReminderPromptProvider } from '@/context/ReminderPromptContext';
 import { useReminderNotificationRouting } from '@/hooks/useReminderNotificationRouting';
 import GlobalKeyboardDoneButton from '@/components/ui/GlobalKeyboardDoneButton';
 import AppSplash from '@/components/ui/AppSplash';
@@ -200,12 +201,14 @@ function ThemedApp() {
       <SystemBarsProvider isDark={isDark}>
         <ToastProvider>
             <UpgradeLimitProvider>
+            <ReminderPromptProvider>
             <View style={{ flex: 1 }}>
               <View key={locale} style={{ flex: 1, backgroundColor: colors.background }}>
                 <RootLayoutNav />
               </View>
               <GlobalKeyboardDoneButton />
             </View>
+            </ReminderPromptProvider>
             </UpgradeLimitProvider>
         </ToastProvider>
       </SystemBarsProvider>

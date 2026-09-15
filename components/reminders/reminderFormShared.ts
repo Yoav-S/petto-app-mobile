@@ -181,6 +181,34 @@ export function shouldPromptFromPush(reminder: Reminder): boolean {
   return reminderHasFired(reminder);
 }
 
+export function buildPromptQueue(
+  items: Reminder[],
+  focusId?: string | null,
+  answeredIds?: Set<string>,
+  forceFocus = false,
+): Reminder[] {
+  const unique = new Map<string, Reminder>();
+  for (const item of items) {
+    if (answeredIds?.has(item.id)) continue;
+    if (needsStatusPrompt(item) || shouldPromptFromPush(item)) unique.set(item.id, item);
+  }
+  if (forceFocus && focusId) {
+    const focused = items.find((row) => row.id === focusId);
+    if (focused && !answeredIds?.has(focused.id) && !reminderAlreadyAnswered(focused)) {
+      unique.set(focused.id, focused);
+    }
+  }
+  const list = Array.from(unique.values()).sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return a.time.localeCompare(b.time);
+  });
+  if (!focusId) return list;
+  const idx = list.findIndex((r) => r.id === focusId);
+  if (idx <= 0) return list;
+  const [focused] = list.splice(idx, 1);
+  return [focused, ...list];
+}
+
 /** Compact clock for list rows and action sheet (e.g. "4:46"). */
 export function formatSheetClockTime(time: string): string {
   return formatDisplayTime(normalizeTime(time));
