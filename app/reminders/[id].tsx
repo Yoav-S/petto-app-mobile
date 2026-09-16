@@ -22,9 +22,7 @@ import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import ReminderFormBody from '@/components/reminders/ReminderFormBody';
-import ReminderFireHistoryList, {
-  HISTORY_LIST_FADE_HEIGHT,
-} from '@/components/reminders/ReminderFireHistoryList';
+import ReminderFireHistoryList from '@/components/reminders/ReminderFireHistoryList';
 import SavingOverlay from '@/components/ui/SavingOverlay';
 import {
   clampAlertForSchedule,
@@ -57,7 +55,6 @@ import { todayIsoDate } from '@/utils/calendar';
 type PendingLeave = Parameters<Parameters<typeof usePreventRemove>[1]>[0]['data']['action'];
 
 const AUTOSAVE_MS = 700;
-const DELETE_BOTTOM_GAP = 16;
 
 function parseCategory(value: string | null | undefined, title: string): ReminderCategory {
   if (value && (REMINDER_CATEGORIES as string[]).includes(value)) {
@@ -75,7 +72,6 @@ export default function EditReminderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { activePetId } = useActivePet();
   const { contentWidth } = useResponsiveLayout();
-  const deleteBottomPad = DELETE_BOTTOM_GAP;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -410,8 +406,6 @@ export default function EditReminderScreen() {
 
   const headerTitle = readOnly ? t('reminders.detail_title') : t('reminders.edit_title');
   const header = <VaccineScreenHeader title={headerTitle} icon="close" />;
-  const historyOverlap =
-    fireHistory.length >= 2 ? -(HISTORY_LIST_FADE_HEIGHT - 76) : 0;
 
   if (loading) {
     return (
@@ -448,7 +442,7 @@ export default function EditReminderScreen() {
         header={header}
         edges={['left', 'right', 'bottom']}
         topFade
-        bottomFade={fireHistory.length === 0}
+        bottomFade
       >
         {({ paddingTop }) => (
           <ReminderFormBody
@@ -484,27 +478,22 @@ export default function EditReminderScreen() {
         onRepeatSelect={setRepeat}
         onAlertConfirm={setAlert}
         readOnly={readOnly}
-        pinFooterToBottom
-        footerBottomInset={deleteBottomPad}
         afterFields={
           fireHistory.length > 0 ? (
             <ReminderFireHistoryList items={fireHistory} width={layout.cardWidth} />
           ) : null
         }
         footer={
-          <View style={historyOverlap ? { marginTop: historyOverlap } : undefined}>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => {
-                setSheet(null);
-                setDeleteVisible(true);
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.deleteText}>{t('reminders.delete')}</Text>
-            </TouchableOpacity>
-            <View style={styles.belowDelete} />
-          </View>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => {
+              setSheet(null);
+              setDeleteVisible(true);
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.deleteText}>{t('reminders.delete')}</Text>
+          </TouchableOpacity>
         }
           />
         )}
@@ -539,9 +528,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 16,
     lineHeight: 18,
     color: c.error,
-  },
-  belowDelete: {
-    height: 160,
-    width: '100%',
   },
 });

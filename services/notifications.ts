@@ -107,14 +107,36 @@ export function parseReminderPushData(
   return { type: 'reminder', reminderId, petId, kind };
 }
 
+async function ensureAndroidChannels(
+  Notifications: typeof import('expo-notifications'),
+): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationChannelAsync('alerts', {
+    name: 'Alert',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#004741',
+  });
+  await Notifications.setNotificationChannelAsync('reminders', {
+    name: 'Reminder',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#004741',
+  });
+  await Notifications.setNotificationChannelAsync('default', {
+    name: 'Reminder',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#004741',
+  });
+}
+
 async function ensureNotificationHandler(): Promise<typeof import('expo-notifications') | null> {
   if (isExpoGo) return null;
   const Notifications = await import('expo-notifications');
   if (!handlerConfigured) {
     Notifications.setNotificationHandler({
-      handleNotification: async (notification) => {
-        // Always show both OS pushes (alert + main). The sheet is opened
-        // separately, and only for the main reminder.
+      handleNotification: async () => {
         return {
           shouldShowAlert: true,
           shouldShowBanner: true,
@@ -126,6 +148,7 @@ async function ensureNotificationHandler(): Promise<typeof import('expo-notifica
     });
     handlerConfigured = true;
   }
+  await ensureAndroidChannels(Notifications);
   return Notifications;
 }
 
@@ -135,27 +158,6 @@ async function resolvePushToken(): Promise<string | null> {
   const Device = await import('expo-device');
 
   if (!Device.isDevice) return null;
-
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('alerts', {
-      name: 'Alert',
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#004741',
-    });
-    await Notifications.setNotificationChannelAsync('reminders', {
-      name: 'Reminder',
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#004741',
-    });
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'Reminder',
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#004741',
-    });
-  }
 
   const { status: existing } = await Notifications.getPermissionsAsync();
   let status = existing;

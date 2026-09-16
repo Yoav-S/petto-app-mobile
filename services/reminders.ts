@@ -114,6 +114,12 @@ export async function updateReminder(
   return row;
 }
 
+export async function markReminderFired(petId: string, id: string): Promise<Reminder> {
+  const row = await apiPost<Reminder>(`/pets/${petId}/reminders/${id}/fired`, {});
+  invalidateReminders(petId);
+  return row;
+}
+
 export async function updateReminderStatus(
   petId: string,
   id: string,

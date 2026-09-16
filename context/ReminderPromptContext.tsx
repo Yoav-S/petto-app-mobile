@@ -17,6 +17,7 @@ import {
 import {
   getReminder,
   listReminders,
+  markReminderFired,
   updateReminderStatus,
 } from '@/services/reminders';
 import { listPets } from '@/services/pets';
@@ -73,20 +74,46 @@ export function ReminderPromptProvider({ children }: { children: React.ReactNode
   const [queue, setQueue] = useState<Reminder[]>([]);
   const [total, setTotal] = useState(0);
   const answeredIdsRef = useRef(new Set<string>());
+  const pinnedIdsRef = useRef(new Set<string>());
   const queueRef = useRef<Reminder[]>([]);
   queueRef.current = queue;
 
   const present = useCallback((items: Reminder[], focusId?: string | null) => {
-    const next = buildPromptQueue(items, focusId, answeredIdsRef.current, Boolean(focusId));
-    if (next.length === 0) return;
-    const firstOpen = queueRef.current.length === 0;
-    setQueue(next);
-    setTotal(next.length);
-    if (firstOpen) {
-      const petId = next[0]?.pet_id || activePetId;
-      if (petId) invalidateReminders(petId);
+    const incoming = buildPromptQueue(
+      items,
+      focusId,
+      answeredIdsRef.current,
+      Boolean(focusId),
+    );
+    const prev = queueRef.current;
+
+    if (prev.length === 0) {
+      if (incoming.length === 0) return;
+      setQueue(incoming);
+      setTotal(incoming.length);
+    } else {
+      const seen = new Set(prev.map((row) => row.id));
+      const added = incoming.filter(
+        (row) => !seen.has(row.id) && !answeredIdsRef.current.has(row.id),
+      );
+      if (added.length > 0) {
+        setQueue([...prev, ...added]);
+        setTotal((count) => count + added.length);
+      }
     }
-  }, [activePetId]);
+
+    const pinRows = incoming.length > 0 ? incoming : prev;
+    for (const row of pinRows) {
+      if (!row.pet_id) continue;
+      if (reminderAlreadyAnswered(row)) continue;
+      if (row.notified_at) continue;
+      if (pinnedIdsRef.current.has(row.id)) continue;
+      pinnedIdsRef.current.add(row.id);
+      void markReminderFired(row.pet_id, row.id).catch(() => {
+        pinnedIdsRef.current.delete(row.id);
+      });
+    }
+  }, []);
 
   const presentFromPush = useCallback(
     async (data: ReminderPushData, source: 'tap' | 'foreground') => {

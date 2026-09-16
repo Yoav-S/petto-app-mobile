@@ -80,10 +80,10 @@ export function useReminderNotificationRouting(enabled: boolean) {
     };
 
     const presentDue = (items: Reminder[], focusId?: string) => {
-      if (cancelled || visibleRef.current || !onAuthedSurface()) return;
+      if (cancelled || !onAuthedSurface()) return;
       const pending = items.filter(needsStatusPrompt);
       if (!pending.length && !focusId) return;
-      present(items, focusId);
+      present(focusId ? items : pending, focusId);
     };
 
     const refreshCache = async () => {
@@ -106,7 +106,7 @@ export function useReminderNotificationRouting(enabled: boolean) {
     };
 
     const onLocalClock = () => {
-      if (cancelled || visibleRef.current || !onAuthedSurface()) return;
+      if (cancelled || !onAuthedSurface()) return;
       const due = cacheRef.current.filter(needsStatusPrompt);
       if (!due.length) return;
       present(due);
