@@ -121,12 +121,17 @@ export default function ListScrollLayout({
   /** Same as HeaderScrollLayout — fade starts at chrome bottom, extends over the list. */
   const fadeTop = chrome != null ? chromeContentHeight : 0;
 
-  /** Item area only — ignore scroll padding so FAB/fade clearance does not fake overflow. */
+  /**
+   * Rows against the height rows can actually use: the chrome inset and the
+   * FAB/fade clearance are not viewport. Comparing rows to the whole viewport
+   * kept the fades off until a list was a full screen taller than it scrolled.
+   */
   const itemScrollHeight = metrics.contentHeight - paddingTop - paddingBottom;
+  const itemViewportHeight = metrics.viewportHeight - paddingTop - paddingBottom;
   const hasItemOverflow =
     scrollActive &&
-    metrics.viewportHeight > 0 &&
-    itemScrollHeight > metrics.viewportHeight + 1;
+    itemViewportHeight > 0 &&
+    itemScrollHeight > itemViewportHeight + 1;
 
   /** True once this list has reported real metrics — before that we trust memory. */
   const isMeasured = scrollActive && metrics.contentHeight > 0;

@@ -1,13 +1,11 @@
-import React, { useEffect, useId, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/context/ThemeContext';
+import ScrollFadeBand from '@/components/ui/ScrollFadeBand';
 import {
   SCROLL_BOTTOM_FADE_GRADIENT,
-  SCROLL_BOTTOM_FADE_SOLID_AT,
   SCROLL_TOP_FADE_GRADIENT,
-  SCROLL_TOP_FADE_SOLID_AT,
 } from '@/constants/layout';
 
 interface ScrollEdgeFadesProps {
@@ -37,7 +35,8 @@ const FADE_MS = 120;
 const FADE_SEAM_OVERLAP = 1;
 
 /**
- * Visual fades pinned to the scroll viewport edges.
+ * Visual fades pinned to the scroll viewport edges, using the same Figma ramp as
+ * every other fade in the app.
  * Top: sits on the scroll top edge (below header) — content dissolves under the title.
  * Bottom: sits on the scroll bottom edge — solid strip over the home indicator.
  * Does NOT change scroll padding; scroll runs full height.
@@ -57,7 +56,6 @@ export default function ScrollEdgeFades({
   const bottomStrip = bottomInset ?? insets.bottom;
   const fadeColor = color ?? colors.background;
   const opacity = useRef(new Animated.Value(visible ? 1 : 0)).current;
-  const gradientId = useId().replace(/:/g, '');
 
   useEffect(() => {
     Animated.timing(opacity, {
@@ -68,24 +66,10 @@ export default function ScrollEdgeFades({
   }, [opacity, visible]);
 
   return (
-    <Animated.View
-      style={[styles.wrap, { opacity }]}
-      pointerEvents="none"
-    >
+    <Animated.View style={[styles.wrap, { opacity }]} pointerEvents="none">
       {showTop ? (
-        <View
-          style={[styles.edge, styles.top, { top: scrollTop, height: topHeight }]}
-        >
-          <Svg width="100%" height="100%" preserveAspectRatio="none">
-            <Defs>
-              <LinearGradient id={`${gradientId}-top`} x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor={fadeColor} stopOpacity={1} />
-                <Stop offset={String(SCROLL_TOP_FADE_SOLID_AT)} stopColor={fadeColor} stopOpacity={1} />
-                <Stop offset="1" stopColor={fadeColor} stopOpacity={0} />
-              </LinearGradient>
-            </Defs>
-            <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradientId}-top)`} />
-          </Svg>
+        <View style={[styles.edge, styles.top, { top: scrollTop, height: topHeight }]}>
+          <ScrollFadeBand edge="top" height={topHeight} color={fadeColor} />
         </View>
       ) : null}
 
@@ -97,22 +81,12 @@ export default function ScrollEdgeFades({
             { height: bottomHeight + bottomStrip },
           ]}
         >
-          <View style={{ height: bottomHeight }}>
-            <Svg width="100%" height="100%" preserveAspectRatio="none">
-              <Defs>
-                <LinearGradient id={`${gradientId}-bottom`} x1="0" y1="0" x2="0" y2="1">
-                  <Stop offset="0" stopColor={fadeColor} stopOpacity={0} />
-                  <Stop
-                    offset={String(1 - SCROLL_BOTTOM_FADE_SOLID_AT)}
-                    stopColor={fadeColor}
-                    stopOpacity={0}
-                  />
-                  <Stop offset="1" stopColor={fadeColor} stopOpacity={1} />
-                </LinearGradient>
-              </Defs>
-              <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradientId}-bottom)`} />
-            </Svg>
-          </View>
+          <ScrollFadeBand
+            edge="bottom"
+            height={bottomHeight}
+            color={fadeColor}
+            style={{ bottom: bottomStrip }}
+          />
           <View
             style={[
               styles.bottomSolid,

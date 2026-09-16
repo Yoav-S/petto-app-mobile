@@ -107,11 +107,15 @@ export const FOOTER_FADE_SOLID_AT = 0.3557;
 /** Scroll room so the last row can come to rest above the fade band. */
 export const FOOTER_FADE_CONTENT_INSET = FOOTER_FADE_BAND + 8;
 
+/**
+ * Every scroll fade shares the Figma ramp, so the opaque tail of a band is
+ * always `1 - FOOTER_FADE_SOLID_AT` of its height, whatever the band height is.
+ */
 /** Top gradient stays opaque through this fraction (seamless under header). */
-export const SCROLL_TOP_FADE_SOLID_AT = 0.32;
+export const SCROLL_TOP_FADE_SOLID_AT = 1 - FOOTER_FADE_SOLID_AT;
 
-/** Bottom gradient reaches full opacity through this fraction. */
-export const SCROLL_BOTTOM_FADE_SOLID_AT = 0.55;
+/** Bottom gradient is fully opaque through this fraction, measured upward. */
+export const SCROLL_BOTTOM_FADE_SOLID_AT = 1 - FOOTER_FADE_SOLID_AT;
 
 /**
  * Full-bleed legal header (auth Terms / Privacy): status cover, then the back

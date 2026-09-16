@@ -616,5 +616,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flexShrink: 0,
     flexBasis: 'auto',
     width: '100%',
+    /** Without this the list hugs the left edge instead of the card column. */
+    alignItems: 'center',
   },
 });
