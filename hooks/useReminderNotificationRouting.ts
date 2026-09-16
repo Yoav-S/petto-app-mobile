@@ -18,12 +18,9 @@ function mergeReminderRows(today: Reminder[], recent: Reminder[]): Reminder[] {
 }
 
 /**
- * Alert tap before fire → edit screen (handled in presentFromPush).
- * Reminder fire (foreground or tap) and alert tap after fire → Done/Missed sheet
- * on any screen. Alert receive never opens the sheet.
- *
- * Local clock + list scan open the sheet even when Expo Go cannot deliver
- * remote push, and even before the server writes notified_at.
+ * Reminder fire or Reminder tap → Done/Missed sheet (full unanswered queue).
+ * Alert tap after that fire → same sheet. Alert tap before the reminder → edit.
+ * Alert banner arriving does not auto-open the sheet.
  */
 export function useReminderNotificationRouting(enabled: boolean) {
   const segments = useSegments();

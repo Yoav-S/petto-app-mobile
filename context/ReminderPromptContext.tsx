@@ -79,12 +79,18 @@ export function ReminderPromptProvider({ children }: { children: React.ReactNode
   const present = useCallback((items: Reminder[], focusId?: string | null) => {
     const next = buildPromptQueue(items, focusId, answeredIdsRef.current, Boolean(focusId));
     if (next.length === 0) return;
+    const firstOpen = queueRef.current.length === 0;
     setQueue(next);
     setTotal(next.length);
-  }, []);
+    if (firstOpen) {
+      const petId = next[0]?.pet_id || activePetId;
+      if (petId) invalidateReminders(petId);
+    }
+  }, [activePetId]);
 
   const presentFromPush = useCallback(
     async (data: ReminderPushData, source: 'tap' | 'foreground') => {
+      // Alert banner arriving does not open the sheet.
       if (source === 'foreground' && data.kind === 'alert') return;
 
       const petId = data.petId;
@@ -114,36 +120,30 @@ export function ReminderPromptProvider({ children }: { children: React.ReactNode
           } catch {
             focused = null;
           }
-          if (focused && reminderAlreadyAnswered(focused)) {
-            return;
+          if (!focused) {
+            await sleep(400);
+            continue;
           }
-          if (
-            focused &&
-            (shouldPromptFromPush(focused) || data.kind !== 'alert')
-          ) {
-            break;
-          }
-          if (data.kind === 'alert' && focused && !shouldPromptFromPush(focused)) {
-            break;
-          }
+          if (reminderAlreadyAnswered(focused)) return;
+          if (data.kind !== 'alert' || reminderHasFired(focused)) break;
+          // Alert tap before reminder time: stop waiting, go to edit.
+          if (source === 'tap') break;
           await sleep(400);
         }
+      }
 
-        // Alert tap only goes to edit when the main reminder has not fired yet.
-        // After fire, Alert tap and Reminder tap both open Done/Missed.
-        if (
-          data.kind === 'alert' &&
-          focused &&
-          !shouldPromptFromPush(focused) &&
-          !reminderHasFired(focused)
-        ) {
-          if (source === 'tap' && !reminderAlreadyAnswered(focused)) {
-            router.push(`/reminders/${reminderId}` as never);
-          }
-          return;
+      const alertBeforeReminder =
+        data.kind === 'alert' &&
+        source === 'tap' &&
+        focused &&
+        !reminderHasFired(focused) &&
+        !shouldPromptFromPush(focused);
+
+      if (alertBeforeReminder) {
+        if (!reminderAlreadyAnswered(focused)) {
+          router.push(`/reminders/${reminderId}` as never);
         }
-
-        if (focused) present([focused], reminderId);
+        return;
       }
 
       const items: Reminder[] = [];
@@ -165,8 +165,6 @@ export function ReminderPromptProvider({ children }: { children: React.ReactNode
       }
 
       present(items, reminderId);
-      // Stay on the current screen. The sheet is global; jumping to Recent
-      // was leaving tab=Recent in the URL so back from edit landed on Recent.
       if (source === 'tap') {
         setTimeout(() => present(items, reminderId), 400);
       }

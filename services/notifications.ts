@@ -137,8 +137,20 @@ async function resolvePushToken(): Promise<string | null> {
   if (!Device.isDevice) return null;
 
   if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('alerts', {
+      name: 'Alert',
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#004741',
+    });
+    await Notifications.setNotificationChannelAsync('reminders', {
+      name: 'Reminder',
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#004741',
+    });
     await Notifications.setNotificationChannelAsync('default', {
-      name: 'Reminders',
+      name: 'Reminder',
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#004741',
