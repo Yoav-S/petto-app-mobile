@@ -105,6 +105,7 @@ export function HealthFormScroll({
   scrollEventThrottle,
   nestedScrollEnabled,
 }: HealthFormScrollProps) {
+  const scrollFade = useScrollFadeReporter();
   return (
     <ScrollView
       ref={scrollRef}
@@ -116,6 +117,8 @@ export function HealthFormScroll({
       nestedScrollEnabled={nestedScrollEnabled}
       onScroll={onScroll}
       scrollEventThrottle={scrollEventThrottle}
+      onLayout={(e) => scrollFade?.reportViewport(e.nativeEvent.layout.height)}
+      onContentSizeChange={(_w, h) => scrollFade?.reportContent(h)}
     >
       {children}
     </ScrollView>

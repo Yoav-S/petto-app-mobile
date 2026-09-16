@@ -25,6 +25,7 @@ import ReminderListItem, {
 } from '@/components/reminders/ReminderListItem';
 import SwipeToDeleteRow from '@/components/ui/SwipeToDeleteRow';
 import {
+  isRecentOccurrence,
   needsStatusPrompt,
   shouldPromptFromPush,
   formatSheetClockTime,
@@ -284,7 +285,9 @@ export default function RemindersScreen() {
         openPromptQueue([item], item.id);
         return;
       }
-      router.push(`/reminders/${item.id}` as never);
+      /** Recent rows are read-only history — the flag keeps the title steady. */
+      const suffix = isRecentOccurrence(item) ? '?recent=1' : '';
+      router.push(`/reminders/${item.id}${suffix}` as never);
     },
     [openPromptQueue, router],
   );

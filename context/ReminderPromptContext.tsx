@@ -166,7 +166,7 @@ export function ReminderPromptProvider({ children }: { children: React.ReactNode
         !reminderHasFired(focused) &&
         !shouldPromptFromPush(focused);
 
-      if (alertBeforeReminder) {
+      if (focused && alertBeforeReminder) {
         if (!reminderAlreadyAnswered(focused)) {
           router.push(`/reminders/${reminderId}` as never);
         }

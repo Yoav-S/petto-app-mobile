@@ -95,6 +95,18 @@ export const SCROLL_LIST_BOTTOM_FADE_GRADIENT = SCROLL_BOTTOM_FADE_GRADIENT + 36
 export const SCROLL_DOCUMENT_TOP_FADE_GRADIENT = SCROLL_TOP_FADE_GRADIENT + 44;
 export const SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT = SCROLL_BOTTOM_FADE_GRADIENT + 44;
 
+/**
+ * Figma fade band above a footer pinned to the screen bottom (375×812 → 122pt):
+ * `linear-gradient(180deg, rgba(255,255,255,0) 0%, #FFFFFF 35.57%)`.
+ * The band is transparent at its top edge and solid from 35.57% down, so the
+ * strip the button sits on is plain background.
+ */
+export const FOOTER_FADE_BAND = 122;
+export const FOOTER_FADE_SOLID_AT = 0.3557;
+
+/** Scroll room so the last row can come to rest above the fade band. */
+export const FOOTER_FADE_CONTENT_INSET = FOOTER_FADE_BAND + 8;
+
 /** Top gradient stays opaque through this fraction (seamless under header). */
 export const SCROLL_TOP_FADE_SOLID_AT = 0.32;
 

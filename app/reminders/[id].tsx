@@ -6,7 +6,13 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
+import ScrollFadeBand from '@/components/ui/ScrollFadeBand';
+import {
+  FOOTER_FADE_BAND,
+  FOOTER_FADE_CONTENT_INSET,
+} from '@/constants/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   useFocusEffect,
@@ -50,11 +56,14 @@ import {
 } from '@/utils/reminderCategory';
 import type { Reminder } from '@/types/api';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { useKeyboardOpen } from '@/components/ui/keyboardUtils';
 import { todayIsoDate } from '@/utils/calendar';
 
 type PendingLeave = Parameters<Parameters<typeof usePreventRemove>[1]>[0]['data']['action'];
 
 const AUTOSAVE_MS = 700;
+/** Delete sits on the solid tail of the fade band, clear of the home indicator. */
+const DELETE_FOOTER_MIN_BOTTOM = 10;
 
 function parseCategory(value: string | null | undefined, title: string): ReminderCategory {
   if (value && (REMINDER_CATEGORIES as string[]).includes(value)) {
@@ -69,14 +78,19 @@ export default function EditReminderScreen() {
   const toast = useToast();
   const router = useRouter();
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, recent } = useLocalSearchParams<{ id: string; recent?: string }>();
   const { activePetId } = useActivePet();
   const { contentWidth } = useResponsiveLayout();
+  const insets = useSafeAreaInsets();
+  const keyboardOpen = useKeyboardOpen();
+
+  /** Recent rows announce themselves in the route, so the title never flips. */
+  const openedFromRecent = (Array.isArray(recent) ? recent[0] : recent) === '1';
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [readOnly, setReadOnly] = useState(false);
+  const [readOnly, setReadOnly] = useState(openedFromRecent);
 
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<ReminderCategory>('general');
@@ -146,7 +160,10 @@ export default function EditReminderScreen() {
     try {
       setError(null);
       const reminder = await getReminder(activePetId, id);
-      const editable = reminder.status === 'scheduled' || reminder.status === 'today';
+      /** Only live Today / Upcoming heads are editable — never a fired occurrence. */
+      const editable =
+        (reminder.status === 'scheduled' || reminder.status === 'today') &&
+        !isRecentOccurrence(reminder);
       setReadOnly(!editable);
 
       let history: Reminder[] = [];
@@ -404,8 +421,9 @@ export default function EditReminderScreen() {
     });
   };
 
-  const headerTitle = readOnly ? t('reminders.detail_title') : t('reminders.edit_title');
+  const headerTitle = readOnly ? t('reminders.recent_title') : t('reminders.edit_title');
   const header = <VaccineScreenHeader title={headerTitle} icon="close" />;
+  const showHistory = readOnly && fireHistory.length > 0;
 
   if (loading) {
     return (
@@ -438,52 +456,78 @@ export default function EditReminderScreen() {
 
   return (
     <>
-      <HeaderScrollLayout
-        header={header}
-        edges={['left', 'right', 'bottom']}
-        topFade
-        bottomFade
-      >
-        {({ paddingTop }) => (
-          <ReminderFormBody
-            scrollInsetTop={paddingTop}
-            layout={layout}
-        title={title}
-        onTitleChange={handleTitleChange}
-        onTitleBlur={handleFieldBlur}
-        category={category}
-        onCategorySelect={handleCategorySelect}
-        date={date}
-        endDate={endDate}
-        time={time}
-        repeat={repeat}
-        alert={alert}
-        note={note}
-        onNoteChange={setNote}
-        noteFocused={noteFocused}
-        onNoteFocus={() => setNoteFocused(true)}
-        onNoteBlur={() => {
-          setNoteFocused(false);
-          handleFieldBlur();
-        }}
-        sheet={sheet}
-        onSheetChange={setSheet}
-        onDateConfirm={handleDateConfirm}
-        onEndDateConfirm={handleEndDateConfirm}
-        onEndDateClear={() => {
-          setEndDate(null);
-          setSheet(null);
-        }}
-        onTimeConfirm={handleTimeConfirm}
-        onRepeatSelect={setRepeat}
-        onAlertConfirm={setAlert}
-        readOnly={readOnly}
-        afterFields={
-          fireHistory.length > 0 ? (
-            <ReminderFireHistoryList items={fireHistory} width={layout.cardWidth} />
-          ) : null
-        }
-        footer={
+      <View style={styles.screen}>
+        <HeaderScrollLayout
+          header={header}
+          edges={['left', 'right']}
+          topFade
+        >
+          {({ paddingTop }) => (
+            <ReminderFormBody
+              scrollInsetTop={paddingTop}
+              /** The recent list runs under the fade band; its own scroll clears it. */
+              scrollPaddingBottom={showHistory ? 0 : FOOTER_FADE_CONTENT_INSET}
+              layout={layout}
+              title={title}
+              onTitleChange={handleTitleChange}
+              onTitleBlur={handleFieldBlur}
+              category={category}
+              onCategorySelect={handleCategorySelect}
+              date={date}
+              endDate={endDate}
+              time={time}
+              repeat={repeat}
+              alert={alert}
+              note={note}
+              onNoteChange={setNote}
+              noteFocused={noteFocused}
+              onNoteFocus={() => setNoteFocused(true)}
+              onNoteBlur={() => {
+                setNoteFocused(false);
+                handleFieldBlur();
+              }}
+              sheet={sheet}
+              onSheetChange={setSheet}
+              onDateConfirm={handleDateConfirm}
+              onEndDateConfirm={handleEndDateConfirm}
+              onEndDateClear={() => {
+                setEndDate(null);
+                setSheet(null);
+              }}
+              onTimeConfirm={handleTimeConfirm}
+              onRepeatSelect={setRepeat}
+              onAlertConfirm={setAlert}
+              readOnly={readOnly}
+              showCategoryField={!readOnly}
+              showAlertField={!readOnly}
+              fillAfterFields={showHistory}
+              afterFields={
+                showHistory ? (
+                  <ReminderFireHistoryList
+                    items={fireHistory}
+                    width={layout.cardWidth}
+                    fill
+                    bottomFade={false}
+                  />
+                ) : null
+              }
+            />
+          )}
+        </HeaderScrollLayout>
+
+        <View
+          style={[
+            styles.deleteFooter,
+            {
+              height: FOOTER_FADE_BAND,
+              paddingBottom: Math.max(insets.bottom, DELETE_FOOTER_MIN_BOTTOM),
+            },
+            /** Never let delete ride up on the keyboard while a field is open. */
+            keyboardOpen ? styles.hidden : null,
+          ]}
+          pointerEvents={keyboardOpen ? 'none' : 'box-none'}
+        >
+          <ScrollFadeBand edge="bottom" height={FOOTER_FADE_BAND} />
           <TouchableOpacity
             style={styles.deleteButton}
             onPress={() => {
@@ -494,10 +538,8 @@ export default function EditReminderScreen() {
           >
             <Text style={styles.deleteText}>{t('reminders.delete')}</Text>
           </TouchableOpacity>
-        }
-          />
-        )}
-      </HeaderScrollLayout>
+        </View>
+      </View>
 
       <ConfirmModal
         visible={deleteVisible}
@@ -514,10 +556,25 @@ export default function EditReminderScreen() {
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: c.background,
+  },
   centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  /** Sits on the fade band so the list above dissolves into the button. */
+  deleteFooter: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'flex-end',
+  },
+  hidden: {
+    opacity: 0,
   },
   deleteButton: {
     alignItems: 'center',

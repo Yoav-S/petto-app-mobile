@@ -385,6 +385,7 @@ export default function HealthDetailsScreen() {
         header={<ScreenHeader title={record.title} right={menuButton} />}
         edges={['left', 'right']}
         topFade
+        bottomFade
         fadeMode="list"
         fadeAboveFooter
       >

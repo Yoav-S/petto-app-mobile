@@ -279,6 +279,7 @@
     "add_title": "Add reminder",
     "edit_title": "Edit reminder",
     "detail_title": "Reminder",
+    "recent_title": "Recent",
     "edit_not_allowed": "Only upcoming reminders can be edited",
     "action_sheet_title": "Reminder",
     "mark_done": "Done",

@@ -1,9 +1,16 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 import { Radius, type ThemeColors } from '@/constants/theme';
-import { useColors, useThemedStyles } from '@/context/ThemeContext';
-import { SCROLL_BOTTOM_FADE_SOLID_AT } from '@/constants/layout';
+import { useThemedStyles } from '@/context/ThemeContext';
+import { FOOTER_FADE_BAND, FOOTER_FADE_CONTENT_INSET } from '@/constants/layout';
+import ScrollFadeBand from '@/components/ui/ScrollFadeBand';
 import { t } from '@/i18n';
 import type { Reminder } from '@/types/api';
 import { formatSheetClockTime } from '@/components/reminders/reminderFormShared';
@@ -17,9 +24,12 @@ import {
 export const HISTORY_ITEM_HEIGHT = 54;
 export const HISTORY_ITEM_GAP = 12;
 export const HISTORY_LIST_MAX_HEIGHT = 404;
+/** Figma shows roughly this much of the list on landing (375×812). */
+export const HISTORY_LIST_MIN_HEIGHT = 200;
 /** Figma fade band (375×812 → 122pt). */
-export const HISTORY_LIST_FADE_HEIGHT = 122;
+export const HISTORY_LIST_FADE_HEIGHT = FOOTER_FADE_BAND;
 const TITLE_TO_LIST = 16;
+const SCROLLED_EPSILON = 4;
 
 function historyDayLabel(date: string): string {
   const today = todayIsoDate();
@@ -54,43 +64,68 @@ function HistoryRow({ item }: { item: Reminder }) {
 export default function ReminderFireHistoryList({
   items,
   width,
+  fill = false,
+  bottomFade = true,
+  contentBottomInset,
 }: {
   items: Reminder[];
   width: number;
+  /** Take the remaining screen height instead of sizing to the rows. */
+  fill?: boolean;
+  /** Off when the screen already paints a fade band over the list bottom. */
+  bottomFade?: boolean;
+  /** Scroll room below the last row so it can clear the fade band. */
+  contentBottomInset?: number;
 }) {
-  const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const [gradientId] = useState(() => `hist-fade-${Math.random().toString(36).slice(2, 8)}`);
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
+  const [scrollY, setScrollY] = useState(0);
 
-  const contentHeight = useMemo(() => {
+  const rowsHeight = useMemo(() => {
     if (items.length === 0) return 0;
     return items.length * HISTORY_ITEM_HEIGHT + (items.length - 1) * HISTORY_ITEM_GAP;
   }, [items.length]);
 
-  const viewportHeight = Math.min(
-    Math.max(contentHeight, HISTORY_ITEM_HEIGHT),
+  const fixedHeight = Math.min(
+    Math.max(rowsHeight, HISTORY_ITEM_HEIGHT),
     HISTORY_LIST_MAX_HEIGHT,
   );
-  const innerScrolls = contentHeight > HISTORY_LIST_MAX_HEIGHT;
-  const showFade = viewportHeight >= HISTORY_ITEM_HEIGHT * 2;
+  const scrollRoom = contentBottomInset ?? FOOTER_FADE_CONTENT_INSET;
+  const overflows = contentHeight > viewportHeight + 1;
+  const atEnd = scrollY + viewportHeight >= contentHeight - SCROLLED_EPSILON;
+  const showTopFade = overflows && scrollY > SCROLLED_EPSILON;
+  const showBottomFade = bottomFade && overflows && !atEnd;
 
   if (items.length === 0) return null;
 
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    setScrollY(e.nativeEvent.contentOffset.y);
+  };
+
   return (
-    <View style={[styles.wrap, { width }]}>
+    <View style={[styles.wrap, { width }, fill ? styles.wrapFill : null]}>
       <Text style={styles.heading}>{t('reminders.recent_list')}</Text>
-      <View style={[styles.listFrame, { height: viewportHeight }]}>
+      <View
+        style={[
+          styles.listFrame,
+          fill ? styles.listFrameFill : { height: fixedHeight },
+        ]}
+      >
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
-            showFade ? { paddingBottom: HISTORY_LIST_FADE_HEIGHT * 0.45 } : null,
+            scrollRoom > 0 ? { paddingBottom: scrollRoom } : null,
           ]}
           nestedScrollEnabled
           keyboardShouldPersistTaps="always"
           keyboardDismissMode="none"
           showsVerticalScrollIndicator={false}
-          scrollEnabled={innerScrolls || contentHeight > viewportHeight}
+          scrollEventThrottle={16}
+          onScroll={handleScroll}
+          onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
+          onContentSizeChange={(_w, h) => setContentHeight(h)}
         >
           {items.map((item, index) => (
             <View
@@ -101,24 +136,8 @@ export default function ReminderFireHistoryList({
             </View>
           ))}
         </ScrollView>
-        {showFade ? (
-          <View style={styles.fade} pointerEvents="none">
-            <Svg width="100%" height="100%" preserveAspectRatio="none">
-              <Defs>
-                <LinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <Stop offset="0" stopColor={colors.background} stopOpacity="0" />
-                  <Stop
-                    offset={String(1 - SCROLL_BOTTOM_FADE_SOLID_AT)}
-                    stopColor={colors.background}
-                    stopOpacity="0"
-                  />
-                  <Stop offset="1" stopColor={colors.background} stopOpacity="1" />
-                </LinearGradient>
-              </Defs>
-              <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradientId})`} />
-            </Svg>
-          </View>
-        ) : null}
+        {showTopFade ? <ScrollFadeBand edge="top" /> : null}
+        {showBottomFade ? <ScrollFadeBand edge="bottom" /> : null}
       </View>
     </View>
   );
@@ -128,6 +147,12 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     wrap: {
       gap: TITLE_TO_LIST,
+    },
+    wrapFill: {
+      flexGrow: 1,
+      flexShrink: 0,
+      flexBasis: 'auto',
+      minHeight: HISTORY_LIST_MIN_HEIGHT,
     },
     heading: {
       fontFamily: 'Rubik-Regular',
@@ -139,18 +164,17 @@ const makeStyles = (c: ThemeColors) =>
       width: '100%',
       overflow: 'hidden',
     },
+    listFrameFill: {
+      flexGrow: 1,
+      flexShrink: 1,
+      flexBasis: 0,
+      minHeight: HISTORY_ITEM_HEIGHT,
+    },
     scroll: {
       flex: 1,
     },
     scrollContent: {
       flexGrow: 1,
-    },
-    fade: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      bottom: 0,
-      height: HISTORY_LIST_FADE_HEIGHT,
     },
   });
 

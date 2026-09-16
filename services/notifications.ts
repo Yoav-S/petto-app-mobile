@@ -92,14 +92,15 @@ function coercePushRecord(data: unknown): Record<string, unknown> | null {
 
 export function parseReminderPushData(
   data: unknown,
-  title?: string,
+  title?: string | null,
 ): ReminderPushData | null {
   const raw = coercePushRecord(data);
   if (!raw) return null;
   const reminderId = asDataString(raw.reminderId) ?? asDataString(raw.reminder_id);
   const petId = asDataString(raw.petId) ?? asDataString(raw.pet_id);
   const kindRaw = asDataString(raw.kind);
-  let kind = kindRaw === 'alert' || kindRaw === 'main' ? kindRaw : undefined;
+  let kind: ReminderPushData['kind'] =
+    kindRaw === 'alert' || kindRaw === 'main' ? kindRaw : undefined;
   const normalizedTitle = (title ?? asDataString(raw.title) ?? '').trim();
   if (!kind && normalizedTitle === 'Alert') kind = 'alert';
   if (!kind && normalizedTitle === 'Reminder') kind = 'main';
@@ -222,7 +223,7 @@ export async function subscribeToReminderNotificationResponses(
   const Notifications = await ensureNotificationHandler();
   if (!Notifications) return () => {};
 
-  const deliver = (data: unknown, title?: string) => {
+  const deliver = (data: unknown, title?: string | null) => {
     const parsed = parseReminderPushData(data, title);
     if (!parsed) return;
     onOpen(parsed);

@@ -106,6 +106,11 @@ interface ReminderFormBodyProps {
   scrollInsetTop?: number;
   /** Content under the description card (fire history on recent occurrences). */
   afterFields?: React.ReactNode;
+  /** `afterFields` takes the leftover screen height (recent list). */
+  fillAfterFields?: boolean;
+  /** Recent occurrences show the schedule only — no category / alert rows. */
+  showCategoryField?: boolean;
+  showAlertField?: boolean;
 }
 
 export default function ReminderFormBody({
@@ -136,11 +141,14 @@ export default function ReminderFormBody({
   readOnly = false,
   footer,
   saveFooter,
-  scrollPaddingBottom = 32,
+  scrollPaddingBottom = 0,
   pinFooterToBottom = false,
   footerBottomInset = 32,
   scrollInsetTop = 0,
   afterFields,
+  fillAfterFields = false,
+  showCategoryField = true,
+  showAlertField = true,
 }: ReminderFormBodyProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -157,13 +165,19 @@ export default function ReminderFormBody({
     styles.content,
     {
       paddingTop: scrollInsetTop + layout.formTop,
+      paddingBottom: scrollPaddingBottom,
       gap: layout.formGap,
       alignItems: 'center' as const,
     },
   ];
 
   const formFields = (
-    <View style={{ gap: layout.formGap, alignItems: 'center', width: '100%' }}>
+    <View
+      style={[
+        { gap: layout.formGap, alignItems: 'center', width: '100%' },
+        fillAfterFields ? styles.fieldsFill : null,
+      ]}
+    >
           <View
             style={[
               styles.card,
@@ -192,35 +206,37 @@ export default function ReminderFormBody({
             />
           </View>
 
-          <TouchableOpacity
-            style={[
-              styles.card,
-              styles.categoryRow,
-              CARD_SHADOW,
-              {
-                width: layout.cardWidth,
-                height: layout.categoryHeight,
-                borderRadius: layout.cardRadius,
-                paddingHorizontal: layout.cardPadH,
-                gap: 10,
-              },
-            ]}
-            onPress={() => openSheet('category')}
-            activeOpacity={0.6}
-            disabled={readOnly}
-          >
-            <Image
-              source={reminderCategoryIconFor(category)}
-              style={styles.categoryIcon}
-              resizeMode="contain"
-            />
-            <Text style={styles.categoryLabel} numberOfLines={1}>
-              {categoryLabel(category)}
-            </Text>
-            {!readOnly ? (
-              <Ionicons name="chevron-down" size={18} color={colors.secondaryText} />
-            ) : null}
-          </TouchableOpacity>
+          {showCategoryField ? (
+            <TouchableOpacity
+              style={[
+                styles.card,
+                styles.categoryRow,
+                CARD_SHADOW,
+                {
+                  width: layout.cardWidth,
+                  height: layout.categoryHeight,
+                  borderRadius: layout.cardRadius,
+                  paddingHorizontal: layout.cardPadH,
+                  gap: 10,
+                },
+              ]}
+              onPress={() => openSheet('category')}
+              activeOpacity={0.6}
+              disabled={readOnly}
+            >
+              <Image
+                source={reminderCategoryIconFor(category)}
+                style={styles.categoryIcon}
+                resizeMode="contain"
+              />
+              <Text style={styles.categoryLabel} numberOfLines={1}>
+                {categoryLabel(category)}
+              </Text>
+              {!readOnly ? (
+                <Ionicons name="chevron-down" size={18} color={colors.secondaryText} />
+              ) : null}
+            </TouchableOpacity>
+          ) : null}
 
           <View style={{ width: layout.cardWidth, gap: 20 }}>
             <View
@@ -288,31 +304,33 @@ export default function ReminderFormBody({
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              style={[
-                styles.card,
-                styles.scheduleRow,
-                CARD_SHADOW,
-                {
-                  width: layout.cardWidth,
-                  borderRadius: layout.cardRadius,
-                  paddingHorizontal: layout.cardPadH,
-                  paddingVertical: layout.cardPadV,
-                },
-              ]}
-              onPress={() => openSheet('alert')}
-              activeOpacity={0.6}
-              disabled={readOnly}
-            >
-              <Text style={styles.scheduleLabel}>{t('reminders.field_alert')}</Text>
-              <Text
-                style={
-                  alert === 'off' ? styles.scheduleRepeatValue : styles.scheduleValue
-                }
+            {showAlertField ? (
+              <TouchableOpacity
+                style={[
+                  styles.card,
+                  styles.scheduleRow,
+                  CARD_SHADOW,
+                  {
+                    width: layout.cardWidth,
+                    borderRadius: layout.cardRadius,
+                    paddingHorizontal: layout.cardPadH,
+                    paddingVertical: layout.cardPadV,
+                  },
+                ]}
+                onPress={() => openSheet('alert')}
+                activeOpacity={0.6}
+                disabled={readOnly}
               >
-                {alertFieldLabel(alert)}
-              </Text>
-            </TouchableOpacity>
+                <Text style={styles.scheduleLabel}>{t('reminders.field_alert')}</Text>
+                <Text
+                  style={
+                    alert === 'off' ? styles.scheduleRepeatValue : styles.scheduleValue
+                  }
+                >
+                  {alertFieldLabel(alert)}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
 
           <View
@@ -348,7 +366,11 @@ export default function ReminderFormBody({
             </View>
           </View>
 
-          {afterFields}
+          {afterFields && fillAfterFields ? (
+            <View style={styles.afterFieldsFill}>{afterFields}</View>
+          ) : (
+            afterFields
+          )}
     </View>
   );
 
@@ -375,7 +397,7 @@ export default function ReminderFormBody({
           <HealthFormScroll
             contentContainerStyle={[
               ...formFieldsStyle,
-              pinFooterToBottom ? styles.scrollWithSave : null,
+              pinFooterToBottom || fillAfterFields ? styles.scrollWithSave : null,
             ]}
             nestedScrollEnabled
           >
@@ -582,5 +604,17 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   scrollWithSave: {
     flexGrow: 1,
+  },
+  /** Grows into leftover height, never shrinks below the cards it holds. */
+  fieldsFill: {
+    flexGrow: 1,
+    flexShrink: 0,
+    flexBasis: 'auto',
+  },
+  afterFieldsFill: {
+    flexGrow: 1,
+    flexShrink: 0,
+    flexBasis: 'auto',
+    width: '100%',
   },
 });
