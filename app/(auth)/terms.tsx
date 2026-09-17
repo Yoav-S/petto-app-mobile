@@ -14,7 +14,7 @@ import { type ThemeColors } from '@/constants/theme';
 import {
   HEADER_BELOW_SAFE_AREA,
   LEGAL_TAB_BAR,
-  LEGAL_TABS_TOP_FADE_GRADIENT,
+  LIST_HEADER_CONTENT_GAP,
   PAGE_HORIZONTAL_PADDING,
 } from '@/constants/layout';
 import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
@@ -95,11 +95,13 @@ export default function TermsScreen() {
   return (
     <ListScrollLayout
       fadeKey={`auth-legal:${tab}`}
+      edges={[]}
       backgroundColor={colors.surface}
       fadeColor={colors.surface}
-      topFadeHeight={LEGAL_TABS_TOP_FADE_GRADIENT}
-      clearTopFade
       documentFade
+      topFade
+      bottomFade
+      contentGap={LIST_HEADER_CONTENT_GAP}
       chrome={
         <View style={[styles.header, { paddingTop: headerTopPad }]}>
           <View style={styles.backRow}>
@@ -147,9 +149,15 @@ export default function TermsScreen() {
           style={styles.scroll}
           contentContainerStyle={[styles.scrollContent, { paddingTop, paddingBottom }]}
           showsVerticalScrollIndicator={false}
+          contentInsetAdjustmentBehavior="never"
+          automaticallyAdjustContentInsets={false}
+          automaticallyAdjustsScrollIndicatorInsets={false}
           onLayout={scrollMetricsProps.onLayout}
           onContentSizeChange={scrollMetricsProps.onContentSizeChange}
         >
+          <Text style={styles.docTitle}>
+            {tab === 'privacy' ? t('settings.privacy') : t('settings.terms')}
+          </Text>
           <Text style={styles.updated}>
             {t('settings.last_updated')}: {formatUpdated(LEGAL_LAST_UPDATED_ISO)}
           </Text>
@@ -162,11 +170,9 @@ export default function TermsScreen() {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    /** Flush with the top edge; its fill is also the inactive tab's fill. */
+    /** Flush with the top of the screen. */
     header: {
       backgroundColor: c.background,
-      borderTopLeftRadius: LEGAL_TAB_BAR.radius,
-      borderTopRightRadius: LEGAL_TAB_BAR.radius,
     },
     /** `flex-start` follows the reading direction, so the chip flips in RTL. */
     backRow: {
@@ -211,6 +217,12 @@ const makeStyles = (c: ThemeColors) =>
     scrollContent: {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       gap: 8,
+    },
+    docTitle: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 16,
+      lineHeight: 20,
+      color: c.primaryText,
     },
     updated: {
       fontFamily: 'Rubik-Regular',

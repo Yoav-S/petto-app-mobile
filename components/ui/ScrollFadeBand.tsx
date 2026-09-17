@@ -10,8 +10,57 @@ interface ScrollFadeBandProps {
   height?: number;
   /** Fraction of the band where the gradient reaches full opacity. */
   solidAt?: number;
+  /**
+   * 'linear' is the Figma ramp. 'soft' ramps late (bottom of long lists).
+   * 'listTop' is opaque at the tabs and already visible on the first row.
+   * 'documentTop' is 122pt tall but clear over the first lines.
+   */
+  ramp?: 'linear' | 'soft' | 'listTop' | 'documentTop';
   color?: string;
   style?: StyleProp<ViewStyle>;
+}
+
+interface GradientStop {
+  offset: number;
+  opacity: number;
+}
+
+/** Stops from the band's open edge (transparent) to its solid edge. */
+function rampStops(
+  solidAt: number,
+  ramp: 'linear' | 'soft' | 'listTop' | 'documentTop',
+): GradientStop[] {
+  const stops =
+    ramp === 'documentTop'
+      ? [
+          { offset: 0, opacity: 0 },
+          { offset: 0.55, opacity: 0 },
+          { offset: 0.72, opacity: 0.08 },
+          { offset: 0.88, opacity: 0.35 },
+          { offset: 1, opacity: 1 },
+        ]
+      : ramp === 'listTop'
+        ? [
+            { offset: 0, opacity: 0 },
+            { offset: 0.55, opacity: 0.12 },
+            { offset: 0.82, opacity: 0.65 },
+            { offset: 1, opacity: 1 },
+          ]
+        : ramp === 'soft'
+          ? [
+              { offset: 0, opacity: 0 },
+              { offset: solidAt * 0.5, opacity: 0.08 },
+              { offset: solidAt * 0.8, opacity: 0.4 },
+              { offset: solidAt, opacity: 1 },
+              { offset: 1, opacity: 1 },
+            ]
+          : [
+              { offset: 0, opacity: 0 },
+              { offset: solidAt, opacity: 1 },
+              { offset: 1, opacity: 1 },
+            ];
+  /** A band with no solid tail ends exactly at 1 — drop the duplicate stop. */
+  return stops.filter((stop, i) => i === 0 || stop.offset > stops[i - 1].offset);
 }
 
 /**
@@ -22,26 +71,23 @@ interface ScrollFadeBandProps {
 export default function ScrollFadeBand({
   edge = 'bottom',
   height = FOOTER_FADE_BAND,
-  solidAt = FOOTER_FADE_SOLID_AT,
+  solidAt: solidAtProp,
+  ramp = 'linear',
   color,
   style,
 }: ScrollFadeBandProps) {
+  const solidAt = solidAtProp ?? FOOTER_FADE_SOLID_AT;
   const colors = useColors();
   const fadeColor = color ?? colors.background;
   const gradientId = `fade-band-${useId().replace(/:/g, '')}`;
+  const ramped = rampStops(solidAt, ramp);
   /** Stops run top → bottom, so the top band is the mirror of the bottom one. */
   const stops =
     edge === 'bottom'
-      ? [
-          { offset: 0, opacity: 0 },
-          { offset: solidAt, opacity: 1 },
-          { offset: 1, opacity: 1 },
-        ]
-      : [
-          { offset: 0, opacity: 1 },
-          { offset: 1 - solidAt, opacity: 1 },
-          { offset: 1, opacity: 0 },
-        ];
+      ? ramped
+      : ramped
+          .map((stop) => ({ offset: 1 - stop.offset, opacity: stop.opacity }))
+          .reverse();
 
   return (
     <View

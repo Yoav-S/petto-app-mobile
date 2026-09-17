@@ -40,11 +40,11 @@ export const LIST_HEADER_TABS_GAP = 16;
 /** Gap between header chrome and scroll content (vaccines, legal docs). */
 export const LIST_HEADER_CONTENT_GAP = 20;
 
-/** Gap between segmented tabs and the scrollable list below (solid chrome strip). */
-export const LIST_TABS_CONTENT_GAP = 8;
+/** Gap between segmented tabs and the scrollable list below. */
+export const LIST_TABS_CONTENT_GAP = 16;
 
-/** Extra offset on list rows so the first row sits clear of the top fade band. */
-export const LIST_CONTENT_TOP_NUDGE = 4;
+/** Extra offset so the first row sits just below the top fade, not under it. */
+export const LIST_CONTENT_TOP_NUDGE = 16;
 
 /** Documents start a little lower so the first line is clear of the deeper top fade. */
 export const DOCUMENT_CONTENT_TOP_NUDGE = 20;
@@ -80,32 +80,51 @@ export const SCROLL_TOP_FADE_GRADIENT = 44;
 export const SCROLL_BOTTOM_FADE_GRADIENT = 50;
 
 /**
- * List screen fade bands (reminders / topics — tabs to list, list bottom).
- * The top band stays opaque across the margin below the tabs, then dissolves over
- * the first row's top edge, so the row stays readable while rows scrolling up melt away.
+ * List top fade — same idea as the bottom band: a long dissolve from the tabs
+ * down over the list. The 16pt gap is the solid seam; the rest is the fade.
  */
-export const SCROLL_LIST_TOP_FADE_GRADIENT =
-  LIST_TABS_CONTENT_GAP + LIST_CONTENT_TOP_NUDGE + 24;
-export const SCROLL_LIST_BOTTOM_FADE_GRADIENT = SCROLL_BOTTOM_FADE_GRADIENT + 36;
+export const LIST_TOP_FADE_SOLID_STRIP = LIST_TABS_CONTENT_GAP;
+export const SCROLL_LIST_TOP_FADE_GRADIENT = 80;
 
 /**
- * Long, soft fades for legal / document scroll screens (terms, privacy).
- * Document content starts below the top band, so text only dissolves once scrolled.
+ * Where a top gradient starts, measured from the band's transparent (lower) edge:
+ * everything above it is solid, so the band seams into the chrome.
  */
-export const SCROLL_DOCUMENT_TOP_FADE_GRADIENT = SCROLL_TOP_FADE_GRADIENT + 44;
-export const SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT = SCROLL_BOTTOM_FADE_GRADIENT + 44;
+export function topFadeSolidAt(bandHeight: number, solidStrip: number): number {
+  if (bandHeight <= solidStrip) return 0;
+  return 1 - solidStrip / bandHeight;
+}
+/** Long band so rows dissolve over ~2 rows instead of snapping out at the edge. */
+export const SCROLL_LIST_BOTTOM_FADE_GRADIENT = 122;
 
 /**
- * Figma fade band above a footer pinned to the screen bottom (375×812 → 122pt):
+ * A list runs to the bottom of the screen: only this last strip is solid
+ * background, so the scroll can end just above the device buttons.
+ */
+export const LIST_BOTTOM_FADE_SOLID_TAIL = 8;
+
+/** Extra scroll so the last row can rest above the bottom fade. */
+export const LIST_SCROLL_END_CLEARANCE = 108;
+
+/** Fraction of a list band where the gradient finishes, leaving the solid tail. */
+export function listBottomFadeSolidAt(bandHeight: number): number {
+  if (bandHeight <= LIST_BOTTOM_FADE_SOLID_TAIL) return 0;
+  return (bandHeight - LIST_BOTTOM_FADE_SOLID_TAIL) / bandHeight;
+}
+
+/**
+ * Figma fade band (375×812 → 122pt):
  * `linear-gradient(180deg, rgba(255,255,255,0) 0%, #FFFFFF 35.57%)`.
- * The band is transparent at its top edge and solid from 35.57% down, so the
- * strip the button sits on is plain background.
  */
 export const FOOTER_FADE_BAND = 122;
 export const FOOTER_FADE_SOLID_AT = 0.3557;
 
-/** Scroll room so the last row can come to rest above the fade band. */
-export const FOOTER_FADE_CONTENT_INSET = FOOTER_FADE_BAND + 8;
+/** Legal / document fades — same 122pt Figma band at both edges. */
+export const SCROLL_DOCUMENT_TOP_FADE_GRADIENT = FOOTER_FADE_BAND;
+export const SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT = FOOTER_FADE_BAND;
+
+/** Scroll room so the last row comes to rest clearly above the fade band. */
+export const FOOTER_FADE_CONTENT_INSET = FOOTER_FADE_BAND + 16;
 
 /**
  * Every scroll fade shares the Figma ramp, so the opaque tail of a band is

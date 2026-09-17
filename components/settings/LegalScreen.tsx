@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
-import { useThemedStyles } from '@/context/ThemeContext';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t, currentLocale } from '@/i18n';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import ListScrollLayout from '@/components/ui/ListScrollLayout';
@@ -29,70 +29,56 @@ function formatUpdated(iso: string): string {
   }
 }
 
-function TextBlock({
-  text,
-  gap = 3,
-  style,
-}: {
-  text: string;
-  gap?: number;
-  style: object;
-}) {
-  const lines = text.split('\n');
-  return (
-    <View style={{ gap }}>
-      {lines.map((line, index) => (
-        <Text key={index} style={style}>
-          {line}
-        </Text>
-      ))}
-    </View>
-  );
-}
-
 export default function LegalScreen({ title, lastUpdatedISO, blocks }: LegalScreenProps) {
+  const colors = useColors();
   const styles = useThemedStyles(makeStyles);
 
   return (
     <ListScrollLayout
       fadeKey={`legal:${title}`}
-      edges={['left', 'right']}
-      chrome={<SettingsHeader title={title} />}
-      contentGap={LIST_HEADER_CONTENT_GAP}
+      edges={[]}
+      backgroundColor={colors.surface}
+      fadeColor={colors.surface}
+      chrome={<SettingsHeader title={title} backgroundColor={colors.surface} />}
       documentFade
+      topFade
+      bottomFade
+      contentGap={LIST_HEADER_CONTENT_GAP}
     >
       {({ paddingTop, paddingBottom, scrollMetricsProps }) => (
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={[styles.scrollContent, { paddingTop, paddingBottom }]}
           showsVerticalScrollIndicator={false}
+          contentInsetAdjustmentBehavior="never"
+          automaticallyAdjustContentInsets={false}
+          automaticallyAdjustsScrollIndicatorInsets={false}
           onLayout={scrollMetricsProps.onLayout}
           onContentSizeChange={scrollMetricsProps.onContentSizeChange}
         >
-          <View style={styles.card}>
-            <Text style={styles.docTitle}>{title}</Text>
-            <Text style={styles.updated}>
-              {t('settings.last_updated')}: {formatUpdated(lastUpdatedISO)}
-            </Text>
-
-            {blocks.map((block, index) => {
-              if (block.type === 'heading') {
-                return (
-                  <Text key={index} style={styles.heading}>
-                    {block.text}
-                  </Text>
-                );
-              }
+          <Text style={styles.docTitle}>{title}</Text>
+          <Text style={styles.updated}>
+            {t('settings.last_updated')}: {formatUpdated(lastUpdatedISO)}
+          </Text>
+          {blocks.map((block, index) => {
+            if (block.type === 'heading') {
               return (
-                <TextBlock
-                  key={index}
-                  text={block.text}
-                  gap={block.gap}
-                  style={styles.paragraph}
-                />
+                <Text key={index} style={styles.heading}>
+                  {block.text}
+                </Text>
               );
-            })}
-          </View>
+            }
+            const lines = block.text.split('\n');
+            return (
+              <View key={index} style={styles.block}>
+                {lines.map((line, lineIndex) => (
+                  <Text key={lineIndex} style={styles.paragraph}>
+                    {line}
+                  </Text>
+                ))}
+              </View>
+            );
+          })}
         </ScrollView>
       )}
     </ListScrollLayout>
@@ -106,44 +92,37 @@ const makeStyles = (c: ThemeColors) =>
     },
     scrollContent: {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-    },
-    card: {
-      backgroundColor: c.surface,
-      borderRadius: 12,
-      padding: 16,
-      gap: 12,
-      shadowColor: '#2D2D2A',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.04,
-      shadowRadius: 20,
-      elevation: 2,
+      gap: 8,
     },
     docTitle: {
       fontFamily: 'Rubik-Medium',
       fontSize: 16,
       lineHeight: 20,
-      letterSpacing: 0,
       color: c.primaryText,
     },
     updated: {
       fontFamily: 'Rubik-Regular',
       fontSize: 14,
       lineHeight: 20,
-      letterSpacing: 0,
       color: c.secondaryText,
+      marginBottom: 8,
     },
     heading: {
       fontFamily: 'Rubik-Medium',
       fontSize: 16,
       lineHeight: 20,
-      letterSpacing: 0,
       color: c.primaryText,
+      marginTop: 8,
+      marginBottom: 4,
+    },
+    block: {
+      gap: 3,
+      marginBottom: 12,
     },
     paragraph: {
       fontFamily: 'Rubik-Regular',
-      fontSize: 16,
-      lineHeight: 24,
-      letterSpacing: 0,
+      fontSize: 14,
+      lineHeight: 22,
       color: c.primaryText,
     },
   });

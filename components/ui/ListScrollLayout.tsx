@@ -5,8 +5,8 @@ import {
   type Edge,
 } from 'react-native-safe-area-context';
 import {
-  DOCUMENT_CONTENT_TOP_NUDGE,
   LIST_CONTENT_TOP_NUDGE,
+  LIST_SCROLL_END_CLEARANCE,
   LIST_TABS_CONTENT_GAP,
 } from '@/constants/layout';
 import { type ThemeColors } from '@/constants/theme';
@@ -25,9 +25,9 @@ import {
 export interface ListScrollInsets {
   /** Inset so first row clears floating chrome (includes solid gap below tabs). */
   paddingTop: number;
-  /** Bottom padding — clears fade + home indicator + FAB when fabOverlay is true. */
+  /** Bottom padding — clears the fade's solid tail + home indicator. */
   paddingBottom: number;
-  /** Height of the covered strip at the viewport bottom (fade band + home inset). */
+  /** Height of the opaque strip at the viewport bottom (solid tail + home inset). */
   bottomFadeInset: number;
   scrollMetricsProps: {
     onLayout: (e: import('react-native').LayoutChangeEvent) => void;
@@ -58,8 +58,6 @@ interface ListScrollLayoutProps {
   topFadeHeight?: number;
   /** Start content at the end of the top fade band so nothing is dimmed at rest. */
   clearTopFade?: boolean;
-  /** When true, bottom padding also clears the speed-dial FAB. */
-  fabOverlay?: boolean;
   /**
    * Stable id (include the active tab) so fades can paint on the first frame
    * when coming back to a list that was already known to scroll.
@@ -80,7 +78,6 @@ export default function ListScrollLayout({
   documentFade = false,
   topFadeHeight: topFadeHeightOverride,
   clearTopFade = false,
-  fabOverlay = false,
   fadeKey,
 }: ListScrollLayoutProps) {
   const styles = useThemedStyles(makeStyles);
@@ -97,8 +94,10 @@ export default function ListScrollLayout({
   const {
     topFadeHeight: presetTopFadeHeight,
     bottomFadeHeight,
+    bottomSolidAt,
     bottomInset,
     bottomPadding,
+    topSolidAt,
   } = useListScrollFadeLayout(documentFade);
   const topFadeHeight = topFadeHeightOverride ?? presetTopFadeHeight;
   const { metrics, reportViewport, reportContent, reportPinnedFooterOverflow } =
@@ -110,20 +109,41 @@ export default function ListScrollLayout({
     metrics.contentHeight > metrics.viewportHeight + 1;
 
   const scrollActive = metrics.viewportHeight > 0;
-  /** Normal gap plus a small nudge — the fade band overlays content instead of clearing it. */
-  const contentOffset = clearTopFade
-    ? topFadeHeight + LIST_CONTENT_TOP_NUDGE
-    : contentGap + (documentFade ? DOCUMENT_CONTENT_TOP_NUDGE : LIST_CONTENT_TOP_NUDGE);
-  const paddingTop =
-    chrome != null ? chromeContentHeight + contentOffset : contentOffset;
-  const paddingBottom = bottomPadding(fabOverlay);
-  const bottomFadeInset = bottomFadeHeight + bottomInset;
-  /** Same as HeaderScrollLayout — fade starts at chrome bottom, extends over the list. */
-  const fadeTop = chrome != null ? chromeContentHeight : 0;
+  /**
+   * Documents pin the header in flow so the first line can never sit under it.
+   * Lists keep overlay chrome so rows scroll through the tabs.
+   */
+  const pinChrome = documentFade;
+  /**
+   * 16pt gap under the tabs. The top fade is taller than that gap so rows
+   * dissolve as they scroll, but the first row starts in the clear part of
+   * the ramp and is not covered at rest.
+   */
+  const contentOffset = pinChrome
+    ? contentGap
+    : clearTopFade
+      ? topFadeHeight
+      : contentGap + LIST_CONTENT_TOP_NUDGE;
+  const paddingTop = pinChrome
+    ? contentOffset
+    : chrome != null
+      ? chromeContentHeight + contentOffset
+      : contentOffset;
+  /**
+   * Documents fill to the screen bottom; extra padding is only the opaque
+   * fade tail so the last line can scroll into the open part of the ramp.
+   */
+  const paddingBottom = documentFade
+    ? bottomPadding()
+    : LIST_SCROLL_END_CLEARANCE;
+  /** Home indicator only — rows scroll through the fade to the screen bottom. */
+  const bottomFadeInset = bottomInset;
+  /** Overlay lists: fade starts at chrome bottom. In-flow documents: scroll slot top. */
+  const fadeTop = pinChrome ? 0 : chrome != null ? chromeContentHeight : 0;
 
   /**
    * Rows against the height rows can actually use: the chrome inset and the
-   * FAB/fade clearance are not viewport. Comparing rows to the whole viewport
+   * fade clearance are not viewport. Comparing rows to the whole viewport
    * kept the fades off until a list was a full screen taller than it scrolled.
    */
   const itemScrollHeight = metrics.contentHeight - paddingTop - paddingBottom;
@@ -168,12 +188,16 @@ export default function ListScrollLayout({
       : overflowLatch.current ||
         (remembered?.scrollable ?? rememberedRef.current?.scrollable ?? false);
 
-  const showTopFade = topFade && (chrome != null ? chromeContentHeight > 0 : true);
-  const showBottomFade = bottomFade;
+  const showTopFade =
+    topFade &&
+    !isStaticView &&
+    (pinChrome || chrome == null || chromeContentHeight > 0);
+  /** Paint both edges on list screens — do not wait for overflow math. */
+  const showBottomFade = bottomFade && !isStaticView;
   /** Mounted before metrics arrive so a remembered-scrollable list fades in on frame one. */
   const mountFades =
     !isStaticView &&
-    (chrome == null || chromeContentHeight > 0) &&
+    (pinChrome || chrome == null || chromeContentHeight > 0) &&
     (topFade || bottomFade);
 
   const markNonScrollable = useCallback(
@@ -211,6 +235,22 @@ export default function ListScrollLayout({
     [markNonScrollable, markScrollable, reportViewport, reportContent],
   );
 
+  const fadeOverlay = mountFades ? (
+    <ScrollEdgeFades
+      scrollTop={fadeTop}
+      color={fadeColor}
+      showTop={showTopFade}
+      showBottom={showBottomFade}
+      topHeight={topFadeHeight}
+      bottomHeight={bottomFadeHeight}
+      bottomSolidAt={bottomSolidAt}
+      topSolidAt={topSolidAt}
+      ramp="linear"
+      topRamp={documentFade ? 'documentTop' : undefined}
+      visible
+    />
+  ) : null;
+
   return (
     <SafeAreaView
       style={[styles.safeArea, surface ? { backgroundColor: surface } : null, style]}
@@ -218,26 +258,22 @@ export default function ListScrollLayout({
     >
       <ScrollFadeMetricsProvider value={fadeContext}>
         <View style={styles.body}>
+          {pinChrome && chrome != null ? (
+            <View
+              style={[styles.chromePinned, surface ? { backgroundColor: surface } : null]}
+              onLayout={(e) => setChromeContentHeight(e.nativeEvent.layout.height)}
+            >
+              {chrome}
+            </View>
+          ) : null}
           <View style={styles.scrollSlot}>
             {children({ paddingTop, paddingBottom, bottomFadeInset, scrollMetricsProps })}
+            {pinChrome ? fadeOverlay : null}
           </View>
-          {mountFades ? (
-            <ScrollEdgeFades
-              scrollTop={fadeTop}
-              color={fadeColor}
-              showTop={showTopFade}
-              showBottom={showBottomFade}
-              topHeight={topFadeHeight}
-              bottomHeight={bottomFadeHeight}
-              visible={showFades}
-            />
-          ) : null}
-          {chrome != null ? (
+          {pinChrome ? null : fadeOverlay}
+          {!pinChrome && chrome != null ? (
             <View
-              style={[
-                styles.chrome,
-                surface ? { backgroundColor: surface } : null,
-              ]}
+              style={styles.chrome}
               onLayout={(e) => setChromeContentHeight(e.nativeEvent.layout.height)}
               pointerEvents="box-none"
             >
@@ -263,12 +299,17 @@ const makeStyles = (c: ThemeColors) =>
     scrollSlot: {
       flex: 1,
       minHeight: 0,
+      position: 'relative',
     },
     chrome: {
       position: 'absolute',
       top: 0,
       left: 0,
       right: 0,
+      zIndex: 4,
+      backgroundColor: c.background,
+    },
+    chromePinned: {
       zIndex: 4,
       backgroundColor: c.background,
     },

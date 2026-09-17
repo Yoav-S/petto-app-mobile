@@ -24,7 +24,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import ListLoadMoreFooter from '@/components/ui/ListLoadMoreFooter';
 import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
 import TopicActionsSheet from '@/components/topics/TopicActionsSheet';
-import { LIST_PAGE_SIZE, LIST_SCROLL_END_GAP } from '@/constants/pagination';
+import { LIST_PAGE_SIZE } from '@/constants/pagination';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { t } from '@/i18n';
@@ -399,7 +399,7 @@ export default function HealthDetailsScreen() {
               styles.content,
               { paddingTop },
               noteListItems.length === 0 ? styles.contentEmpty : null,
-              { paddingBottom: LIST_SCROLL_END_GAP + fadeBottomInset },
+              { paddingBottom: fadeBottomInset },
             ]}
             showsVerticalScrollIndicator={false}
             onLayout={scrollMetricsProps.onLayout}

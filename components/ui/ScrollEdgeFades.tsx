@@ -21,6 +21,14 @@ interface ScrollEdgeFadesProps {
    * Pass 0 when the scroll ends above a footer instead of the screen edge.
    */
   bottomInset?: number;
+  /** Where the bottom gradient finishes; the rest of the band is solid. */
+  bottomSolidAt?: number;
+  /** Where the top gradient starts; above it the band is solid (seam under chrome). */
+  topSolidAt?: number;
+  /** Bottom band shape — 'soft' for lists so the last row stays readable. */
+  ramp?: 'linear' | 'soft';
+  /** Top band shape — lists use 'listTop' so the fade is visible on frame one. */
+  topRamp?: 'linear' | 'soft' | 'listTop' | 'documentTop';
   /** Animate opacity when scroll overflow toggles. */
   visible?: boolean;
 }
@@ -49,41 +57,76 @@ export default function ScrollEdgeFades({
   topHeight = SCROLL_TOP_FADE_GRADIENT,
   bottomHeight = SCROLL_BOTTOM_FADE_GRADIENT,
   bottomInset,
+  bottomSolidAt,
+  topSolidAt,
+  ramp,
+  topRamp,
   visible = true,
 }: ScrollEdgeFadesProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const bottomStrip = bottomInset ?? insets.bottom;
   const fadeColor = color ?? colors.background;
-  const opacity = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  const topShown = visible && showTop;
+  const bottomShown = visible && showBottom;
+  const topOpacity = useRef(new Animated.Value(topShown ? 1 : 0)).current;
+  const bottomOpacity = useRef(new Animated.Value(bottomShown ? 1 : 0)).current;
+  /** Stay mounted once shown, so hiding a band animates instead of snapping off. */
+  const topMounted = useRef(false);
+  const bottomMounted = useRef(false);
+  if (topShown) topMounted.current = true;
+  if (bottomShown) bottomMounted.current = true;
 
   useEffect(() => {
-    Animated.timing(opacity, {
-      toValue: visible ? 1 : 0,
-      duration: FADE_MS,
+    Animated.timing(topOpacity, {
+      toValue: topShown ? 1 : 0,
+      /** Appearing is instant — a delayed fade-in is what made the top look broken. */
+      duration: topShown ? 0 : FADE_MS,
       useNativeDriver: true,
     }).start();
-  }, [opacity, visible]);
+  }, [topOpacity, topShown]);
+
+  useEffect(() => {
+    Animated.timing(bottomOpacity, {
+      toValue: bottomShown ? 1 : 0,
+      duration: bottomShown ? 0 : FADE_MS,
+      useNativeDriver: true,
+    }).start();
+  }, [bottomOpacity, bottomShown]);
 
   return (
-    <Animated.View style={[styles.wrap, { opacity }]} pointerEvents="none">
-      {showTop ? (
-        <View style={[styles.edge, styles.top, { top: scrollTop, height: topHeight }]}>
-          <ScrollFadeBand edge="top" height={topHeight} color={fadeColor} />
-        </View>
+    <View style={styles.wrap} pointerEvents="none">
+      {topMounted.current ? (
+        <Animated.View
+          style={[
+            styles.edge,
+            styles.top,
+            { top: scrollTop, height: topHeight, opacity: topOpacity },
+          ]}
+        >
+          <ScrollFadeBand
+            edge="top"
+            height={topHeight}
+            solidAt={topSolidAt}
+            ramp={topRamp ?? ramp}
+            color={fadeColor}
+          />
+        </Animated.View>
       ) : null}
 
-      {showBottom ? (
-        <View
+      {bottomMounted.current ? (
+        <Animated.View
           style={[
             styles.edge,
             styles.bottom,
-            { height: bottomHeight + bottomStrip },
+            { height: bottomHeight + bottomStrip, opacity: bottomOpacity },
           ]}
         >
           <ScrollFadeBand
             edge="bottom"
             height={bottomHeight}
+            solidAt={bottomSolidAt}
+            ramp={ramp}
             color={fadeColor}
             style={{ bottom: bottomStrip }}
           />
@@ -96,9 +139,9 @@ export default function ScrollEdgeFades({
               },
             ]}
           />
-        </View>
+        </Animated.View>
       ) : null}
-    </Animated.View>
+    </View>
   );
 }
 

@@ -1,22 +1,28 @@
 import { useMemo } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ADD_FAB } from '@/components/ui/SpeedDialFab';
 import {
-  SCROLL_BOTTOM_FADE_SOLID_AT,
+  FOOTER_FADE_SOLID_AT,
+  LIST_BOTTOM_FADE_SOLID_TAIL,
+  LIST_TOP_FADE_SOLID_STRIP,
   SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT,
   SCROLL_DOCUMENT_TOP_FADE_GRADIENT,
   SCROLL_LIST_BOTTOM_FADE_GRADIENT,
   SCROLL_LIST_TOP_FADE_GRADIENT,
+  listBottomFadeSolidAt,
   structuralScale,
+  topFadeSolidAt,
 } from '@/constants/layout';
-
-/** Small breathing room below the last row at the design frame (scaled per device). */
-const LIST_BOTTOM_BREATH_DESIGN = 12;
 
 export interface ListFadeHeights {
   topFadeHeight: number;
   bottomFadeHeight: number;
+  /** Where the bottom gradient finishes — the rest of the band is solid. */
+  bottomSolidAt: number;
+  /** Height of that solid tail, i.e. what scroll padding has to clear. */
+  bottomSolidTail: number;
+  /** Where the top gradient starts — above it the band seams into the chrome. */
+  topSolidAt?: number;
 }
 
 export function getListFadeHeights(
@@ -27,41 +33,51 @@ export function getListFadeHeights(
   const scale = structuralScale(width, height);
   if (document) {
     return {
-      topFadeHeight: Math.round(SCROLL_DOCUMENT_TOP_FADE_GRADIENT * scale),
-      bottomFadeHeight: Math.round(SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT * scale),
+      /** Same 122pt Figma band at both edges of the document scroll. */
+      topFadeHeight: SCROLL_DOCUMENT_TOP_FADE_GRADIENT,
+      bottomFadeHeight: SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT,
+      bottomSolidAt: FOOTER_FADE_SOLID_AT,
+      bottomSolidTail: Math.round(
+        SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT * (1 - FOOTER_FADE_SOLID_AT),
+      ),
+      /**
+       * Opaque only in the small gap under the header. The rest of the 122pt
+       * band is a dissolve, so the first line stays readable at rest.
+       */
+      topSolidAt: topFadeSolidAt(
+        SCROLL_DOCUMENT_TOP_FADE_GRADIENT,
+        LIST_TOP_FADE_SOLID_STRIP,
+      ),
     };
   }
+  const bottomFadeHeight = Math.round(SCROLL_LIST_BOTTOM_FADE_GRADIENT * scale);
   return {
-    topFadeHeight: Math.round(SCROLL_LIST_TOP_FADE_GRADIENT * scale),
-    bottomFadeHeight: Math.round(SCROLL_LIST_BOTTOM_FADE_GRADIENT * scale),
+    /** Unscaled: the first row's offset is measured off this exact height. */
+    topFadeHeight: SCROLL_LIST_TOP_FADE_GRADIENT,
+    bottomFadeHeight,
+    bottomSolidAt: listBottomFadeSolidAt(bottomFadeHeight),
+    bottomSolidTail: Math.min(LIST_BOTTOM_FADE_SOLID_TAIL, bottomFadeHeight),
+    topSolidAt: topFadeSolidAt(
+      SCROLL_LIST_TOP_FADE_GRADIENT,
+      LIST_TOP_FADE_SOLID_STRIP,
+    ),
   };
 }
 
-/** FAB footprint above the screen bottom (home inset handled by the bottom fade strip). */
-export function getFabScrollPadding(width: number, height: number): number {
-  const scale = structuralScale(width, height);
-  return Math.round(ADD_FAB.bottom * scale + ADD_FAB.size * scale + 8);
-}
-
 /**
- * Bottom scroll padding: clear the opaque fade tail + home indicator + small breath.
- * Fade and FAB zones overlap — use the larger requirement, not the sum.
+ * Bottom scroll padding. Lists run to the home indicator — the fade overlay
+ * sits on top of the last rows instead of reserving a dead strip under them.
  */
 export function getListScrollBottomPadding(
-  bottomFadeHeight: number,
+  bottomSolidTail: number,
   bottomInset: number,
-  fabPadding: number,
   width: number,
   height: number,
+  document = false,
 ): number {
-  const scale = structuralScale(width, height);
-  const breath = Math.round(LIST_BOTTOM_BREATH_DESIGN * scale);
-  /** Clear the whole opaque tail — a deeper band hides more of the last row. */
-  const fadeClearance =
-    bottomInset + Math.round(bottomFadeHeight * SCROLL_BOTTOM_FADE_SOLID_AT) + breath;
-
-  if (fabPadding <= 0) return fadeClearance;
-  return Math.max(fadeClearance, fabPadding);
+  if (!document) return bottomInset;
+  /** Last line clears the opaque tail; the viewport itself already runs to the screen edge. */
+  return bottomInset + bottomSolidTail;
 }
 
 export function useListScrollFadeLayout(document = false) {
@@ -70,18 +86,16 @@ export function useListScrollFadeLayout(document = false) {
 
   return useMemo(() => {
     const fades = getListFadeHeights(width, height, document);
-    const fabPadding = getFabScrollPadding(width, height);
     return {
       ...fades,
       bottomInset: insets.bottom,
-      fabPadding,
-      bottomPadding: (fabOverlay: boolean) =>
+      bottomPadding: () =>
         getListScrollBottomPadding(
-          fades.bottomFadeHeight,
+          fades.bottomSolidTail,
           insets.bottom,
-          fabOverlay ? fabPadding : 0,
           width,
           height,
+          document,
         ),
     };
   }, [width, height, insets.bottom, document]);

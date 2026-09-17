@@ -1,15 +1,12 @@
-import React, { useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-} from 'react-native';
+import React, { useMemo, useRef, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Radius, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
-import { FOOTER_FADE_BAND, FOOTER_FADE_CONTENT_INSET } from '@/constants/layout';
+import {
+  FOOTER_FADE_BAND,
+  FOOTER_FADE_CONTENT_INSET,
+  SCROLL_LIST_TOP_FADE_GRADIENT,
+} from '@/constants/layout';
 import ScrollFadeBand from '@/components/ui/ScrollFadeBand';
 import { t } from '@/i18n';
 import type { Reminder } from '@/types/api';
@@ -29,7 +26,6 @@ export const HISTORY_LIST_MIN_HEIGHT = 200;
 /** Figma fade band (375×812 → 122pt). */
 export const HISTORY_LIST_FADE_HEIGHT = FOOTER_FADE_BAND;
 const TITLE_TO_LIST = 16;
-const SCROLLED_EPSILON = 4;
 
 function historyDayLabel(date: string): string {
   const today = todayIsoDate();
@@ -45,17 +41,17 @@ function HistoryRow({ item }: { item: Reminder }) {
     <View style={styles.card}>
       {item.status === 'completed' ? <View style={styles.completedBar} /> : null}
       <View style={styles.inner}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title} numberOfLines={1}>
-            {item.title}
-          </Text>
+        <Text style={styles.title} numberOfLines={1}>
+          {item.title}
+        </Text>
+        <View style={styles.meta}>
           <Text style={styles.time} numberOfLines={1}>
             {formatSheetClockTime(item.time)}
           </Text>
+          <Text style={styles.day} numberOfLines={1}>
+            {historyDayLabel(item.date)}
+          </Text>
         </View>
-        <Text style={styles.day} numberOfLines={1}>
-          {historyDayLabel(item.date)}
-        </Text>
       </View>
     </View>
   );
@@ -78,9 +74,9 @@ export default function ReminderFireHistoryList({
   contentBottomInset?: number;
 }) {
   const styles = useThemedStyles(makeStyles);
-  const [viewportHeight, setViewportHeight] = useState(0);
-  const [contentHeight, setContentHeight] = useState(0);
-  const [scrollY, setScrollY] = useState(0);
+  const [overflows, setOverflows] = useState(false);
+  const viewportHeight = useRef(0);
+  const contentHeight = useRef(0);
 
   const rowsHeight = useMemo(() => {
     if (items.length === 0) return 0;
@@ -92,16 +88,12 @@ export default function ReminderFireHistoryList({
     HISTORY_LIST_MAX_HEIGHT,
   );
   const scrollRoom = contentBottomInset ?? FOOTER_FADE_CONTENT_INSET;
-  const overflows = contentHeight > viewportHeight + 1;
-  const atEnd = scrollY + viewportHeight >= contentHeight - SCROLLED_EPSILON;
-  const showTopFade = overflows && scrollY > SCROLLED_EPSILON;
-  const showBottomFade = bottomFade && overflows && !atEnd;
+
+  const syncOverflow = () => {
+    setOverflows(contentHeight.current > viewportHeight.current + 1);
+  };
 
   if (items.length === 0) return null;
-
-  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    setScrollY(e.nativeEvent.contentOffset.y);
-  };
 
   return (
     <View style={[styles.wrap, { width }, fill ? styles.wrapFill : null]}>
@@ -122,10 +114,14 @@ export default function ReminderFireHistoryList({
           keyboardShouldPersistTaps="always"
           keyboardDismissMode="none"
           showsVerticalScrollIndicator={false}
-          scrollEventThrottle={16}
-          onScroll={handleScroll}
-          onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
-          onContentSizeChange={(_w, h) => setContentHeight(h)}
+          onLayout={(e) => {
+            viewportHeight.current = e.nativeEvent.layout.height;
+            syncOverflow();
+          }}
+          onContentSizeChange={(_w, h) => {
+            contentHeight.current = h;
+            syncOverflow();
+          }}
         >
           {items.map((item, index) => (
             <View
@@ -136,8 +132,10 @@ export default function ReminderFireHistoryList({
             </View>
           ))}
         </ScrollView>
-        {showTopFade ? <ScrollFadeBand edge="top" /> : null}
-        {showBottomFade ? <ScrollFadeBand edge="bottom" /> : null}
+        {overflows ? (
+          <ScrollFadeBand edge="top" height={SCROLL_LIST_TOP_FADE_GRADIENT} />
+        ) : null}
+        {bottomFade && overflows ? <ScrollFadeBand edge="bottom" /> : null}
       </View>
     </View>
   );
@@ -199,41 +197,41 @@ const makeRowStyles = (c: ThemeColors) =>
       borderRadius: 2,
       backgroundColor: c.success,
     },
+    /** Name top-left, time over date top-right — the row is not vertically centered. */
     inner: {
       flex: 1,
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
       paddingHorizontal: 16,
       paddingVertical: 8,
-      justifyContent: 'center',
-      gap: 2,
-    },
-    titleRow: {
-      height: 20,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
       gap: 10,
     },
     title: {
       flex: 1,
       minWidth: 0,
       fontFamily: 'Rubik-Medium',
-      fontSize: 16,
+      fontSize: 14,
       lineHeight: 20,
       color: c.primaryText,
     },
-    time: {
+    meta: {
       flexShrink: 0,
-      fontFamily: 'Rubik-Regular',
-      fontSize: 14,
-      lineHeight: 20,
+      alignItems: 'flex-end',
+      gap: 4,
+    },
+    time: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 12,
+      lineHeight: 16,
       color: c.primaryText,
       textAlign: 'right',
     },
     day: {
-      height: 16,
       fontFamily: 'Rubik-Regular',
       fontSize: 12,
       lineHeight: 16,
       color: c.secondaryText,
+      textAlign: 'right',
     },
   });

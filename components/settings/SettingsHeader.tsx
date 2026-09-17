@@ -12,20 +12,21 @@ import HeaderIconButton, {
 
 interface SettingsHeaderProps {
   title: string;
+  backgroundColor?: string;
 }
 
 /**
  * Settings-style header. Owns top inset like ScreenHeader so it matches
  * Add Health title height. Parent must NOT pad the top safe area.
  */
-export default function SettingsHeader({ title }: SettingsHeaderProps) {
+export default function SettingsHeader({ title, backgroundColor }: SettingsHeaderProps) {
   const router = useRouter();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const paddingTop = useHeaderTopPadding();
 
   return (
-    <View style={[styles.wrap, { paddingTop }]}>
+    <View style={[styles.wrap, { paddingTop, backgroundColor }]}>
       <View style={styles.header}>
         <HeaderIconButton
           onPress={() => router.back()}

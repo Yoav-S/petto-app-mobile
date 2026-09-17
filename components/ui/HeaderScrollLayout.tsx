@@ -14,13 +14,18 @@ import {
 import {
   HEADER_CONTENT_GAP,
   HEADER_SCROLL_GAP,
+  LIST_CONTENT_TOP_NUDGE,
+  LIST_SCROLL_END_CLEARANCE,
+  LIST_TABS_CONTENT_GAP,
+  LIST_TOP_FADE_SOLID_STRIP,
   SCROLL_BOTTOM_FADE_GRADIENT,
-  SCROLL_BOTTOM_FADE_SOLID_AT,
   SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT,
   SCROLL_DOCUMENT_TOP_FADE_GRADIENT,
   SCROLL_LIST_BOTTOM_FADE_GRADIENT,
   SCROLL_LIST_TOP_FADE_GRADIENT,
   SCROLL_TOP_FADE_GRADIENT,
+  listBottomFadeSolidAt,
+  topFadeSolidAt,
 } from '@/constants/layout';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
@@ -93,21 +98,28 @@ export default function HeaderScrollLayout({
   const [chromeHeight, setChromeHeight] = useState(0);
   const { metrics, reportViewport, reportContent, reportPinnedFooterOverflow } =
     useScrollFadeMetricsState();
-
   const hasOverflow = hasActiveScrollOverflow(metrics);
   const scrollActive = metrics.viewportHeight > 0;
-  const showTopFade = topFade && chromeHeight > 0 && scrollActive && hasOverflow;
-  const showBottomFade = bottomFade && scrollActive && hasOverflow && !keyboardOpen;
+  const showTopFade = topFade && chromeHeight > 0 && scrollActive;
+  const showBottomFade =
+    bottomFade &&
+    chromeHeight > 0 &&
+    (fadeMode === 'list' || (scrollActive && hasOverflow)) &&
+    !keyboardOpen;
   const bands = fadeHeights(fadeMode);
 
-  const paddingTop = chromeHeight + HEADER_CONTENT_GAP;
+  const paddingTop =
+    chromeHeight +
+    (fadeMode === 'list'
+      ? LIST_TABS_CONTENT_GAP + LIST_CONTENT_TOP_NUDGE
+      : HEADER_CONTENT_GAP);
   const paddingBottom = Math.max(insets.bottom, 8);
   const fadeBottomInset = !bottomFade
     ? 0
     : fadeMode === 'document'
       ? SCROLL_BOTTOM_FADE_GRADIENT
       : fadeMode === 'list'
-        ? Math.round(bands.bottom * SCROLL_BOTTOM_FADE_SOLID_AT)
+        ? LIST_SCROLL_END_CLEARANCE
         : 0;
 
   const fadeContext = useMemo(
@@ -139,7 +151,7 @@ export default function HeaderScrollLayout({
               scrollMetricsProps,
             })}
           </View>
-          {showTopFade || showBottomFade ? (
+          {(topFade || bottomFade) && chromeHeight > 0 ? (
             <ScrollEdgeFades
               scrollTop={chromeHeight}
               color={fadeColor}
@@ -147,6 +159,15 @@ export default function HeaderScrollLayout({
               showBottom={showBottomFade}
               topHeight={bands.top}
               bottomHeight={bands.bottom}
+              bottomSolidAt={
+                fadeMode === 'list' ? listBottomFadeSolidAt(bands.bottom) : undefined
+              }
+              topSolidAt={
+                fadeMode === 'list'
+                  ? topFadeSolidAt(bands.top, LIST_TOP_FADE_SOLID_STRIP)
+                  : undefined
+              }
+              ramp="linear"
               bottomInset={fadeAboveFooter ? 0 : undefined}
             />
           ) : null}

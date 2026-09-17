@@ -275,7 +275,6 @@ export default function HealthScreen() {
     <>
       <ListScrollLayout
         fadeKey={`topics:${activeTab}`}
-        fabOverlay={hasAnyRecords}
         chrome={
           <>
             <ScreenHeader title={t('topics.title')} />

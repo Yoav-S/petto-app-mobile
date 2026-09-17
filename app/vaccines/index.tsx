@@ -280,14 +280,11 @@ export default function VaccinesScreen() {
     );
   };
 
-  const showFab = items.length > 0 && !loading && !(error && !items.length);
-
   return (
     <>
       <ListScrollLayout
         fadeKey="vaccines"
         contentGap={LIST_HEADER_CONTENT_GAP}
-        fabOverlay={showFab}
         chrome={<VaccineScreenHeader title={t('vaccines.list_title')} />}
       >
         {({ paddingTop, paddingBottom, bottomFadeInset, scrollMetricsProps }) =>

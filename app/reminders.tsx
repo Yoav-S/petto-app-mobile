@@ -415,7 +415,6 @@ export default function RemindersScreen() {
     <>
       <ListScrollLayout
         fadeKey={`reminders:${activeTab}`}
-        fabOverlay={hasAnyReminders}
         chrome={
           <>
             <ScreenHeader title={t('reminders.title')} />
