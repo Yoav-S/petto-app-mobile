@@ -27,6 +27,8 @@ const FOCUS_SCROLL_DELAY_MS = 80;
 interface UseKeyboardAwareScrollOptions {
   /** Bottom control (e.g. delete) — adds invisible trailing scroll room when keyboard is open. */
   bottomAnchorRef?: RefObject<View | null>;
+  /** Extra gap above the Done bar when scrolled to the bottom with the keyboard open. */
+  bottomClearance?: number;
   /** When false, focus does not auto-scroll (layout stays put; user scrolls manually). */
   autoScrollOnFocus?: boolean;
 }
@@ -71,7 +73,7 @@ export function useKeyboardAwareScroll(
   onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
   onInputFocus: TextFieldFocusHandler;
 } {
-  const { bottomAnchorRef, autoScrollOnFocus = true } = options;
+  const { bottomAnchorRef, bottomClearance = 0, autoScrollOnFocus = true } = options;
   const scrollRef = useRef<ScrollView>(null);
   const scrollYRef = useRef(0);
   const keyboardOffset = useKeyboardBottomOffset();
@@ -101,7 +103,10 @@ export function useKeyboardAwareScroll(
         const keyboardTop = winH - keyboardOffset;
         const doneTop = keyboardTop - KEYBOARD_DONE_BAR_HEIGHT;
         const anchorBottom = y + h;
-        const needed = Math.max(0, Math.round(anchorBottom - doneTop + scrollYRef.current));
+        const needed = Math.max(
+          0,
+          Math.round(anchorBottom - doneTop + scrollYRef.current + bottomClearance),
+        );
         setKeyboardScrollRoom(needed);
       });
     };
@@ -111,7 +116,7 @@ export function useKeyboardAwareScroll(
       cancelled = true;
       clearTimeout(t);
     };
-  }, [bottomAnchorRef, keyboardOffset]);
+  }, [bottomAnchorRef, bottomClearance, keyboardOffset]);
 
   const scrollFocusedIntoView = useCallback((target: number, keyboard: number) => {
     if (!scrollRef.current) return;

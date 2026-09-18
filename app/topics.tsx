@@ -289,7 +289,7 @@ export default function HealthScreen() {
           </>
         }
       >
-        {({ paddingTop, paddingBottom, bottomFadeInset, scrollMetricsProps }) => (
+        {({ paddingTop, paddingBottom, bottomFadeInset, scrollable, scrollMetricsProps }) => (
           <>
             {showSpinner ? (
               <View
@@ -392,6 +392,10 @@ export default function HealthScreen() {
                     { paddingTop, paddingBottom },
                   ]}
                   showsVerticalScrollIndicator={false}
+                  scrollEnabled={scrollable}
+                  bounces={scrollable}
+                  alwaysBounceVertical={false}
+                  overScrollMode={scrollable ? 'auto' : 'never'}
                   onEndReached={() => {
                     void loadMore();
                   }}

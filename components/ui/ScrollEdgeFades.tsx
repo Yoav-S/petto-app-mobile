@@ -26,14 +26,12 @@ interface ScrollEdgeFadesProps {
   /** Where the top gradient starts; above it the band is solid (seam under chrome). */
   topSolidAt?: number;
   /** Bottom band shape — 'soft' for lists so the last row stays readable. */
-  ramp?: 'linear' | 'soft';
+  ramp?: 'linear' | 'soft' | 'documentBottom';
   /** Top band shape — lists use 'listTop' so the fade is visible on frame one. */
   topRamp?: 'linear' | 'soft' | 'listTop' | 'documentTop';
   /** Animate opacity when scroll overflow toggles. */
   visible?: boolean;
 }
-
-const FADE_MS = 120;
 
 /**
  * The solid tail overlaps the gradient's last row. The gradient only reaches full
@@ -71,17 +69,11 @@ export default function ScrollEdgeFades({
   const bottomShown = visible && showBottom;
   const topOpacity = useRef(new Animated.Value(topShown ? 1 : 0)).current;
   const bottomOpacity = useRef(new Animated.Value(bottomShown ? 1 : 0)).current;
-  /** Stay mounted once shown, so hiding a band animates instead of snapping off. */
-  const topMounted = useRef(false);
-  const bottomMounted = useRef(false);
-  if (topShown) topMounted.current = true;
-  if (bottomShown) bottomMounted.current = true;
 
   useEffect(() => {
     Animated.timing(topOpacity, {
       toValue: topShown ? 1 : 0,
-      /** Appearing is instant — a delayed fade-in is what made the top look broken. */
-      duration: topShown ? 0 : FADE_MS,
+      duration: 0,
       useNativeDriver: true,
     }).start();
   }, [topOpacity, topShown]);
@@ -89,58 +81,54 @@ export default function ScrollEdgeFades({
   useEffect(() => {
     Animated.timing(bottomOpacity, {
       toValue: bottomShown ? 1 : 0,
-      duration: bottomShown ? 0 : FADE_MS,
+      duration: 0,
       useNativeDriver: true,
     }).start();
   }, [bottomOpacity, bottomShown]);
 
   return (
     <View style={styles.wrap} pointerEvents="none">
-      {topMounted.current ? (
-        <Animated.View
-          style={[
-            styles.edge,
-            styles.top,
-            { top: scrollTop, height: topHeight, opacity: topOpacity },
-          ]}
-        >
-          <ScrollFadeBand
-            edge="top"
-            height={topHeight}
-            solidAt={topSolidAt}
-            ramp={topRamp ?? ramp}
-            color={fadeColor}
-          />
-        </Animated.View>
-      ) : null}
+      <Animated.View
+        style={[
+          styles.edge,
+          styles.top,
+          { top: scrollTop, height: topHeight, opacity: topOpacity },
+        ]}
+      >
+        <ScrollFadeBand
+          edge="top"
+          height={topHeight}
+          solidAt={topSolidAt}
+          ramp={topRamp ?? ramp}
+          color={fadeColor}
+        />
+      </Animated.View>
 
-      {bottomMounted.current ? (
-        <Animated.View
+      <Animated.View
+        style={[
+          styles.edge,
+          styles.bottom,
+          { height: bottomHeight + bottomStrip, opacity: bottomOpacity },
+        ]}
+      >
+        <ScrollFadeBand
+          edge="bottom"
+          height={bottomHeight}
+          solidAt={bottomSolidAt}
+          ramp={ramp}
+          color={fadeColor}
+          style={{ bottom: bottomStrip }}
+        />
+        <View
           style={[
-            styles.edge,
-            styles.bottom,
-            { height: bottomHeight + bottomStrip, opacity: bottomOpacity },
+            styles.bottomSolid,
+            {
+              height: bottomStrip + FADE_SEAM_OVERLAP,
+              backgroundColor: fadeColor,
+            },
           ]}
-        >
-          <ScrollFadeBand
-            edge="bottom"
-            height={bottomHeight}
-            solidAt={bottomSolidAt}
-            ramp={ramp}
-            color={fadeColor}
-            style={{ bottom: bottomStrip }}
-          />
-          <View
-            style={[
-              styles.bottomSolid,
-              {
-                height: bottomStrip + FADE_SEAM_OVERLAP,
-                backgroundColor: fadeColor,
-              },
-            ]}
-          />
-        </Animated.View>
-      ) : null}
+        />
+      </Animated.View>
     </View>
   );
 }

@@ -215,6 +215,7 @@ const makeStyles = (c: ThemeColors) =>
       flex: 1,
     },
     scrollContent: {
+      flexGrow: 1,
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       gap: 8,
     },

@@ -200,8 +200,8 @@ export function HeaderScrollScreen({
   children,
   contentContainerStyle,
   edges = ['left', 'right'],
-  topFade = true,
-  bottomFade = true,
+  topFade = false,
+  bottomFade = false,
   fadeColor,
   fadeMode = 'scroll',
 }: HeaderScrollScreenProps) {

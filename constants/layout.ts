@@ -46,8 +46,17 @@ export const LIST_TABS_CONTENT_GAP = 16;
 /** Extra offset so the first row sits just below the top fade, not under it. */
 export const LIST_CONTENT_TOP_NUDGE = 16;
 
-/** Documents start a little lower so the first line is clear of the deeper top fade. */
-export const DOCUMENT_CONTENT_TOP_NUDGE = 20;
+/** Documents start a little lower so the first line is clear of the top fade on mount. */
+export const DOCUMENT_CONTENT_TOP_NUDGE = 16;
+
+/** Solid cover over the home indicator / device buttons on legal screens. */
+export const DOCUMENT_BOTTOM_SOLID = 22;
+
+/** Visible bottom dissolve on legal screens. Last line sits above it. */
+export const DOCUMENT_BOTTOM_FADE_GRADIENT = 80;
+
+/** Extra scroll so the last privacy/terms line rests ~60pt above the screen bottom. */
+export const DOCUMENT_SCROLL_END_CLEARANCE = 60;
 
 /** Figma header band: row starts 56pt from screen top; row height 44pt. */
 export const HEADER_LAYOUT = {

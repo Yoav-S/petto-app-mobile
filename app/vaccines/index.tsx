@@ -156,6 +156,7 @@ export default function VaccinesScreen() {
     paddingTop: number,
     paddingBottom: number,
     bottomFadeInset: number,
+    scrollable: boolean,
     scrollMetricsProps: ListScrollInsets['scrollMetricsProps'],
   ) => {
     if (loading && items.length === 0) {
@@ -268,6 +269,10 @@ export default function VaccinesScreen() {
         )}
         contentContainerStyle={[styles.listContent, { paddingTop, paddingBottom }]}
         showsVerticalScrollIndicator={false}
+        scrollEnabled={scrollable}
+        bounces={scrollable}
+        alwaysBounceVertical={false}
+        overScrollMode={scrollable ? 'auto' : 'never'}
         onEndReached={() => {
           void loadMore();
         }}
@@ -287,8 +292,8 @@ export default function VaccinesScreen() {
         contentGap={LIST_HEADER_CONTENT_GAP}
         chrome={<VaccineScreenHeader title={t('vaccines.list_title')} />}
       >
-        {({ paddingTop, paddingBottom, bottomFadeInset, scrollMetricsProps }) =>
-          renderContent(paddingTop, paddingBottom, bottomFadeInset, scrollMetricsProps)
+        {({ paddingTop, paddingBottom, bottomFadeInset, scrollable, scrollMetricsProps }) =>
+          renderContent(paddingTop, paddingBottom, bottomFadeInset, scrollable, scrollMetricsProps)
         }
       </ListScrollLayout>
       {items.length > 0 && !loading && !(error && !items.length) ? (

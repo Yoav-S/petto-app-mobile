@@ -87,7 +87,7 @@ export default function NotificationsSettingsScreen() {
   );
 
   return (
-    <HeaderScrollLayout header={<SettingsHeader title={t('settings.notifications')} />} topFade bottomFade fadeMode="scroll">
+    <HeaderScrollLayout header={<SettingsHeader title={t('settings.notifications')} />}>
       {({ paddingTop, paddingBottom, scrollMetricsProps }) => (
         <ScrollView
           style={styles.scroll}

@@ -13,9 +13,10 @@ interface ScrollFadeBandProps {
   /**
    * 'linear' is the Figma ramp. 'soft' ramps late (bottom of long lists).
    * 'listTop' is opaque at the tabs and already visible on the first row.
-   * 'documentTop' is 122pt tall but clear over the first lines.
+   * 'documentTop' is a strong dissolve under the header.
+   * 'documentBottom' stays clear at the last line, then a hard dissolve into the button cover.
    */
-  ramp?: 'linear' | 'soft' | 'listTop' | 'documentTop';
+  ramp?: 'linear' | 'soft' | 'listTop' | 'documentTop' | 'documentBottom';
   color?: string;
   style?: StyleProp<ViewStyle>;
 }
@@ -28,15 +29,24 @@ interface GradientStop {
 /** Stops from the band's open edge (transparent) to its solid edge. */
 function rampStops(
   solidAt: number,
-  ramp: 'linear' | 'soft' | 'listTop' | 'documentTop',
+  ramp: 'linear' | 'soft' | 'listTop' | 'documentTop' | 'documentBottom',
 ): GradientStop[] {
   const stops =
-    ramp === 'documentTop'
+    ramp === 'documentBottom'
       ? [
           { offset: 0, opacity: 0 },
-          { offset: 0.55, opacity: 0 },
-          { offset: 0.72, opacity: 0.08 },
-          { offset: 0.88, opacity: 0.35 },
+          { offset: 0.48, opacity: 0 },
+          { offset: 0.58, opacity: 0.4 },
+          { offset: 0.7, opacity: 0.75 },
+          { offset: 0.85, opacity: 0.95 },
+          { offset: 1, opacity: 1 },
+        ]
+      : ramp === 'documentTop'
+      ? [
+          { offset: 0, opacity: 0 },
+          { offset: 0.28, opacity: 0.15 },
+          { offset: 0.52, opacity: 0.42 },
+          { offset: 0.75, opacity: 0.78 },
           { offset: 1, opacity: 1 },
         ]
       : ramp === 'listTop'

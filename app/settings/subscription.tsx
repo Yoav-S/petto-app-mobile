@@ -209,7 +209,7 @@ export default function SubscriptionSettingsScreen() {
         visible={successVisible}
         onClose={() => setSuccessVisible(false)}
       />
-      <HeaderScrollLayout header={<SettingsHeader title={t('settings.subscription')} />} topFade bottomFade fadeMode="scroll">
+      <HeaderScrollLayout header={<SettingsHeader title={t('settings.subscription')} />}>
         {({ paddingTop, paddingBottom, scrollMetricsProps }) =>
           loading ? (
             <View style={[styles.loadingWrap, { paddingTop }]}>

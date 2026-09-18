@@ -5,6 +5,8 @@ import {
   type Edge,
 } from 'react-native-safe-area-context';
 import {
+  DOCUMENT_BOTTOM_SOLID,
+  DOCUMENT_CONTENT_TOP_NUDGE,
   LIST_CONTENT_TOP_NUDGE,
   LIST_SCROLL_END_CLEARANCE,
   LIST_TABS_CONTENT_GAP,
@@ -29,6 +31,8 @@ export interface ListScrollInsets {
   paddingBottom: number;
   /** Height of the opaque strip at the viewport bottom (solid tail + home inset). */
   bottomFadeInset: number;
+  /** False when the rows fit — no scroll, no edge fades. */
+  scrollable: boolean;
   scrollMetricsProps: {
     onLayout: (e: import('react-native').LayoutChangeEvent) => void;
     onContentSizeChange: (w: number, h: number) => void;
@@ -84,13 +88,34 @@ export default function ListScrollLayout({
   const surface = backgroundColor;
   const remembered = readScrollFadeMemory(fadeKey);
   const rememberedRef = useRef(remembered);
+  const fadeKeyRef = useRef(fadeKey);
+  /** Content-size reports are tagged with the fadeKey they belong to. */
+  const measuredFadeKeyRef = useRef<string | undefined>(undefined);
   const [chromeContentHeight, setChromeContentHeight] = useState(
     rememberedRef.current?.chromeHeight ?? 0,
   );
   const [isStaticView, setIsStaticView] = useState(false);
-  const overflowLatch = useRef(false);
+  const overflowLatch = useRef(Boolean(remembered?.scrollable));
+  /**
+   * Bottom padding that was actually applied last render. Overflow math has to
+   * ignore this extra (it is only there so the last row can clear the fade).
+   */
+  const listBottomPadRef = useRef(
+    remembered?.scrollable ? LIST_SCROLL_END_CLEARANCE : 0,
+  );
   /** Loading placeholders should not erase what we know about this list. */
   const transientStatic = useRef(false);
+
+  /** Apply the new tab's memory in this render — a post-paint effect is a frame too late and jumps. */
+  const tabChanged = fadeKeyRef.current !== fadeKey;
+  if (tabChanged) {
+    fadeKeyRef.current = fadeKey;
+    const mem = readScrollFadeMemory(fadeKey);
+    rememberedRef.current = mem;
+    overflowLatch.current = Boolean(mem?.scrollable);
+    listBottomPadRef.current = mem?.scrollable ? LIST_SCROLL_END_CLEARANCE : 0;
+    if (isStaticView) setIsStaticView(false);
+  }
   const {
     topFadeHeight: presetTopFadeHeight,
     bottomFadeHeight,
@@ -114,13 +139,39 @@ export default function ListScrollLayout({
    * Lists keep overlay chrome so rows scroll through the tabs.
    */
   const pinChrome = documentFade;
+
   /**
-   * 16pt gap under the tabs. The top fade is taller than that gap so rows
-   * dissolve as they scroll, but the first row starts in the clear part of
-   * the ramp and is not covered at rest.
+   * Ignore list end-clearance when deciding whether rows actually overflow.
+   * That padding exists only so a scrolling list can park the last row above
+   * the fade — it must not make a short list look scrollable.
+   */
+  const hasItemOverflow =
+    !documentFade &&
+    scrollActive &&
+    metrics.contentHeight - listBottomPadRef.current > metrics.viewportHeight + 1;
+
+  /** True once THIS tab's list has reported real metrics — before that we trust memory. */
+  const isMeasured =
+    scrollActive &&
+    metrics.contentHeight > 0 &&
+    measuredFadeKeyRef.current === fadeKey;
+  const measuredOverflow = documentFade ? hasDocumentOverflow : hasItemOverflow;
+
+  const listScrollable =
+    isStaticView && !tabChanged
+      ? false
+      : isMeasured
+        ? measuredOverflow
+        : overflowLatch.current ||
+          (remembered?.scrollable ?? rememberedRef.current?.scrollable ?? false);
+
+  /**
+   * Top gap is stable across tabs so switching Active ↔ Resolved does not
+   * shove the first row when the fade appears. Extra bottom clearance still
+   * follows overflow so a short list cannot scroll through empty padding.
    */
   const contentOffset = pinChrome
-    ? contentGap
+    ? contentGap + (documentFade ? DOCUMENT_CONTENT_TOP_NUDGE : 0)
     : clearTopFade
       ? topFadeHeight
       : contentGap + LIST_CONTENT_TOP_NUDGE;
@@ -129,33 +180,19 @@ export default function ListScrollLayout({
     : chrome != null
       ? chromeContentHeight + contentOffset
       : contentOffset;
-  /**
-   * Documents fill to the screen bottom; extra padding is only the opaque
-   * fade tail so the last line can scroll into the open part of the ramp.
-   */
   const paddingBottom = documentFade
     ? bottomPadding()
-    : LIST_SCROLL_END_CLEARANCE;
-  /** Home indicator only — rows scroll through the fade to the screen bottom. */
-  const bottomFadeInset = bottomInset;
+    : listScrollable
+      ? LIST_SCROLL_END_CLEARANCE
+      : 0;
+  if (!documentFade) listBottomPadRef.current = paddingBottom;
+  /** Documents: 22pt button cover under the fade. Lists: home inset. */
+  const fadeBottomStrip = documentFade
+    ? Math.max(DOCUMENT_BOTTOM_SOLID, bottomInset)
+    : bottomInset;
+  const bottomFadeInset = fadeBottomStrip;
   /** Overlay lists: fade starts at chrome bottom. In-flow documents: scroll slot top. */
   const fadeTop = pinChrome ? 0 : chrome != null ? chromeContentHeight : 0;
-
-  /**
-   * Rows against the height rows can actually use: the chrome inset and the
-   * fade clearance are not viewport. Comparing rows to the whole viewport
-   * kept the fades off until a list was a full screen taller than it scrolled.
-   */
-  const itemScrollHeight = metrics.contentHeight - paddingTop - paddingBottom;
-  const itemViewportHeight = metrics.viewportHeight - paddingTop - paddingBottom;
-  const hasItemOverflow =
-    scrollActive &&
-    itemViewportHeight > 0 &&
-    itemScrollHeight > itemViewportHeight + 1;
-
-  /** True once this list has reported real metrics — before that we trust memory. */
-  const isMeasured = scrollActive && metrics.contentHeight > 0;
-  const measuredOverflow = documentFade ? hasDocumentOverflow : hasItemOverflow;
 
   useEffect(() => {
     if (measuredOverflow) {
@@ -181,22 +218,17 @@ export default function ListScrollLayout({
     }
   }, [fadeKey, isMeasured, isStaticView, measuredOverflow]);
 
-  const showFades = isStaticView
-    ? false
-    : isMeasured
-      ? measuredOverflow
-      : overflowLatch.current ||
-        (remembered?.scrollable ?? rememberedRef.current?.scrollable ?? false);
+  const showFades = documentFade || listScrollable;
 
+  const hideForStatic = isStaticView && !tabChanged;
   const showTopFade =
     topFade &&
-    !isStaticView &&
+    !hideForStatic &&
+    showFades &&
     (pinChrome || chrome == null || chromeContentHeight > 0);
-  /** Paint both edges on list screens — do not wait for overflow math. */
-  const showBottomFade = bottomFade && !isStaticView;
-  /** Mounted before metrics arrive so a remembered-scrollable list fades in on frame one. */
+  const showBottomFade = bottomFade && !hideForStatic && showFades;
+  /** Keep bands mounted so tab switches only change opacity, not layout. */
   const mountFades =
-    !isStaticView &&
     (pinChrome || chrome == null || chromeContentHeight > 0) &&
     (topFade || bottomFade);
 
@@ -226,13 +258,14 @@ export default function ListScrollLayout({
         reportViewport(e.nativeEvent.layout.height);
       },
       onContentSizeChange: (_w: number, h: number) => {
+        measuredFadeKeyRef.current = fadeKey;
         reportContent(h);
         if (h > 0) setIsStaticView(false);
       },
       markNonScrollable,
       markScrollable,
     }),
-    [markNonScrollable, markScrollable, reportViewport, reportContent],
+    [fadeKey, markNonScrollable, markScrollable, reportViewport, reportContent],
   );
 
   const fadeOverlay = mountFades ? (
@@ -243,11 +276,12 @@ export default function ListScrollLayout({
       showBottom={showBottomFade}
       topHeight={topFadeHeight}
       bottomHeight={bottomFadeHeight}
+      bottomInset={fadeBottomStrip}
       bottomSolidAt={bottomSolidAt}
       topSolidAt={topSolidAt}
-      ramp="linear"
+      ramp={documentFade ? 'documentBottom' : 'linear'}
       topRamp={documentFade ? 'documentTop' : undefined}
-      visible
+      visible={showFades}
     />
   ) : null;
 
@@ -267,7 +301,13 @@ export default function ListScrollLayout({
             </View>
           ) : null}
           <View style={styles.scrollSlot}>
-            {children({ paddingTop, paddingBottom, bottomFadeInset, scrollMetricsProps })}
+            {children({
+              paddingTop,
+              paddingBottom,
+              bottomFadeInset,
+              scrollable: documentFade || listScrollable,
+              scrollMetricsProps,
+            })}
             {pinChrome ? fadeOverlay : null}
           </View>
           {pinChrome ? null : fadeOverlay}

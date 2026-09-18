@@ -428,7 +428,7 @@ export default function RemindersScreen() {
           </>
         }
       >
-        {({ paddingTop, paddingBottom, bottomFadeInset, scrollMetricsProps }) => (
+        {({ paddingTop, paddingBottom, bottomFadeInset, scrollable, scrollMetricsProps }) => (
           <>
             {showSpinner ? (
               <View
@@ -518,6 +518,10 @@ export default function RemindersScreen() {
                     { paddingTop, paddingBottom },
                   ]}
                   showsVerticalScrollIndicator={false}
+                  scrollEnabled={scrollable}
+                  bounces={scrollable}
+                  alwaysBounceVertical={false}
+                  overScrollMode={scrollable ? 'auto' : 'never'}
                   onEndReached={() => {
                     void loadMore();
                   }}

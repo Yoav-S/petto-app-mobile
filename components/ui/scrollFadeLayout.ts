@@ -2,10 +2,11 @@ import { useMemo } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  DOCUMENT_BOTTOM_FADE_GRADIENT,
+  DOCUMENT_SCROLL_END_CLEARANCE,
   FOOTER_FADE_SOLID_AT,
   LIST_BOTTOM_FADE_SOLID_TAIL,
   LIST_TOP_FADE_SOLID_STRIP,
-  SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT,
   SCROLL_DOCUMENT_TOP_FADE_GRADIENT,
   SCROLL_LIST_BOTTOM_FADE_GRADIENT,
   SCROLL_LIST_TOP_FADE_GRADIENT,
@@ -33,17 +34,14 @@ export function getListFadeHeights(
   const scale = structuralScale(width, height);
   if (document) {
     return {
-      /** Same 122pt Figma band at both edges of the document scroll. */
+      /** Tall top dissolve; first lines sit below it via document content offset. */
       topFadeHeight: SCROLL_DOCUMENT_TOP_FADE_GRADIENT,
-      bottomFadeHeight: SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT,
+      bottomFadeHeight: DOCUMENT_BOTTOM_FADE_GRADIENT,
+      /** Figma ramp — real dissolve, opaque only in the last third (device buttons). */
       bottomSolidAt: FOOTER_FADE_SOLID_AT,
       bottomSolidTail: Math.round(
-        SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT * (1 - FOOTER_FADE_SOLID_AT),
+        DOCUMENT_BOTTOM_FADE_GRADIENT * (1 - FOOTER_FADE_SOLID_AT),
       ),
-      /**
-       * Opaque only in the small gap under the header. The rest of the 122pt
-       * band is a dissolve, so the first line stays readable at rest.
-       */
       topSolidAt: topFadeSolidAt(
         SCROLL_DOCUMENT_TOP_FADE_GRADIENT,
         LIST_TOP_FADE_SOLID_STRIP,
@@ -76,8 +74,8 @@ export function getListScrollBottomPadding(
   document = false,
 ): number {
   if (!document) return bottomInset;
-  /** Last line clears the opaque tail; the viewport itself already runs to the screen edge. */
-  return bottomInset + bottomSolidTail;
+  /** Last line rests ~60pt from the screen bottom, above the bottom fade. */
+  return DOCUMENT_SCROLL_END_CLEARANCE;
 }
 
 export function useListScrollFadeLayout(document = false) {

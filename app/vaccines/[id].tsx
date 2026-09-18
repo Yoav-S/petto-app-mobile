@@ -41,6 +41,7 @@ import { uploadImage } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import { addYearsToIsoDate, formatDisplayDate, isIsoDateAfter, parseIsoDate, todayIsoDate } from '@/utils/calendar';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
+import { useKeyboardOpen } from '@/components/ui/keyboardUtils';
 import { useVaccinationQuery } from '@/hooks/useCachedQueries';
 import { queryClient } from '@/services/queryClient';
 import { queryKeys } from '@/services/queryKeys';
@@ -50,8 +51,9 @@ type PickerTarget = 'date' | 'next' | null;
 
 /** Delete label row height estimate for fit check. */
 const DELETE_ROW_H = 42;
-/** Small gap above the home indicator / screen bottom. */
-const DELETE_BOTTOM_GAP = 16;
+/** Gap under delete above the home indicator / keyboard Done bar. */
+const DELETE_BOTTOM_GAP = 22;
+const CONTENT_TOP_PAD = 20;
 
 type PendingLeave = Parameters<Parameters<typeof usePreventRemove>[1]>[0]['data']['action'];
 
@@ -80,6 +82,7 @@ export default function VaccineDetailsScreen() {
   const [deleteVisible, setDeleteVisible] = useState(false);
   const [bodyH, setBodyH] = useState(0);
   const [formH, setFormH] = useState(0);
+  const keyboardOpen = useKeyboardOpen();
   const deleteAnchorRef = useRef<View>(null);
   const {
     scrollRef,
@@ -89,6 +92,7 @@ export default function VaccineDetailsScreen() {
     onInputFocus,
   } = useKeyboardAwareScroll(deleteBottomPad, {
     bottomAnchorRef: deleteAnchorRef,
+    bottomClearance: DELETE_BOTTOM_GAP,
     autoScrollOnFocus: false,
   });
 
@@ -96,10 +100,16 @@ export default function VaccineDetailsScreen() {
   const needsScroll =
     bodyH > 0 && formH > 0 && formH + DELETE_ROW_H + deleteBottomPad > bodyH + 1;
   const pinDeleteToBottom = !needsScroll;
+  const canScroll = keyboardOpen || needsScroll;
   const pinPanelMinHeight =
     pinDeleteToBottom && bodyH > 0
-      ? bodyH - Spacing.md - contentPaddingBottom
+      ? bodyH - CONTENT_TOP_PAD - contentPaddingBottom
       : undefined;
+
+  useEffect(() => {
+    if (canScroll) return;
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [canScroll, scrollRef]);
 
   const query = useVaccinationQuery(activePetId, id);
   const loading = query.isLoading && !query.data && !vaccine;
@@ -390,6 +400,10 @@ export default function VaccineDetailsScreen() {
             styles.content,
             { paddingBottom: contentPaddingBottom },
           ]}
+          scrollEnabled={canScroll}
+          bounces={canScroll}
+          alwaysBounceVertical={false}
+          overScrollMode={canScroll ? 'auto' : 'never'}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="none"
           showsVerticalScrollIndicator={false}
@@ -487,7 +501,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   content: {
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-    paddingTop: 20,
+    paddingTop: CONTENT_TOP_PAD,
   },
   scrollContentGrow: {
     flexGrow: 1,
