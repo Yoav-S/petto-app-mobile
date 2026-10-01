@@ -1,6 +1,6 @@
 import { signInWithCustomToken, signOut } from 'firebase/auth';
 import auth from './firebaseAuth';
-import { ApiError, apiPost, apiPostPublic, apiDelete } from './api';
+import { ApiError, apiPatch, apiPost, apiPostPublic, apiDelete } from './api';
 import { clearOnboardingComplete } from '@/services/onboarding';
 import { currentLocale, t } from '@/i18n';
 import type { UserProfile } from '@/types/api';
@@ -83,6 +83,11 @@ export async function deleteAccount(): Promise<void> {
 async function clearIncompleteAuthSession(): Promise<void> {
   await signOut(auth);
   await clearOnboardingComplete();
+}
+
+/** Save the account holder name collected after email verification. */
+export async function saveAccountName(name: string): Promise<UserProfile> {
+  return apiPatch<UserProfile>('/users/me', { name: name.trim() });
 }
 
 /** Upsert Firebase user in MongoDB — updates last_login_at. Called after every login/session restore. */

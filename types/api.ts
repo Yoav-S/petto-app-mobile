@@ -10,6 +10,8 @@ export interface UserSubscription {
 export interface UserProfile {
   id: string;
   email: string;
+  /** Account holder. Missing until the post-email name step is saved. */
+  name?: string | null;
   auth_provider: 'email' | 'google';
   email_verified: boolean;
   created_at: string;

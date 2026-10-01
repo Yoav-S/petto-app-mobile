@@ -47,7 +47,7 @@ function BootSpinner() {
 }
 
 function RootLayoutNav() {
-  const { user, isLoading, isSyncing, hasPets } = useAuth();
+  const { user, isLoading, isSyncing, hasPets, hasAccountName } = useAuth();
   const { resetDraft } = usePetOnboardingDraft();
   const segments = useSegments();
   const router = useRouter();
@@ -63,6 +63,7 @@ function RootLayoutNav() {
   const onVerifyEmail = authScreen === 'verify-email';
   const onTerms = authScreen === 'terms';
   const onEmail = authScreen === 'email';
+  const onYourName = authScreen === 'your-name';
   /** Welcome / lobby — not mid-auth flows. */
   const onAuthLobby = inAuthGroup && !onVerifyEmail && !onTerms && !onEmail;
 
@@ -71,11 +72,13 @@ function RootLayoutNav() {
   const loggedInVerified = !isLoading && Boolean(user) && emailVerified;
   const loggedInUnverified = !isLoading && Boolean(user) && !emailVerified;
   const petsKnown = hasPets !== null;
+  const nameKnown = hasAccountName !== null;
 
   /** Tabs, onboarding, or any signed-in stack screen (reminders, settings, …). */
   const onAuthedAppSurface =
     inTabsGroup ||
     inOnboardingGroup ||
+    onYourName ||
     (group != null && group !== '(auth)');
 
   useReminderNotificationRouting(emailVerified);
@@ -112,7 +115,7 @@ function RootLayoutNav() {
       return;
     }
 
-    if (!user && inOnboardingGroup) {
+    if (!user && (inOnboardingGroup || onYourName)) {
       router.replace('/(auth)/' as never);
       return;
     }
@@ -122,7 +125,15 @@ function RootLayoutNav() {
       return;
     }
 
-    if (!user || !user.emailVerified || !petsKnown) return;
+    if (!user || !user.emailVerified || !petsKnown || !nameKnown) return;
+
+    // Existing accounts without a holder name stop here, then go home.
+    // New accounts continue into pet onboarding after the name is saved.
+    if (!hasAccountName && !onYourName) {
+      router.replace('/(auth)/your-name' as never);
+      return;
+    }
+    if (!hasAccountName) return;
 
     // No first pet yet → must finish onboarding (never skip to home on cold start).
     if (hasPets === false && !inOnboardingGroup) {
@@ -131,7 +142,7 @@ function RootLayoutNav() {
     }
 
     // Has pets → app home (not welcome lobby / not stuck in onboarding).
-    if (hasPets === true && (onAuthLobby || inOnboardingGroup)) {
+    if (hasPets === true && (onAuthLobby || inOnboardingGroup || onYourName)) {
       router.replace('/(tabs)' as never);
     }
   }, [
@@ -139,12 +150,15 @@ function RootLayoutNav() {
     isLoading,
     isSyncing,
     hasPets,
+    hasAccountName,
     petsKnown,
+    nameKnown,
     inAuthGroup,
     inOnboardingGroup,
     onVerifyEmail,
     onTerms,
     onEmail,
+    onYourName,
     onAuthLobby,
     router,
   ]);
@@ -166,7 +180,7 @@ function RootLayoutNav() {
   const showRedirectSpinner =
     !showBrandSplash &&
     loggedInVerified &&
-    (!petsKnown || isSyncing || !onAuthedAppSurface);
+    (!petsKnown || !nameKnown || isSyncing || !onAuthedAppSurface);
 
   return (
     <View style={styles.root}>

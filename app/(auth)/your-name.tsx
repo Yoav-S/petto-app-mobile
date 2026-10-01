@@ -13,60 +13,49 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ApiError } from '@/services/api';
+import { saveAccountName } from '@/services/auth';
 import { getErrorMessage } from '@/services/errors';
-import { sendOtp, setPendingEmail } from '@/services/auth';
 import { t } from '@/i18n';
 import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
+import { useAuth } from '@/context/AuthContext';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
 import {
   centeredInputText,
-  FIELD_LABEL_GAP,
   FIELD_LABEL_TEXT,
   FIELD_TO_ACTION_GAP,
   SINGLE_LINE_FIELD,
 } from '@/constants/textField';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-export default function EmailAuthScreen() {
+export default function YourNameScreen() {
   const router = useRouter();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const { hasPets, markAccountName } = useAuth();
   const inputRef = useRef<TextInput>(null);
-  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [focused, setFocused] = useState(false);
-
-  const canSubmit = EMAIL_REGEX.test(email.trim());
+  const trimmed = name.trim();
+  const canSubmit = trimmed.length > 0;
 
   const handleContinue = async () => {
-    const trimmed = email.trim().toLowerCase();
-    if (isLoading) return;
-    if (!EMAIL_REGEX.test(trimmed)) {
-      setError(t('auth.email_invalid'));
-      return;
-    }
-
+    if (!canSubmit || isLoading) return;
     setIsLoading(true);
     setError('');
     try {
-      setPendingEmail(trimmed);
-      await sendOtp(trimmed);
-      router.push('/(auth)/verify-email' as never);
+      await saveAccountName(trimmed);
+      markAccountName();
+      if (hasPets) {
+        router.replace('/(tabs)' as never);
+      } else {
+        router.replace('/(onboarding)/name' as never);
+      }
     } catch (err: unknown) {
       setError(getErrorMessage(err));
-      if (err instanceof ApiError && err.status === 429 && err.retryAfterSec) {
-        setError(
-          `${getErrorMessage(err)} (${err.retryAfterSec}s)`,
-        );
-      }
-    } finally {
       setIsLoading(false);
     }
   };
@@ -84,49 +73,44 @@ export default function EmailAuthScreen() {
         >
           <OnboardingBackButton onPress={() => router.back()} style={styles.backBtn} />
 
+          <Text style={styles.title}>{t('auth.your_name_title')}</Text>
+          <Text style={styles.subtitle}>{t('auth.your_name_subtitle')}</Text>
 
-          <Text style={styles.title}>{t('auth.email_title')}</Text>
-          <Text style={styles.subtitle}>{t('auth.email_subtitle')}</Text>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>{t('auth.email_label')}</Text>
-            <View style={[styles.inputWrap, focused && styles.inputWrapFocused]}>
-              <TextInput
-                ref={inputRef}
-                style={styles.input}
-                value={email}
-                onChangeText={(v) => {
-                  setEmail(v);
-                  if (error) setError('');
+          <View style={[styles.inputWrap, focused && styles.inputWrapFocused]}>
+            <TextInput
+              ref={inputRef}
+              style={styles.input}
+              value={name}
+              onChangeText={(value) => {
+                setName(value);
+                if (error) setError('');
+              }}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              autoCapitalize="words"
+              autoCorrect={false}
+              autoComplete="name"
+              textContentType="name"
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={() => {
+                void handleContinue();
+              }}
+            />
+            {name.length > 0 ? (
+              <Pressable
+                style={styles.clearBtn}
+                onPress={() => {
+                  setName('');
+                  inputRef.current?.focus();
                 }}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                placeholder={t('auth.email_placeholder')}
-                placeholderTextColor={colors.secondaryText}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="email"
-                textContentType="emailAddress"
-                autoFocus
-                returnKeyType="done"
-                onSubmitEditing={handleContinue}
-              />
-              {email.length > 0 ? (
-                <Pressable
-                  style={styles.clearBtn}
-                  onPress={() => {
-                    setEmail('');
-                    inputRef.current?.focus();
-                  }}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('common.clear')}
-                >
-                  <Ionicons name="close-circle" size={20} color={colors.secondaryText} />
-                </Pressable>
-              ) : null}
-            </View>
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.clear')}
+              >
+                <Ionicons name="close-circle" size={20} color={colors.secondaryText} />
+              </Pressable>
+            ) : null}
           </View>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -134,7 +118,9 @@ export default function EmailAuthScreen() {
           {canSubmit ? (
             <Pressable
               style={styles.button}
-              onPress={handleContinue}
+              onPress={() => {
+                void handleContinue();
+              }}
               disabled={isLoading}
               accessibilityRole="button"
             >
@@ -176,7 +162,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   title: {
     fontFamily: 'Rubik-Regular',
     fontSize: 24,
-    // Looser than the 28 single-line spec so RU/RO titles breathe when they wrap.
     lineHeight: 32,
     color: c.primaryText,
     marginBottom: Spacing.sm,
@@ -185,14 +170,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     ...FIELD_LABEL_TEXT,
     color: c.secondaryText,
     marginBottom: 22,
-  },
-  /** Label + field measures 76: 20 label, 8 gap, 48 field. */
-  fieldGroup: {
-    gap: FIELD_LABEL_GAP,
-  },
-  fieldLabel: {
-    ...FIELD_LABEL_TEXT,
-    color: c.secondaryText,
   },
   inputWrap: {
     flexDirection: 'row',

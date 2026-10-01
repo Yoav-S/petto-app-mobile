@@ -7,6 +7,7 @@ import {
   Pressable,
   StyleSheet,
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   ScrollView,
   Platform,
@@ -75,9 +76,10 @@ export default function VerifyEmailScreen() {
     return () => clearInterval(t);
   }, [cooldown]);
 
-  const handleVerify = useCallback(async () => {
-    if (verifiedRef.current || otp.length !== OTP_LENGTH || verifyLockRef.current) {
-      if (!verifiedRef.current && otp.length !== OTP_LENGTH) {
+  const handleVerify = useCallback(async (code?: string) => {
+    const value = (code ?? otp).replace(/\D/g, '').slice(0, OTP_LENGTH);
+    if (verifiedRef.current || value.length !== OTP_LENGTH || verifyLockRef.current) {
+      if (!verifiedRef.current && value.length !== OTP_LENGTH) {
         setError(t('errors.otp_length'));
         focusOtpInput();
       }
@@ -85,16 +87,19 @@ export default function VerifyEmailScreen() {
     }
 
     verifyLockRef.current = true;
+    Keyboard.dismiss();
     setIsVerifying(true);
     setError('');
     setInfo('');
     try {
       const wasOnboarded = await getOnboardingComplete();
-      const profile = await verifyOtpAndSignIn(email, otp);
+      const profile = await verifyOtpAndSignIn(email, value);
       verifiedRef.current = true;
       // Server is the source of truth: pets â†’ home; first-time no pets â†’ onboarding;
       // pets wiped after a past onboarding â†’ welcome (session reset in AuthContext).
-      if (profile.has_pets) {
+      if (!profile.name?.trim()) {
+        router.replace('/(auth)/your-name' as never);
+      } else if (profile.has_pets) {
         router.replace('/(tabs)' as any);
       } else if (wasOnboarded) {
         router.replace('/(auth)/' as never);
@@ -110,12 +115,6 @@ export default function VerifyEmailScreen() {
       setIsVerifying(false);
     }
   }, [email, focusOtpInput, otp, router]);
-
-  useEffect(() => {
-    if (otp.length === OTP_LENGTH && !verifyLockRef.current && !verifiedRef.current && !error) {
-      handleVerify();
-    }
-  }, [otp, error, handleVerify]);
 
   const handleResend = async () => {
     if (cooldown > 0 || !email) return;
@@ -193,8 +192,13 @@ export default function VerifyEmailScreen() {
                 maxLength={OTP_LENGTH}
                 value={otp}
                 onChangeText={(v) => {
-                  setOtp(v.replace(/\D/g, '').slice(0, OTP_LENGTH));
+                  const next = v.replace(/\D/g, '').slice(0, OTP_LENGTH);
+                  setOtp(next);
                   if (error) setError('');
+                  if (next.length === OTP_LENGTH) {
+                    Keyboard.dismiss();
+                    void handleVerify(next);
+                  }
                 }}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
@@ -217,7 +221,9 @@ export default function VerifyEmailScreen() {
                 styles.button,
                 (otp.length !== OTP_LENGTH || isVerifying) && styles.buttonDisabled,
               ]}
-              onPress={handleVerify}
+              onPress={() => {
+                void handleVerify();
+              }}
               disabled={otp.length !== OTP_LENGTH || isVerifying}
             >
               {isVerifying ? (

@@ -7,6 +7,7 @@ export default function AuthLayout() {
       <Stack.Screen name="email" />
       <Stack.Screen name="terms" />
       <Stack.Screen name="verify-email" />
+      <Stack.Screen name="your-name" />
     </Stack>
   );
 }
