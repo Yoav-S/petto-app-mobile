@@ -56,6 +56,8 @@ interface AuthContextType {
   hasPets: boolean | null;
   /** null until profile sync. False sends the user to the name step. */
   hasAccountName: boolean | null;
+  /** Account holder name from the user document. */
+  accountName: string | null;
   syncError: string | null;
   isGoogleLoading: boolean;
   googleAuthError: string | null;
@@ -66,7 +68,7 @@ interface AuthContextType {
   /** Call after creating the first pet so cold-start routing can enter the app. */
   markHasPets: () => void;
   /** Call after the account holder name is saved. */
-  markAccountName: () => void;
+  markAccountName: (name?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -75,6 +77,7 @@ const AuthContext = createContext<AuthContextType>({
   isSyncing: false,
   hasPets: null,
   hasAccountName: null,
+  accountName: null,
   syncError: null,
   isGoogleLoading: false,
   googleAuthError: null,
@@ -94,6 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [hasPets, setHasPets] = useState<boolean | null>(null);
   const [hasAccountName, setHasAccountName] = useState<boolean | null>(null);
+  const [accountName, setAccountName] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
@@ -132,12 +136,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await clearOnboardingComplete();
         setHasPets(null);
         setHasAccountName(null);
+        setAccountName(null);
         await firebaseSignOut(auth);
         return;
       }
 
       setHasPets(pets);
       setHasAccountName(Boolean(profile.name?.trim()));
+      setAccountName(profile.name?.trim() || null);
       // Identify RevenueCat with Firebase UID (no-op if keys missing).
       void loginPurchases(firebaseUser.uid);
       // Fire-and-forget: register push token + timezone. Never blocks login.
@@ -146,6 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Backend auth handshake failed:', error);
       setHasPets(null);
       setHasAccountName(null);
+      setAccountName(null);
       setSyncError(getErrorMessage(error));
     } finally {
       setIsSyncing(false);
@@ -160,6 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setHasPets(null);
         setHasAccountName(null);
+        setAccountName(null);
         setSyncError(null);
       }
       setIsLoading(false);
@@ -240,6 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await clearOnboardingComplete();
       setHasPets(null);
       setHasAccountName(null);
+      setAccountName(null);
     } catch (error) {
       console.error('Sign-out Error:', error);
     }
@@ -252,7 +261,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const clearGoogleAuthError = () => setGoogleAuthError(null);
   const markHasPets = useCallback(() => setHasPets(true), []);
-  const markAccountName = useCallback(() => setHasAccountName(true), []);
+  const markAccountName = useCallback((name?: string) => {
+    setHasAccountName(true);
+    if (name?.trim()) setAccountName(name.trim());
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -262,6 +274,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isSyncing,
         hasPets,
         hasAccountName,
+        accountName,
         syncError,
         isGoogleLoading,
         googleAuthError,

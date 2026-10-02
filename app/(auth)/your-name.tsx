@@ -48,7 +48,7 @@ export default function YourNameScreen() {
     setError('');
     try {
       await saveAccountName(trimmed);
-      markAccountName();
+      markAccountName(trimmed);
       if (hasPets) {
         router.replace('/(tabs)' as never);
       } else {
