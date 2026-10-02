@@ -124,7 +124,7 @@ export default function HomeScreen() {
 
   const [fabOpen, setFabOpen] = useState(false);
   const [switchVisible, setSwitchVisible] = useState(false);
-  const [panelMode, setPanelMode] = useState<'home' | 'profile'>('home');
+  const [petTab, setPetTab] = useState<'overview' | 'about'>('overview');
   const [signOutVisible, setSignOutVisible] = useState(false);
 
   const petsQuery = usePetsQuery(Boolean(user) && !authLoading);
@@ -256,12 +256,6 @@ export default function HomeScreen() {
     }, [authLoading, user, refetchHome]),
   );
 
-  const effectiveMode = pet ? panelMode : 'home';
-
-  useEffect(() => {
-    if (effectiveMode === 'profile' && fabOpen) setFabOpen(false);
-  }, [effectiveMode, fabOpen]);
-
   const handleSelectPet = async (petId: string) => {
     const nextPet = pets.find((p) => p.id === petId);
     if (
@@ -296,22 +290,38 @@ export default function HomeScreen() {
         <View style={styles.homeFrame}>
           <PetHeader
             pet={pet}
-            petCount={pets.length}
             loading={loading}
+            switchOpen={switchVisible}
             onSwitchPress={() => setSwitchVisible(true)}
-            onLogout={() => setSignOutVisible(true)}
-            onCoverPress={
-              pet
-                ? () => setPanelMode((mode) => (mode === 'home' ? 'profile' : 'home'))
-                : undefined
-            }
-            onSettingsPress={() => router.push('/settings' as never)}
-            onReturnHome={() => setPanelMode('home')}
+            onReturnHome={() => router.back()}
             onEditProfile={() => router.push('/profile/edit' as never)}
-            profileActive={effectiveMode === 'profile'}
           >
-            {effectiveMode === 'profile' ? (
-              <PetProfilePanel pet={pet} />
+            <View style={styles.tabs}>
+              <TouchableOpacity
+                style={[styles.tab, petTab === 'overview' && styles.tabOn]}
+                onPress={() => setPetTab('overview')}
+                accessibilityRole="button"
+                accessibilityState={{ selected: petTab === 'overview' }}
+              >
+                <Text style={[styles.tabText, petTab === 'overview' && styles.tabTextOn]}>
+                  {t('profile.tab_overview')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.tab, petTab === 'about' && styles.tabOn]}
+                onPress={() => setPetTab('about')}
+                accessibilityRole="button"
+                accessibilityState={{ selected: petTab === 'about' }}
+              >
+                <Text style={[styles.tabText, petTab === 'about' && styles.tabTextOn]}>
+                  {t('profile.tab_about')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {petTab === 'about' ? (
+              <View style={styles.aboutWrap}>
+                <PetProfilePanel pet={pet} />
+              </View>
             ) : (
               <View style={styles.cardsGrid} pointerEvents="auto">
                 <View style={styles.row}>
@@ -369,7 +379,7 @@ export default function HomeScreen() {
           ) : null}
         </View>
 
-        {pet && effectiveMode !== 'profile' ? (
+        {pet && petTab === 'overview' ? (
           <FABMenu
             open={fabOpen}
             onOpenChange={setFabOpen}
@@ -458,9 +468,42 @@ const makeStyles = (c: ThemeColors) =>
       fontSize: 14,
       color: c.primaryText,
     },
+    tabs: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: 8,
+    },
+    tab: {
+      height: 28,
+      borderRadius: 10,
+      paddingTop: 4,
+      paddingRight: 8,
+      paddingBottom: 4,
+      paddingLeft: 8,
+      backgroundColor: '#F6F7F9',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    tabOn: {
+      backgroundColor: '#004741',
+    },
+    tabText: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 14,
+      lineHeight: 20,
+      color: '#1F2937',
+    },
+    tabTextOn: {
+      color: '#F6F7F9',
+    },
+    aboutWrap: {
+      marginTop: 16,
+    },
     cardsGrid: {
       flex: 1,
       width: '100%',
+      marginTop: 16,
       gap: Spacing.sm,
       overflow: 'visible',
     },

@@ -109,6 +109,8 @@
   "profile": {
     "tab_general": "General",
     "tab_details": "Details",
+    "tab_overview": "Overview",
+    "tab_about": "About",
     "sex": "Sex",
     "sex_male": "Male",
     "sex_female": "Female",

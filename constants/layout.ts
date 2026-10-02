@@ -67,12 +67,12 @@ export const HEADER_LAYOUT = {
 } as const;
 
 /** Home cover + bottom panel (375×812 reference). */
-export const DESIGN_COVER_HEIGHT = 352;
+export const DESIGN_COVER_HEIGHT = 358;
 export const DESIGN_PANEL_TOP = 328;
 export const DESIGN_PANEL_HEIGHT = 484;
 export const DESIGN_PANEL_RADIUS = 24;
 export const DESIGN_HOME_HALF_CARD_HEIGHT = 194;
-export const DESIGN_HOME_HEALTH_CARD_HEIGHT = 112;
+export const DESIGN_HOME_HEALTH_CARD_HEIGHT = 132;
 /** Figma: topics bottom covers 25% of the 56px FAB (14px). */
 export const DESIGN_FAB_TOPICS_OVERLAP = 14;
 

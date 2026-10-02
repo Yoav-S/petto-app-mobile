@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Spacing, type ThemeColors } from '@/constants/theme';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import type { Pet } from '@/types/api';
-
-type ProfileTab = 'general' | 'details';
 
 const EMPTY_VALUE = '\u2014';
 
@@ -37,12 +35,22 @@ function formatNeutered(value?: boolean | null): string {
   return value ? t('common.yes') : t('common.no');
 }
 
-function ProfileRow({ label, value, height }: { label: string; value: string; height: number }) {
+function DetailCard({
+  label,
+  value,
+  flex,
+}: {
+  label: string;
+  value: string;
+  flex: number;
+}) {
   const styles = useThemedStyles(makeStyles);
   return (
-    <View style={[styles.row, { minHeight: height }]}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue} numberOfLines={1} ellipsizeMode="tail">
+    <View style={[styles.card, { flex }]}>
+      <Text style={styles.label} numberOfLines={1}>
+        {label}
+      </Text>
+      <Text style={styles.value} numberOfLines={2}>
         {value}
       </Text>
     </View>
@@ -51,126 +59,55 @@ function ProfileRow({ label, value, height }: { label: string; value: string; he
 
 export default function PetProfilePanel({ pet }: PetProfilePanelProps) {
   const styles = useThemedStyles(makeStyles);
-  const [tab, setTab] = useState<ProfileTab>('general');
 
   return (
-    <View style={styles.wrapper}>
-      <View style={styles.switcher}>
-        {(['general', 'details'] as const).map((key) => {
-          const active = tab === key;
-          return (
-            <TouchableOpacity
-              key={key}
-              style={[styles.segment, active && styles.segmentActive]}
-              onPress={() => setTab(key)}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-            >
-              <Text style={[styles.segmentText, active && styles.segmentTextActive]}>
-                {t(`profile.tab_${key}`)}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+    <View style={styles.grid}>
+      <View style={styles.row}>
+        <DetailCard label={t('profile.sex')} value={formatSex(pet?.sex)} flex={164} />
+        <DetailCard label={t('profile.birth_date')} value={formatBirthDate(pet?.birth_date)} flex={163} />
       </View>
-
-      <View style={styles.container}>
-        {tab === 'general' ? (
-          <>
-            <ProfileRow label={t('profile.sex')} value={formatSex(pet?.sex)} height={48} />
-            <ProfileRow label={t('profile.birth_date')} value={formatBirthDate(pet?.birth_date)} height={48} />
-            <ProfileRow label={t('profile.weight')} value={formatWeight(pet?.weight)} height={50} />
-            <ProfileRow label={t('profile.color')} value={pet?.color || EMPTY_VALUE} height={50} />
-          </>
-        ) : (
-          <>
-            <ProfileRow label={t('profile.neutered')} value={formatNeutered(pet?.is_neutered)} height={50} />
-            <ProfileRow label={t('profile.chip_id')} value={pet?.chip_id || EMPTY_VALUE} height={50} />
-          </>
-        )}
+      <View style={styles.row}>
+        <DetailCard label={t('profile.color')} value={pet?.color || EMPTY_VALUE} flex={229} />
+        <DetailCard label={t('profile.weight')} value={formatWeight(pet?.weight)} flex={98} />
+      </View>
+      <View style={styles.row}>
+        <DetailCard label={t('profile.neutered')} value={formatNeutered(pet?.is_neutered)} flex={98} />
+        <DetailCard label={t('profile.chip_id')} value={pet?.chip_id || EMPTY_VALUE} flex={229} />
       </View>
     </View>
   );
 }
 
-const cardShadow = {
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.06,
-  shadowRadius: 10,
-  elevation: 2,
-};
-
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  wrapper: {
+  grid: {
     width: '100%',
-    gap: Spacing.lg,
+    gap: 8,
   },
-  switcher: {
-    alignSelf: 'center',
+  row: {
     flexDirection: 'row',
-    alignItems: 'center',
-    minWidth: 220,
-    maxWidth: '100%',
-    minHeight: 36,
-    borderRadius: 10,
-    backgroundColor: c.border,
-    paddingTop: 2,
-    paddingRight: 4,
-    paddingBottom: 2,
-    paddingLeft: 4,
-    gap: 4,
-    opacity: 1,
+    alignItems: 'stretch',
+    gap: 8,
   },
-  segment: {
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: 'auto',
-    minWidth: 0,
-    paddingHorizontal: 10,
-    minHeight: 28,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+  card: {
+    height: 100,
+    borderRadius: 20,
+    backgroundColor: c.background,
+    paddingTop: 16,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    gap: 8,
+    overflow: 'hidden',
   },
-  segmentActive: {
-    backgroundColor: c.surface,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  segmentText: {
+  label: {
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 20,
-    color: c.tabInactiveText,
+    color: '#101623',
   },
-  segmentTextActive: {
-    color: c.primaryText,
-  },
-  container: {
-    backgroundColor: c.surface,
-    borderRadius: 16,
-    padding: Spacing.lg,
-    gap: Spacing.lg,
-    ...cardShadow,
-  },
-  row: {
-    gap: Spacing.xs,
-    justifyContent: 'center',
-  },
-  rowLabel: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 12,
-    color: c.secondaryText,
-  },
-  rowValue: {
+  value: {
     fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    color: c.primaryText,
+    fontSize: 20,
+    lineHeight: 24,
+    color: '#1F2937',
   },
 });
-

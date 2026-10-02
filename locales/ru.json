@@ -109,6 +109,8 @@
   "profile": {
     "tab_general": "Общее",
     "tab_details": "Подробности",
+    "tab_overview": "Обзор",
+    "tab_about": "О питомце",
     "sex": "Пол",
     "sex_male": "Самец",
     "sex_female": "Самка",

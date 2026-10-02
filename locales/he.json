@@ -109,6 +109,8 @@
   "profile": {
     "tab_general": "כללי",
     "tab_details": "פרטים",
+    "tab_overview": "סקירה",
+    "tab_about": "אודות",
     "sex": "מין",
     "sex_male": "זכר",
     "sex_female": "נקבה",

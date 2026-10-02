@@ -1,4 +1,4 @@
-import { Spacing, type ThemeColors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles, useTheme } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -6,7 +6,6 @@ import { Pencil } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Animated,
-  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -28,8 +27,6 @@ import { useHomePanelLayout } from '@/hooks/useHomePanelLayout';
 
 import {
   DESIGN_COVER_HEIGHT,
-  DESIGN_PANEL_RADIUS,
-  DESIGN_PANEL_TOP,
   PAGE_HORIZONTAL_PADDING,
 } from '@/constants/layout';
 
@@ -42,15 +39,11 @@ interface PetHeaderProps {
     birth_date?: string | null;
     photo_url?: string | null;
   } | null;
-  petCount: number;
   loading: boolean;
   onSwitchPress: () => void;
-  onLogout?: () => void;
-  onSettingsPress?: () => void;
-  onCoverPress?: () => void;
   onEditProfile?: () => void;
   onReturnHome?: () => void;
-  profileActive?: boolean;
+  switchOpen?: boolean;
   children?: React.ReactNode;
 }
 
@@ -73,14 +66,11 @@ function calculateAge(birthDateString?: string): string {
 
 export default function PetHeader({
   pet,
-  petCount,
   loading,
   onSwitchPress,
-  onSettingsPress,
-  onCoverPress,
   onEditProfile,
   onReturnHome,
-  profileActive,
+  switchOpen = false,
   children,
 }: PetHeaderProps) {
   const colors = useColors();
@@ -88,12 +78,10 @@ export default function PetHeader({
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { width: screenWidth, structuralScale, contentWidth } = useResponsiveLayout();
-  const { gapAfterName, cardsBottomInset } = useHomePanelLayout();
+  const { cardsBottomInset } = useHomePanelLayout();
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
 
   const coverHeight = Math.round(DESIGN_COVER_HEIGHT * structuralScale);
-  const panelOverlap = Math.round((DESIGN_COVER_HEIGHT - DESIGN_PANEL_TOP) * structuralScale);
-  const panelRadius = Math.round(DESIGN_PANEL_RADIUS * structuralScale);
   const nameBlockWidth = Math.min(screenWidth - PAGE_HORIZONTAL_PADDING * 2, contentWidth);
   const coverSource = useMemo(
     () => petPhotoSource(pet),
@@ -127,19 +115,7 @@ export default function PetHeader({
   return (
     <View style={styles.wrapper} pointerEvents="box-none">
       <View style={[styles.cover, { height: coverHeight }]} pointerEvents="auto">
-        <Pressable
-          style={styles.coverPressable}
-          onPress={onCoverPress}
-          disabled={loading || !pet || !onCoverPress}
-          accessibilityRole={onCoverPress ? 'button' : undefined}
-          accessibilityLabel={
-            onCoverPress
-              ? profileActive
-                ? t('profile.cover_back_a11y')
-                : t('profile.cover_open_a11y')
-              : undefined
-          }
-        >
+        <View style={styles.coverPressable}>
           {loading ? (
             <PetPhotoImage forceLoading style={styles.coverImage} />
           ) : pet ? (
@@ -155,116 +131,83 @@ export default function PetHeader({
               <Ionicons name="paw" size={72} color={colors.secondaryText} />
             </View>
           )}
-        </Pressable>
+        </View>
+
+        <View style={styles.coverShade} pointerEvents="none" />
 
         <View style={[styles.actionBar, { top: insets.top }]}>
-          {profileActive ? (
-            <>
-            <HeaderIconButton
-              onPress={onReturnHome}
-              accessibilityLabel={t('profile.return_home')}
-            >
-              <MaterialIcons
-                name="chevron-left"
-                size={HEADER_ICON_BTN.iconSize}
-                color={colors.primaryText}
-                style={styles.backIcon}
-              />
-            </HeaderIconButton>
+          <HeaderIconButton
+            onPress={onReturnHome}
+            accessibilityLabel={t('profile.return_home')}
+          >
+            <MaterialIcons
+              name="chevron-left"
+              size={HEADER_ICON_BTN.iconSize}
+              color={colors.primaryText}
+              style={styles.backIcon}
+            />
+          </HeaderIconButton>
+          <HeaderIconButton
+            onPress={onEditProfile}
+            accessibilityLabel={t('profile.edit_profile')}
+          >
+            <Pencil size={18} color={colors.primaryText} strokeWidth={2} />
+          </HeaderIconButton>
+        </View>
 
-            <HeaderIconButton
-              onPress={onEditProfile}
-              accessibilityLabel={t('profile.edit_profile')}
-            >
-              <Pencil size={18} color={colors.primaryText} strokeWidth={2} />
-            </HeaderIconButton>
-            </>
+        <View style={[styles.identity, { maxWidth: nameBlockWidth }]} pointerEvents="box-none">
+          {loading ? (
+            <View>
+              <Animated.View style={[styles.nameSkeleton, { opacity: fadeAnim }]} />
+              <Animated.View style={[styles.subtitleSkeleton, { opacity: fadeAnim }]} />
+            </View>
           ) : (
             <>
-              <View style={styles.actionSpacer} />
-              <HeaderIconButton
-                onPress={onSettingsPress}
-                accessibilityLabel={t('home.settings')}
+              <TouchableOpacity
+                style={styles.nameRow}
+                onPress={canSwitch ? onSwitchPress : undefined}
+                activeOpacity={canSwitch ? 0.7 : 1}
+                disabled={!canSwitch}
               >
-                <Ionicons
-                  name="settings-outline"
-                  size={HEADER_ICON_BTN.iconSize}
-                  color={colors.primaryText}
-                />
-              </HeaderIconButton>
+                <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+                  {pet?.name ?? t('home.noPet')}
+                </Text>
+                {canSwitch ? (
+                  <Ionicons
+                    name={switchOpen ? 'chevron-up' : 'chevron-down'}
+                    size={24}
+                    color="#1F2937"
+                  />
+                ) : null}
+              </TouchableOpacity>
+              {pet && (pet.breed || petAge) ? (
+                <View style={styles.metaRow}>
+                  {pet.breed ? (
+                    <View style={styles.metaBubble}>
+                      <Text style={styles.metaText} numberOfLines={1} ellipsizeMode="tail">
+                        {pet.breed}
+                      </Text>
+                    </View>
+                  ) : null}
+                  {petAge ? (
+                    <View style={styles.metaBubble}>
+                      <Text style={styles.metaText} numberOfLines={1} ellipsizeMode="tail">
+                        {petAge}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
             </>
           )}
         </View>
       </View>
 
-      <View style={[styles.panelOuter, { marginTop: -panelOverlap }]} pointerEvents="box-none">
-        <View
-          style={[
-            styles.panelHeaderClip,
-            {
-              borderTopLeftRadius: panelRadius,
-              borderTopRightRadius: panelRadius,
-            },
-          ]}
-          pointerEvents="auto"
-        >
-          {loading ? (
-            <View style={[styles.nameSection, { maxWidth: nameBlockWidth }]}>
-              <Animated.View style={[styles.nameSkeleton, { opacity: fadeAnim }]} />
-              <Animated.View style={[styles.subtitleSkeleton, { opacity: fadeAnim }]} />
-            </View>
-          ) : (
-            <View style={[styles.nameSection, { maxWidth: nameBlockWidth }]}>
-              <TouchableOpacity
-                style={styles.nameRow}
-                onPress={canSwitch ? onSwitchPress : undefined}
-                activeOpacity={canSwitch ? 0.7 : 1}
-              >
-                <Text
-                  style={styles.name}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {pet?.name ?? t('home.noPet')}
-                </Text>
-                {canSwitch ? (
-                  <Ionicons name="chevron-down" size={24} color={colors.primaryText} />
-                ) : null}
-              </TouchableOpacity>
-              {pet ? (
-                <View style={styles.subtitleRow}>
-                  {pet.breed ? (
-                    <Text style={styles.breed} numberOfLines={1} ellipsizeMode="tail">
-                      {pet.breed}
-                    </Text>
-                  ) : null}
-                  {pet.breed && petAge ? <Text style={styles.subtitleSeparator}>{'\u2022'}</Text> : null}
-                  {petAge ? (
-                    <Text style={styles.age} numberOfLines={1}>
-                      {petAge}
-                    </Text>
-                  ) : null}
-                </View>
-              ) : (
-                <Text style={styles.emptySubtitle}>{t('home.addFirstPet')}</Text>
-              )}
-            </View>
-          )}
-        </View>
-
-        <View
-          style={[
-            styles.panelBody,
-            {
-              paddingTop: profileActive ? 0 : gapAfterName,
-              paddingBottom: profileActive ? 16 : cardsBottomInset,
-              justifyContent: 'flex-start',
-            },
-          ]}
-          pointerEvents="box-none"
-        >
-          {children}
-        </View>
+      <View
+        style={[styles.panelBody, { paddingBottom: cardsBottomInset }]}
+        pointerEvents="box-none"
+      >
+        {children}
       </View>
     </View>
   );
@@ -278,8 +221,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   cover: {
     width: '100%',
-    backgroundColor: '#E8E2D8',
+    backgroundColor: 'transparent',
     overflow: 'hidden',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  coverShade: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   coverPressable: {
     width: '100%',
@@ -307,95 +256,60 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingVertical: 6,
     zIndex: 90,
   },
-  actionSpacer: {
-    width: HEADER_ICON_BTN.size,
-    height: HEADER_ICON_BTN.size,
-  },
   backIcon: {
     // Material chevron glyph is optically left-heavy inside its box.
     marginLeft: -1,
     textAlign: 'center',
   },
-  panelOuter: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    overflow: 'visible',
-  },
-  panelHeaderClip: {
-    backgroundColor: c.panel,
-    paddingTop: 16,
-    overflow: 'hidden',
+  identity: {
+    position: 'absolute',
+    left: PAGE_HORIZONTAL_PADDING,
+    bottom: 20,
+    gap: 6,
+    zIndex: 3,
   },
   panelBody: {
-    backgroundColor: c.panel,
+    backgroundColor: c.surface,
     overflow: 'visible',
     flex: 1,
-    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-  },
-  nameSection: {
-    width: '100%',
-    maxWidth: '100%',
-    minHeight: 72,
-    alignSelf: 'center',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    marginBottom: 0,
-    paddingBottom: 0,
+    paddingTop: 32,
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
   },
   nameRow: {
     maxWidth: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.xs,
-    marginBottom: 4,
+    gap: 8,
   },
   name: {
     flexShrink: 1,
     fontFamily: 'Rubik-Regular',
     fontSize: 36,
     lineHeight: 44,
-    color: c.primaryText,
-    textAlign: 'center',
+    color: '#1F2937',
   },
-  subtitleRow: {
-    width: '100%',
-    minHeight: 20,
+  metaRow: {
+    maxWidth: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    flexWrap: 'nowrap',
-    gap: 4,
+    gap: 8,
   },
-  breed: {
+  metaBubble: {
     flexShrink: 1,
     minWidth: 0,
-    fontFamily: 'Rubik-Regular',
+    maxWidth: '100%',
+    borderRadius: 10,
+    paddingTop: 4,
+    paddingRight: 8,
+    paddingBottom: 4,
+    paddingLeft: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  metaText: {
+    fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 20,
-    color: c.secondaryText,
-    textAlign: 'center',
-  },
-  subtitleSeparator: {
-    flexShrink: 0,
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: c.secondaryText,
-  },
-  age: {
-    flexShrink: 0,
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: c.secondaryText,
-  },
-  emptySubtitle: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
-    color: c.secondaryText,
-    textAlign: 'center',
+    color: '#1F2937',
   },
   nameSkeleton: {
     width: 160,

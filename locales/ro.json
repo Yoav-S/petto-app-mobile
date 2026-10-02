@@ -109,6 +109,8 @@
   "profile": {
     "tab_general": "General",
     "tab_details": "Detalii",
+    "tab_overview": "Prezentare",
+    "tab_about": "Despre",
     "sex": "Sex",
     "sex_male": "Mascul",
     "sex_female": "Femelă",
