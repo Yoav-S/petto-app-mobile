@@ -58,6 +58,12 @@
       ],
       "expo-localization",
       [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Ragly to use your location to show places near you."
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "Allow Ragly to access your photos to add a pet picture.",
