@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,14 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Linking,
+  Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Location from 'expo-location';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 import { Plus, Settings } from 'lucide-react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -47,6 +49,14 @@ const CATEGORIES: { key: keyof typeof CATEGORY_ART | 'pharmacy' | 'pet_friendly'
   { key: 'pet_friendly', label: 'home.category_friendly' },
 ];
 
+type LocationModule = typeof import('expo-location');
+
+/** This dev build has no ExpoLocation native module. Never load the package then. */
+function locationModule(): LocationModule | null {
+  if (!requireOptionalNativeModule('ExpoLocation')) return null;
+  return require('expo-location') as LocationModule;
+}
+
 function greetingKey(now = new Date()): string {
   const hour = now.getHours();
   if (hour >= NIGHT_HOUR || hour < MORNING_HOUR) return 'home.greeting_night';
@@ -73,10 +83,13 @@ export default function DiscoverHomeScreen() {
   const [places, setPlaces] = useState<BusinessPlace[]>([]);
   const [placesLoading, setPlacesLoading] = useState(false);
   const [locating, setLocating] = useState(false);
+  const askedOnLoad = useRef(false);
 
   const readLocation = useCallback(async () => {
-    const position = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
+    const location = locationModule();
+    if (!location) return;
+    const position = await location.getCurrentPositionAsync({
+      accuracy: location.Accuracy.Balanced,
     });
     setCoords({
       latitude: position.coords.latitude,
@@ -84,22 +97,48 @@ export default function DiscoverHomeScreen() {
     });
   }, []);
 
+  const resolveLocation = useCallback(async (ask: boolean) => {
+    const location = locationModule();
+    if (!location) return;
+    let permission = await location.getForegroundPermissionsAsync();
+    if (permission.status !== 'granted') {
+      if (!ask) {
+        setCoords(null);
+        return;
+      }
+      if (!permission.canAskAgain) {
+        await Linking.openSettings();
+        return;
+      }
+      permission = await location.requestForegroundPermissionsAsync();
+      if (permission.status !== 'granted') {
+        setCoords(null);
+        return;
+      }
+    }
+    const servicesOn = await location.hasServicesEnabledAsync();
+    if (!servicesOn && ask && Platform.OS === 'android') {
+      try {
+        await location.enableNetworkProviderAsync();
+      } catch {
+        setCoords(null);
+        return;
+      }
+    }
+    if (!(await location.hasServicesEnabledAsync())) {
+      setCoords(null);
+      return;
+    }
+    await readLocation();
+  }, [readLocation]);
+
   useFocusEffect(
     useCallback(() => {
       void petsQuery.refetch();
-      void (async () => {
-        const current = await Location.getForegroundPermissionsAsync();
-        if (current.status !== 'granted') {
-          setCoords(null);
-          return;
-        }
-        try {
-          await readLocation();
-        } catch {
-          setCoords(null);
-        }
-      })();
-    }, [petsQuery.refetch, readLocation]),
+      const ask = !askedOnLoad.current;
+      askedOnLoad.current = true;
+      void resolveLocation(ask).catch(() => setCoords(null));
+    }, [petsQuery.refetch, resolveLocation]),
   );
 
   useEffect(() => {
@@ -125,9 +164,7 @@ export default function DiscoverHomeScreen() {
     if (locating) return;
     setLocating(true);
     try {
-      const result = await Location.requestForegroundPermissionsAsync();
-      if (result.status !== 'granted') return;
-      await readLocation();
+      await resolveLocation(true);
     } catch {
       setCoords(null);
     } finally {
@@ -174,14 +211,33 @@ export default function DiscoverHomeScreen() {
           <View style={styles.petsBlock}>
             <Text style={styles.sectionTitle}>{t('home.my_pets')}</Text>
             <View style={styles.petsRow}>
-              <ScrollView
-                horizontal
-                nestedScrollEnabled
-                showsHorizontalScrollIndicator={false}
-                style={styles.petScroll}
-                contentContainerStyle={styles.petScrollContent}
-              >
-                {pets.map((pet) => (
+              {pets.length > 1 ? (
+                <ScrollView
+                  horizontal
+                  nestedScrollEnabled
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.petScroll}
+                  contentContainerStyle={styles.petScrollContent}
+                >
+                  {pets.map((pet) => (
+                    <TouchableOpacity
+                      key={pet.id}
+                      style={styles.petItem}
+                      onPress={() => void openPet(pet)}
+                    >
+                      <Image
+                        source={petPhotoSource(pet)}
+                        style={styles.petPhoto}
+                        contentFit="cover"
+                      />
+                      <Text style={styles.petName} numberOfLines={1}>
+                        {pet.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              ) : (
+                pets.map((pet) => (
                   <TouchableOpacity
                     key={pet.id}
                     style={styles.petItem}
@@ -196,8 +252,8 @@ export default function DiscoverHomeScreen() {
                       {pet.name}
                     </Text>
                   </TouchableOpacity>
-                ))}
-              </ScrollView>
+                ))
+              )}
               <TouchableOpacity style={styles.petItem} onPress={() => void addPet()}>
                 <View style={styles.addPhoto}>
                   <Plus size={24} color={colors.primaryText} />
@@ -274,17 +330,20 @@ export default function DiscoverHomeScreen() {
           </View>
         ) : (
           <View style={styles.locationCard}>
-            <View style={styles.locationCopy}>
-              <Text style={styles.locationTitle}>{t('home.near_title')}</Text>
-              <Text style={styles.locationSubtitle}>{t('home.near_subtitle')}</Text>
+            <View style={styles.locationHandle} />
+            <View style={styles.locationBody}>
+              <View style={styles.locationCopy}>
+                <Text style={styles.locationTitle}>{t('home.near_title')}</Text>
+                <Text style={styles.locationSubtitle}>{t('home.near_subtitle')}</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.locationButton}
+                onPress={() => void enableLocation()}
+                disabled={locating}
+              >
+                <Text style={styles.locationButtonText}>{t('home.enable_location')}</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={styles.locationButton}
-              onPress={() => void enableLocation()}
-              disabled={locating}
-            >
-              <Text style={styles.locationButtonText}>{t('home.enable_location')}</Text>
-            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -299,8 +358,8 @@ function makeStyles(colors: ThemeColors) {
       backgroundColor: colors.background,
     },
     page: {
+      flexGrow: 1,
       gap: 4,
-      paddingBottom: 24,
     },
     welcomeCard: {
       backgroundColor: colors.surface,
@@ -321,15 +380,15 @@ function makeStyles(colors: ThemeColors) {
       paddingRight: 12,
     },
     greetingLine: {
-      fontFamily: 'Rubik-Regular',
-      fontSize: 16,
-      lineHeight: 22,
-      color: colors.secondaryText,
-    },
-    nameLine: {
       fontFamily: 'Rubik-Medium',
       fontSize: 20,
-      lineHeight: 22,
+      lineHeight: 24,
+      color: colors.primaryText,
+    },
+    nameLine: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 14,
+      lineHeight: 20,
       color: colors.primaryText,
     },
     settingsButton: {
@@ -346,7 +405,7 @@ function makeStyles(colors: ThemeColors) {
       elevation: 4,
     },
     petsBlock: {
-      width: PET_SCROLL_WIDTH + PET_GAP + PET_SIZE,
+      alignSelf: 'flex-start',
       gap: 16,
     },
     sectionTitle: {
@@ -501,13 +560,25 @@ function makeStyles(colors: ThemeColors) {
       backgroundColor: colors.background,
     },
     locationCard: {
+      flexGrow: 1,
       backgroundColor: colors.surface,
       borderRadius: 24,
-      paddingTop: 32,
       paddingBottom: 22,
-      paddingHorizontal: 20,
       alignItems: 'center',
+    },
+    locationHandle: {
+      position: 'absolute',
+      top: 8,
+      width: 36,
+      height: 5,
+      borderRadius: 100,
+      backgroundColor: colors.border,
+    },
+    locationBody: {
+      marginTop: 45,
       gap: 20,
+      alignItems: 'center',
+      paddingHorizontal: 20,
     },
     locationCopy: {
       width: 256,
