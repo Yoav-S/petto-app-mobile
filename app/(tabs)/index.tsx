@@ -41,6 +41,27 @@ const PET_SCROLL_WIDTH = PET_SIZE * 2 + PET_GAP;
 const SHEET_SNAP_MS = 240;
 const PAGE_END_PX = 480;
 
+type HomeCoords = { latitude: number; longitude: number };
+
+/** Survives leaving home for a pet and coming back. Cleared when location is off. */
+let savedNearby: {
+  coords: HomeCoords;
+  places: BusinessPlace[];
+  hasMore: boolean;
+} | null = null;
+
+function sameSpot(a: HomeCoords, b: HomeCoords): boolean {
+  return Math.abs(a.latitude - b.latitude) < 0.0002
+    && Math.abs(a.longitude - b.longitude) < 0.0002;
+}
+
+function mergeFirstPage(current: BusinessPlace[], fresh: BusinessPlace[]): BusinessPlace[] {
+  if (current.length === 0) return fresh;
+  const freshIds = new Set(fresh.map((item) => item.id));
+  const rest = current.filter((item) => !freshIds.has(item.id));
+  return [...fresh, ...rest];
+}
+
 const CATEGORY_ART = {
   veterinarian: require('@/assets/images/categories/veterinary.png'),
   groomer: require('@/assets/images/categories/grooming.png'),
@@ -116,17 +137,18 @@ export default function DiscoverHomeScreen() {
   const petsQuery = usePetsQuery();
   const pets = petsQuery.data ?? [];
 
-  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [places, setPlaces] = useState<BusinessPlace[]>([]);
+  const [coords, setCoords] = useState<HomeCoords | null>(savedNearby?.coords ?? null);
+  const [places, setPlaces] = useState<BusinessPlace[]>(savedNearby?.places ?? []);
   const [placesLoading, setPlacesLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
+  const [hasMore, setHasMore] = useState(savedNearby?.hasMore ?? false);
+  const [placesEpoch, setPlacesEpoch] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [locating, setLocating] = useState(false);
   const askedOnLoad = useRef(false);
   const loadingMoreRef = useRef(false);
-  const hasMoreRef = useRef(false);
-  const placesRef = useRef<BusinessPlace[]>([]);
+  const hasMoreRef = useRef(savedNearby?.hasMore ?? false);
+  const placesRef = useRef<BusinessPlace[]>(savedNearby?.places ?? []);
   const coordsRef = useRef(coords);
   const sheetHeight = useRef(new Animated.Value(0)).current;
   const sheetHeightRef = useRef(0);
@@ -206,16 +228,18 @@ export default function DiscoverHomeScreen() {
     }),
   ).current;
 
-  const readLocation = useCallback(async () => {
-    const location = locationModule();
-    if (!location) return;
-    const position = await location.getCurrentPositionAsync({
-      accuracy: location.Accuracy.Balanced,
-    });
-    setCoords({
-      latitude: position.coords.latitude,
-      longitude: position.coords.longitude,
-    });
+  const publishCoords = useCallback((next: HomeCoords) => {
+    setCoords((current) => (current && sameSpot(current, next) ? current : next));
+  }, []);
+
+  const clearNearby = useCallback(() => {
+    savedNearby = null;
+    placesRef.current = [];
+    hasMoreRef.current = false;
+    setCoords(null);
+    setPlaces([]);
+    setHasMore(false);
+    setPlacesLoading(false);
   }, []);
 
   const resolveLocation = useCallback(async (ask: boolean) => {
@@ -224,7 +248,7 @@ export default function DiscoverHomeScreen() {
     let permission = await location.getForegroundPermissionsAsync();
     if (permission.status !== 'granted') {
       if (!ask) {
-        setCoords(null);
+        clearNearby();
         return;
       }
       if (!permission.canAskAgain) {
@@ -233,40 +257,68 @@ export default function DiscoverHomeScreen() {
       }
       permission = await location.requestForegroundPermissionsAsync();
       if (permission.status !== 'granted') {
-        setCoords(null);
-        return;
-      }
-    }
-    const servicesOn = await location.hasServicesEnabledAsync();
-    if (!servicesOn && ask && Platform.OS === 'android') {
-      try {
-        await location.enableNetworkProviderAsync();
-      } catch {
-        setCoords(null);
+        clearNearby();
         return;
       }
     }
     if (!(await location.hasServicesEnabledAsync())) {
-      setCoords(null);
-      return;
+      if (ask && Platform.OS === 'android') {
+        try {
+          await location.enableNetworkProviderAsync();
+        } catch {
+          clearNearby();
+          return;
+        }
+      }
+      if (!(await location.hasServicesEnabledAsync())) {
+        clearNearby();
+        return;
+      }
     }
-    await readLocation();
-  }, [readLocation]);
+    const last = await location.getLastKnownPositionAsync();
+    if (last) {
+      publishCoords({
+        latitude: last.coords.latitude,
+        longitude: last.coords.longitude,
+      });
+    }
+    try {
+      const position = await location.getCurrentPositionAsync({
+        accuracy: location.Accuracy.Balanced,
+      });
+      publishCoords({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      });
+    } catch {
+      // Permission is still on. Keep the list that is already on screen.
+    }
+  }, [clearNearby, publishCoords]);
 
   useFocusEffect(
     useCallback(() => {
       void petsQuery.refetch();
       const ask = !askedOnLoad.current;
       askedOnLoad.current = true;
-      void resolveLocation(ask).catch(() => setCoords(null));
-    }, [petsQuery.refetch, resolveLocation]),
+      const before = coordsRef.current;
+      void resolveLocation(ask)
+        .catch(() => {
+          if (!placesRef.current.length) clearNearby();
+        })
+        .finally(() => {
+          const after = coordsRef.current;
+          if (after && before && sameSpot(before, after) && placesRef.current.length) {
+            setPlacesEpoch((value) => value + 1);
+          }
+        });
+    }, [petsQuery.refetch, resolveLocation, clearNearby]),
   );
 
   useEffect(() => {
     if (!coords) return;
     let cancelled = false;
-    setPlacesLoading(true);
-    setHasMore(false);
+    const refreshing = placesRef.current.length > 0;
+    if (!refreshing) setPlacesLoading(true);
     listPlaces({
       latitude: coords.latitude,
       longitude: coords.longitude,
@@ -274,11 +326,16 @@ export default function DiscoverHomeScreen() {
     })
       .then((page) => {
         if (cancelled) return;
-        setPlaces(page.items);
-        setHasMore(page.has_more);
+        const merged = mergeFirstPage(placesRef.current, page.items);
+        const more = merged.length > page.items.length ? hasMoreRef.current : page.has_more;
+        placesRef.current = merged;
+        hasMoreRef.current = more;
+        savedNearby = { coords, places: merged, hasMore: more };
+        setPlaces(merged);
+        setHasMore(more);
       })
       .catch(() => {
-        if (!cancelled) setPlaces([]);
+        if (!cancelled && placesRef.current.length === 0) setPlaces([]);
       })
       .finally(() => {
         if (!cancelled) setPlacesLoading(false);
@@ -286,7 +343,7 @@ export default function DiscoverHomeScreen() {
     return () => {
       cancelled = true;
     };
-  }, [coords]);
+  }, [coords, placesEpoch]);
 
   const loadMore = useCallback(async () => {
     const here = coordsRef.current;
@@ -308,6 +365,13 @@ export default function DiscoverHomeScreen() {
       }
       placesRef.current = [...placesRef.current, ...extra];
       hasMoreRef.current = page.has_more;
+      if (here) {
+        savedNearby = {
+          coords: here,
+          places: placesRef.current,
+          hasMore: page.has_more,
+        };
+      }
       setPlaces(placesRef.current);
       setHasMore(page.has_more);
     } catch {
@@ -324,7 +388,7 @@ export default function DiscoverHomeScreen() {
     try {
       await resolveLocation(true);
     } catch {
-      setCoords(null);
+      if (!placesRef.current.length) clearNearby();
     } finally {
       setLocating(false);
     }
