@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -30,12 +30,24 @@ import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicke
 import { uploadAccountPhoto } from '@/services/storage';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import ConfirmModal from '@/components/ui/ConfirmModal';
-import { HeaderScrollScreen } from '@/components/ui/HeaderScrollLayout';
+import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
+import { HealthFormScreen } from '@/components/health/HealthKeyboardFooter';
 import EditPhotoSheet from '@/components/health/EditPhotoSheet';
 import { OnboardingPhotoAdd } from '@/components/brand/onboarding';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHOTO_SIZE = 128;
+
+type Draft = {
+  name: string;
+  phone: string;
+  email: string;
+  remotePhoto: string | null;
+  localPhoto: string | null;
+  photoMime: string | null;
+  photoRemoved: boolean;
+};
 
 export default function AccountSettingsScreen() {
   const { user, signOut, markAccountName } = useAuth();
@@ -45,7 +57,6 @@ export default function AccountSettingsScreen() {
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState(user?.email ?? '');
-  const [savedEmail, setSavedEmail] = useState(user?.email ?? '');
   const [phone, setPhone] = useState('');
   const [remotePhoto, setRemotePhoto] = useState<string | null>(null);
   const [localPhoto, setLocalPhoto] = useState<string | null>(null);
@@ -56,19 +67,57 @@ export default function AccountSettingsScreen() {
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [otpVisible, setOtpVisible] = useState(false);
   const [otp, setOtp] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [savingEmail, setSavingEmail] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const readyRef = useRef(false);
+
+  const committed = useRef({
+    name: '',
+    phone: '',
+    email: (user?.email ?? '').trim().toLowerCase(),
+    photo: null as string | null,
+  });
+  const draft = useRef<Draft>({
+    name: '',
+    phone: '',
+    email: user?.email ?? '',
+    remotePhoto: null,
+    localPhoto: null,
+    photoMime: null,
+    photoRemoved: false,
+  });
+  const saveQueue = useRef(Promise.resolve());
+
+  draft.current = {
+    name,
+    phone,
+    email,
+    remotePhoto,
+    localPhoto,
+    photoMime,
+    photoRemoved,
+  };
 
   useEffect(() => {
     let active = true;
     fetchAccount()
       .then((profile) => {
         if (!active) return;
-        setName(profile.name ?? '');
-        setPhone(profile.phone ?? '');
-        setEmail(profile.email);
-        setSavedEmail(profile.email);
-        setRemotePhoto(profile.photo_url ?? null);
+        const nextName = profile.name ?? '';
+        const nextPhone = profile.phone ?? '';
+        const nextEmail = profile.email;
+        const nextPhoto = profile.photo_url ?? null;
+        setName(nextName);
+        setPhone(nextPhone);
+        setEmail(nextEmail);
+        setRemotePhoto(nextPhoto);
+        committed.current = {
+          name: nextName.trim(),
+          phone: nextPhone.trim(),
+          email: nextEmail.trim().toLowerCase(),
+          photo: nextPhoto,
+        };
+        readyRef.current = true;
       })
       .catch(() => {});
     return () => {
@@ -77,7 +126,67 @@ export default function AccountSettingsScreen() {
   }, []);
 
   const shownPhoto = localPhoto ?? (photoRemoved ? null : remotePhoto);
-  const canSave = name.trim().length > 0 && !saving && !deleting;
+
+  const enqueue = (task: () => Promise<void>) => {
+    saveQueue.current = saveQueue.current.then(task, task);
+    return saveQueue.current;
+  };
+
+  const commitProfile = (source: Draft = draft.current) =>
+    enqueue(async () => {
+      if (!readyRef.current) return;
+      const nextName = source.name.trim();
+      if (!nextName) {
+        setName(committed.current.name);
+        return;
+      }
+      let photoUrl: string | null = source.photoRemoved ? null : source.remotePhoto;
+      if (source.localPhoto) {
+        photoUrl = await uploadAccountPhoto(source.localPhoto, source.photoMime);
+      }
+      const nextPhone = source.phone.trim();
+      if (
+        nextName === committed.current.name &&
+        nextPhone === committed.current.phone &&
+        photoUrl === committed.current.photo
+      ) {
+        return;
+      }
+      const profile = await updateAccount({
+        name: nextName,
+        phone: nextPhone || null,
+        photo_url: photoUrl,
+      });
+      committed.current = {
+        ...committed.current,
+        name: (profile.name ?? nextName).trim(),
+        phone: (profile.phone ?? '').trim(),
+        photo: profile.photo_url ?? null,
+      };
+      markAccountName(profile.name ?? nextName);
+      setRemotePhoto(profile.photo_url ?? null);
+      setLocalPhoto(null);
+      setPhotoRemoved(false);
+      setPhone(profile.phone ?? '');
+    });
+
+  const commitEmail = async () => {
+    const nextEmail = draft.current.email.trim().toLowerCase();
+    if (nextEmail === committed.current.email) return;
+    if (!EMAIL_RE.test(nextEmail)) {
+      toast.showError(t('errors.invalid_email'));
+      setEmail(committed.current.email);
+      return;
+    }
+    try {
+      await commitProfile();
+      await sendAccountEmailOtp(nextEmail);
+      setOtp('');
+      setOtpVisible(true);
+    } catch (err) {
+      toast.showError(getErrorMessage(err));
+    }
+  };
 
   const pickImage = async (source: 'camera' | 'library') => {
     setPhotoSheetVisible(false);
@@ -97,77 +206,51 @@ export default function AccountSettingsScreen() {
       );
       return;
     }
-    if (picked?.uri) {
-      setLocalPhoto(picked.uri);
-      setPhotoMime(picked.mimeType);
-      setPhotoRemoved(false);
-    }
-  };
-
-  const saveProfile = async () => {
-    let photoUrl: string | null = photoRemoved ? null : remotePhoto;
-    if (localPhoto) {
-      photoUrl = await uploadAccountPhoto(localPhoto, photoMime);
-    }
-    const profile = await updateAccount({
-      name: name.trim(),
-      phone: phone.trim() || null,
-      photo_url: photoUrl,
-    });
-    markAccountName(profile.name ?? name.trim());
-    setRemotePhoto(profile.photo_url ?? null);
-    setLocalPhoto(null);
+    if (!picked?.uri) return;
+    const next: Draft = {
+      ...draft.current,
+      localPhoto: picked.uri,
+      photoMime: picked.mimeType,
+      photoRemoved: false,
+    };
+    setLocalPhoto(picked.uri);
+    setPhotoMime(picked.mimeType);
     setPhotoRemoved(false);
-    setPhone(profile.phone ?? '');
-    return profile;
+    void commitProfile(next).catch((err) => toast.showError(getErrorMessage(err)));
   };
 
-  const handleSave = async () => {
-    Keyboard.dismiss();
-    if (!canSave) return;
-    const nextEmail = email.trim().toLowerCase();
-    if (!EMAIL_RE.test(nextEmail)) {
-      toast.showError(t('errors.invalid_email'));
-      return;
-    }
-    try {
-      setSaving(true);
-      await saveProfile();
-      if (nextEmail !== savedEmail.trim().toLowerCase()) {
-        await sendAccountEmailOtp(nextEmail);
-        setOtp('');
-        setOtpVisible(true);
-        return;
-      }
-      toast.show({ message: t('settings.account_saved') });
-    } catch (err) {
-      toast.showError(getErrorMessage(err));
-    } finally {
-      setSaving(false);
-    }
+  const removePhoto = () => {
+    setPhotoSheetVisible(false);
+    const next: Draft = {
+      ...draft.current,
+      localPhoto: null,
+      photoRemoved: true,
+    };
+    setLocalPhoto(null);
+    setPhotoRemoved(true);
+    void commitProfile(next).catch((err) => toast.showError(getErrorMessage(err)));
   };
 
   const cancelEmailChange = () => {
     setOtpVisible(false);
     setOtp('');
-    setEmail(savedEmail);
+    setEmail(committed.current.email);
   };
 
   const confirmEmail = async () => {
     const code = otp.trim();
-    if (code.length !== 6 || saving) return;
+    if (code.length !== 6 || savingEmail) return;
     try {
-      setSaving(true);
-      const profile = await confirmAccountEmail(email.trim().toLowerCase(), code);
-      setSavedEmail(profile.email);
+      setSavingEmail(true);
+      const profile = await confirmAccountEmail(draft.current.email.trim().toLowerCase(), code);
+      committed.current = { ...committed.current, email: profile.email.trim().toLowerCase() };
       setEmail(profile.email);
       setOtpVisible(false);
       setOtp('');
-      toast.show({ message: t('settings.account_saved') });
     } catch (err) {
       toast.showError(getErrorMessage(err));
     } finally {
-      setSaving(false);
+      setSavingEmail(false);
     }
   };
 
@@ -185,90 +268,93 @@ export default function AccountSettingsScreen() {
 
   return (
     <>
-      <HeaderScrollScreen
+      <HeaderScrollLayout
         header={<SettingsHeader title={t('settings.account')} />}
-        contentContainerStyle={styles.content}
+        edges={['left', 'right']}
+        topFade
+        bottomFade
+        fadeMode="form"
       >
-        <View style={styles.form}>
-          <Pressable
-            onPress={() => setPhotoSheetVisible(true)}
-            style={styles.photo}
-            accessibilityRole="button"
-            accessibilityLabel={t('pets.add_photo')}
+        {({ paddingTop }) => (
+          <HealthFormScreen
+            scrollInsetTop={paddingTop}
+            contentContainerStyle={styles.form}
+            footer={{
+              label: t('settings.delete_account'),
+              tone: 'destructive-text',
+              loading: deleting,
+              disabled: !committed.current.email || deleting,
+              onPress: () => setConfirmVisible(true),
+            }}
           >
-            {shownPhoto ? (
-              <Image source={{ uri: shownPhoto }} style={styles.photoImage} contentFit="cover" />
-            ) : (
-              <OnboardingPhotoAdd width={128} height={128} />
-            )}
-          </Pressable>
+            <Pressable
+              onPress={() => setPhotoSheetVisible(true)}
+              style={styles.photo}
+              accessibilityRole="button"
+              accessibilityLabel={t('pets.add_photo')}
+            >
+              {shownPhoto ? (
+                <Image source={{ uri: shownPhoto }} style={styles.photoImage} contentFit="cover" />
+              ) : (
+                <OnboardingPhotoAdd width={PHOTO_SIZE} height={PHOTO_SIZE} />
+              )}
+            </Pressable>
 
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder={t('settings.account_name_placeholder')}
-            placeholderTextColor={colors.secondaryText}
-            style={styles.nameInput}
-            autoCapitalize="words"
-            returnKeyType="next"
-          />
-
-          <View style={styles.tallField}>
-            <Text style={styles.fieldLabel}>{t('settings.account_email')}</Text>
             <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="example@gmail.com"
+              value={name}
+              onChangeText={setName}
+              onBlur={() => {
+                void commitProfile().catch((err) => toast.showError(getErrorMessage(err)));
+              }}
+              placeholder={t('settings.account_name_placeholder')}
               placeholderTextColor={colors.secondaryText}
-              style={styles.fieldValue}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
+              style={styles.nameInput}
+              autoCapitalize="words"
+              returnKeyType="next"
             />
-          </View>
 
-          <View style={styles.tallField}>
-            <Text style={styles.fieldLabel}>{t('settings.account_phone')}</Text>
-            <TextInput
-              value={phone}
-              onChangeText={setPhone}
-              placeholder={t('settings.account_phone_placeholder')}
-              placeholderTextColor={colors.secondaryText}
-              style={styles.fieldValue}
-              keyboardType="phone-pad"
-            />
-          </View>
-        </View>
+            <View style={styles.tallField}>
+              <Text style={styles.fieldLabel}>{t('settings.account_email')}</Text>
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                onBlur={() => {
+                  Keyboard.dismiss();
+                  void commitEmail();
+                }}
+                placeholder="example@gmail.com"
+                placeholderTextColor={colors.secondaryText}
+                style={styles.fieldValue}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+              />
+            </View>
 
-        <TouchableOpacity
-          style={[styles.saveButton, !canSave && styles.saveDisabled]}
-          onPress={() => void handleSave()}
-          disabled={!canSave}
-          activeOpacity={0.85}
-        >
-          {saving ? (
-            <ActivityIndicator color={colors.button.primaryText} />
-          ) : (
-            <Text style={styles.saveLabel}>{t('common.save')}</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.deleteRow}
-          onPress={() => setConfirmVisible(true)}
-          disabled={!savedEmail || deleting}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.deleteLabel}>{t('settings.delete_account')}</Text>
-        </TouchableOpacity>
-      </HeaderScrollScreen>
+            <View style={styles.tallField}>
+              <Text style={styles.fieldLabel}>{t('settings.account_phone')}</Text>
+              <TextInput
+                value={phone}
+                onChangeText={setPhone}
+                onBlur={() => {
+                  void commitProfile().catch((err) => toast.showError(getErrorMessage(err)));
+                }}
+                placeholder={t('settings.account_phone_placeholder')}
+                placeholderTextColor={colors.secondaryText}
+                style={styles.fieldValue}
+                keyboardType="phone-pad"
+              />
+            </View>
+          </HealthFormScreen>
+        )}
+      </HeaderScrollLayout>
 
       <EditPhotoSheet
         visible={photoSheetVisible}
         onClose={() => setPhotoSheetVisible(false)}
         onTake={() => void pickImage('camera')}
         onChoose={() => void pickImage('library')}
-        onRemove={shownPhoto ? () => { setPhotoSheetVisible(false); setLocalPhoto(null); setPhotoRemoved(true); } : undefined}
+        onRemove={shownPhoto ? removePhoto : undefined}
       />
 
       <ConfirmModal
@@ -298,9 +384,9 @@ export default function AccountSettingsScreen() {
             <TouchableOpacity
               style={[styles.saveButton, otp.trim().length !== 6 && styles.saveDisabled]}
               onPress={() => void confirmEmail()}
-              disabled={otp.trim().length !== 6 || saving}
+              disabled={otp.trim().length !== 6 || savingEmail}
             >
-              {saving ? (
+              {savingEmail ? (
                 <ActivityIndicator color={colors.button.primaryText} />
               ) : (
                 <Text style={styles.saveLabel}>{t('common.save')}</Text>
@@ -318,43 +404,36 @@ export default function AccountSettingsScreen() {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    content: {
-      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-      paddingTop: 16,
-      paddingBottom: 32,
-      gap: 22,
-    },
     form: {
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       gap: 22,
       alignItems: 'center',
     },
     photo: {
-      width: 128,
-      height: 128,
-      alignSelf: 'center',
-    },
-    photoImage: {
-      width: 116,
-      height: 116,
+      width: PHOTO_SIZE,
+      height: PHOTO_SIZE,
       borderRadius: 22,
-      marginTop: 6,
-      marginLeft: 6,
+      backgroundColor: c.surface,
       shadowColor: '#2D2D2A',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
+      shadowOpacity: 20 / 255,
       shadowRadius: 20,
+      elevation: 4,
+    },
+    photoImage: {
+      width: PHOTO_SIZE,
+      height: PHOTO_SIZE,
+      borderRadius: 22,
     },
     nameInput: {
       alignSelf: 'stretch',
       height: 48,
       borderRadius: 12,
-      paddingVertical: 14,
       paddingHorizontal: 16,
       backgroundColor: c.surface,
       color: c.primaryText,
       fontFamily: 'Rubik-Regular',
       fontSize: 16,
-      lineHeight: 24,
       shadowColor: '#2D2D2A',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.04,
@@ -367,7 +446,7 @@ const makeStyles = (c: ThemeColors) =>
       borderRadius: 12,
       paddingVertical: 14,
       paddingHorizontal: 16,
-      gap: 10,
+      gap: 6,
       backgroundColor: c.surface,
       shadowColor: '#2D2D2A',
       shadowOffset: { width: 0, height: 4 },
@@ -384,9 +463,9 @@ const makeStyles = (c: ThemeColors) =>
     fieldValue: {
       fontFamily: 'Rubik-Regular',
       fontSize: 16,
-      lineHeight: 24,
       color: c.primaryText,
       padding: 0,
+      margin: 0,
     },
     saveButton: {
       alignSelf: 'stretch',
@@ -404,18 +483,6 @@ const makeStyles = (c: ThemeColors) =>
       fontSize: 16,
       lineHeight: 24,
       color: c.button.primaryText,
-    },
-    deleteRow: {
-      alignSelf: 'stretch',
-      minHeight: 48,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    deleteLabel: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 16,
-      lineHeight: 24,
-      color: '#E5484D',
     },
     otpBackdrop: {
       flex: 1,
