@@ -5,14 +5,16 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Pressable,
   Linking,
   Platform,
+  Modal,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronRight, MapPin, Phone, Send, Star } from 'lucide-react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { DESIGN_COVER_HEIGHT, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useColors, useThemedStyles, useTheme } from '@/context/ThemeContext';
@@ -20,6 +22,7 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useImageStatusBarStyle } from '@/hooks/useImageStatusBarStyle';
 import { useStatusBarOverride } from '@/context/SystemBarsContext';
 import HeaderIconButton from '@/components/ui/HeaderIconButton';
+import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 import { getErrorMessage } from '@/services/errors';
 import { useToast } from '@/context/ToastContext';
@@ -98,24 +101,21 @@ function openInstagram(value: string) {
   if (handle) void Linking.openURL(`https://instagram.com/${handle}`);
 }
 
-function openDirections(place: BusinessPlaceDetail) {
+type NavApp = 'google' | 'waze' | 'apple';
+
+function directionUrl(app: NavApp, place: BusinessPlaceDetail): string | null {
   const point = place.location?.coordinates;
+  const query = encodeURIComponent(addressText(place.address, place.city));
+  if (!point && !query) return null;
   if (point) {
     const [lng, lat] = point;
-    const url =
-      Platform.OS === 'ios'
-        ? `http://maps.apple.com/?daddr=${lat},${lng}`
-        : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-    void Linking.openURL(url);
-    return;
+    if (app === 'waze') return `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
+    if (app === 'apple') return `http://maps.apple.com/?daddr=${lat},${lng}`;
+    return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
   }
-  const query = encodeURIComponent(addressText(place.address, place.city));
-  if (!query) return;
-  const url =
-    Platform.OS === 'ios'
-      ? `http://maps.apple.com/?q=${query}`
-      : `https://www.google.com/maps/search/?api=1&query=${query}`;
-  void Linking.openURL(url);
+  if (app === 'waze') return `https://waze.com/ul?q=${query}&navigate=yes`;
+  if (app === 'apple') return `http://maps.apple.com/?q=${query}`;
+  return `https://www.google.com/maps/dir/?api=1&destination=${query}`;
 }
 
 export default function BusinessScreen() {
@@ -143,6 +143,8 @@ export default function BusinessScreen() {
   const [place, setPlace] = useState<BusinessPlaceDetail | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [footerHeight, setFooterHeight] = useState(104);
+  const [photoOpen, setPhotoOpen] = useState(false);
+  const [directionsOpen, setDirectionsOpen] = useState(false);
 
   const previewImage = params.image || null;
   const image = place?.image ?? previewImage;
@@ -187,11 +189,18 @@ export default function BusinessScreen() {
   return (
     <View style={styles.screen}>
       <View style={[styles.cover, { height: coverHeight }]}>
-        {image ? (
-          <Image source={{ uri: image }} style={styles.coverImage} contentFit="cover" />
-        ) : (
-          <View style={styles.coverImage} />
-        )}
+        <Pressable
+          style={styles.coverImage}
+          disabled={!image}
+          onPress={() => setPhotoOpen(true)}
+          accessibilityRole="button"
+        >
+          {image ? (
+            <Image source={{ uri: image }} style={styles.coverImage} contentFit="cover" />
+          ) : (
+            <View style={styles.coverImage} />
+          )}
+        </Pressable>
         <View style={[styles.actionBar, { top: insets.top }]}>
           <HeaderIconButton
             onPress={() => router.back()}
@@ -232,7 +241,9 @@ export default function BusinessScreen() {
                 <Star size={12} color="#F6F7F9" fill="#F6F7F9" />
                 <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
               </View>
-            ) : null}
+            ) : (
+              <Text style={styles.noReviews}>{t('home.no_reviews')}</Text>
+            )}
           </View>
           <Text style={styles.businessName}>{name}</Text>
           {description ? (
@@ -267,10 +278,19 @@ export default function BusinessScreen() {
             <View style={styles.reviewsFilled}>
               <View style={styles.sectionHead}>
                 <Text style={styles.sectionTitle}>{t('business.reviews')}</Text>
-                <View style={styles.seeAll}>
+                <TouchableOpacity
+                  style={styles.seeAll}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/business/[id]/reviews',
+                      params: { id: params.id },
+                    } as never)
+                  }
+                  hitSlop={8}
+                >
                   <Text style={styles.seeAllText}>{t('home.see_all')}</Text>
                   <ChevronRight size={16} color={colors.primaryText} />
-                </View>
+                </TouchableOpacity>
               </View>
               <ScrollView
                 horizontal
@@ -376,12 +396,57 @@ export default function BusinessScreen() {
         <TouchableOpacity
           style={styles.directionsButton}
           disabled={!place}
-          onPress={() => place && openDirections(place)}
+          onPress={() => setDirectionsOpen(true)}
         >
           <Send size={20} color={colors.primaryText} />
           <Text style={styles.directionsLabel}>{t('business.directions')}</Text>
         </TouchableOpacity>
       </View>
+
+      <Modal visible={photoOpen && Boolean(image)} transparent animationType="fade" onRequestClose={() => setPhotoOpen(false)}>
+        <View style={styles.photoModal}>
+          {image ? (
+            <Image source={{ uri: image }} style={styles.photoFull} contentFit="contain" />
+          ) : null}
+          <View style={[styles.photoClose, { top: insets.top + 8 }]}>
+            <HeaderIconButton
+              onPress={() => setPhotoOpen(false)}
+              accessibilityLabel={t('petOnboarding.photo_close_a11y')}
+              style={styles.backButton}
+            >
+              <Ionicons name="close" size={24} color="#1F2937" />
+            </HeaderIconButton>
+          </View>
+        </View>
+      </Modal>
+
+      <BottomSheetModal visible={directionsOpen} onClose={() => setDirectionsOpen(false)}>
+        <View style={[styles.directionsSheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+          <Text style={styles.directionsTitle}>{t('business.open_in')}</Text>
+          {(['google', 'waze', ...(Platform.OS === 'ios' ? (['apple'] as const) : [])] as NavApp[]).map((app) => (
+            <TouchableOpacity
+              key={app}
+              style={styles.directionsOption}
+              onPress={() => {
+                if (!place) return;
+                const url = directionUrl(app, place);
+                setDirectionsOpen(false);
+                if (url) void Linking.openURL(url);
+              }}
+            >
+              <Text style={styles.directionsOptionLabel}>
+                {t(
+                  app === 'google'
+                    ? 'business.google_maps'
+                    : app === 'waze'
+                      ? 'business.waze'
+                      : 'business.apple_maps',
+                )}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </BottomSheetModal>
     </View>
   );
 }
@@ -494,6 +559,12 @@ const makeStyles = (c: ThemeColors) =>
       fontSize: 10,
       lineHeight: 16,
       color: '#F6F7F9',
+    },
+    noReviews: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 10,
+      lineHeight: 16,
+      color: c.secondaryText,
     },
     businessName: {
       fontFamily: 'Rubik-Regular',
@@ -741,5 +812,43 @@ const makeStyles = (c: ThemeColors) =>
     },
     buttonDisabled: {
       opacity: 0.5,
+    },
+    photoModal: {
+      flex: 1,
+      backgroundColor: '#000000',
+    },
+    photoFull: {
+      flex: 1,
+    },
+    photoClose: {
+      position: 'absolute',
+      right: PAGE_HORIZONTAL_PADDING,
+      zIndex: 2,
+    },
+    directionsSheet: {
+      paddingTop: 8,
+      paddingHorizontal: 20,
+      gap: 8,
+    },
+    directionsTitle: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 18,
+      lineHeight: 24,
+      color: c.primaryText,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    directionsOption: {
+      height: 48,
+      borderRadius: 12,
+      backgroundColor: c.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    directionsOptionLabel: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 16,
+      lineHeight: 24,
+      color: c.primaryText,
     },
   });
