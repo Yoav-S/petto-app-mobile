@@ -18,7 +18,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { requireOptionalNativeModule } from 'expo-modules-core';
-import { ChevronRight, MapPin, Plus, Settings, Star, X } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, MapPin, Plus, Settings, Star, X } from 'lucide-react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
@@ -38,7 +38,7 @@ const NIGHT_HOUR = 21;
 const PET_SIZE = 72;
 const PET_GAP = 16;
 const PET_SCROLL_WIDTH = PET_SIZE * 2 + PET_GAP;
-const SHEET_SNAP_MS = 240;
+const SHEET_SNAP_MS = 320;
 const PAGE_END_PX = 480;
 
 type HomeCoords = { latitude: number; longitude: number };
@@ -117,13 +117,21 @@ function placeStatus(place: BusinessPlace): { open: boolean; detail: string | nu
       detail: place.closes_at ? `${t('home.closes')} ${place.closes_at}` : null,
     };
   }
-  if (place.opens_tomorrow) return { open: false, detail: t('home.opens_tomorrow') };
-  if (place.opens_at && !place.next_open_day) {
-    return { open: false, detail: `${t('home.opens')} ${place.opens_at}` };
+  const when = place.opens_at;
+  if (place.opens_tomorrow) {
+    return {
+      open: false,
+      detail: when ? `${t('home.opens_tomorrow')} ${when}` : t('home.opens_tomorrow'),
+    };
   }
   if (place.next_open_day) {
-    return { open: false, detail: `${t('home.opens')} ${t(DAY_LABEL[place.next_open_day])}` };
+    const day = t(DAY_LABEL[place.next_open_day]);
+    return {
+      open: false,
+      detail: when ? `${t('home.opens')} ${day} ${when}` : `${t('home.opens')} ${day}`,
+    };
   }
+  if (when) return { open: false, detail: `${t('home.opens')} ${when}` };
   return { open: false, detail: null };
 }
 
@@ -150,24 +158,33 @@ export default function DiscoverHomeScreen() {
   const hasMoreRef = useRef(savedNearby?.hasMore ?? false);
   const placesRef = useRef<BusinessPlace[]>(savedNearby?.places ?? []);
   const coordsRef = useRef(coords);
-  const sheetHeight = useRef(new Animated.Value(0)).current;
-  const sheetHeightRef = useRef(0);
+  const sheetShift = useRef(new Animated.Value(800)).current;
+  const sheetShiftRef = useRef(800);
   const collapsedHeightRef = useRef(0);
   const screenHeightRef = useRef(0);
   const topHeightRef = useRef(0);
   const expandedRef = useRef(false);
   const draggingRef = useRef(false);
+  const animatingRef = useRef(false);
   const dragOriginRef = useRef(0);
+  const [frameHeight, setFrameHeight] = useState(0);
   hasMoreRef.current = hasMore;
   placesRef.current = places;
   coordsRef.current = coords;
 
   useEffect(() => {
-    const id = sheetHeight.addListener(({ value }) => {
-      sheetHeightRef.current = value;
+    const id = sheetShift.addListener(({ value }) => {
+      sheetShiftRef.current = value;
     });
-    return () => sheetHeight.removeListener(id);
-  }, [sheetHeight]);
+    return () => sheetShift.removeListener(id);
+  }, [sheetShift]);
+
+  const collapsedShift = useCallback(() => {
+    const screen = screenHeightRef.current;
+    const collapsed = collapsedHeightRef.current;
+    if (!screen || !collapsed) return 0;
+    return Math.max(0, screen - collapsed);
+  }, []);
 
   const syncSheetRest = useCallback(() => {
     const screen = screenHeightRef.current;
@@ -175,22 +192,27 @@ export default function DiscoverHomeScreen() {
     if (!screen || !top) return;
     const collapsed = Math.max(180, screen - top - 4);
     collapsedHeightRef.current = collapsed;
-    if (draggingRef.current) return;
-    sheetHeight.setValue(expandedRef.current ? screen : collapsed);
-  }, [sheetHeight]);
+    if (draggingRef.current || animatingRef.current) return;
+    sheetShift.setValue(expandedRef.current ? 0 : Math.max(0, screen - collapsed));
+  }, [sheetShift]);
 
   const snapSheet = useCallback((toExpanded: boolean) => {
-    const target = toExpanded ? screenHeightRef.current : collapsedHeightRef.current;
-    if (target <= 0) return;
+    const screen = screenHeightRef.current;
+    const collapsed = collapsedHeightRef.current;
+    if (!screen || !collapsed) return;
+    const target = toExpanded ? 0 : Math.max(0, screen - collapsed);
     expandedRef.current = toExpanded;
     setExpanded(toExpanded);
-    Animated.timing(sheetHeight, {
+    animatingRef.current = true;
+    Animated.timing(sheetShift, {
       toValue: target,
       duration: SHEET_SNAP_MS,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [sheetHeight]);
+      easing: Easing.bezier(0.22, 0.61, 0.36, 1),
+      useNativeDriver: true,
+    }).start(() => {
+      animatingRef.current = false;
+    });
+  }, [sheetShift]);
 
   const snapSheetRef = useRef(snapSheet);
   snapSheetRef.current = snapSheet;
@@ -201,29 +223,25 @@ export default function DiscoverHomeScreen() {
         Math.abs(gesture.dy) > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
       onPanResponderGrant: () => {
         draggingRef.current = true;
-        dragOriginRef.current = sheetHeightRef.current;
-        sheetHeight.stopAnimation();
+        animatingRef.current = false;
+        dragOriginRef.current = sheetShiftRef.current;
+        sheetShift.stopAnimation();
       },
       onPanResponderMove: (_, gesture) => {
-        const collapsed = collapsedHeightRef.current;
-        const full = screenHeightRef.current;
-        if (!collapsed || !full) return;
-        const next = dragOriginRef.current - gesture.dy;
-        sheetHeight.setValue(Math.min(full, Math.max(collapsed, next)));
+        const maxShift = collapsedShift();
+        const next = Math.min(maxShift, Math.max(0, dragOriginRef.current + gesture.dy));
+        sheetShiftRef.current = next;
+        sheetShift.setValue(next);
       },
       onPanResponderRelease: () => {
         draggingRef.current = false;
-        const collapsed = collapsedHeightRef.current;
-        const full = screenHeightRef.current;
-        const midpoint = collapsed + (full - collapsed) / 2;
-        snapSheetRef.current(sheetHeightRef.current >= midpoint);
+        const maxShift = collapsedShift();
+        snapSheetRef.current(sheetShiftRef.current < maxShift / 2);
       },
       onPanResponderTerminate: () => {
         draggingRef.current = false;
-        const collapsed = collapsedHeightRef.current;
-        const full = screenHeightRef.current;
-        const midpoint = collapsed + (full - collapsed) / 2;
-        snapSheetRef.current(sheetHeightRef.current >= midpoint);
+        const maxShift = collapsedShift();
+        snapSheetRef.current(sheetShiftRef.current < maxShift / 2);
       },
     }),
   ).current;
@@ -411,12 +429,15 @@ export default function DiscoverHomeScreen() {
     <View
       style={styles.screen}
       onLayout={(event) => {
-        screenHeightRef.current = event.nativeEvent.layout.height;
+        const height = event.nativeEvent.layout.height;
+        screenHeightRef.current = height;
+        setFrameHeight(height);
         syncSheetRest();
       }}
     >
       <View style={styles.page}>
         <View
+          style={styles.topStack}
           onLayout={(event) => {
             topHeightRef.current = event.nativeEvent.layout.height;
             syncSheetRest();
@@ -533,36 +554,48 @@ export default function DiscoverHomeScreen() {
             style={[
               styles.nearSheet,
               {
-                height: sheetHeight,
-                paddingTop: expanded ? insets.top : 0,
+                height: frameHeight || undefined,
+                transform: [{ translateY: sheetShift }],
+                paddingTop: expanded ? insets.top + 10 : 0,
+                gap: expanded ? 0 : 10,
                 borderRadius: expanded ? 0 : 24,
               },
             ]}
           >
-            <View style={styles.handleHit} {...sheetPan.panHandlers}>
-              <View style={styles.sheetHandle} />
-            </View>
-            <View style={styles.nearHeader}>
-              {expanded ? (
+            <View {...sheetPan.panHandlers}>
+              {expanded ? null : (
+                <View style={styles.handleHit}>
+                  <View style={styles.sheetHandle} />
+                </View>
+              )}
+              <View style={[styles.nearHeader, expanded && styles.nearHeaderExpanded]}>
+                {expanded ? (
+                  <TouchableOpacity
+                    style={styles.sheetClose}
+                    onPress={() => snapSheet(false)}
+                    accessibilityLabel={t('home.close_list')}
+                  >
+                    <X size={18} color={colors.primaryText} />
+                  </TouchableOpacity>
+                ) : null}
+                <Text style={[styles.sectionTitle, styles.nearTitle]} numberOfLines={1}>
+                  {t('home.near_you')}
+                </Text>
                 <TouchableOpacity
-                  style={styles.sheetClose}
-                  onPress={() => snapSheet(false)}
-                  accessibilityLabel={t('home.close_list')}
-                >
-                  <X size={18} color={colors.primaryText} />
-                </TouchableOpacity>
-              ) : null}
-              <Text style={[styles.sectionTitle, styles.nearTitle]} numberOfLines={1}>
-                {t('home.near_you')}
-              </Text>
-              <TouchableOpacity
                   style={styles.seeAll}
-                  onPress={() => snapSheet(true)}
+                  onPress={() => snapSheet(!expanded)}
                   hitSlop={8}
                 >
-                  <Text style={styles.seeAllText}>{t('home.see_all')}</Text>
-                  <ChevronRight size={16} color={colors.primaryText} />
+                  <Text style={styles.seeAllText}>
+                    {expanded ? t('home.see_less') : t('home.see_all')}
+                  </Text>
+                  {expanded ? (
+                    <ChevronDown size={16} color={colors.primaryText} />
+                  ) : (
+                    <ChevronUp size={16} color={colors.primaryText} />
+                  )}
                 </TouchableOpacity>
+              </View>
             </View>
             {placesLoading ? (
               <ActivityIndicator color={colors.brand} style={styles.nearStatus} />
@@ -574,7 +607,7 @@ export default function DiscoverHomeScreen() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={[
                   styles.placeListContent,
-                  { paddingBottom: insets.bottom + 22 },
+                  { paddingTop: expanded ? 12 : 0, paddingBottom: insets.bottom + 22 },
                 ]}
                 scrollEventThrottle={16}
                 onScroll={(event) => {
@@ -685,9 +718,13 @@ function makeStyles(colors: ThemeColors) {
     screen: {
       flex: 1,
       backgroundColor: colors.background,
+      overflow: 'hidden',
     },
     page: {
       flex: 1,
+      gap: 4,
+    },
+    topStack: {
       gap: 4,
     },
     welcomeCard: {
@@ -825,7 +862,7 @@ function makeStyles(colors: ThemeColors) {
       position: 'absolute',
       left: 0,
       right: 0,
-      bottom: 0,
+      top: 0,
       zIndex: 5,
       backgroundColor: colors.surface,
       borderRadius: 24,
@@ -848,6 +885,9 @@ function makeStyles(colors: ThemeColors) {
       alignItems: 'center',
       gap: 8,
       paddingHorizontal: 20,
+    },
+    nearHeaderExpanded: {
+      marginBottom: 12,
     },
     nearTitle: {
       flex: 1,
