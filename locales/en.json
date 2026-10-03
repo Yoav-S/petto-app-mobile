@@ -28,6 +28,7 @@
     "closed": "Closed",
     "closes": "Closes",
     "opens": "Opens",
+    "opens_24_7": "Opens 24/7",
     "opens_tomorrow": "Opens tomorrow",
     "close_list": "Close",
     "day_mon": "Monday",
@@ -38,6 +39,7 @@
     "day_sat": "Saturday",
     "day_sun": "Sunday",
     "near_empty": "No businesses nearby yet",
+    "no_reviews": "No reviews yet",
     "noPet": "No pet yet",
     "addFirstPet": "Add your first pet to get started",
     "vaccinesCard": {

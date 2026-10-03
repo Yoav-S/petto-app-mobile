@@ -28,6 +28,7 @@
     "closed": "Închis",
     "closes": "Se închide",
     "opens": "Se deschide",
+    "opens_24_7": "Deschis 24/7",
     "opens_tomorrow": "Se deschide mâine",
     "close_list": "Închide",
     "day_mon": "luni",
@@ -38,6 +39,7 @@
     "day_sat": "sâmbătă",
     "day_sun": "duminică",
     "near_empty": "Nu sunt afaceri în apropiere",
+    "no_reviews": "Nicio recenzie încă",
     "noPet": "Niciun animal încă",
     "addFirstPet": "Adaugă primul animal pentru a începe",
     "vaccinesCard": {

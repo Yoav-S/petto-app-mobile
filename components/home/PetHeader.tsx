@@ -12,7 +12,10 @@ import {
   View,
 } from 'react-native';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { useImageStatusBarStyle } from '@/hooks/useImageStatusBarStyle';
+import {
+  foregroundForBarStyle,
+  useImageStatusBarStyle,
+} from '@/hooks/useImageStatusBarStyle';
 import {
   useStatusBarOverride,
   type SystemBarContentStyle,
@@ -93,7 +96,10 @@ export default function PetHeader({
   }, [pet?.photo_url]);
   const themeBarStyle: SystemBarContentStyle = isDark ? 'light' : 'dark';
   const imageBarStyle = useImageStatusBarStyle(coverSource, themeBarStyle);
-  useStatusBarOverride(loading ? themeBarStyle : pet ? imageBarStyle : 'dark');
+  const barStyle: SystemBarContentStyle = loading ? themeBarStyle : pet ? imageBarStyle : 'dark';
+  useStatusBarOverride(barStyle);
+  const onPhoto = foregroundForBarStyle(barStyle);
+  const metaBubbleBg = onPhoto === '#1F2937' ? 'rgba(255, 255, 255, 0.72)' : 'rgba(255, 255, 255, 0.2)';
 
   useEffect(() => {
     if (loading) {
@@ -169,29 +175,29 @@ export default function PetHeader({
                 activeOpacity={canSwitch ? 0.7 : 1}
                 disabled={!canSwitch}
               >
-                <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={[styles.name, { color: onPhoto }]} numberOfLines={1} ellipsizeMode="tail">
                   {pet?.name ?? t('home.noPet')}
                 </Text>
                 {canSwitch ? (
                   <Ionicons
                     name={switchOpen ? 'chevron-up' : 'chevron-down'}
                     size={24}
-                    color="#1F2937"
+                    color={onPhoto}
                   />
                 ) : null}
               </TouchableOpacity>
               {pet && (pet.breed || petAge) ? (
                 <View style={styles.metaRow}>
                   {pet.breed ? (
-                    <View style={styles.metaBubble}>
-                      <Text style={styles.metaText} numberOfLines={1} ellipsizeMode="tail">
+                    <View style={[styles.metaBubble, { backgroundColor: metaBubbleBg }]}>
+                      <Text style={[styles.metaText, { color: onPhoto }]} numberOfLines={1} ellipsizeMode="tail">
                         {pet.breed}
                       </Text>
                     </View>
                   ) : null}
                   {petAge ? (
-                    <View style={styles.metaBubble}>
-                      <Text style={styles.metaText} numberOfLines={1} ellipsizeMode="tail">
+                    <View style={[styles.metaBubble, { backgroundColor: metaBubbleBg }]}>
+                      <Text style={[styles.metaText, { color: onPhoto }]} numberOfLines={1} ellipsizeMode="tail">
                         {petAge}
                       </Text>
                     </View>
@@ -286,7 +292,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     fontSize: 36,
     lineHeight: 44,
-    color: '#1F2937',
+    color: '#FFFFFF',
   },
   metaRow: {
     maxWidth: '100%',

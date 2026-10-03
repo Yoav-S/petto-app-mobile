@@ -18,6 +18,13 @@ function resolveImageUri(source: ImageSource | { uri: string }): string | null {
   return ReactNativeImage.resolveAssetSource(source as ImageSourcePropType)?.uri ?? null;
 }
 
+export type PhotoForeground = '#FFFFFF' | '#1F2937';
+
+/** Dark status-bar icons mean the photo is light, so the type is dark too. */
+export function foregroundForBarStyle(style: SystemBarContentStyle): PhotoForeground {
+  return style === 'dark' ? '#1F2937' : '#FFFFFF';
+}
+
 /**
  * Chooses status-bar icon contrast from an image's dominant/background color.
  * Dynamic import keeps Expo Go from crashing when the native module is absent.

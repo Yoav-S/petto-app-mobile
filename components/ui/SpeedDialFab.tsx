@@ -59,6 +59,8 @@ interface SpeedDialFabProps {
   style?: ViewStyle;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Distance from the screen bottom to the button. Omit for the default corner. */
+  bottom?: number;
 }
 
 /**
@@ -70,6 +72,7 @@ export default function SpeedDialFab({
   style,
   open: openProp,
   onOpenChange,
+  bottom,
 }: SpeedDialFabProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -137,7 +140,7 @@ export default function SpeedDialFab({
           styles.anchor,
           {
             right: PAGE_HORIZONTAL_PADDING,
-            bottom: Math.max(ADD_FAB.bottom * s, 16 + insets.bottom),
+            bottom: bottom ?? Math.max(ADD_FAB.bottom * s, 16 + insets.bottom),
           },
           style,
         ]}

@@ -9,6 +9,7 @@ interface FABMenuProps {
   onVaccinePress: () => void;
   onHealthPress: () => void;
   onReminderPress: () => void;
+  bottom?: number;
 }
 
 /** Home speed-dial: Topics / Vaccines / Reminders. */
@@ -18,6 +19,7 @@ export default function FABMenu({
   onVaccinePress,
   onHealthPress,
   onReminderPress,
+  bottom,
 }: FABMenuProps) {
   const items: SpeedDialItem[] = [
     {
@@ -46,6 +48,7 @@ export default function FABMenu({
       onOpenChange={onOpenChange}
       items={items}
       accessibilityLabel={t('fab.add')}
+      bottom={bottom}
     />
   );
 }

@@ -111,6 +111,7 @@ function categoryLabel(category: BusinessPlace['category']): string {
 
 function placeStatus(place: BusinessPlace): { open: boolean; detail: string | null } | null {
   if (typeof place.open_now !== 'boolean') return null;
+  if (place.open_24_7) return { open: true, detail: t('home.opens_24_7') };
   if (place.open_now) {
     return {
       open: true,
@@ -659,7 +660,9 @@ export default function DiscoverHomeScreen() {
                                 <Star size={12} color="#F6F7F9" fill="#F6F7F9" />
                                 <Text style={styles.ratingText}>{place.rating.toFixed(1)}</Text>
                               </View>
-                            ) : null}
+                            ) : (
+                              <Text style={styles.noReviews}>{t('home.no_reviews')}</Text>
+                            )}
                           </View>
                           <Text style={styles.placeName} numberOfLines={1}>
                             {place.name}
@@ -667,17 +670,15 @@ export default function DiscoverHomeScreen() {
                         </View>
                         {status ? (
                           <View style={styles.statusRow}>
-                            <View style={styles.statusSide}>
-                              <Text style={[styles.statusText, { color: statusColor(status.open) }]}>
-                                {status.open ? t('home.open') : t('home.closed')}
-                              </Text>
-                              <View
-                                style={[
-                                  styles.statusDot,
-                                  { backgroundColor: statusColor(status.open) },
-                                ]}
-                              />
-                            </View>
+                            <Text style={[styles.statusText, { color: statusColor(status.open) }]}>
+                              {status.open ? t('home.open') : t('home.closed')}
+                            </Text>
+                            <View
+                              style={[
+                                styles.statusDot,
+                                { backgroundColor: statusColor(status.open) },
+                              ]}
+                            />
                             {status.detail ? (
                               <Text style={styles.statusDetail}>{status.detail}</Text>
                             ) : null}
@@ -980,10 +981,11 @@ function makeStyles(colors: ThemeColors) {
       gap: 4,
     },
     cardMeta: {
-      minHeight: 20,
+      height: 20,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      gap: 10,
     },
     categoryChip: {
       borderRadius: 6,
@@ -1001,6 +1003,7 @@ function makeStyles(colors: ThemeColors) {
       color: colors.secondaryText,
     },
     ratingChip: {
+      height: 20,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
@@ -1018,6 +1021,12 @@ function makeStyles(colors: ThemeColors) {
       textAlign: 'center',
       color: '#F6F7F9',
     },
+    noReviews: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 10,
+      lineHeight: 16,
+      color: colors.secondaryText,
+    },
     placeName: {
       fontFamily: 'Rubik-Medium',
       fontSize: 20,
@@ -1025,11 +1034,6 @@ function makeStyles(colors: ThemeColors) {
       color: colors.primaryText,
     },
     statusRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    statusSide: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,

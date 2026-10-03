@@ -11,17 +11,12 @@ import { Image } from 'expo-image';
 import { useHomePanelLayout } from '@/hooks/useHomePanelLayout';
 import { type ThemeColors } from '@/constants/theme';
 
-/** Figma Topics card inner metrics (335×112 → 303×80 after 16 padding). */
+/** Figma Topics card: 335×118, padding 16, inner gap 10. */
 const TOPICS = {
   padding: 16,
   radius: 20,
-  innerGap: 8,
+  innerGap: 10,
   icon: 36,
-  columnGap: 4,
-  headerH: 20,
-  titleDescGap: 8,
-  titleH: 16,
-  descH: 32,
 } as const;
 
 interface HealthCardProps {
@@ -92,7 +87,7 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
                 {t('home.topicsCard.title')}
               </Text>
               {latestRecord?.reminder_date || latestRecord?.reminder_time ? (
-                <View style={homeCardTypography.healthDateMeta}>
+                <View style={styles.dateMeta}>
                   <Ionicons
                     name="notifications-outline"
                     size={14}
@@ -158,11 +153,10 @@ const cardShadow = {
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
     flex: 1,
+    height: '100%',
     backgroundColor: c.surface,
     borderRadius: TOPICS.radius,
-    paddingTop: TOPICS.padding,
-    paddingHorizontal: TOPICS.padding,
-    paddingBottom: TOPICS.padding + 20,
+    padding: TOPICS.padding,
     width: '100%',
     overflow: 'hidden',
     ...cardShadow,
@@ -177,26 +171,33 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   column: {
     flex: 1,
     minWidth: 0,
-    height: '100%',
-    gap: TOPICS.columnGap,
-    justifyContent: 'space-between',
+    gap: 10,
   },
   headerRow: {
-    height: TOPICS.headerH,
+    minHeight: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
     flexShrink: 0,
-    overflow: 'hidden',
   },
   headerTitle: {
     flexShrink: 1,
     includeFontPadding: false,
   },
+  dateMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 4,
+    flexShrink: 1,
+    maxWidth: '55%',
+  },
   body: {
     width: '100%',
-    flexShrink: 0,
-    gap: TOPICS.titleDescGap,
+    gap: 4,
+    flexShrink: 1,
+    minHeight: 0,
   },
   bodyEmpty: {
     justifyContent: 'center',
@@ -204,14 +205,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   recordTitle: {
     width: '100%',
-    height: TOPICS.titleH,
     fontFamily: 'Rubik-Regular',
     fontSize: 16,
-    lineHeight: 16,
+    lineHeight: 20,
     color: c.primaryText,
     flexShrink: 0,
-    includeFontPadding: false,
-    overflow: 'hidden',
   },
   iconContainer: {
     width: TOPICS.icon,

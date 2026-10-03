@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { Spacing, type ThemeColors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
 import { homeCategoryIconBg, HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
@@ -75,51 +75,49 @@ export default function RemindersCard({
         </View>
       ) : (
         <View style={styles.contentContainer}>
-          <View style={styles.topContent}>
-            <View style={styles.iconTitleBlock}>
-              <CategoryIcon />
-              <Text style={homeCardTypography.title}>{t('home.remindersCard.title')}</Text>
-            </View>
-
-            <View
-              style={[
-                styles.reminderDetails,
-                nextReminder ? null : homeCardTypography.emptyBlockCentered,
-              ]}
-            >
-              {nextReminder ? (
-                <>
-                  <Text style={homeCardTypography.subtitle} numberOfLines={1} ellipsizeMode="tail">
-                    {nextReminder.title}
-                  </Text>
-                  <Text style={homeCardTypography.meta} numberOfLines={1}>
-                    {formatTime(nextReminder.scheduled_at)}
-                  </Text>
-                </>
-              ) : (
-                <Text
-                  style={[homeCardTypography.note, homeCardTypography.noteCentered]}
-                  numberOfLines={2}
-                  ellipsizeMode="tail"
-                >
-                  {allDoneToday
-                    ? t('home.remindersCard.allDone')
-                    : t('home.remindersCard.empty')}
-                </Text>
-              )}
-            </View>
+          <View style={styles.iconTitleBlock}>
+            <CategoryIcon />
+            <Text style={homeCardTypography.title} numberOfLines={1}>
+              {t('home.remindersCard.title')}
+            </Text>
           </View>
 
-          <View style={homeCardTypography.footerRow}>
-            {upcomingCount > 0 ? (
+          <View
+            style={[
+              styles.reminderDetails,
+              nextReminder ? null : homeCardTypography.emptyBlockCentered,
+            ]}
+          >
+            {nextReminder ? (
               <>
-                <Text style={homeCardTypography.meta} numberOfLines={1}>
-                  {upcomingCount} {t('home.remindersCard.upcoming')}
+                <Text style={homeCardTypography.subtitle} numberOfLines={1} ellipsizeMode="tail">
+                  {nextReminder.title}
                 </Text>
-                <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
+                <Text style={homeCardTypography.meta} numberOfLines={1}>
+                  {formatTime(nextReminder.scheduled_at)}
+                </Text>
               </>
-            ) : null}
+            ) : (
+              <Text
+                style={[homeCardTypography.note, homeCardTypography.noteCentered]}
+                numberOfLines={3}
+                ellipsizeMode="tail"
+              >
+                {allDoneToday
+                  ? t('home.remindersCard.allDone')
+                  : t('home.remindersCard.empty')}
+              </Text>
+            )}
           </View>
+
+          {upcomingCount > 0 ? (
+            <View style={styles.footer}>
+              <Text style={styles.upcoming} numberOfLines={1}>
+                {upcomingCount} {t('home.remindersCard.upcoming')}
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
+            </View>
+          ) : null}
         </View>
       )}
     </TouchableOpacity>
@@ -137,32 +135,46 @@ const cardShadow = {
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
     backgroundColor: c.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderBottomLeftRadius: 20,
-    padding: Spacing.lg,
+    borderRadius: 20,
+    padding: 16,
     flex: 1,
     minWidth: 0,
+    height: '100%',
+    overflow: 'hidden',
     ...cardShadow,
   },
   contentContainer: {
     width: '100%',
     flex: 1,
-    justifyContent: 'space-between',
+    gap: 10,
     minWidth: 0,
-  },
-  topContent: {
-    width: '100%',
-    gap: Spacing.md,
-    flex: 1,
   },
   iconTitleBlock: {
     width: '100%',
-    gap: Spacing.sm,
+    gap: 10,
+    flexShrink: 0,
   },
   reminderDetails: {
     width: '100%',
+    gap: 4,
+    flexShrink: 1,
+    minHeight: 0,
+    overflow: 'hidden',
+  },
+  footer: {
+    marginTop: 'auto',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 6,
+    flexShrink: 0,
+  },
+  upcoming: {
+    flex: 1,
+    fontFamily: 'Rubik-Medium',
+    fontSize: 12,
+    lineHeight: 16,
+    color: c.secondaryText,
   },
   iconContainer: {
     width: 36,

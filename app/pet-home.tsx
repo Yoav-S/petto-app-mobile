@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useActivePet } from '@/store/petStore';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
-import { HOME_HALF_ROW_FLEX, HOME_TOPICS_ROW_FLEX } from '@/hooks/useHomePanelLayout';
+import { useHomePanelLayout } from '@/hooks/useHomePanelLayout';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { getErrorMessage } from '@/services/errors';
@@ -118,6 +118,7 @@ function pickLatestHealthRecord(records: MedicalRecord[]): MedicalRecord | null 
 
 export default function HomeScreen() {
   const styles = useThemedStyles(makeStyles);
+  const { halfCardHeight, topicsCardHeight, cardRowGap, halfCardGap, fabBottom } = useHomePanelLayout();
   const router = useRouter();
   const { user, isLoading: authLoading, syncError, retryBackendSync, isSyncing, signOut } = useAuth();
   const { activePetId, setActivePetId } = useActivePet();
@@ -323,8 +324,8 @@ export default function HomeScreen() {
                 <PetProfilePanel pet={pet} />
               </View>
             ) : (
-              <View style={styles.cardsGrid} pointerEvents="auto">
-                <View style={styles.row}>
+              <View style={[styles.cardsGrid, { gap: cardRowGap }]} pointerEvents="auto">
+                <View style={[styles.row, { height: halfCardHeight, gap: halfCardGap }]}>
                   <VaccinesCard
                     latestVaccine={
                       latestVaccine
@@ -347,7 +348,7 @@ export default function HomeScreen() {
                   />
                 </View>
 
-                <View style={styles.healthWrap}>
+                <View style={[styles.healthWrap, { height: topicsCardHeight }]}>
                   <HealthCard
                     latestRecord={latestRecord}
                     allDoneToday={topicsAllDone}
@@ -381,6 +382,7 @@ export default function HomeScreen() {
 
         {pet && petTab === 'overview' ? (
           <FABMenu
+            bottom={fabBottom}
             open={fabOpen}
             onOpenChange={setFabOpen}
             onVaccinePress={() => pushDirect('/vaccines/add')}
@@ -501,21 +503,16 @@ const makeStyles = (c: ThemeColors) =>
       marginTop: 16,
     },
     cardsGrid: {
-      flex: 1,
       width: '100%',
       marginTop: 16,
-      gap: Spacing.sm,
       overflow: 'visible',
     },
     row: {
-      flex: HOME_HALF_ROW_FLEX,
       flexDirection: 'row',
-      gap: 8,
+      alignItems: 'stretch',
     },
     healthWrap: {
-      flex: HOME_TOPICS_ROW_FLEX,
       position: 'relative',
       overflow: 'visible',
-      zIndex: 50,
     },
   });

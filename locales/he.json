@@ -28,6 +28,7 @@
     "closed": "סגור",
     "closes": "נסגר",
     "opens": "נפתח",
+    "opens_24_7": "פתוח 24/7",
     "opens_tomorrow": "נפתח מחר",
     "close_list": "סגור",
     "day_mon": "יום שני",
@@ -38,6 +39,7 @@
     "day_sat": "שבת",
     "day_sun": "יום ראשון",
     "near_empty": "אין עסקים בקרבת מקום",
+    "no_reviews": "אין ביקורות עדיין",
     "noPet": "אין חיה עדיין",
     "addFirstPet": "הוסף את החיה הראשונה שלך כדי להתחיל",
     "vaccinesCard": {

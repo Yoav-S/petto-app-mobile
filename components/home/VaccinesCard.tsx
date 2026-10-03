@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Image } from 'expo-image';
-import { Spacing, type ThemeColors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
 import { homeCategoryIconBg, HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
@@ -71,7 +71,9 @@ export default function VaccinesCard({ latestVaccine, loading, onPress }: Vaccin
         <View style={styles.contentContainer}>
           <View style={styles.iconTitleBlock}>
             <CategoryIcon />
-            <Text style={homeCardTypography.title}>{t('home.vaccinesCard.title')}</Text>
+            <Text style={homeCardTypography.title} numberOfLines={1}>
+              {t('home.vaccinesCard.title')}
+            </Text>
           </View>
 
           <View
@@ -97,7 +99,7 @@ export default function VaccinesCard({ latestVaccine, loading, onPress }: Vaccin
             ) : (
               <Text
                 style={[homeCardTypography.note, homeCardTypography.noteCentered]}
-                numberOfLines={2}
+                numberOfLines={3}
                 ellipsizeMode="tail"
               >
                 {t('home.vaccinesCard.empty')}
@@ -121,28 +123,30 @@ const cardShadow = {
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
     backgroundColor: c.surface,
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 20,
-    borderBottomLeftRadius: 20,
-    padding: Spacing.lg,
+    borderRadius: 20,
+    padding: 16,
     flex: 1,
     minWidth: 0,
+    height: '100%',
+    overflow: 'hidden',
     ...cardShadow,
   },
   contentContainer: {
     width: '100%',
     flex: 1,
-    gap: Spacing.md,
+    gap: 10,
     minWidth: 0,
   },
   iconTitleBlock: {
     width: '100%',
-    gap: Spacing.sm,
+    gap: 10,
+    flexShrink: 0,
   },
   vaccineDetails: {
     width: '100%',
-    gap: 6,
-    flex: 1,
+    gap: 4,
+    flexShrink: 1,
+    minHeight: 0,
   },
   iconContainer: {
     width: 36,

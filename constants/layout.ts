@@ -72,7 +72,11 @@ export const DESIGN_PANEL_TOP = 328;
 export const DESIGN_PANEL_HEIGHT = 484;
 export const DESIGN_PANEL_RADIUS = 24;
 export const DESIGN_HOME_HALF_CARD_HEIGHT = 194;
-export const DESIGN_HOME_HEALTH_CARD_HEIGHT = 132;
+export const DESIGN_HOME_HEALTH_CARD_HEIGHT = 118;
+/** Gap between the vaccine/reminder row and Topics. */
+export const DESIGN_HOME_CARD_ROW_GAP = 6;
+/** Gap between the Vaccines and Reminders cards. */
+export const DESIGN_HOME_HALF_GAP = 7;
 /** Figma: topics bottom covers 25% of the 56px FAB (14px). */
 export const DESIGN_FAB_TOPICS_OVERLAP = 14;
 

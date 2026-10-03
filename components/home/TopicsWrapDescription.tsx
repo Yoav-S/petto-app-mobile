@@ -8,7 +8,7 @@ interface TopicsWrapDescriptionProps {
   style: StyleProp<TextStyle>;
 }
 
-const LINE_H = 14;
+const LINE_H = 16;
 const DESC_GAP = 4;
 const BOX_H = LINE_H * 2 + DESC_GAP;
 

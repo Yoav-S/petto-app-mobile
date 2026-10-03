@@ -18,6 +18,7 @@ export interface BusinessPlace {
   distance_km: number | null;
   rating?: number | null;
   open_now?: boolean;
+  open_24_7?: boolean;
   closes_at?: string | null;
   opens_at?: string | null;
   next_open_day?: Weekday | null;
