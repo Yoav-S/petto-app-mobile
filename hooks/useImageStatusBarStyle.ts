@@ -32,13 +32,15 @@ export function foregroundForBarStyle(style: SystemBarContentStyle): PhotoForegr
 export function useImageStatusBarStyle(
   source: ImageSource | { uri: string },
   fallback: SystemBarContentStyle,
-): SystemBarContentStyle {
+): { style: SystemBarContentStyle; ready: boolean } {
   const [style, setStyle] = useState<SystemBarContentStyle>(fallback);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let active = true;
     const uri = resolveImageUri(source);
     setStyle(fallback);
+    setReady(false);
     if (!uri) {
       return () => {
         active = false;
@@ -63,9 +65,10 @@ export function useImageStatusBarStyle(
               ? result.average
               : result.dominant;
         setStyle(statusBarStyleForHex(color, fallback));
+        setReady(true);
       })
       .catch(() => {
-        // Theme contrast remains the safe fallback when analysis is unavailable.
+        // Day mode keeps the white title until a photo color is identified.
       });
 
     return () => {
@@ -73,5 +76,5 @@ export function useImageStatusBarStyle(
     };
   }, [fallback, source]);
 
-  return style;
+  return { style, ready };
 }

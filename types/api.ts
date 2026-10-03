@@ -12,6 +12,8 @@ export interface UserProfile {
   email: string;
   /** Account holder. Missing until the post-email name step is saved. */
   name?: string | null;
+  phone?: string | null;
+  photo_url?: string | null;
   auth_provider: 'email' | 'google';
   email_verified: boolean;
   created_at: string;

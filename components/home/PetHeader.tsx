@@ -95,11 +95,12 @@ export default function PetHeader({
     void prefetchPetPhoto(pet?.photo_url);
   }, [pet?.photo_url]);
   const themeBarStyle: SystemBarContentStyle = isDark ? 'light' : 'dark';
-  const imageBarStyle = useImageStatusBarStyle(coverSource, themeBarStyle);
-  const barStyle: SystemBarContentStyle = loading ? themeBarStyle : pet ? imageBarStyle : 'dark';
+  const imageContrast = useImageStatusBarStyle(coverSource, themeBarStyle);
+  const barStyle: SystemBarContentStyle = loading ? themeBarStyle : pet ? imageContrast.style : 'dark';
   useStatusBarOverride(barStyle);
-  const onPhoto = foregroundForBarStyle(barStyle);
-  const metaBubbleBg = onPhoto === '#1F2937' ? 'rgba(255, 255, 255, 0.72)' : 'rgba(255, 255, 255, 0.2)';
+  const nameColor =
+    !isDark && !imageContrast.ready ? '#FFFFFF' : foregroundForBarStyle(imageContrast.style);
+  const metaBubbleBg = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.72)';
 
   useEffect(() => {
     if (loading) {
@@ -175,14 +176,14 @@ export default function PetHeader({
                 activeOpacity={canSwitch ? 0.7 : 1}
                 disabled={!canSwitch}
               >
-                <Text style={[styles.name, { color: onPhoto }]} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={[styles.name, { color: nameColor }]} numberOfLines={1} ellipsizeMode="tail">
                   {pet?.name ?? t('home.noPet')}
                 </Text>
                 {canSwitch ? (
                   <Ionicons
                     name={switchOpen ? 'chevron-up' : 'chevron-down'}
                     size={24}
-                    color={onPhoto}
+                    color={nameColor}
                   />
                 ) : null}
               </TouchableOpacity>
@@ -190,14 +191,14 @@ export default function PetHeader({
                 <View style={styles.metaRow}>
                   {pet.breed ? (
                     <View style={[styles.metaBubble, { backgroundColor: metaBubbleBg }]}>
-                      <Text style={[styles.metaText, { color: onPhoto }]} numberOfLines={1} ellipsizeMode="tail">
+                      <Text style={[styles.metaText, { color: colors.primaryText }]} numberOfLines={1} ellipsizeMode="tail">
                         {pet.breed}
                       </Text>
                     </View>
                   ) : null}
                   {petAge ? (
                     <View style={[styles.metaBubble, { backgroundColor: metaBubbleBg }]}>
-                      <Text style={[styles.metaText, { color: onPhoto }]} numberOfLines={1} ellipsizeMode="tail">
+                      <Text style={[styles.metaText, { color: colors.primaryText }]} numberOfLines={1} ellipsizeMode="tail">
                         {petAge}
                       </Text>
                     </View>

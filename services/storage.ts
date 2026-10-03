@@ -117,6 +117,11 @@ export function uploadPetPhoto(localUri: string, mimeHint?: string | null): Prom
   return uploadImage(localUri, 'pets', mimeHint);
 }
 
+/** Account photo under users/{uid}/account/. */
+export function uploadAccountPhoto(localUri: string, mimeHint?: string | null): Promise<string> {
+  return uploadImage(localUri, 'account', mimeHint);
+}
+
 /** Thin wrapper: upload a topic-note image under users/{uid}/health/. */
 export function uploadHealthNotePhoto(localUri: string, mimeHint?: string | null): Promise<string> {
   return uploadImage(localUri, 'health', mimeHint);

@@ -1,6 +1,6 @@
 import { signInWithCustomToken, signOut } from 'firebase/auth';
 import auth from './firebaseAuth';
-import { ApiError, apiPatch, apiPost, apiPostPublic, apiDelete } from './api';
+import { ApiError, apiGet, apiPatch, apiPost, apiPostPublic, apiDelete } from './api';
 import { clearOnboardingComplete } from '@/services/onboarding';
 import { currentLocale, t } from '@/i18n';
 import type { UserProfile } from '@/types/api';
@@ -88,6 +88,34 @@ async function clearIncompleteAuthSession(): Promise<void> {
 /** Save the account holder name collected after email verification. */
 export async function saveAccountName(name: string): Promise<UserProfile> {
   return apiPatch<UserProfile>('/users/me', { name: name.trim() });
+}
+
+export function fetchAccount(): Promise<UserProfile> {
+  return apiGet<UserProfile>('/users/me');
+}
+
+export function updateAccount(body: {
+  name: string;
+  phone?: string | null;
+  photo_url?: string | null;
+}): Promise<UserProfile> {
+  return apiPatch<UserProfile>('/users/me', body);
+}
+
+/** Ask the server to mail a code. The stored email does not change yet. */
+export function sendAccountEmailOtp(email: string): Promise<{ message: string }> {
+  return apiPost('/users/me/email/otp', { email: email.trim().toLowerCase() });
+}
+
+/** Apply the new email only when the code matches. Then refresh the sign-in token. */
+export async function confirmAccountEmail(email: string, otp: string): Promise<UserProfile> {
+  const profile = await apiPost<UserProfile>('/users/me/email/confirm', {
+    email: email.trim().toLowerCase(),
+    otp,
+  });
+  await auth.currentUser?.reload();
+  await auth.currentUser?.getIdToken(true);
+  return profile;
 }
 
 /** Upsert Firebase user in MongoDB — updates last_login_at. Called after every login/session restore. */
