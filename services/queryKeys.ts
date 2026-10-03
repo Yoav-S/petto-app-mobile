@@ -30,4 +30,7 @@ export const queryKeys = {
   profile: {
     me: ['ragly', 'profile', 'me'] as const,
   },
+  businesses: {
+    reviews: (businessId: string) => ['ragly', 'businesses', businessId, 'reviews'] as const,
+  },
 } as const;

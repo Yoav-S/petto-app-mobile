@@ -76,6 +76,8 @@
     "reviews": "Reviews",
     "review": "Review",
     "posted": "Posted",
+    "posted_at": "at",
+    "few_minutes_ago": "few minutes ago",
     "address": "Address",
     "contact": "Contact",
     "opening_hours": "Opening hours",

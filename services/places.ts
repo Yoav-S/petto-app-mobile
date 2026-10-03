@@ -105,6 +105,15 @@ export function getPlace(
   return apiGet<BusinessPlaceDetail>(`/businesses/${id}${query ? `?${query}` : ''}`);
 }
 
+export function listPlaceReviews(
+  id: string,
+  options: { limit: number; cursor?: string },
+): Promise<PlaceReview[]> {
+  const params = new URLSearchParams({ limit: String(options.limit) });
+  if (options.cursor) params.set('cursor', options.cursor);
+  return apiGet<PlaceReview[]>(`/businesses/${id}/reviews?${params.toString()}`);
+}
+
 export function savePlaceReview(
   id: string,
   body: { rating: number; comment?: string | null },

@@ -1,16 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
+  FlatList,
+} from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
+import { useCursorPagination } from '@/hooks/useCursorPagination';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import ReviewListCard from '@/components/business/ReviewListCard';
 import WriteReviewSheet from '@/components/business/WriteReviewSheet';
 import { t } from '@/i18n';
-import { getErrorMessage } from '@/services/errors';
-import { getPlace, type PlaceReview } from '@/services/places';
+import { queryKeys } from '@/services/queryKeys';
+import { listPlaceReviews, type PlaceReview } from '@/services/places';
 
 export default function BusinessReviewsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -19,54 +28,88 @@ export default function BusinessReviewsScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
-  const [reviews, setReviews] = useState<PlaceReview[] | null>(null);
   const [footerHeight, setFooterHeight] = useState(88);
   const [reviewOpen, setReviewOpen] = useState(false);
-  const [reloadToken, setReloadToken] = useState(0);
+  const openedOnce = useRef(false);
+
+  const fetchPage = useCallback(
+    (params: { limit: number; cursor?: string }) =>
+      id ? listPlaceReviews(id, params) : Promise.resolve([]),
+    [id],
+  );
+  const {
+    items: reviews,
+    loading,
+    loadingMore,
+    error,
+    loadMore,
+    refresh,
+  } = useCursorPagination<PlaceReview>({
+    fetchPage,
+    enabled: Boolean(id),
+    resetKey: id,
+    cacheKey: queryKeys.businesses.reviews(id ?? ''),
+  });
 
   useEffect(() => {
-    if (!id) return;
-    let active = true;
-    getPlace(id)
-      .then((place) => {
-        if (active) setReviews(place.reviews ?? []);
-      })
-      .catch((err) => {
-        if (active) toast.showError(getErrorMessage(err));
-      });
-    return () => {
-      active = false;
-    };
-  }, [id, reloadToken, toast]);
+    if (error) toast.showError(error);
+  }, [error, toast]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!openedOnce.current) {
+        openedOnce.current = true;
+        return;
+      }
+      void refresh();
+    }, [refresh]),
+  );
+
+  const mine = reviews.find((review) => review.is_mine);
 
   return (
     <View style={styles.screen}>
       <SettingsHeader title={t('business.review')} />
-      {reviews == null ? (
+      {loading && reviews.length === 0 ? (
         <ActivityIndicator color={colors.brand} style={styles.loader} />
       ) : (
-        <ScrollView
+        <FlatList
+          data={reviews}
+          keyExtractor={(review) => review.id}
           style={styles.scroll}
           contentContainerStyle={{
             paddingTop: 4,
             paddingBottom: footerHeight + 4,
-            gap: 4,
           }}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
           showsVerticalScrollIndicator={false}
-        >
-          {reviews.map((review) => (
+          onEndReached={() => {
+            void loadMore();
+          }}
+          onEndReachedThreshold={0.35}
+          renderItem={({ item }) => (
             <ReviewListCard
-              key={review.id}
-              review={review}
-              onPress={() =>
-                router.push({
-                  pathname: '/business/[id]/reviews/[reviewId]',
-                  params: { id, reviewId: review.id },
-                } as never)
+              review={item}
+              onPress={
+                item.is_mine
+                  ? () =>
+                      router.push({
+                        pathname: '/business/[id]/reviews/[reviewId]',
+                        params: {
+                          id,
+                          reviewId: item.id,
+                          rating: String(item.rating),
+                          comment: item.comment ?? '',
+                        },
+                      } as never)
+                  : undefined
               }
             />
-          ))}
-        </ScrollView>
+          )}
+          ListFooterComponent={
+            loadingMore ? <ActivityIndicator color={colors.brand} style={styles.loader} /> : null
+          }
+        />
       )}
       <View
         style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}
@@ -79,10 +122,12 @@ export default function BusinessReviewsScreen() {
       <WriteReviewSheet
         visible={reviewOpen}
         businessId={id}
-        initialRating={reviews?.find((review) => review.is_mine)?.rating}
-        initialComment={reviews?.find((review) => review.is_mine)?.comment}
+        initialRating={mine?.rating}
+        initialComment={mine?.comment}
         onClose={() => setReviewOpen(false)}
-        onSaved={() => setReloadToken((value) => value + 1)}
+        onSaved={() => {
+          void refresh();
+        }}
       />
     </View>
   );
@@ -96,6 +141,9 @@ const makeStyles = (c: ThemeColors) =>
     },
     scroll: {
       flex: 1,
+    },
+    separator: {
+      height: 4,
     },
     loader: {
       marginTop: 24,

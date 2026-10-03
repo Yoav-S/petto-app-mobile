@@ -26,6 +26,7 @@ import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 import { getErrorMessage } from '@/services/errors';
 import WriteReviewSheet from '@/components/business/WriteReviewSheet';
+import { postedLabel } from '@/utils/reviewPosted';
 import { useToast } from '@/context/ToastContext';
 import {
   getPlace,
@@ -54,22 +55,6 @@ const CATEGORY_KEY: Record<BusinessCategory, string> = {
 };
 const OPEN_COLOR = '#1EC876';
 const CLOSED_COLOR = '#EF4444';
-
-function relativeTime(iso: string): string {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return '';
-  const minutes = Math.max(0, Math.round((Date.now() - then) / 60000));
-  if (minutes < 1) return t('business.just_now');
-  if (minutes < 60) {
-    return `${minutes} ${t(minutes === 1 ? 'business.minute_ago' : 'business.minutes_ago')}`;
-  }
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) {
-    return `${hours} ${t(hours === 1 ? 'business.hour_ago' : 'business.hours_ago')}`;
-  }
-  const days = Math.round(hours / 24);
-  return `${days} ${t(days === 1 ? 'business.day_ago' : 'business.days_ago')}`;
-}
 
 function dayHours(hours: OpeningHours | undefined, day: Weekday): string {
   if (!hours) return t('home.closed');
@@ -316,7 +301,7 @@ export default function BusinessScreen() {
                         <Text style={styles.reviewName} numberOfLines={1}>
                           {review.author_name || t('business.pet_parent')}
                         </Text>
-                        <Text style={styles.reviewDate}>{relativeTime(review.created_at)}</Text>
+                        <Text style={styles.reviewDate}>{postedLabel(review.created_at)}</Text>
                       </View>
                       <View style={styles.ratingChip}>
                         <Star size={12} color="#F6F7F9" fill="#F6F7F9" />

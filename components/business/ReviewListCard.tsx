@@ -6,27 +6,9 @@ import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import type { PlaceReview } from '@/services/places';
+import { postedLabel } from '@/utils/reviewPosted';
 
-function relativeTime(iso: string): string {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return '';
-  const minutes = Math.max(0, Math.round((Date.now() - then) / 60000));
-  if (minutes < 1) return t('business.just_now');
-  if (minutes < 60) {
-    return `${minutes} ${t(minutes === 1 ? 'business.minute_ago' : 'business.minutes_ago')}`;
-  }
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) {
-    return `${hours} ${t(hours === 1 ? 'business.hour_ago' : 'business.hours_ago')}`;
-  }
-  const days = Math.round(hours / 24);
-  return `${days} ${t(days === 1 ? 'business.day_ago' : 'business.days_ago')}`;
-}
-
-export function postedLabel(iso: string): string {
-  const when = relativeTime(iso);
-  return when ? `${t('business.posted')} ${when}` : '';
-}
+export { postedLabel };
 
 interface ReviewListCardProps {
   review: PlaceReview;
