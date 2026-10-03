@@ -58,6 +58,8 @@ interface AuthContextType {
   hasAccountName: boolean | null;
   /** Account holder name from the user document. */
   accountName: string | null;
+  /** Account photo from the user document. Null until one is saved. */
+  accountPhotoUrl: string | null;
   syncError: string | null;
   isGoogleLoading: boolean;
   googleAuthError: string | null;
@@ -69,6 +71,8 @@ interface AuthContextType {
   markHasPets: () => void;
   /** Call after the account holder name is saved. */
   markAccountName: (name?: string) => void;
+  /** Call after the account photo is saved or removed. */
+  markAccountPhoto: (url: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -78,6 +82,7 @@ const AuthContext = createContext<AuthContextType>({
   hasPets: null,
   hasAccountName: null,
   accountName: null,
+  accountPhotoUrl: null,
   syncError: null,
   isGoogleLoading: false,
   googleAuthError: null,
@@ -87,6 +92,7 @@ const AuthContext = createContext<AuthContextType>({
   clearGoogleAuthError: () => {},
   markHasPets: () => {},
   markAccountName: () => {},
+  markAccountPhoto: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -98,6 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [hasPets, setHasPets] = useState<boolean | null>(null);
   const [hasAccountName, setHasAccountName] = useState<boolean | null>(null);
   const [accountName, setAccountName] = useState<string | null>(null);
+  const [accountPhotoUrl, setAccountPhotoUrl] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
@@ -137,6 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setHasPets(null);
         setHasAccountName(null);
         setAccountName(null);
+        setAccountPhotoUrl(null);
         await firebaseSignOut(auth);
         return;
       }
@@ -144,6 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setHasPets(pets);
       setHasAccountName(Boolean(profile.name?.trim()));
       setAccountName(profile.name?.trim() || null);
+      setAccountPhotoUrl(profile.photo_url ?? null);
       // Identify RevenueCat with Firebase UID (no-op if keys missing).
       void loginPurchases(firebaseUser.uid);
       // Fire-and-forget: register push token + timezone. Never blocks login.
@@ -153,6 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setHasPets(null);
       setHasAccountName(null);
       setAccountName(null);
+      setAccountPhotoUrl(null);
       setSyncError(getErrorMessage(error));
     } finally {
       setIsSyncing(false);
@@ -168,6 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setHasPets(null);
         setHasAccountName(null);
         setAccountName(null);
+        setAccountPhotoUrl(null);
         setSyncError(null);
       }
       setIsLoading(false);
@@ -249,6 +260,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setHasPets(null);
       setHasAccountName(null);
       setAccountName(null);
+      setAccountPhotoUrl(null);
     } catch (error) {
       console.error('Sign-out Error:', error);
     }
@@ -265,6 +277,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setHasAccountName(true);
     if (name?.trim()) setAccountName(name.trim());
   }, []);
+  const markAccountPhoto = useCallback((url: string | null) => {
+    setAccountPhotoUrl(url);
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -275,6 +290,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         hasPets,
         hasAccountName,
         accountName,
+        accountPhotoUrl,
         syncError,
         isGoogleLoading,
         googleAuthError,
@@ -284,6 +300,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         clearGoogleAuthError,
         markHasPets,
         markAccountName,
+        markAccountPhoto,
       }}
     >
       {children}

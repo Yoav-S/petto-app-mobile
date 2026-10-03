@@ -12,6 +12,7 @@ import {
   Modal,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { useNavigation } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -50,7 +51,8 @@ type Draft = {
 };
 
 export default function AccountSettingsScreen() {
-  const { user, signOut, markAccountName } = useAuth();
+  const navigation = useNavigation();
+  const { user, signOut, markAccountName, markAccountPhoto } = useAuth();
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
   const toast = useToast();
@@ -87,6 +89,8 @@ export default function AccountSettingsScreen() {
     photoRemoved: false,
   });
   const saveQueue = useRef(Promise.resolve());
+  const leavingRef = useRef(false);
+  const deletingRef = useRef(false);
 
   draft.current = {
     name,
@@ -164,11 +168,43 @@ export default function AccountSettingsScreen() {
         photo: profile.photo_url ?? null,
       };
       markAccountName(profile.name ?? nextName);
+      markAccountPhoto(profile.photo_url ?? null);
       setRemotePhoto(profile.photo_url ?? null);
       setLocalPhoto(null);
       setPhotoRemoved(false);
       setPhone(profile.phone ?? '');
     });
+
+  const commitProfileRef = useRef(commitProfile);
+  commitProfileRef.current = commitProfile;
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (event) => {
+      if (leavingRef.current || deletingRef.current || !readyRef.current) return;
+      const source = draft.current;
+      const nextName = source.name.trim();
+      const nextPhone = source.phone.trim();
+      const dirty =
+        Boolean(nextName) &&
+        (nextName !== committed.current.name ||
+          nextPhone !== committed.current.phone ||
+          Boolean(source.localPhoto) ||
+          source.photoRemoved);
+      if (!dirty) return;
+      event.preventDefault();
+      leavingRef.current = true;
+      void commitProfileRef
+        .current(source)
+        .catch((err) => {
+          leavingRef.current = false;
+          toast.showError(getErrorMessage(err));
+        })
+        .then(() => {
+          if (leavingRef.current) navigation.dispatch(event.data.action);
+        });
+    });
+    return unsubscribe;
+  }, [navigation, toast]);
 
   const commitEmail = async () => {
     const nextEmail = draft.current.email.trim().toLowerCase();
@@ -256,11 +292,13 @@ export default function AccountSettingsScreen() {
 
   const handleDelete = async () => {
     setConfirmVisible(false);
+    deletingRef.current = true;
     try {
       setDeleting(true);
       await deleteAccount();
       await signOut();
     } catch (err) {
+      deletingRef.current = false;
       setDeleting(false);
       toast.showError(getErrorMessage(err));
     }
@@ -271,7 +309,6 @@ export default function AccountSettingsScreen() {
       <HeaderScrollLayout
         header={<SettingsHeader title={t('settings.account')} />}
         edges={['left', 'right']}
-        topFade
         bottomFade
         fadeMode="form"
       >

@@ -35,6 +35,8 @@ const MORNING_HOUR = 5;
 const EVENING_HOUR = 17;
 const NIGHT_HOUR = 21;
 
+/** Greeting line 24 + 2px gap + name line 20. */
+const GREETING_AVATAR = 24 + 2 + 20;
 const PET_SIZE = 72;
 const PET_GAP = 16;
 const PET_SCROLL_WIDTH = PET_SIZE * 2 + PET_GAP;
@@ -141,7 +143,7 @@ export default function DiscoverHomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { accountName } = useAuth();
+  const { accountName, accountPhotoUrl } = useAuth();
   const { setActivePetId } = useActivePet();
   const petsQuery = usePetsQuery();
   const pets = petsQuery.data ?? [];
@@ -447,12 +449,28 @@ export default function DiscoverHomeScreen() {
         <View style={[styles.welcomeCard, { paddingTop: insets.top + 10 }]}>
           <View style={styles.welcomeRow}>
             <View style={styles.greeting}>
-              <Text style={styles.greetingLine}>{t(greetingKey())}</Text>
-              {accountName ? (
-                <Text style={styles.nameLine} numberOfLines={1}>
-                  {`${accountName} !`}
-                </Text>
+              {accountPhotoUrl ? (
+                <TouchableOpacity
+                  style={styles.avatar}
+                  onPress={() => router.push('/settings/account' as never)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('settings.account')}
+                >
+                  <Image
+                    source={{ uri: accountPhotoUrl }}
+                    style={styles.avatarImage}
+                    contentFit="cover"
+                  />
+                </TouchableOpacity>
               ) : null}
+              <View style={styles.greetingCopy}>
+                <Text style={styles.greetingLine}>{t(greetingKey())}</Text>
+                {accountName ? (
+                  <Text style={styles.nameLine} numberOfLines={1}>
+                    {`${accountName} !`}
+                  </Text>
+                ) : null}
+              </View>
             </View>
             <TouchableOpacity
               style={styles.settingsButton}
@@ -629,7 +647,27 @@ export default function DiscoverHomeScreen() {
                 renderItem={({ item: place }) => {
                   const status = placeStatus(place);
                   return (
-                    <View style={styles.placeCard}>
+                    <TouchableOpacity
+                      style={styles.placeCard}
+                      activeOpacity={0.9}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/business/[id]',
+                          params: {
+                            id: place.id,
+                            name: place.name,
+                            image: place.image ?? '',
+                            category: place.category,
+                            distance: place.distance_km != null ? String(place.distance_km) : '',
+                            rating: typeof place.rating === 'number' ? String(place.rating) : '',
+                            openNow: place.open_now ? '1' : '0',
+                            open247: place.open_24_7 ? '1' : '0',
+                            lat: coords ? String(coords.latitude) : '',
+                            lng: coords ? String(coords.longitude) : '',
+                          },
+                        } as never)
+                      }
+                    >
                       <View style={styles.cardImageWrap}>
                         {place.image ? (
                           <Image
@@ -685,7 +723,7 @@ export default function DiscoverHomeScreen() {
                           </View>
                         ) : null}
                       </View>
-                    </View>
+                    </TouchableOpacity>
                   );
                 }}
               />
@@ -744,8 +782,25 @@ function makeStyles(colors: ThemeColors) {
     },
     greeting: {
       flex: 1,
-      gap: 2,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
       paddingRight: 12,
+    },
+    greetingCopy: {
+      flex: 1,
+      gap: 2,
+    },
+    avatar: {
+      width: GREETING_AVATAR,
+      height: GREETING_AVATAR,
+      borderRadius: GREETING_AVATAR / 2,
+      overflow: 'hidden',
+      backgroundColor: colors.background,
+    },
+    avatarImage: {
+      width: GREETING_AVATAR,
+      height: GREETING_AVATAR,
     },
     greetingLine: {
       fontFamily: 'Rubik-Medium',

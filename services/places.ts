@@ -30,6 +30,42 @@ export interface BusinessPlacePage {
   has_more: boolean;
 }
 
+export interface TimeSlot {
+  open: string;
+  close: string;
+}
+
+export interface OpeningHours {
+  always_open?: boolean;
+  mon: TimeSlot[];
+  tue: TimeSlot[];
+  wed: TimeSlot[];
+  thu: TimeSlot[];
+  fri: TimeSlot[];
+  sat: TimeSlot[];
+  sun: TimeSlot[];
+}
+
+export interface PlaceReview {
+  id: string;
+  author_name: string;
+  author_photo: string | null;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+}
+
+export interface BusinessPlaceDetail extends BusinessPlace {
+  description: string | null;
+  address: string;
+  phone: string[];
+  website: string | null;
+  instagram: string | null;
+  opening_hours: OpeningHours;
+  location: { type: 'Point'; coordinates: [number, number] } | null;
+  reviews: PlaceReview[];
+}
+
 const PAGE_SIZE = 15;
 
 export function listPlaces(options: {
@@ -53,4 +89,17 @@ export function listPlaces(options: {
     }
     return { items: data.items ?? [], has_more: Boolean(data.has_more) };
   });
+}
+
+export function getPlace(
+  id: string,
+  coords?: { latitude: number; longitude: number },
+): Promise<BusinessPlaceDetail> {
+  const params = new URLSearchParams();
+  if (coords) {
+    params.set('latitude', String(coords.latitude));
+    params.set('longitude', String(coords.longitude));
+  }
+  const query = params.toString();
+  return apiGet<BusinessPlaceDetail>(`/businesses/${id}${query ? `?${query}` : ''}`);
 }
