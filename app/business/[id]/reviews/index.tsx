@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
@@ -7,6 +7,7 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import ReviewListCard from '@/components/business/ReviewListCard';
+import WriteReviewSheet from '@/components/business/WriteReviewSheet';
 import { t } from '@/i18n';
 import { getErrorMessage } from '@/services/errors';
 import { getPlace, type PlaceReview } from '@/services/places';
@@ -20,6 +21,8 @@ export default function BusinessReviewsScreen() {
   const toast = useToast();
   const [reviews, setReviews] = useState<PlaceReview[] | null>(null);
   const [footerHeight, setFooterHeight] = useState(88);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     if (!id) return;
@@ -34,7 +37,7 @@ export default function BusinessReviewsScreen() {
     return () => {
       active = false;
     };
-  }, [id, toast]);
+  }, [id, reloadToken, toast]);
 
   return (
     <View style={styles.screen}>
@@ -69,10 +72,18 @@ export default function BusinessReviewsScreen() {
         style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}
         onLayout={(event) => setFooterHeight(event.nativeEvent.layout.height)}
       >
-        <View style={styles.writeButton}>
+        <TouchableOpacity style={styles.writeButton} onPress={() => setReviewOpen(true)}>
           <Text style={styles.writeLabel}>{t('business.write_review')}</Text>
-        </View>
+        </TouchableOpacity>
       </View>
+      <WriteReviewSheet
+        visible={reviewOpen}
+        businessId={id}
+        initialRating={reviews?.find((review) => review.is_mine)?.rating}
+        initialComment={reviews?.find((review) => review.is_mine)?.comment}
+        onClose={() => setReviewOpen(false)}
+        onSaved={() => setReloadToken((value) => value + 1)}
+      />
     </View>
   );
 }

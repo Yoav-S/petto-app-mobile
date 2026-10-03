@@ -25,6 +25,7 @@ import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 import { getErrorMessage } from '@/services/errors';
+import WriteReviewSheet from '@/components/business/WriteReviewSheet';
 import { useToast } from '@/context/ToastContext';
 import {
   getPlace,
@@ -145,6 +146,8 @@ export default function BusinessScreen() {
   const [footerHeight, setFooterHeight] = useState(104);
   const [photoOpen, setPhotoOpen] = useState(false);
   const [directionsOpen, setDirectionsOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
 
   const previewImage = params.image || null;
   const image = place?.image ?? previewImage;
@@ -171,7 +174,7 @@ export default function BusinessScreen() {
     return () => {
       active = false;
     };
-  }, [params.id, params.lat, params.lng, toast]);
+  }, [params.id, params.lat, params.lng, reloadToken, toast]);
 
   const name = place?.name || params.name || '';
   const category = place?.category ?? params.category;
@@ -270,9 +273,9 @@ export default function BusinessScreen() {
                 <Text style={styles.reviewsEmptyTitle}>{t('home.no_reviews')}</Text>
                 <Text style={styles.reviewsEmptyBody}>{t('business.reviews_empty_body')}</Text>
               </View>
-              <View style={styles.writeButton}>
+              <TouchableOpacity style={styles.writeButton} onPress={() => setReviewOpen(true)}>
                 <Text style={styles.writeLabel}>{t('business.write_review')}</Text>
-              </View>
+              </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.reviewsFilled}>
@@ -419,6 +422,15 @@ export default function BusinessScreen() {
           </View>
         </View>
       </Modal>
+
+      <WriteReviewSheet
+        visible={reviewOpen}
+        businessId={params.id}
+        initialRating={reviews.find((review) => review.is_mine)?.rating}
+        initialComment={reviews.find((review) => review.is_mine)?.comment}
+        onClose={() => setReviewOpen(false)}
+        onSaved={() => setReloadToken((value) => value + 1)}
+      />
 
       <BottomSheetModal visible={directionsOpen} onClose={() => setDirectionsOpen(false)}>
         <View style={[styles.directionsSheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>

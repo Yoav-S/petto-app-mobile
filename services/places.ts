@@ -1,4 +1,4 @@
-import { apiGet } from './api';
+import { apiGet, apiPost } from './api';
 
 export type BusinessCategory =
   | 'veterinarian'
@@ -53,6 +53,7 @@ export interface PlaceReview {
   rating: number;
   comment: string | null;
   created_at: string;
+  is_mine?: boolean;
 }
 
 export interface BusinessPlaceDetail extends BusinessPlace {
@@ -102,4 +103,14 @@ export function getPlace(
   }
   const query = params.toString();
   return apiGet<BusinessPlaceDetail>(`/businesses/${id}${query ? `?${query}` : ''}`);
+}
+
+export function savePlaceReview(
+  id: string,
+  body: { rating: number; comment?: string | null },
+): Promise<PlaceReview> {
+  return apiPost<PlaceReview>(`/businesses/${id}/reviews`, {
+    rating: body.rating,
+    comment: body.comment?.trim() || null,
+  });
 }
