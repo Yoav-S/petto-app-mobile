@@ -705,6 +705,16 @@ export default function DiscoverHomeScreen() {
                           <Text style={styles.placeName} numberOfLines={1}>
                             {place.name}
                           </Text>
+                          {place.address ? (
+                            <Text style={styles.noReviews} numberOfLines={1}>
+                              {place.address}
+                            </Text>
+                          ) : null}
+                          {(place.location_count ?? 1) > 1 ? (
+                            <Text style={styles.noReviews}>
+                              {`${place.location_count} ${t('business.locations')}`}
+                            </Text>
+                          ) : null}
                         </View>
                         {status ? (
                           <View style={styles.statusRow}>

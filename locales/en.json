@@ -79,6 +79,8 @@
     "posted_at": "at",
     "few_minutes_ago": "few minutes ago",
     "address": "Address",
+    "locations": "locations",
+    "locations_title": "Locations",
     "contact": "Contact",
     "opening_hours": "Opening hours",
     "call": "Call",

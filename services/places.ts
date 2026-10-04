@@ -23,6 +23,8 @@ export interface BusinessPlace {
   opens_at?: string | null;
   next_open_day?: Weekday | null;
   opens_tomorrow?: boolean;
+  address?: string;
+  location_count?: number;
 }
 
 export interface BusinessPlacePage {
@@ -56,6 +58,18 @@ export interface PlaceReview {
   is_mine?: boolean;
 }
 
+export interface PlaceLocation {
+  id: string;
+  address: string;
+  city: string;
+  opening_hours: OpeningHours;
+  phone: string[];
+  call_phone: string[];
+  shared_phone: boolean;
+  location: { type: 'Point'; coordinates: [number, number] } | null;
+  distance_km: number | null;
+}
+
 export interface BusinessPlaceDetail extends BusinessPlace {
   description: string | null;
   address: string;
@@ -65,6 +79,7 @@ export interface BusinessPlaceDetail extends BusinessPlace {
   opening_hours: OpeningHours;
   location: { type: 'Point'; coordinates: [number, number] } | null;
   reviews: PlaceReview[];
+  locations?: PlaceLocation[];
 }
 
 const PAGE_SIZE = 15;

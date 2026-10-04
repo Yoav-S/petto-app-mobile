@@ -35,6 +35,7 @@ import {
   type BusinessCategory,
   type BusinessPlaceDetail,
   type OpeningHours,
+  type PlaceLocation,
   type Weekday,
 } from '@/services/places';
 
@@ -91,9 +92,12 @@ function openInstagram(value: string) {
 
 type NavApp = 'google' | 'waze' | 'apple';
 
-function directionUrl(app: NavApp, place: BusinessPlaceDetail): string | null {
-  const point = place.location?.coordinates;
-  const query = encodeURIComponent(addressText(place.address, place.city));
+function directionUrl(
+  app: NavApp,
+  target: { address: string; city: string; location?: { coordinates: [number, number] } | null },
+): string | null {
+  const point = target.location?.coordinates;
+  const query = encodeURIComponent(addressText(target.address, target.city));
   if (!point && !query) return null;
   if (point) {
     const [lng, lat] = point;
@@ -133,6 +137,8 @@ export default function BusinessScreen() {
   const [photoOpen, setPhotoOpen] = useState(false);
   const [phoneOpen, setPhoneOpen] = useState(false);
   const [mapsOpen, setMapsOpen] = useState(false);
+  const [callPhones, setCallPhones] = useState<string[]>([]);
+  const [mapTarget, setMapTarget] = useState<PlaceLocation | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -174,16 +180,21 @@ export default function BusinessScreen() {
   const showReadMore = description.length > 120;
   const reviews = place?.reviews ?? [];
   const phones = place?.phone ?? [];
+  const branches = place?.locations ?? [];
   const photoPresented = useSettledModalVisible(photoOpen && Boolean(image));
 
-  const showPhones = () => {
-    if (!phones.length) return;
+  const showPhones = (numbers?: string[]) => {
+    const list = numbers ?? phones;
+    if (!list.length) return;
+    setCallPhones(list);
     setMapsOpen(false);
     setPhoneOpen(true);
   };
 
-  const showMaps = () => {
-    if (!place || !directionUrl('google', place)) return;
+  const showMaps = (target?: PlaceLocation) => {
+    const next = target ?? place;
+    if (!next || !directionUrl('google', next)) return;
+    setMapTarget(target ?? null);
     setPhoneOpen(false);
     setMapsOpen(true);
   };
@@ -337,28 +348,64 @@ export default function BusinessScreen() {
           )}
         </View>
 
-        <Pressable
-          style={styles.card}
-          disabled={!place || !directionUrl('google', place)}
-          onPress={showMaps}
-          accessibilityRole="button"
-        >
-          <View style={styles.sectionHead}>
-            <Text style={styles.sectionTitle}>{t('business.address')}</Text>
-            {typeof distance === 'number' && !Number.isNaN(distance) ? (
-              <View style={styles.distanceChip}>
-                <MapPin size={24} color={colors.primaryText} />
-                <Text style={styles.distanceText}>{`${distance} km`}</Text>
-              </View>
-            ) : null}
+        {branches.length > 0 ? (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>{t('business.locations_title')}</Text>
+            {branches.map((branch) => {
+              const branchPhones = branch.shared_phone ? [] : branch.phone;
+              return (
+                <View key={branch.id} style={styles.hoursList}>
+                  <Text style={styles.bodyText}>{addressText(branch.address, branch.city)}</Text>
+                  {typeof branch.distance_km === 'number' ? (
+                    <Text style={styles.dayLabel}>{`${branch.distance_km} km`}</Text>
+                  ) : null}
+                  {WEEK.map((day) => (
+                    <View key={`${branch.id}-${day}`} style={styles.hoursRow}>
+                      <Text style={styles.dayLabel}>{t(DAY_KEY[day])}</Text>
+                      <Text style={styles.hoursValue}>{dayHours(branch.opening_hours, day)}</Text>
+                    </View>
+                  ))}
+                  {branchPhones.map((phone) => (
+                    <Text key={phone} style={styles.bodyText}>{phone}</Text>
+                  ))}
+                  <View style={styles.hoursRow}>
+                    {branchPhones.length > 0 ? (
+                      <TouchableOpacity onPress={() => showPhones(branchPhones)}>
+                        <Text style={styles.bodyText}>{t('business.call')}</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                    <TouchableOpacity onPress={() => showMaps(branch)}>
+                      <Text style={styles.bodyText}>{t('business.directions')}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })}
           </View>
-          <Text style={styles.bodyText}>{addressText(place?.address ?? '', place?.city ?? '')}</Text>
-        </Pressable>
+        ) : (
+          <Pressable
+            style={styles.card}
+            disabled={!place || !directionUrl('google', place)}
+            onPress={() => showMaps()}
+            accessibilityRole="button"
+          >
+            <View style={styles.sectionHead}>
+              <Text style={styles.sectionTitle}>{t('business.address')}</Text>
+              {typeof distance === 'number' && !Number.isNaN(distance) ? (
+                <View style={styles.distanceChip}>
+                  <MapPin size={24} color={colors.primaryText} />
+                  <Text style={styles.distanceText}>{`${distance} km`}</Text>
+                </View>
+              ) : null}
+            </View>
+            <Text style={styles.bodyText}>{addressText(place?.address ?? '', place?.city ?? '')}</Text>
+          </Pressable>
+        )}
 
         {phones.length || website || instagram ? (
           <View style={styles.card}>
             <Pressable
-              onPress={showPhones}
+              onPress={() => showPhones()}
               disabled={phones.length === 0}
               hitSlop={8}
               accessibilityRole="button"
@@ -369,7 +416,7 @@ export default function BusinessScreen() {
               {phones.length > 0 ? (
                 <Pressable
                   style={styles.phoneBlock}
-                  onPress={showPhones}
+                  onPress={() => showPhones()}
                   accessibilityRole="button"
                 >
                   {phones.map((phone) => (
@@ -391,6 +438,7 @@ export default function BusinessScreen() {
           </View>
         ) : null}
 
+        {branches.length > 0 ? null : (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>{t('business.opening_hours')}</Text>
           <View style={styles.hoursList}>
@@ -402,12 +450,13 @@ export default function BusinessScreen() {
             ))}
           </View>
         </View>
+        )}
 
         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <TouchableOpacity
             style={[styles.callButton, phones.length === 0 && styles.buttonDisabled]}
             disabled={phones.length === 0}
-            onPress={showPhones}
+            onPress={() => showPhones()}
           >
             <Phone size={20} color="#F6F7F9" />
             <Text style={styles.callLabel}>{t('business.call')}</Text>
@@ -415,7 +464,7 @@ export default function BusinessScreen() {
           <TouchableOpacity
             style={styles.directionsButton}
             disabled={!place || !directionUrl('google', place)}
-            onPress={showMaps}
+            onPress={() => showMaps()}
           >
             <Send size={20} color={colors.primaryText} />
             <Text style={styles.directionsLabel}>{t('business.directions')}</Text>
@@ -449,14 +498,19 @@ export default function BusinessScreen() {
         onSaved={() => setReloadToken((value) => value + 1)}
       />
 
-      <PhoneSheet visible={phoneOpen} phones={phones} onClose={() => setPhoneOpen(false)} />
+      <PhoneSheet
+        visible={phoneOpen}
+        phones={callPhones.length ? callPhones : phones}
+        onClose={() => setPhoneOpen(false)}
+      />
       <LocationSheet
         visible={mapsOpen}
         options={(
           ['google', 'waze', ...(Platform.OS === 'ios' ? (['apple'] as const) : [])] as NavApp[]
         ).flatMap((app) => {
-          if (!place) return [];
-          const url = directionUrl(app, place);
+          const target = mapTarget ?? place;
+          if (!target) return [];
+          const url = directionUrl(app, target);
           if (!url) return [];
           return [
             {
