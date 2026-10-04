@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   Pressable,
   useWindowDimensions,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Image } from 'expo-image';
@@ -21,7 +22,11 @@ import {
   OnboardingDefaultPetPhoto,
 } from '@/components/brand/onboarding';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
+import { uploadPetPhoto } from '@/services/storage';
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
+import { buildOnboardingProgress, saveOnboardingProgress } from '@/services/onboardingProgress';
+import { getErrorMessage } from '@/services/errors';
+import { goToPreviousOnboardingStep } from '@/utils/onboardingRoute';
 import { t } from '@/i18n';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -44,6 +49,14 @@ export default function PetPhotoOnboardingScreen() {
   const { draft, setPhotoUri } = usePetOnboardingDraft();
   const [photoUri, setLocalPhotoUri] = useState<string | null>(draft.photoUri);
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const seededPhoto = useRef(Boolean(draft.photoUri));
+
+  useEffect(() => {
+    if (seededPhoto.current || !draft.photoUri) return;
+    seededPhoto.current = true;
+    setLocalPhotoUri(draft.photoUri);
+  }, [draft.photoUri]);
 
   const heroW = heroWidth;
   const heroH = heroHeight;
@@ -102,21 +115,53 @@ export default function PetPhotoOnboardingScreen() {
     setSheetVisible(true);
   };
 
-  const handleBack = () => {
-    router.back();
+  const storedPhotoUrl = async (uri: string | null): Promise<string | null> => {
+    if (!uri) return null;
+    if (uri.startsWith('https://')) return uri;
+    return uploadPetPhoto(uri);
   };
 
-  const goNext = (uri: string | null) => {
-    setPhotoUri(uri);
-    router.push('/(onboarding)/birth' as never);
+  const handleBack = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const photoUrl = photoUri?.startsWith('https://') ? photoUri : null;
+      setPhotoUri(photoUrl ?? photoUri);
+      await saveOnboardingProgress(
+        buildOnboardingProgress('type', { ...draft, photoUri: photoUrl }),
+      );
+      goToPreviousOnboardingStep(router, 'photo');
+    } catch (err: unknown) {
+      Alert.alert(t('errors.load_failed'), getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const goNext = async (uri: string | null) => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const photoUrl = await storedPhotoUrl(uri);
+      setPhotoUri(photoUrl);
+      setLocalPhotoUri(photoUrl);
+      await saveOnboardingProgress(
+        buildOnboardingProgress('birth', { ...draft, photoUri: photoUrl }, photoUrl),
+      );
+      router.push('/(onboarding)/birth' as never);
+    } catch (err: unknown) {
+      Alert.alert(t('errors.load_failed'), getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleContinue = () => {
-    goNext(photoUri);
+    void goNext(photoUri);
   };
 
   const handleSkip = () => {
-    goNext(null);
+    void goNext(null);
   };
 
   return (
@@ -130,13 +175,13 @@ export default function PetPhotoOnboardingScreen() {
           },
         ]}
       >
-        <OnboardingBackButton onPress={handleBack} />
+        <OnboardingBackButton onPress={() => { void handleBack(); }} />
 
         <View style={styles.headerCenter}>
           <OnboardingProgressDots currentStep={3} />
         </View>
 
-        <OnboardingSkipButton onPress={handleSkip} />
+        <OnboardingSkipButton onPress={saving ? () => {} : handleSkip} />
       </View>
 
       <View style={styles.flex}>
@@ -308,6 +353,7 @@ export default function PetPhotoOnboardingScreen() {
       >
         <Pressable
           onPress={handleContinue}
+          disabled={saving}
           style={[
             styles.continueBtn,
             {
@@ -318,9 +364,13 @@ export default function PetPhotoOnboardingScreen() {
           ]}
           accessibilityRole="button"
         >
-          <Text style={[styles.continueText, { fontSize: 16, lineHeight: 24 }]}>
-            {t('onboarding.continue')}
-          </Text>
+          {saving ? (
+            <ActivityIndicator color={colors.button.primaryText} />
+          ) : (
+            <Text style={[styles.continueText, { fontSize: 16, lineHeight: 24 }]}>
+              {t('onboarding.continue')}
+            </Text>
+          )}
         </Pressable>
       </View>
 

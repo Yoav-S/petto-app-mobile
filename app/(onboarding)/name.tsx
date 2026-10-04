@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,21 @@ import {
   StyleSheet,
   Pressable,
   useWindowDimensions,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
+import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { OnboardingCollar } from '@/components/brand/onboarding';
 import { HealthKeyboardAvoidingView } from '@/components/health/HealthKeyboardFooter';
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
+import { useAuth } from '@/context/AuthContext';
+import { buildOnboardingProgress, saveOnboardingProgress } from '@/services/onboardingProgress';
+import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
 import { centeredInputText } from '@/constants/textField';
@@ -43,9 +50,19 @@ export default function PetNameOnboardingScreen() {
   const inputRef = useRef<TextInput>(null);
 
   const { draft, setName } = usePetOnboardingDraft();
+  const { signOut } = useAuth();
   const [name, setLocalName] = useState(draft.name);
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const seededName = useRef(draft.name.length > 0);
 
   const canContinue = isValidPetName(name);
+
+  useEffect(() => {
+    if (seededName.current || !draft.name) return;
+    seededName.current = true;
+    setLocalName(draft.name);
+  }, [draft.name]);
 
   useFocusEffect(
     useCallback(() => {
@@ -59,10 +76,27 @@ export default function PetNameOnboardingScreen() {
     setLocalName(lettersOnly);
   };
 
-  const handleContinue = () => {
-    if (!canContinue) return;
-    setName(name.trim());
-    router.push('/(onboarding)/type' as never);
+  const handleContinue = async () => {
+    if (!canContinue || saving) return;
+    const trimmed = name.trim();
+    setSaving(true);
+    setName(trimmed);
+    try {
+      await saveOnboardingProgress(
+        buildOnboardingProgress('type', { ...draft, name: trimmed }),
+      );
+      router.push('/(onboarding)/type' as never);
+    } catch (err: unknown) {
+      Alert.alert(t('errors.load_failed'), getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleLeave = async () => {
+    setLeaveOpen(false);
+    await signOut();
+    router.replace('/(auth)/' as never);
   };
 
   const cardRadius = PET_NAME_STEP.cardRadius;
@@ -80,7 +114,7 @@ export default function PetNameOnboardingScreen() {
             },
           ]}
         >
-          <View style={styles.headerSide} />
+          <OnboardingBackButton onPress={() => setLeaveOpen(true)} />
           <View style={styles.headerCenter}>
             <OnboardingProgressDots currentStep={1} />
           </View>
@@ -182,7 +216,7 @@ export default function PetNameOnboardingScreen() {
         >
           <Pressable
             onPress={handleContinue}
-            disabled={!canContinue}
+            disabled={!canContinue || saving}
             style={[
               styles.continueBtn,
               {
@@ -193,14 +227,29 @@ export default function PetNameOnboardingScreen() {
               !canContinue && styles.continueBtnDisabled,
             ]}
             accessibilityRole="button"
-            accessibilityState={{ disabled: !canContinue }}
+            accessibilityState={{ disabled: !canContinue || saving }}
           >
-            <Text style={[styles.continueText, { fontSize: 16, lineHeight: 24 }]}>
-              {t('onboarding.continue')}
-            </Text>
+            {saving ? (
+              <ActivityIndicator color={colors.button.primaryText} />
+            ) : (
+              <Text style={[styles.continueText, { fontSize: 16, lineHeight: 24 }]}>
+                {t('onboarding.continue')}
+              </Text>
+            )}
           </Pressable>
         </View>
       </HealthKeyboardAvoidingView>
+      <ConfirmModal
+        visible={leaveOpen}
+        title={t('petOnboarding.leave_title')}
+        message={t('petOnboarding.leave_body')}
+        confirmText={t('petOnboarding.leave_confirm')}
+        cancelText={t('petOnboarding.leave_stay')}
+        onConfirm={() => {
+          void handleLeave();
+        }}
+        onCancel={() => setLeaveOpen(false)}
+      />
     </SafeAreaView>
   );
 }

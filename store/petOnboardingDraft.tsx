@@ -1,4 +1,6 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { draftFromProgress } from '@/services/onboardingProgress';
 
 export type PetType = 'dog' | 'cat';
 
@@ -28,7 +30,15 @@ const emptyDraft: PetOnboardingDraft = {
 const PetOnboardingDraftContext = createContext<PetOnboardingDraftContextValue | null>(null);
 
 export function PetOnboardingDraftProvider({ children }: { children: React.ReactNode }) {
+  const { user, onboardingReady, onboardingResume } = useAuth();
   const [draft, setDraft] = useState<PetOnboardingDraft>(emptyDraft);
+  const [appliedKey, setAppliedKey] = useState<string | null>(null);
+  const resumeKey = onboardingReady && user?.uid ? user.uid : null;
+  // Apply the server draft before child screens read it, including a logout wipe.
+  if (resumeKey !== appliedKey) {
+    setAppliedKey(resumeKey);
+    setDraft(resumeKey ? draftFromProgress(onboardingResume) : emptyDraft);
+  }
 
   const setName = useCallback((name: string) => {
     setDraft((prev) => ({ ...prev, name }));

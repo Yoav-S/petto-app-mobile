@@ -26,6 +26,7 @@ import {
   consumeVerifyScreenMessage,
 } from '@/services/auth';
 import { getOnboardingComplete } from '@/services/onboarding';
+import { onboardingHref } from '@/utils/onboardingRoute';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
@@ -104,7 +105,7 @@ export default function VerifyEmailScreen() {
       } else if (wasOnboarded) {
         router.replace('/(auth)/' as never);
       } else {
-        router.replace('/(onboarding)/name' as never);
+        router.replace(onboardingHref(profile.onboarding?.step) as never);
       }
     } catch (err: unknown) {
       console.error(err);

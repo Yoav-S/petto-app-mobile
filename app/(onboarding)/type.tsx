@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
   useWindowDimensions,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +14,9 @@ import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDo
 import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
 import { OnboardingBed, OnboardingCat, OnboardingDog } from '@/components/brand/onboarding';
 import { usePetOnboardingDraft, type PetType } from '@/store/petOnboardingDraft';
+import { buildOnboardingProgress, saveOnboardingProgress } from '@/services/onboardingProgress';
+import { getErrorMessage } from '@/services/errors';
+import { goToPreviousOnboardingStep } from '@/utils/onboardingRoute';
 import { t } from '@/i18n';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -33,6 +38,14 @@ export default function PetTypeOnboardingScreen() {
 
   const { draft, setType } = usePetOnboardingDraft();
   const [selected, setSelected] = useState<PetType | null>(draft.type);
+  const [saving, setSaving] = useState(false);
+  const seededType = useRef(draft.type !== null);
+
+  useEffect(() => {
+    if (seededType.current || !draft.type) return;
+    seededType.current = true;
+    setSelected(draft.type);
+  }, [draft.type]);
 
   const canContinue = selected !== null;
   const tileWidth =
@@ -42,14 +55,36 @@ export default function PetTypeOnboardingScreen() {
     setSelected(type);
   };
 
-  const handleContinue = () => {
-    if (!selected) return;
+  const handleContinue = async () => {
+    if (!selected || saving) return;
+    setSaving(true);
     setType(selected);
-    router.push('/(onboarding)/photo' as never);
+    try {
+      await saveOnboardingProgress(
+        buildOnboardingProgress('photo', { ...draft, type: selected }),
+      );
+      router.push('/(onboarding)/photo' as never);
+    } catch (err: unknown) {
+      Alert.alert(t('errors.load_failed'), getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleBack = () => {
-    router.back();
+  const handleBack = async () => {
+    if (saving) return;
+    setSaving(true);
+    if (selected) setType(selected);
+    try {
+      await saveOnboardingProgress(
+        buildOnboardingProgress('name', { ...draft, type: selected }),
+      );
+      goToPreviousOnboardingStep(router, 'type');
+    } catch (err: unknown) {
+      Alert.alert(t('errors.load_failed'), getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -63,7 +98,7 @@ export default function PetTypeOnboardingScreen() {
           },
         ]}
       >
-        <OnboardingBackButton onPress={handleBack} />
+        <OnboardingBackButton onPress={() => { void handleBack(); }} />
 
         <View style={styles.headerCenter}>
           <OnboardingProgressDots currentStep={2} />
@@ -161,8 +196,8 @@ export default function PetTypeOnboardingScreen() {
         ]}
       >
         <Pressable
-          onPress={handleContinue}
-          disabled={!canContinue}
+          onPress={() => { void handleContinue(); }}
+          disabled={!canContinue || saving}
           style={[
             styles.continueBtn,
             {
@@ -175,7 +210,11 @@ export default function PetTypeOnboardingScreen() {
           accessibilityRole="button"
           accessibilityState={{ disabled: !canContinue }}
         >
-          <Text style={styles.continueText}>{t('onboarding.continue')}</Text>
+          {saving ? (
+            <ActivityIndicator color={colors.button.primaryText} />
+          ) : (
+            <Text style={styles.continueText}>{t('onboarding.continue')}</Text>
+          )}
         </Pressable>
       </View>
     </SafeAreaView>

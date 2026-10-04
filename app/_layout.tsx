@@ -19,6 +19,7 @@ import { ToastProvider } from '@/context/ToastContext';
 import QueryProvider from '@/context/QueryProvider';
 import { PetStoreProvider, useSnapActivePetToIncluded } from '@/store/petStore';
 import { PetOnboardingDraftProvider, usePetOnboardingDraft } from '@/store/petOnboardingDraft';
+import { onboardingHref } from '@/utils/onboardingRoute';
 import { UpgradeLimitProvider } from '@/context/UpgradeLimitContext';
 import { ReminderPromptProvider } from '@/context/ReminderPromptContext';
 import { useReminderNotificationRouting } from '@/hooks/useReminderNotificationRouting';
@@ -47,7 +48,7 @@ function BootSpinner() {
 }
 
 function RootLayoutNav() {
-  const { user, isLoading, isSyncing, hasPets, hasAccountName } = useAuth();
+  const { user, isLoading, isSyncing, hasPets, hasAccountName, onboardingResume } = useAuth();
   const { resetDraft } = usePetOnboardingDraft();
   const segments = useSegments();
   const router = useRouter();
@@ -135,9 +136,9 @@ function RootLayoutNav() {
     }
     if (!hasAccountName) return;
 
-    // No first pet yet → must finish onboarding (never skip to home on cold start).
+    // No first pet yet → resume the saved step (never skip to home on cold start).
     if (hasPets === false && !inOnboardingGroup) {
-      router.replace('/(onboarding)/name' as never);
+      router.replace(onboardingHref(onboardingResume?.step) as never);
       return;
     }
 
@@ -160,6 +161,7 @@ function RootLayoutNav() {
     onEmail,
     onYourName,
     onAuthLobby,
+    onboardingResume?.step,
     router,
   ]);
 

@@ -18,6 +18,7 @@ import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
 import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
 import { useAuth } from '@/context/AuthContext';
+import { onboardingHref } from '@/utils/onboardingRoute';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
@@ -47,12 +48,12 @@ export default function YourNameScreen() {
     setIsLoading(true);
     setError('');
     try {
-      await saveAccountName(trimmed);
+      const profile = await saveAccountName(trimmed);
       markAccountName(trimmed);
-      if (hasPets) {
+      if (hasPets || profile.has_pets) {
         router.replace('/(tabs)' as never);
       } else {
-        router.replace('/(onboarding)/name' as never);
+        router.replace(onboardingHref(profile.onboarding?.step) as never);
       }
     } catch (err: unknown) {
       setError(getErrorMessage(err));

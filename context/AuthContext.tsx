@@ -8,6 +8,7 @@ import { registerForPushNotifications } from '@/services/notifications';
 import { clearOnboardingComplete, getOnboardingComplete } from '@/services/onboarding';
 import { clearQueryCache } from '@/services/queryClient';
 import { getErrorMessage } from '@/services/errors';
+import type { OnboardingProgress } from '@/types/api';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
@@ -73,6 +74,10 @@ interface AuthContextType {
   markAccountName: (name?: string) => void;
   /** Call after the account photo is saved or removed. */
   markAccountPhoto: (url: string | null) => void;
+  /** True after this session's profile sync, so setup can resume from the server. */
+  onboardingReady: boolean;
+  /** Saved first-pet step. Null when there is no draft or the account already has a pet. */
+  onboardingResume: OnboardingProgress | null;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -93,6 +98,8 @@ const AuthContext = createContext<AuthContextType>({
   markHasPets: () => {},
   markAccountName: () => {},
   markAccountPhoto: () => {},
+  onboardingReady: false,
+  onboardingResume: null,
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -105,6 +112,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [hasAccountName, setHasAccountName] = useState<boolean | null>(null);
   const [accountName, setAccountName] = useState<string | null>(null);
   const [accountPhotoUrl, setAccountPhotoUrl] = useState<string | null>(null);
+  const [onboardingReady, setOnboardingReady] = useState(false);
+  const [onboardingResume, setOnboardingResume] = useState<OnboardingProgress | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
@@ -145,10 +154,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setHasAccountName(null);
         setAccountName(null);
         setAccountPhotoUrl(null);
+        setOnboardingResume(null);
+        setOnboardingReady(false);
         await firebaseSignOut(auth);
         return;
       }
 
+      setOnboardingResume(pets ? null : profile.onboarding ?? null);
+      setOnboardingReady(true);
       setHasPets(pets);
       setHasAccountName(Boolean(profile.name?.trim()));
       setAccountName(profile.name?.trim() || null);
@@ -163,6 +176,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setHasAccountName(null);
       setAccountName(null);
       setAccountPhotoUrl(null);
+      setOnboardingResume(null);
+      setOnboardingReady(false);
       setSyncError(getErrorMessage(error));
     } finally {
       setIsSyncing(false);
@@ -179,6 +194,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setHasAccountName(null);
         setAccountName(null);
         setAccountPhotoUrl(null);
+        setOnboardingResume(null);
+        setOnboardingReady(false);
         setSyncError(null);
       }
       setIsLoading(false);
@@ -261,6 +278,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setHasAccountName(null);
       setAccountName(null);
       setAccountPhotoUrl(null);
+      setOnboardingResume(null);
+      setOnboardingReady(false);
     } catch (error) {
       console.error('Sign-out Error:', error);
     }
@@ -301,6 +320,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         markHasPets,
         markAccountName,
         markAccountPhoto,
+        onboardingReady,
+        onboardingResume,
       }}
     >
       {children}

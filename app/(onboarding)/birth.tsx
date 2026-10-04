@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,8 @@ import { useActivePet } from '@/store/petStore';
 import { createPet } from '@/services/pets';
 import { uploadPetPhoto } from '@/services/storage';
 import { setOnboardingComplete } from '@/services/onboarding';
+import { buildOnboardingProgress, saveOnboardingProgress } from '@/services/onboardingProgress';
+import { goToPreviousOnboardingStep } from '@/utils/onboardingRoute';
 import { useAuth } from '@/context/AuthContext';
 import { getErrorMessage } from '@/services/errors';
 import { presentPremiumLimitFromError } from '@/services/subscription';
@@ -56,9 +58,25 @@ export default function PetBirthOnboardingScreen() {
   const [birthDate, setLocalBirthDate] = useState<string | null>(draft.birthDate);
   const [sheetVisible, setSheetVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const seededBirth = useRef(Boolean(draft.birthDate));
 
-  const handleBack = () => {
-    router.back();
+  useEffect(() => {
+    if (seededBirth.current || !draft.birthDate) return;
+    seededBirth.current = true;
+    setLocalBirthDate(draft.birthDate);
+  }, [draft.birthDate]);
+
+  const handleBack = async () => {
+    if (isSubmitting) return;
+    setBirthDate(birthDate);
+    try {
+      await saveOnboardingProgress(
+        buildOnboardingProgress('photo', { ...draft, birthDate }),
+      );
+      goToPreviousOnboardingStep(router, 'birth');
+    } catch (err: unknown) {
+      Alert.alert(t('errors.load_failed'), getErrorMessage(err));
+    }
   };
 
   const handleOpenSheet = () => {
@@ -67,7 +85,11 @@ export default function PetBirthOnboardingScreen() {
 
   const handleConfirmDate = (isoDate: string) => {
     setLocalBirthDate(isoDate);
+    setBirthDate(isoDate);
     setSheetVisible(false);
+    void saveOnboardingProgress(
+      buildOnboardingProgress('birth', { ...draft, birthDate: isoDate }),
+    ).catch(() => {});
   };
 
   const completeOnboarding = async (date: string | null) => {
@@ -81,7 +103,9 @@ export default function PetBirthOnboardingScreen() {
 
     try {
       let photoUrl: string | null = null;
-      if (draft.photoUri) {
+      if (draft.photoUri?.startsWith('https://')) {
+        photoUrl = draft.photoUri;
+      } else if (draft.photoUri) {
         photoUrl = await uploadPetPhoto(draft.photoUri);
       }
 
@@ -128,7 +152,7 @@ export default function PetBirthOnboardingScreen() {
           },
         ]}
       >
-        <OnboardingBackButton onPress={handleBack} />
+        <OnboardingBackButton onPress={() => { void handleBack(); }} />
 
         <View style={styles.headerCenter}>
           <OnboardingProgressDots currentStep={4} />

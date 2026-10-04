@@ -20,7 +20,19 @@ export interface UserProfile {
   last_login_at?: string | null;
   // Server-driven post-login routing: true → go to app, false → onboarding.
   has_pets: boolean;
+  /** First-pet answers. Null once a pet exists. */
+  onboarding?: OnboardingProgress | null;
   subscription?: UserSubscription;
+}
+
+export type OnboardingStep = 'name' | 'type' | 'photo' | 'birth';
+
+export interface OnboardingProgress {
+  step: OnboardingStep;
+  pet_name?: string | null;
+  pet_type?: 'dog' | 'cat' | null;
+  photo_url?: string | null;
+  birth_date?: string | null;
 }
 
 export interface Pet {
