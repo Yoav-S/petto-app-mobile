@@ -18,7 +18,6 @@ interface SettingsRow {
 }
 
 const ROWS: SettingsRow[] = [
-  { key: 'account', route: '/settings/account' },
   { key: 'notifications', route: '/settings/notifications' },
   { key: 'theme', route: '/settings/theme' },
   { key: 'language', route: '/settings/language' },

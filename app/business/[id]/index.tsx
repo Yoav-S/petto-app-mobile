@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -23,7 +23,7 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useImageStatusBarStyle } from '@/hooks/useImageStatusBarStyle';
 import { useStatusBarOverride } from '@/context/SystemBarsContext';
 import HeaderIconButton from '@/components/ui/HeaderIconButton';
-import BottomSheetModal from '@/components/ui/BottomSheetModal';
+import PlaceChoiceSheet from '@/components/business/PlaceChoiceSheet';
 import { t } from '@/i18n';
 import { getErrorMessage } from '@/services/errors';
 import WriteReviewSheet from '@/components/business/WriteReviewSheet';
@@ -130,7 +130,8 @@ export default function BusinessScreen() {
   const [place, setPlace] = useState<BusinessPlaceDetail | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
-  const [sheet, setSheet] = useState<'phones' | 'maps' | null>(null);
+  const [phoneOpen, setPhoneOpen] = useState(false);
+  const [mapsOpen, setMapsOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -172,6 +173,35 @@ export default function BusinessScreen() {
   const showReadMore = description.length > 120;
   const reviews = place?.reviews ?? [];
   const phones = place?.phone ?? [];
+
+  const sheetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (sheetTimer.current) clearTimeout(sheetTimer.current);
+    },
+    [],
+  );
+
+  const openSheet = (which: 'phone' | 'maps') => {
+    if (sheetTimer.current) clearTimeout(sheetTimer.current);
+    setPhoneOpen(false);
+    setMapsOpen(false);
+    sheetTimer.current = setTimeout(() => {
+      if (which === 'phone') setPhoneOpen(true);
+      else setMapsOpen(true);
+    }, 120);
+  };
+
+  const showPhones = () => {
+    if (!phones.length) return;
+    openSheet('phone');
+  };
+
+  const showMaps = () => {
+    if (!place || !directionUrl('google', place)) return;
+    openSheet('maps');
+  };
+
   const website = place?.website?.trim() ?? '';
   const instagram = place?.instagram?.trim() ?? '';
   const statusColor = open ? OPEN_COLOR : CLOSED_COLOR;
@@ -324,7 +354,7 @@ export default function BusinessScreen() {
         <Pressable
           style={styles.card}
           disabled={!place || !directionUrl('google', place)}
-          onPress={() => setSheet('maps')}
+          onPress={showMaps}
           accessibilityRole="button"
         >
           <View style={styles.sectionHead}>
@@ -346,7 +376,7 @@ export default function BusinessScreen() {
               {phones.length > 0 ? (
                 <Pressable
                   style={styles.phoneBlock}
-                  onPress={() => setSheet('phones')}
+                  onPress={showPhones}
                   accessibilityRole="button"
                 >
                   {phones.map((phone) => (
@@ -384,7 +414,7 @@ export default function BusinessScreen() {
           <TouchableOpacity
             style={[styles.callButton, phones.length === 0 && styles.buttonDisabled]}
             disabled={phones.length === 0}
-            onPress={() => setSheet('phones')}
+            onPress={showPhones}
           >
             <Phone size={20} color="#F6F7F9" />
             <Text style={styles.callLabel}>{t('business.call')}</Text>
@@ -392,7 +422,7 @@ export default function BusinessScreen() {
           <TouchableOpacity
             style={styles.directionsButton}
             disabled={!place || !directionUrl('google', place)}
-            onPress={() => setSheet('maps')}
+            onPress={showMaps}
           >
             <Send size={20} color={colors.primaryText} />
             <Text style={styles.directionsLabel}>{t('business.directions')}</Text>
@@ -426,48 +456,38 @@ export default function BusinessScreen() {
         onSaved={() => setReloadToken((value) => value + 1)}
       />
 
-      <BottomSheetModal visible={sheet != null} onClose={() => setSheet(null)}>
-        <View style={[styles.directionsSheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-          <Text style={styles.directionsTitle}>
-            {sheet === 'phones' ? t('business.call') : t('business.open_in')}
-          </Text>
-          {sheet === 'phones'
-            ? phones.map((phone) => (
-                <TouchableOpacity
-                  key={phone}
-                  style={styles.directionsOption}
-                  onPress={() => {
-                    setSheet(null);
-                    void Linking.openURL(`tel:${phone}`);
-                  }}
-                >
-                  <Text style={styles.directionsOptionLabel}>{phone}</Text>
-                </TouchableOpacity>
-              ))
-            : (['google', 'waze', ...(Platform.OS === 'ios' ? (['apple'] as const) : [])] as NavApp[]).map((app) => (
-                <TouchableOpacity
-                  key={app}
-                  style={styles.directionsOption}
-                  onPress={() => {
-                    if (!place) return;
-                    const url = directionUrl(app, place);
-                    setSheet(null);
-                    if (url) void Linking.openURL(url);
-                  }}
-                >
-                  <Text style={styles.directionsOptionLabel}>
-                    {t(
-                      app === 'google'
-                        ? 'business.google_maps'
-                        : app === 'waze'
-                          ? 'business.waze'
-                          : 'business.apple_maps',
-                    )}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-        </View>
-      </BottomSheetModal>
+      <PlaceChoiceSheet
+        visible={phoneOpen}
+        title={t('business.call')}
+        options={phones.map((phone) => ({ key: phone, label: phone, url: `tel:${phone}` }))}
+        onClose={() => setPhoneOpen(false)}
+      />
+
+      <PlaceChoiceSheet
+        visible={mapsOpen}
+        title={t('business.address')}
+        options={(
+          ['google', 'waze', ...(Platform.OS === 'ios' ? (['apple'] as const) : [])] as NavApp[]
+        ).flatMap((app) => {
+          if (!place) return [];
+          const url = directionUrl(app, place);
+          if (!url) return [];
+          return [
+            {
+              key: app,
+              label: t(
+                app === 'google'
+                  ? 'business.google_maps'
+                  : app === 'waze'
+                    ? 'business.waze'
+                    : 'business.apple_maps',
+              ),
+              url,
+            },
+          ];
+        })}
+        onClose={() => setMapsOpen(false)}
+      />
     </View>
   );
 }
@@ -838,34 +858,5 @@ const makeStyles = (c: ThemeColors) =>
       position: 'absolute',
       right: PAGE_HORIZONTAL_PADDING,
       zIndex: 2,
-    },
-    directionsSheet: {
-      paddingTop: 8,
-      paddingHorizontal: 20,
-      gap: 8,
-      backgroundColor: c.surface,
-      borderTopLeftRadius: 24,
-      borderTopRightRadius: 24,
-    },
-    directionsTitle: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 18,
-      lineHeight: 24,
-      color: c.primaryText,
-      textAlign: 'center',
-      marginBottom: 8,
-    },
-    directionsOption: {
-      height: 48,
-      borderRadius: 12,
-      backgroundColor: c.background,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    directionsOptionLabel: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 16,
-      lineHeight: 24,
-      color: c.primaryText,
     },
   });
