@@ -1,31 +1,39 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomSheetModal, { waitForBottomSheetsToSettle } from '@/components/ui/BottomSheetModal';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 
-export interface PlaceChoice {
+type AppIcon = 'phone' | 'google' | 'waze' | 'apple';
+
+interface Choice {
   key: string;
   label: string;
   url: string;
+  icon: AppIcon;
 }
 
-interface PlaceChoiceSheetProps {
-  visible: boolean;
-  title: string;
-  options: PlaceChoice[];
-  onClose: () => void;
-}
+const APP_ICON: Record<AppIcon, { name: string; color: string; background: string }> = {
+  phone: { name: 'phone', color: '#F6F7F9', background: '#004741' },
+  google: { name: 'google', color: '#FFFFFF', background: '#4285F4' },
+  waze: { name: 'waze', color: '#FFFFFF', background: '#33CCFF' },
+  apple: { name: 'apple', color: '#FFFFFF', background: '#1F2937' },
+};
 
-export default function PlaceChoiceSheet({
+function Sheet({
   visible,
   title,
-  options,
+  choices,
   onClose,
-}: PlaceChoiceSheetProps) {
+}: {
+  visible: boolean;
+  title: string;
+  choices: Choice[];
+  onClose: () => void;
+}) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
@@ -53,19 +61,77 @@ export default function PlaceChoiceSheet({
           </TouchableOpacity>
         </View>
         <View style={[styles.body, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-          {options.map((option) => (
+          {choices.map((choice) => (
             <TouchableOpacity
-              key={option.key}
-              style={styles.option}
-              onPress={() => choose(option.url)}
+              key={choice.key}
+              style={styles.choice}
+              onPress={() => choose(choice.url)}
               accessibilityRole="button"
             >
-              <Text style={styles.optionText}>{option.label}</Text>
+              <View style={[styles.appIcon, { backgroundColor: APP_ICON[choice.icon].background }]}>
+                {choice.icon === 'phone' ? (
+                  <Ionicons name="call" size={18} color={APP_ICON.phone.color} />
+                ) : (
+                  <FontAwesome5
+                    name={APP_ICON[choice.icon].name}
+                    brand
+                    size={18}
+                    color={APP_ICON[choice.icon].color}
+                  />
+                )}
+              </View>
+              <Text style={styles.choiceLabel}>{choice.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
     </BottomSheetModal>
+  );
+}
+
+export function PhoneSheet({
+  visible,
+  phones,
+  onClose,
+}: {
+  visible: boolean;
+  phones: string[];
+  onClose: () => void;
+}) {
+  return (
+    <Sheet
+      visible={visible}
+      title={t('business.call')}
+      choices={phones.map((phone) => ({
+        key: phone,
+        label: phone,
+        url: `tel:${phone}`,
+        icon: 'phone',
+      }))}
+      onClose={onClose}
+    />
+  );
+}
+
+export function LocationSheet({
+  visible,
+  options,
+  onClose,
+}: {
+  visible: boolean;
+  options: Omit<Choice, 'icon'>[];
+  onClose: () => void;
+}) {
+  return (
+    <Sheet
+      visible={visible}
+      title={t('business.directions')}
+      choices={options.map((option) => ({
+        ...option,
+        icon: option.key === 'waze' ? 'waze' : option.key === 'apple' ? 'apple' : 'google',
+      }))}
+      onClose={onClose}
+    />
   );
 }
 
@@ -106,21 +172,27 @@ const makeStyles = (c: ThemeColors) =>
       paddingHorizontal: 20,
       gap: 8,
     },
-    option: {
-      height: 48,
+    choice: {
+      height: 56,
       borderRadius: 12,
-      borderWidth: 1,
-      borderColor: c.border,
-      backgroundColor: c.surface,
+      backgroundColor: c.background,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingHorizontal: 12,
+    },
+    appIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
       alignItems: 'center',
       justifyContent: 'center',
-      paddingHorizontal: 16,
     },
-    optionText: {
+    choiceLabel: {
+      flex: 1,
       fontFamily: 'Rubik-Medium',
       fontSize: 16,
       lineHeight: 24,
       color: c.primaryText,
-      textAlign: 'center',
     },
   });

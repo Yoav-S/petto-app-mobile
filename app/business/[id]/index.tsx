@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -23,10 +23,11 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useImageStatusBarStyle } from '@/hooks/useImageStatusBarStyle';
 import { useStatusBarOverride } from '@/context/SystemBarsContext';
 import HeaderIconButton from '@/components/ui/HeaderIconButton';
-import PlaceChoiceSheet from '@/components/business/PlaceChoiceSheet';
+import { useSettledModalVisible } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 import { getErrorMessage } from '@/services/errors';
 import WriteReviewSheet from '@/components/business/WriteReviewSheet';
+import { LocationSheet, PhoneSheet } from '@/components/business/ContactSheets';
 import { postedLabel } from '@/utils/reviewPosted';
 import { useToast } from '@/context/ToastContext';
 import {
@@ -173,33 +174,18 @@ export default function BusinessScreen() {
   const showReadMore = description.length > 120;
   const reviews = place?.reviews ?? [];
   const phones = place?.phone ?? [];
-
-  const sheetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(
-    () => () => {
-      if (sheetTimer.current) clearTimeout(sheetTimer.current);
-    },
-    [],
-  );
-
-  const openSheet = (which: 'phone' | 'maps') => {
-    if (sheetTimer.current) clearTimeout(sheetTimer.current);
-    setPhoneOpen(false);
-    setMapsOpen(false);
-    sheetTimer.current = setTimeout(() => {
-      if (which === 'phone') setPhoneOpen(true);
-      else setMapsOpen(true);
-    }, 120);
-  };
+  const photoPresented = useSettledModalVisible(photoOpen && Boolean(image));
 
   const showPhones = () => {
     if (!phones.length) return;
-    openSheet('phone');
+    setMapsOpen(false);
+    setPhoneOpen(true);
   };
 
   const showMaps = () => {
     if (!place || !directionUrl('google', place)) return;
-    openSheet('maps');
+    setPhoneOpen(false);
+    setMapsOpen(true);
   };
 
   const website = place?.website?.trim() ?? '';
@@ -371,7 +357,14 @@ export default function BusinessScreen() {
 
         {phones.length || website || instagram ? (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>{t('business.contact')}</Text>
+            <Pressable
+              onPress={showPhones}
+              disabled={phones.length === 0}
+              hitSlop={8}
+              accessibilityRole="button"
+            >
+              <Text style={styles.sectionTitle}>{t('business.contact')}</Text>
+            </Pressable>
             <View style={styles.contactList}>
               {phones.length > 0 ? (
                 <Pressable
@@ -430,22 +423,22 @@ export default function BusinessScreen() {
         </View>
       </ScrollView>
 
-      <Modal visible={photoOpen && Boolean(image)} transparent animationType="fade" onRequestClose={() => setPhotoOpen(false)}>
-        <View style={styles.photoModal}>
-          {image ? (
+      {photoPresented && image ? (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setPhotoOpen(false)}>
+          <View style={styles.photoModal}>
             <Image source={{ uri: image }} style={styles.photoFull} contentFit="contain" />
-          ) : null}
-          <View style={[styles.photoClose, { top: insets.top + 8 }]}>
-            <HeaderIconButton
-              onPress={() => setPhotoOpen(false)}
-              accessibilityLabel={t('petOnboarding.photo_close_a11y')}
-              style={styles.backButton}
-            >
-              <Ionicons name="close" size={24} color="#1F2937" />
-            </HeaderIconButton>
+            <View style={[styles.photoClose, { top: insets.top + 8 }]}>
+              <HeaderIconButton
+                onPress={() => setPhotoOpen(false)}
+                accessibilityLabel={t('petOnboarding.photo_close_a11y')}
+                style={styles.backButton}
+              >
+                <Ionicons name="close" size={24} color="#1F2937" />
+              </HeaderIconButton>
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      ) : null}
 
       <WriteReviewSheet
         visible={reviewOpen}
@@ -456,16 +449,9 @@ export default function BusinessScreen() {
         onSaved={() => setReloadToken((value) => value + 1)}
       />
 
-      <PlaceChoiceSheet
-        visible={phoneOpen}
-        title={t('business.call')}
-        options={phones.map((phone) => ({ key: phone, label: phone, url: `tel:${phone}` }))}
-        onClose={() => setPhoneOpen(false)}
-      />
-
-      <PlaceChoiceSheet
+      <PhoneSheet visible={phoneOpen} phones={phones} onClose={() => setPhoneOpen(false)} />
+      <LocationSheet
         visible={mapsOpen}
-        title={t('business.address')}
         options={(
           ['google', 'waze', ...(Platform.OS === 'ios' ? (['apple'] as const) : [])] as NavApp[]
         ).flatMap((app) => {
