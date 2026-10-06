@@ -14,6 +14,9 @@ import {
 export const FREE_MAX_PETS = 1;
 export const FREE_MAX_ACTIVE_REMINDERS = 50;
 
+/** This release has no paid plan. Pets and reminders are unlimited. */
+export const SUBSCRIPTION_LIMITS_ENABLED = false;
+
 export async function getMyProfile(): Promise<UserProfile> {
   return apiGet<UserProfile>('/users/me');
 }
@@ -45,6 +48,7 @@ export async function fetchIsPremium(): Promise<boolean> {
 }
 
 export function isPetLocked(pet: Pet | null | undefined): boolean {
+  if (!SUBSCRIPTION_LIMITS_ENABLED) return false;
   return Boolean(pet?.locked);
 }
 
@@ -120,6 +124,7 @@ export async function guardAddPet(
   petCount: number,
   options?: { onBeforeNavigate?: () => void },
 ): Promise<boolean> {
+  if (!SUBSCRIPTION_LIMITS_ENABLED) return true;
   if (petCount < FREE_MAX_PETS) return true;
   if (await fetchIsPremium()) return true;
   showUpgradeAlert(router, 'pet', options);
@@ -134,6 +139,7 @@ export async function guardAddReminder(
   pets: Pet[],
   options?: { onBeforeNavigate?: () => void },
 ): Promise<boolean> {
+  if (!SUBSCRIPTION_LIMITS_ENABLED) return true;
   if (await fetchIsPremium()) return true;
   const countable = pets.filter((p) => !p.locked);
   const active = await countActiveReminders(countable.length ? countable : pets);
@@ -148,6 +154,7 @@ export async function guardSelectPet(
   pet: Pet | null | undefined,
   options?: { onBeforeNavigate?: () => void },
 ): Promise<boolean> {
+  if (!SUBSCRIPTION_LIMITS_ENABLED) return true;
   if (!isPetLocked(pet)) return true;
   if (await fetchIsPremium()) return true;
   showUpgradeAlert(router, 'pet_switch', options);

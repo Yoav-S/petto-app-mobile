@@ -128,7 +128,7 @@ export default function PetPhotoOnboardingScreen() {
       const photoUrl = photoUri?.startsWith('https://') ? photoUri : null;
       setPhotoUri(photoUrl ?? photoUri);
       await saveOnboardingProgress(
-        buildOnboardingProgress('type', { ...draft, photoUri: photoUrl }),
+        buildOnboardingProgress('name', { ...draft, photoUri: photoUrl }),
       );
       goToPreviousOnboardingStep(router, 'photo');
     } catch (err: unknown) {

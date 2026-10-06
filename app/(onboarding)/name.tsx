@@ -14,12 +14,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
 import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
-import ConfirmModal from '@/components/ui/ConfirmModal';
 import { OnboardingCollar } from '@/components/brand/onboarding';
 import { HealthKeyboardAvoidingView } from '@/components/health/HealthKeyboardFooter';
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
-import { useAuth } from '@/context/AuthContext';
 import { buildOnboardingProgress, saveOnboardingProgress } from '@/services/onboardingProgress';
+import { goToPreviousOnboardingStep } from '@/utils/onboardingRoute';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
@@ -50,9 +49,7 @@ export default function PetNameOnboardingScreen() {
   const inputRef = useRef<TextInput>(null);
 
   const { draft, setName } = usePetOnboardingDraft();
-  const { signOut } = useAuth();
   const [name, setLocalName] = useState(draft.name);
-  const [leaveOpen, setLeaveOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const seededName = useRef(draft.name.length > 0);
 
@@ -83,9 +80,9 @@ export default function PetNameOnboardingScreen() {
     setName(trimmed);
     try {
       await saveOnboardingProgress(
-        buildOnboardingProgress('type', { ...draft, name: trimmed }),
+        buildOnboardingProgress('photo', { ...draft, name: trimmed }),
       );
-      router.push('/(onboarding)/type' as never);
+      router.push('/(onboarding)/photo' as never);
     } catch (err: unknown) {
       Alert.alert(t('errors.load_failed'), getErrorMessage(err));
     } finally {
@@ -93,10 +90,21 @@ export default function PetNameOnboardingScreen() {
     }
   };
 
-  const handleLeave = async () => {
-    setLeaveOpen(false);
-    await signOut();
-    router.replace('/(auth)/' as never);
+  const handleBack = async () => {
+    if (saving) return;
+    const trimmed = name.trim();
+    setSaving(true);
+    if (trimmed) setName(trimmed);
+    try {
+      await saveOnboardingProgress(
+        buildOnboardingProgress('type', { ...draft, name: trimmed }),
+      );
+      goToPreviousOnboardingStep(router, 'name');
+    } catch (err: unknown) {
+      Alert.alert(t('errors.load_failed'), getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const cardRadius = PET_NAME_STEP.cardRadius;
@@ -114,9 +122,9 @@ export default function PetNameOnboardingScreen() {
             },
           ]}
         >
-          <OnboardingBackButton onPress={() => setLeaveOpen(true)} />
+          <OnboardingBackButton onPress={() => { void handleBack(); }} />
           <View style={styles.headerCenter}>
-            <OnboardingProgressDots currentStep={1} />
+            <OnboardingProgressDots currentStep={2} />
           </View>
           <View style={styles.headerSide} />
         </View>
@@ -239,17 +247,6 @@ export default function PetNameOnboardingScreen() {
           </Pressable>
         </View>
       </HealthKeyboardAvoidingView>
-      <ConfirmModal
-        visible={leaveOpen}
-        title={t('petOnboarding.leave_title')}
-        message={t('petOnboarding.leave_body')}
-        confirmText={t('petOnboarding.leave_confirm')}
-        cancelText={t('petOnboarding.leave_stay')}
-        onConfirm={() => {
-          void handleLeave();
-        }}
-        onCancel={() => setLeaveOpen(false)}
-      />
     </SafeAreaView>
   );
 }

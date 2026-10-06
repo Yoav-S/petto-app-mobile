@@ -19,7 +19,7 @@ import { ToastProvider } from '@/context/ToastContext';
 import QueryProvider from '@/context/QueryProvider';
 import { PetStoreProvider, useSnapActivePetToIncluded } from '@/store/petStore';
 import { PetOnboardingDraftProvider, usePetOnboardingDraft } from '@/store/petOnboardingDraft';
-import { onboardingHref } from '@/utils/onboardingRoute';
+import { onboardingHref, replaceWithWelcome } from '@/utils/onboardingRoute';
 import { UpgradeLimitProvider } from '@/context/UpgradeLimitContext';
 import { ReminderPromptProvider } from '@/context/ReminderPromptContext';
 import { useReminderNotificationRouting } from '@/hooks/useReminderNotificationRouting';
@@ -112,17 +112,17 @@ function RootLayoutNav() {
     if (isLoading || isSyncing) return;
 
     if (!user && !inAuthGroup && !inOnboardingGroup) {
-      router.replace('/(auth)/' as never);
+      replaceWithWelcome(router);
       return;
     }
 
     if (!user && (inOnboardingGroup || onYourName)) {
-      router.replace('/(auth)/' as never);
+      replaceWithWelcome(router);
       return;
     }
 
     if (user && !user.emailVerified && !onVerifyEmail && !onTerms && !onEmail) {
-      router.replace('/(auth)/' as never);
+      replaceWithWelcome(router);
       return;
     }
 

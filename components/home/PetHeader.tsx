@@ -100,7 +100,6 @@ export default function PetHeader({
   useStatusBarOverride(barStyle);
   const nameColor =
     !isDark && !imageContrast.ready ? '#FFFFFF' : foregroundForBarStyle(imageContrast.style);
-  const metaBubbleBg = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.72)';
 
   useEffect(() => {
     if (loading) {
@@ -190,15 +189,15 @@ export default function PetHeader({
               {pet && (pet.breed || petAge) ? (
                 <View style={styles.metaRow}>
                   {pet.breed ? (
-                    <View style={[styles.metaBubble, { backgroundColor: metaBubbleBg }]}>
-                      <Text style={[styles.metaText, { color: colors.primaryText }]} numberOfLines={1} ellipsizeMode="tail">
+                    <View style={styles.metaBubble}>
+                      <Text style={styles.metaText} numberOfLines={1} ellipsizeMode="tail">
                         {pet.breed}
                       </Text>
                     </View>
                   ) : null}
                   {petAge ? (
-                    <View style={[styles.metaBubble, { backgroundColor: metaBubbleBg }]}>
-                      <Text style={[styles.metaText, { color: colors.primaryText }]} numberOfLines={1} ellipsizeMode="tail">
+                    <View style={styles.metaBubble}>
+                      <Text style={styles.metaText} numberOfLines={1} ellipsizeMode="tail">
                         {petAge}
                       </Text>
                     </View>
@@ -296,23 +295,33 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: '#FFFFFF',
   },
   metaRow: {
+    alignSelf: 'flex-start',
     maxWidth: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   metaBubble: {
+    height: 28,
+    flexGrow: 0,
     flexShrink: 1,
     minWidth: 0,
     maxWidth: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
     borderRadius: 10,
     paddingTop: 4,
     paddingRight: 8,
     paddingBottom: 4,
     paddingLeft: 8,
+    overflow: 'hidden',
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   metaText: {
+    flexShrink: 1,
+    minWidth: 0,
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 20,

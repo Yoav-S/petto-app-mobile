@@ -12,11 +12,13 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
 import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { OnboardingBed, OnboardingCat, OnboardingDog } from '@/components/brand/onboarding';
 import { usePetOnboardingDraft, type PetType } from '@/store/petOnboardingDraft';
+import { useAuth } from '@/context/AuthContext';
 import { buildOnboardingProgress, saveOnboardingProgress } from '@/services/onboardingProgress';
 import { getErrorMessage } from '@/services/errors';
-import { goToPreviousOnboardingStep } from '@/utils/onboardingRoute';
+import { replaceWithWelcome } from '@/utils/onboardingRoute';
 import { t } from '@/i18n';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -37,7 +39,9 @@ export default function PetTypeOnboardingScreen() {
   );
 
   const { draft, setType } = usePetOnboardingDraft();
+  const { signOut } = useAuth();
   const [selected, setSelected] = useState<PetType | null>(draft.type);
+  const [leaveOpen, setLeaveOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const seededType = useRef(draft.type !== null);
 
@@ -61,9 +65,9 @@ export default function PetTypeOnboardingScreen() {
     setType(selected);
     try {
       await saveOnboardingProgress(
-        buildOnboardingProgress('photo', { ...draft, type: selected }),
+        buildOnboardingProgress('name', { ...draft, type: selected }),
       );
-      router.push('/(onboarding)/photo' as never);
+      router.push('/(onboarding)/name' as never);
     } catch (err: unknown) {
       Alert.alert(t('errors.load_failed'), getErrorMessage(err));
     } finally {
@@ -71,20 +75,10 @@ export default function PetTypeOnboardingScreen() {
     }
   };
 
-  const handleBack = async () => {
-    if (saving) return;
-    setSaving(true);
-    if (selected) setType(selected);
-    try {
-      await saveOnboardingProgress(
-        buildOnboardingProgress('name', { ...draft, type: selected }),
-      );
-      goToPreviousOnboardingStep(router, 'type');
-    } catch (err: unknown) {
-      Alert.alert(t('errors.load_failed'), getErrorMessage(err));
-    } finally {
-      setSaving(false);
-    }
+  const handleLeave = async () => {
+    setLeaveOpen(false);
+    await signOut();
+    replaceWithWelcome(router);
   };
 
   return (
@@ -98,10 +92,10 @@ export default function PetTypeOnboardingScreen() {
           },
         ]}
       >
-        <OnboardingBackButton onPress={() => { void handleBack(); }} />
+        <OnboardingBackButton onPress={() => setLeaveOpen(true)} />
 
         <View style={styles.headerCenter}>
-          <OnboardingProgressDots currentStep={2} />
+          <OnboardingProgressDots currentStep={1} />
         </View>
 
         <View style={{ width: 32 }} />
@@ -217,6 +211,17 @@ export default function PetTypeOnboardingScreen() {
           )}
         </Pressable>
       </View>
+      <ConfirmModal
+        visible={leaveOpen}
+        title={t('petOnboarding.leave_title')}
+        message={t('petOnboarding.leave_body')}
+        confirmText={t('petOnboarding.leave_confirm')}
+        cancelText={t('petOnboarding.leave_stay')}
+        onConfirm={() => {
+          void handleLeave();
+        }}
+        onCancel={() => setLeaveOpen(false)}
+      />
     </SafeAreaView>
   );
 }

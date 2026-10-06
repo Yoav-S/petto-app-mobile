@@ -1,12 +1,22 @@
 import type { OnboardingStep } from '@/types/api';
 
-export const ONBOARDING_STEPS = ['name', 'type', 'photo', 'birth'] as const;
+export const ONBOARDING_STEPS = ['type', 'name', 'photo', 'birth'] as const;
+
+/** Blocks a second welcome redirect while the first one is still moving. */
+let welcomeReplaceAt = 0;
+
+export function replaceWithWelcome(router: { replace: (href: never) => void }): void {
+  const now = Date.now();
+  if (now - welcomeReplaceAt < 800) return;
+  welcomeReplaceAt = now;
+  router.replace('/(auth)' as never);
+}
 
 export function onboardingHref(step: OnboardingStep | null | undefined): string {
-  if (step === 'type' || step === 'photo' || step === 'birth') {
+  if (step === 'name' || step === 'photo' || step === 'birth') {
     return `/(onboarding)/${step}`;
   }
-  return '/(onboarding)/name';
+  return '/(onboarding)/type';
 }
 
 export function previousOnboardingStep(step: OnboardingStep): OnboardingStep | null {

@@ -18,7 +18,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { requireOptionalNativeModule } from 'expo-modules-core';
-import { ChevronDown, ChevronUp, MapPin, Plus, Settings, Star, X } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, MapPin, Plus, Settings, Star, User, X } from 'lucide-react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
@@ -37,6 +37,9 @@ const NIGHT_HOUR = 21;
 
 /** Greeting line 24 + 2px gap + name line 20. */
 const GREETING_AVATAR = 24 + 2 + 20;
+/** Overlay chip on a photo: white at 60% (#FFFFFF99), text stays #1F2937. */
+const DISTANCE_CHIP = 'rgba(255,255,255,0.6)';
+const DISTANCE_TEXT = '#1F2937';
 const PET_SIZE = 72;
 const PET_GAP = 16;
 const PET_SCROLL_WIDTH = PET_SIZE * 2 + PET_GAP;
@@ -129,7 +132,7 @@ function placeStatus(place: BusinessPlace): { open: boolean; detail: string | nu
   }
   if (place.next_open_day) {
     const day = t(DAY_LABEL[place.next_open_day]);
-    return {
+  return {
       open: false,
       detail: when ? `${t('home.opens')} ${day} ${when}` : `${t('home.opens')} ${day}`,
     };
@@ -382,8 +385,8 @@ export default function DiscoverHomeScreen() {
       if (extra.length === 0) {
         hasMoreRef.current = false;
         setHasMore(false);
-        return;
-      }
+      return;
+    }
       placesRef.current = [...placesRef.current, ...extra];
       hasMoreRef.current = page.has_more;
       if (here) {
@@ -449,20 +452,24 @@ export default function DiscoverHomeScreen() {
         <View style={[styles.welcomeCard, { paddingTop: insets.top + 10 }]}>
           <View style={styles.welcomeRow}>
             <View style={styles.greeting}>
-              {accountPhotoUrl ? (
-                <TouchableOpacity
-                  style={styles.avatar}
-                  onPress={() => router.push('/settings/account' as never)}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('settings.account')}
-                >
+              <TouchableOpacity
+                style={styles.avatar}
+                onPress={() => router.push('/settings/account' as never)}
+                accessibilityRole="button"
+                accessibilityLabel={t('settings.account')}
+              >
+                {accountPhotoUrl ? (
                   <Image
                     source={{ uri: accountPhotoUrl }}
                     style={styles.avatarImage}
                     contentFit="cover"
                   />
-                </TouchableOpacity>
-              ) : null}
+                ) : (
+                  <View style={styles.avatarFallback}>
+                    <User size={24} color={colors.primaryText} />
+                  </View>
+                )}
+              </TouchableOpacity>
               <View style={styles.greetingCopy}>
                 <Text style={styles.greetingLine}>{t(greetingKey())}</Text>
                 {accountName ? (
@@ -535,7 +542,7 @@ export default function DiscoverHomeScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+                </View>
 
         <View style={styles.categoriesCard}>
           <Text style={[styles.sectionTitle, styles.categoryTitle]}>{t('home.categories')}</Text>
@@ -585,8 +592,8 @@ export default function DiscoverHomeScreen() {
               {expanded ? null : (
                 <View style={styles.handleHit}>
                   <View style={styles.sheetHandle} />
-                </View>
-              )}
+              </View>
+            )}
               <View style={[styles.nearHeader, expanded && styles.nearHeaderExpanded]}>
                 {expanded ? (
                   <TouchableOpacity
@@ -680,8 +687,10 @@ export default function DiscoverHomeScreen() {
                         )}
                         {place.distance_km != null ? (
                           <View style={styles.distanceBadge}>
-                            <MapPin size={24} color={colors.primaryText} />
-                            <Text style={styles.distanceText}>{`${place.distance_km} km`}</Text>
+                            <MapPin size={24} color={DISTANCE_TEXT} />
+                            <Text style={styles.distanceText}>
+                              {`${place.distance_km} km`}
+                            </Text>
                           </View>
                         ) : null}
                       </View>
@@ -714,8 +723,8 @@ export default function DiscoverHomeScreen() {
                             <Text style={styles.noReviews}>
                               {`${place.location_count} ${t('business.locations')}`}
                             </Text>
-                          ) : null}
-                        </View>
+          ) : null}
+        </View>
                         {status ? (
                           <View style={styles.statusRow}>
                             <Text style={[styles.statusText, { color: statusColor(status.open) }]}>
@@ -731,8 +740,8 @@ export default function DiscoverHomeScreen() {
                               <Text style={styles.statusDetail}>{status.detail}</Text>
                             ) : null}
                           </View>
-                        ) : null}
-                      </View>
+        ) : null}
+      </View>
                     </TouchableOpacity>
                   );
                 }}
@@ -811,6 +820,12 @@ function makeStyles(colors: ThemeColors) {
     avatarImage: {
       width: GREETING_AVATAR,
       height: GREETING_AVATAR,
+    },
+    avatarFallback: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.background,
     },
     greetingLine: {
       fontFamily: 'Rubik-Medium',
@@ -1022,21 +1037,23 @@ function makeStyles(colors: ThemeColors) {
       position: 'absolute',
       top: 16,
       left: 16,
+      height: 32,
       flexDirection: 'row',
       alignItems: 'center',
+      alignSelf: 'flex-start',
       gap: 4,
       borderRadius: 10,
       paddingTop: 4,
       paddingRight: 10,
       paddingBottom: 4,
       paddingLeft: 8,
-      backgroundColor: 'rgba(255,255,255,0.8)',
+      backgroundColor: DISTANCE_CHIP,
     },
     distanceText: {
       fontFamily: 'Rubik-Medium',
       fontSize: 14,
       lineHeight: 20,
-      color: '#1F2937',
+      color: DISTANCE_TEXT,
     },
     cardBody: {
       paddingHorizontal: 12,

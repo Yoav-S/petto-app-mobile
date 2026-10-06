@@ -21,7 +21,6 @@ const ROWS: SettingsRow[] = [
   { key: 'notifications', route: '/settings/notifications' },
   { key: 'theme', route: '/settings/theme' },
   { key: 'language', route: '/settings/language' },
-  { key: 'subscription', route: '/settings/subscription' },
   { key: 'privacy', route: '/settings/privacy' },
   { key: 'terms', route: '/settings/terms' },
   { key: 'help', route: '/settings/help' },
