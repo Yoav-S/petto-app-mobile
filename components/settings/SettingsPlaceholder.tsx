@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
@@ -19,7 +19,7 @@ export default function SettingsPlaceholder({ title, icon = 'construct-outline' 
   const styles = useThemedStyles(makeStyles);
 
   return (
-    <HeaderScrollLayout header={<SettingsHeader title={title} />}>
+    <HeaderScrollLayout header={<SettingsHeader title={title} rounded />}>
       {({ paddingTop }) => (
         <View style={[styles.body, { paddingTop }]}>
           <Ionicons name={icon} size={40} color={colors.secondaryText} />

@@ -66,6 +66,7 @@ function MyProfileHeader() {
         <Text style={styles.profileTitle} numberOfLines={1}>
           {t('settings.my_profile')}
         </Text>
+        <View style={styles.profileTitleSpacer} />
       </View>
     </View>
   );
@@ -497,17 +498,19 @@ const makeStyles = (c: ThemeColors) =>
       height: PROFILE_HEADER_ROW,
       flexDirection: 'row',
       alignItems: 'center',
-      alignSelf: 'flex-start',
-      maxWidth: '100%',
       justifyContent: 'space-between',
-      gap: PROFILE_HEADER_GAP,
     },
     profileTitle: {
-      flexShrink: 1,
+      flex: 1,
+      textAlign: 'center',
       fontFamily: 'Rubik-Regular',
       fontSize: 24,
       lineHeight: 28,
       color: c.primaryText,
+    },
+    profileTitleSpacer: {
+      width: HEADER_ICON_BTN.size,
+      height: HEADER_ICON_BTN.size,
     },
     form: {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,

@@ -50,7 +50,7 @@ export default function BusinessReviewScreen() {
 
   return (
     <View style={styles.screen}>
-      <SettingsHeader title={t('business.review')} />
+      <SettingsHeader title={t('business.review')} rounded />
       <HealthFormScreen
         contentContainerStyle={styles.form}
         footer={{

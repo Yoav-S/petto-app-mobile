@@ -13,7 +13,6 @@ import { getErrorMessage } from '@/services/errors';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import Toggle from '@/components/settings/Toggle';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
-import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
 type PrefKey = keyof NotificationPrefs;
 
@@ -76,7 +75,7 @@ export default function NotificationsSettingsScreen() {
   );
 
   const renderRow = (key: PrefKey, disabled: boolean) => (
-    <View style={styles.row}>
+    <View key={key} style={styles.row}>
       <Text style={styles.rowTitle}>{t(`settings.notif_${key}`)}</Text>
       <Toggle
         value={!!prefs?.[key]}
@@ -87,12 +86,15 @@ export default function NotificationsSettingsScreen() {
   );
 
   return (
-    <HeaderScrollLayout header={<SettingsHeader title={t('settings.notifications')} />}>
+    <HeaderScrollLayout
+      header={<SettingsHeader title={t('settings.notifications')} rounded />}
+      contentGap={4}
+      chromePaddingBottom={0}
+    >
       {({ paddingTop, paddingBottom, scrollMetricsProps }) => (
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={[
-            styles.content,
             { paddingTop, paddingBottom: paddingBottom + 16 },
           ]}
           showsVerticalScrollIndicator={false}
@@ -109,22 +111,14 @@ export default function NotificationsSettingsScreen() {
             </View>
           ) : prefs ? (
             <View style={styles.card}>
-              <View style={styles.inner}>
-                <View style={styles.masterSection}>
-                  <View style={styles.masterHeader}>
-                    <Text style={styles.rowTitle}>{t('settings.notif_all')}</Text>
-                    <Toggle value={prefs.all} onValueChange={(next) => toggle('all', next)} />
-                  </View>
-                  <Text style={styles.subtitle}>{t('settings.notif_all_subtitle')}</Text>
+              <View style={styles.master}>
+                <View style={styles.masterHeader}>
+                  <Text style={styles.rowTitle}>{t('settings.notif_all')}</Text>
+                  <Toggle value={prefs.all} onValueChange={(next) => toggle('all', next)} />
                 </View>
-
-                {CATEGORY_KEYS.map((key) => (
-                  <React.Fragment key={key}>
-                    <View style={styles.divider} />
-                    {renderRow(key, !prefs.all)}
-                  </React.Fragment>
-                ))}
+                <Text style={styles.subtitle}>{t('settings.notif_all_subtitle')}</Text>
               </View>
+              {CATEGORY_KEYS.map((key) => renderRow(key, !prefs.all))}
             </View>
           ) : null}
         </ScrollView>
@@ -139,7 +133,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
   },
   loader: {
     minHeight: 200,
@@ -154,35 +147,41 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   card: {
     backgroundColor: c.surface,
-    borderRadius: 12,
+    borderRadius: 24,
+    paddingTop: 22,
+    paddingRight: 20,
+    paddingBottom: 22,
+    paddingLeft: 20,
+    gap: 4,
+  },
+  master: {
+    borderRadius: 16,
     padding: 16,
-    shadowColor: '#2D2D2A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 20,
-    elevation: 2,
-  },
-  inner: {
-    gap: 22,
-  },
-  masterSection: {
     gap: 6,
+    backgroundColor: c.background,
   },
   masterHeader: {
+    minHeight: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 6,
   },
   row: {
+    minHeight: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: 24,
+    gap: 6,
+    borderRadius: 16,
+    padding: 16,
+    backgroundColor: c.background,
   },
   rowTitle: {
-    fontFamily: 'Rubik-Regular',
+    flexShrink: 1,
+    fontFamily: 'Rubik-Medium',
     fontSize: 16,
-    lineHeight: 24,
+    lineHeight: 20,
     color: c.primaryText,
   },
   subtitle: {
@@ -190,10 +189,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     color: c.secondaryText,
-    maxWidth: 210,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: c.border,
   },
 });

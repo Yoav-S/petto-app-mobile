@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronRight, MapPin, Phone, Send, Star } from 'lucide-react-native';
+import { ChevronRight, Globe, MapPin, Phone, Send, Star } from 'lucide-react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { DESIGN_COVER_HEIGHT, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
@@ -76,6 +76,65 @@ function addressText(address: string, city: string): string {
   return line || town;
 }
 
+function clockLabel(total: number): string {
+  const hour = Math.floor(total / 60);
+  const minute = total % 60;
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+function minutesOf(value: string): number | null {
+  if (value === '24:00') return 24 * 60;
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
+/** Open or closed from a branch schedule, in the phone's local time. */
+function branchStatus(hours: OpeningHours | undefined): { open: boolean; detail: string | null } | null {
+  if (!hours) return null;
+  if (hours.always_open) return { open: true, detail: t('home.opens_24_7') };
+  const now = new Date();
+  const today = (now.getDay() + 6) % 7;
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const slotsFor = (index: number) => {
+    const day = WEEK[(index + 7) % 7];
+    const parsed: { start: number; end: number }[] = [];
+    for (const slot of hours[day] ?? []) {
+      const start = minutesOf(slot.open);
+      const end = minutesOf(slot.close);
+      if (start == null || end == null || end <= start) continue;
+      parsed.push({ start, end });
+    }
+    return parsed;
+  };
+  const fullDay = (index: number) =>
+    slotsFor(index).some((slot) => slot.start === 0 && slot.end >= 24 * 60 - 1);
+  if (WEEK.every((_, index) => fullDay(index))) {
+    return { open: true, detail: t('home.opens_24_7') };
+  }
+  const current = slotsFor(today).find((slot) => slot.start <= nowMin && nowMin < slot.end);
+  if (current) return { open: true, detail: `${t('home.closes')} ${clockLabel(current.end)}` };
+  const later = slotsFor(today).filter((slot) => slot.start > nowMin);
+  if (later.length) {
+    return { open: false, detail: `${t('home.opens')} ${clockLabel(Math.min(...later.map((slot) => slot.start)))}` };
+  }
+  for (let offset = 1; offset < 8; offset += 1) {
+    const index = (today + offset) % 7;
+    const upcoming = slotsFor(index);
+    if (!upcoming.length) continue;
+    const when = clockLabel(Math.min(...upcoming.map((slot) => slot.start)));
+    if (offset === 1) return { open: false, detail: `${t('home.opens_tomorrow')} ${when}` };
+    return { open: false, detail: `${t('home.opens')} ${t(`home.day_${WEEK[index]}` as 'home.day_mon')} ${when}` };
+  }
+  return { open: false, detail: null };
+}
+
+function dialNumbers(branch: PlaceLocation): string[] {
+  const own = branch.phone.map((phone) => phone.trim()).filter(Boolean);
+  if (own.length) return own;
+  return branch.call_phone.map((phone) => phone.trim()).filter(Boolean);
+}
+
 function openUrl(url: string) {
   const target = /^https?:\/\//i.test(url) ? url : `https://${url}`;
   void Linking.openURL(target);
@@ -134,6 +193,7 @@ export default function BusinessScreen() {
 
   const [place, setPlace] = useState<BusinessPlaceDetail | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [aboutLineCount, setAboutLineCount] = useState(0);
   const [photoOpen, setPhotoOpen] = useState(false);
   const [phoneOpen, setPhoneOpen] = useState(false);
   const [mapsOpen, setMapsOpen] = useState(false);
@@ -141,6 +201,7 @@ export default function BusinessScreen() {
   const [mapTarget, setMapTarget] = useState<PlaceLocation | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
+  const [openLocationIds, setOpenLocationIds] = useState<string[]>([]);
 
   const previewImage = params.image || null;
   const image = place?.image ?? previewImage;
@@ -177,10 +238,34 @@ export default function BusinessScreen() {
   const distance = place?.distance_km ?? (params.distance ? Number(params.distance) : null);
   const open = place ? Boolean(place.open_now || place.open_24_7) : params.openNow === '1' || params.open247 === '1';
   const description = place?.description?.trim() ?? '';
-  const showReadMore = description.length > 120;
+  const aboutOverflows = aboutLineCount > 3;
+  useEffect(() => {
+    setAboutOpen(false);
+    setAboutLineCount(0);
+  }, [place?.id, description]);
   const reviews = place?.reviews ?? [];
   const phones = place?.phone ?? [];
   const branches = place?.locations ?? [];
+  const locationCards = branches.length
+    ? branches
+    : place
+      ? [{
+          id: place.id,
+          address: place.address,
+          city: place.city,
+          opening_hours: place.opening_hours,
+          phone: [] as string[],
+          call_phone: phones,
+          shared_phone: true,
+          location: place.location,
+          distance_km: typeof distance === 'number' && !Number.isNaN(distance) ? distance : null,
+        } satisfies PlaceLocation]
+      : [];
+  const phoneKeys = locationCards.map((branch) => [...dialNumbers(branch)].sort().join('|'));
+  const phonesOnEachLocation = locationCards.length > 1 && new Set(phoneKeys).size > 1;
+  const contactPhones = phonesOnEachLocation
+    ? []
+    : (locationCards[0] ? dialNumbers(locationCards[0]) : phones);
   const photoPresented = useSettledModalVisible(photoOpen && Boolean(image));
 
   const showPhones = (numbers?: string[]) => {
@@ -265,10 +350,27 @@ export default function BusinessScreen() {
           {description ? (
             <View style={styles.aboutBlock}>
               <Text style={styles.aboutTitle}>{t('business.about')}</Text>
-              <Text style={styles.aboutBody} numberOfLines={aboutOpen ? undefined : 3}>
-                {description}
-              </Text>
-              {showReadMore ? (
+              <View>
+                <Text
+                  pointerEvents="none"
+                  style={[styles.aboutBody, styles.aboutMeasure]}
+                  accessible={false}
+                  onTextLayout={(event) => {
+                    const count = event.nativeEvent.lines.length;
+                    setAboutLineCount((current) => (current === count ? current : count));
+                  }}
+                >
+                  {description}
+                </Text>
+                <Text
+                  style={styles.aboutBody}
+                  numberOfLines={aboutOpen ? undefined : 3}
+                  ellipsizeMode="tail"
+                >
+                  {description}
+                </Text>
+              </View>
+              {aboutOverflows ? (
                 <TouchableOpacity onPress={() => setAboutOpen((value) => !value)} hitSlop={8}>
                   <Text style={styles.readMore}>
                     {aboutOpen ? t('business.read_less') : t('business.read_more')}
@@ -348,115 +450,130 @@ export default function BusinessScreen() {
           )}
         </View>
 
-        {branches.length > 0 ? (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>{t('business.locations_title')}</Text>
-            {branches.map((branch) => {
-              const branchPhones = branch.shared_phone ? [] : branch.phone;
-              return (
-                <View key={branch.id} style={styles.hoursList}>
-                  <Text style={styles.bodyText}>{addressText(branch.address, branch.city)}</Text>
-                  {typeof branch.distance_km === 'number' ? (
-                    <Text style={styles.dayLabel}>{`${branch.distance_km} km`}</Text>
+        <View style={styles.card}>
+        {locationCards.map((branch) => {
+          const expanded = openLocationIds.includes(branch.id);
+          const branchDistance = branch.distance_km;
+          const status = branchStatus(branch.opening_hours);
+          const statusTint = status ? (status.open ? OPEN_COLOR : CLOSED_COLOR) : colors.secondaryText;
+          const branchPhones = dialNumbers(branch);
+          return (
+            <View key={branch.id} style={styles.locationCard}>
+              <View style={styles.locationBody}>
+                <View style={styles.locationAddressBlock}>
+                  {typeof branchDistance === 'number' ? (
+                    <View style={styles.locationDistanceRow}>
+                      <MapPin size={12} color={colors.primaryText} />
+                      <Text style={styles.locationDistance}>{`${branchDistance} km`}</Text>
+                    </View>
                   ) : null}
+                  <Text style={styles.locationAddress}>
+                    {addressText(branch.address, branch.city)}
+                  </Text>
+                </View>
+                <View style={styles.locationStatusRow}>
+                  {status ? (
+                    <View style={styles.locationStatus}>
+                      <Text style={[styles.locationStatusText, { color: statusTint }]}>
+                        {status.open ? t('home.open') : t('home.closed')}
+                      </Text>
+                      <View style={[styles.locationStatusDot, { backgroundColor: statusTint }]} />
+                      {status.detail ? (
+                        <Text style={styles.locationStatusDetail}>{status.detail}</Text>
+                      ) : null}
+                    </View>
+                  ) : <View />}
+                  <Pressable
+                    onPress={() =>
+                      setOpenLocationIds((current) =>
+                        current.includes(branch.id)
+                          ? current.filter((id) => id !== branch.id)
+                          : [...current, branch.id],
+                      )
+                    }
+                    hitSlop={8}
+                    accessibilityRole="button"
+                  >
+                    <Ionicons
+                      name={expanded ? 'chevron-up' : 'chevron-down'}
+                      size={24}
+                      color={colors.primaryText}
+                    />
+                  </Pressable>
+                </View>
+              </View>
+              {expanded ? (
+                <View style={styles.locationExtra}>
                   {WEEK.map((day) => (
                     <View key={`${branch.id}-${day}`} style={styles.hoursRow}>
                       <Text style={styles.dayLabel}>{t(DAY_KEY[day])}</Text>
                       <Text style={styles.hoursValue}>{dayHours(branch.opening_hours, day)}</Text>
                     </View>
                   ))}
-                  {branchPhones.map((phone) => (
-                    <Text key={phone} style={styles.bodyText}>{phone}</Text>
-                  ))}
-                  <View style={styles.hoursRow}>
-                    {branchPhones.length > 0 ? (
-                      <TouchableOpacity onPress={() => showPhones(branchPhones)}>
-                        <Text style={styles.bodyText}>{t('business.call')}</Text>
-                      </TouchableOpacity>
-                    ) : null}
-                    <TouchableOpacity onPress={() => showMaps(branch)}>
-                      <Text style={styles.bodyText}>{t('business.directions')}</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        ) : (
-          <Pressable
-            style={styles.card}
-            disabled={!place || !directionUrl('google', place)}
-            onPress={() => showMaps()}
-            accessibilityRole="button"
-          >
-            <View style={styles.sectionHead}>
-              <Text style={styles.sectionTitle}>{t('business.address')}</Text>
-              {typeof distance === 'number' && !Number.isNaN(distance) ? (
-                <View style={styles.distanceChip}>
-                  <MapPin size={24} color={colors.primaryText} />
-                  <Text style={styles.distanceText}>{`${distance} km`}</Text>
+                  {phonesOnEachLocation
+                    ? branchPhones.map((phone) => (
+                        <Pressable
+                          key={phone}
+                          style={styles.locationPhone}
+                          onPress={() => showPhones([phone])}
+                          accessibilityRole="button"
+                        >
+                          <Phone size={24} color={colors.primaryText} />
+                          <Text style={styles.contactValue} numberOfLines={1}>{phone}</Text>
+                        </Pressable>
+                      ))
+                    : null}
                 </View>
               ) : null}
             </View>
-            <Text style={styles.bodyText}>{addressText(place?.address ?? '', place?.city ?? '')}</Text>
-          </Pressable>
-        )}
+          );
+        })}
+        </View>
 
-        {phones.length || website || instagram ? (
+        {contactPhones.length || website || instagram ? (
           <View style={styles.card}>
-            <Pressable
-              onPress={() => showPhones()}
-              disabled={phones.length === 0}
-              hitSlop={8}
-              accessibilityRole="button"
-            >
-              <Text style={styles.sectionTitle}>{t('business.contact')}</Text>
-            </Pressable>
+            <Text style={styles.sectionTitle}>{t('business.contact')}</Text>
             <View style={styles.contactList}>
-              {phones.length > 0 ? (
+              {contactPhones.map((phone) => (
                 <Pressable
-                  style={styles.phoneBlock}
-                  onPress={() => showPhones()}
+                  key={phone}
+                  style={styles.contactRow}
+                  onPress={() => showPhones([phone])}
                   accessibilityRole="button"
                 >
-                  {phones.map((phone) => (
-                    <Text key={phone} style={styles.bodyText}>{phone}</Text>
-                  ))}
+                  <Phone size={24} color={colors.primaryText} />
+                  <Text style={styles.contactValue} numberOfLines={1}>{phone}</Text>
+                </Pressable>
+              ))}
+              {website ? (
+                <Pressable
+                  style={styles.contactRow}
+                  onPress={() => openUrl(website)}
+                  accessibilityRole="button"
+                >
+                  <Globe size={24} color={colors.primaryText} />
+                  <Text style={styles.contactValue} numberOfLines={1}>{website}</Text>
                 </Pressable>
               ) : null}
-              {website ? (
-                <TouchableOpacity onPress={() => openUrl(website)}>
-                  <Text style={styles.bodyText}>{website}</Text>
-                </TouchableOpacity>
-              ) : null}
               {instagram ? (
-                <TouchableOpacity onPress={() => openInstagram(instagram)}>
-                  <Text style={styles.bodyText}>{instagram}</Text>
-                </TouchableOpacity>
+                <Pressable
+                  style={styles.contactRow}
+                  onPress={() => openInstagram(instagram)}
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="logo-instagram" size={24} color={colors.primaryText} />
+                  <Text style={styles.contactValue} numberOfLines={1}>{instagram}</Text>
+                </Pressable>
               ) : null}
             </View>
           </View>
         ) : null}
 
-        {branches.length > 0 ? null : (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>{t('business.opening_hours')}</Text>
-          <View style={styles.hoursList}>
-            {WEEK.map((day) => (
-              <View key={day} style={styles.hoursRow}>
-                <Text style={styles.dayLabel}>{t(DAY_KEY[day])}</Text>
-                <Text style={styles.hoursValue}>{dayHours(place?.opening_hours, day)}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-        )}
-
         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <TouchableOpacity
-            style={[styles.callButton, phones.length === 0 && styles.buttonDisabled]}
-            disabled={phones.length === 0}
-            onPress={() => showPhones()}
+            style={[styles.callButton, contactPhones.length === 0 && styles.buttonDisabled]}
+            disabled={contactPhones.length === 0}
+            onPress={() => showPhones(contactPhones)}
           >
             <Phone size={20} color="#F6F7F9" />
             <Text style={styles.callLabel}>{t('business.call')}</Text>
@@ -576,6 +693,78 @@ const makeStyles = (c: ThemeColors) =>
       paddingHorizontal: 20,
       gap: 4,
     },
+    locationCard: {
+      backgroundColor: c.background,
+      borderRadius: 24,
+      paddingTop: 12,
+      paddingBottom: 12,
+      paddingLeft: 16,
+      paddingRight: 16,
+      gap: 6,
+    },
+    locationBody: {
+      gap: 4,
+    },
+    locationAddressBlock: {
+      gap: 2,
+    },
+    locationDistanceRow: {
+      height: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    locationDistance: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 10,
+      lineHeight: 16,
+      textAlign: 'center',
+      color: c.primaryText,
+    },
+    locationAddress: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 16,
+      lineHeight: 24,
+      color: c.primaryText,
+    },
+    locationStatusRow: {
+      height: 24,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    locationStatus: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    locationStatusText: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 12,
+      lineHeight: 16,
+    },
+    locationStatusDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+    },
+    locationStatusDetail: {
+      flexShrink: 1,
+      fontFamily: 'Rubik-Medium',
+      fontSize: 12,
+      lineHeight: 16,
+      color: c.secondaryText,
+    },
+    locationExtra: {
+      gap: 4,
+    },
+    locationPhone: {
+      height: 24,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
     metaRow: {
       height: 20,
       flexDirection: 'row',
@@ -668,6 +857,12 @@ const makeStyles = (c: ThemeColors) =>
       fontSize: 16,
       lineHeight: 24,
       color: c.primaryText,
+    },
+    aboutMeasure: {
+      position: 'absolute',
+      opacity: 0,
+      left: 0,
+      right: 0,
     },
     readMore: {
       fontFamily: 'Rubik-Medium',
@@ -811,10 +1006,23 @@ const makeStyles = (c: ThemeColors) =>
     },
     contactList: {
       gap: 6,
-      marginTop: 2,
     },
-    phoneBlock: {
-      gap: 6,
+    contactRow: {
+      height: 56,
+      boxSizing: 'border-box',
+      borderRadius: 16,
+      padding: 16,
+      backgroundColor: c.background,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    contactValue: {
+      flex: 1,
+      fontFamily: 'Rubik-Regular',
+      fontSize: 16,
+      lineHeight: 24,
+      color: c.primaryText,
     },
     hoursList: {
       gap: 6,

@@ -5,7 +5,7 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t, currentLocale } from '@/i18n';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import ListScrollLayout from '@/components/ui/ListScrollLayout';
-import { LIST_HEADER_CONTENT_GAP, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { DOCUMENT_CONTENT_TOP_NUDGE, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
 export type LegalBlock =
   | { type: 'intro'; text: string; gap?: number }
@@ -37,25 +37,32 @@ export default function LegalScreen({ title, lastUpdatedISO, blocks }: LegalScre
     <ListScrollLayout
       fadeKey={`legal:${title}`}
       edges={[]}
-      backgroundColor={colors.surface}
       fadeColor={colors.surface}
-      chrome={<SettingsHeader title={title} backgroundColor={colors.surface} />}
+      chrome={
+        <View>
+          <SettingsHeader title={title} rounded />
+          <View style={styles.headerGap} />
+        </View>
+      }
       documentFade
-      topFade
+      topFade={false}
       bottomFade
-      contentGap={LIST_HEADER_CONTENT_GAP}
+      contentGap={22 - DOCUMENT_CONTENT_TOP_NUDGE}
+      contentBottomPadding={0}
+      fadeBottomInset={0}
     >
       {({ paddingTop, paddingBottom, scrollMetricsProps }) => (
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[styles.scrollContent, { paddingTop, paddingBottom }]}
-          showsVerticalScrollIndicator={false}
-          contentInsetAdjustmentBehavior="never"
-          automaticallyAdjustContentInsets={false}
-          automaticallyAdjustsScrollIndicatorInsets={false}
-          onLayout={scrollMetricsProps.onLayout}
-          onContentSizeChange={scrollMetricsProps.onContentSizeChange}
-        >
+        <View style={styles.sheet}>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={[styles.scrollContent, { paddingTop, paddingBottom }]}
+            showsVerticalScrollIndicator={false}
+            contentInsetAdjustmentBehavior="never"
+            automaticallyAdjustContentInsets={false}
+            automaticallyAdjustsScrollIndicatorInsets={false}
+            onLayout={scrollMetricsProps.onLayout}
+            onContentSizeChange={scrollMetricsProps.onContentSizeChange}
+          >
           <Text style={styles.docTitle}>{title}</Text>
           <Text style={styles.updated}>
             {t('settings.last_updated')}: {formatUpdated(lastUpdatedISO)}
@@ -79,7 +86,8 @@ export default function LegalScreen({ title, lastUpdatedISO, blocks }: LegalScre
               </View>
             );
           })}
-        </ScrollView>
+          </ScrollView>
+        </View>
       )}
     </ListScrollLayout>
   );
@@ -87,6 +95,16 @@ export default function LegalScreen({ title, lastUpdatedISO, blocks }: LegalScre
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    headerGap: {
+      height: 4,
+    },
+    sheet: {
+      flex: 1,
+      backgroundColor: c.surface,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      overflow: 'hidden',
+    },
     scroll: {
       flex: 1,
     },

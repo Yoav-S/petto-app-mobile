@@ -61,6 +61,7 @@ function AddPetHeader() {
         <Text style={styles.headerTitle} numberOfLines={1}>
           {t('pets.add_title')}
         </Text>
+        <View style={styles.headerTitleSpacer} />
       </View>
     </View>
   );
@@ -404,17 +405,19 @@ const makeStyles = (c: ThemeColors) =>
       height: HEADER_ROW,
       flexDirection: 'row',
       alignItems: 'center',
-      alignSelf: 'flex-start',
-      maxWidth: '100%',
       justifyContent: 'space-between',
-      gap: HEADER_GAP,
     },
     headerTitle: {
-      flexShrink: 1,
+      flex: 1,
+      textAlign: 'center',
       fontFamily: 'Rubik-Regular',
       fontSize: 24,
       lineHeight: 28,
       color: c.primaryText,
+    },
+    headerTitleSpacer: {
+      width: HEADER_ICON_BTN.size,
+      height: HEADER_ICON_BTN.size,
     },
     safeArea: {
       flex: 1,

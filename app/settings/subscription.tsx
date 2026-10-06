@@ -209,7 +209,7 @@ export default function SubscriptionSettingsScreen() {
         visible={successVisible}
         onClose={() => setSuccessVisible(false)}
       />
-      <HeaderScrollLayout header={<SettingsHeader title={t('settings.subscription')} />}>
+      <HeaderScrollLayout header={<SettingsHeader title={t('settings.subscription')} rounded />}>
         {({ paddingTop, paddingBottom, scrollMetricsProps }) =>
           loading ? (
             <View style={[styles.loadingWrap, { paddingTop }]}>
@@ -452,11 +452,13 @@ const makeStyles = (c: ThemeColors) =>
       gap: 6,
     },
     checkbox: {
-      width: 24,
-      height: 24,
+      width: 20,
+      height: 20,
+      margin: 2,
+      boxSizing: 'border-box',
       borderRadius: 999,
       borderWidth: 2,
-      borderColor: c.border,
+      borderColor: c.brand,
       alignItems: 'center',
       justifyContent: 'center',
       overflow: 'hidden',

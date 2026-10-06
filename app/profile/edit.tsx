@@ -345,7 +345,7 @@ export default function EditProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <View style={{ paddingTop: headerTopPadding, backgroundColor: colors.background }}>
+      <View style={[styles.headerCard, { paddingTop: headerTopPadding }]}>
         <View style={styles.header}>
           <HeaderIconButton
             onPress={() => router.back()}
@@ -541,6 +541,17 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   flex: {
     flex: 1,
   },
+  headerCard: {
+    paddingBottom: 22,
+    backgroundColor: c.surface,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: '#2D2D2A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0x14 / 255,
+    shadowRadius: 20,
+    elevation: 4,
+  },
   header: {
     height: 44,
     flexDirection: 'row',
@@ -554,6 +565,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     height: HEADER_ICON_BTN.size,
   },
   headerTitle: {
+    flex: 1,
+    textAlign: 'center',
     fontFamily: 'Rubik-Regular',
     fontSize: 24,
     lineHeight: 28,

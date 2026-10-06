@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from './api';
+import { apiDelete, apiGet, apiPost } from './api';
 
 export type BusinessCategory =
   | 'veterinarian'
@@ -137,4 +137,18 @@ export function savePlaceReview(
     rating: body.rating,
     comment: body.comment?.trim() || null,
   });
+}
+
+export function deletePlaceReview(id: string): Promise<void> {
+  return apiDelete(`/businesses/${id}/reviews`);
+}
+
+export type ReviewReportReason = 'spam' | 'offensive' | 'fake' | 'irrelevant';
+
+export function reportPlaceReview(
+  businessId: string,
+  reviewId: string,
+  reason: ReviewReportReason,
+): Promise<void> {
+  return apiPost<void>(`/businesses/${businessId}/reviews/${reviewId}/report`, { reason });
 }

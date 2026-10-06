@@ -12,6 +12,7 @@ import {
   PanResponder,
   Animated,
   Easing,
+  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -145,6 +146,8 @@ export default function DiscoverHomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { width: windowWidth } = useWindowDimensions();
+  const cardImageWidth = windowWidth - PAGE_HORIZONTAL_PADDING * 2;
   const { accountName, accountPhotoUrl } = useAuth();
   const { setActivePetId } = useActivePet();
   const petsQuery = usePetsQuery();
@@ -687,6 +690,18 @@ export default function DiscoverHomeScreen() {
                         {place.distance_km != null ? (
                           <View style={styles.distanceSlot} pointerEvents="none">
                             <View style={styles.distanceBadge}>
+                              {place.image ? (
+                                <Image
+                                  source={{ uri: place.image }}
+                                  style={[
+                                    styles.distanceBlur,
+                                    { width: cardImageWidth, height: CARD_IMAGE_HEIGHT },
+                                  ]}
+                                  contentFit="cover"
+                                  blurRadius={40}
+                                />
+                              ) : null}
+                              <View style={styles.distanceTint} />
                               <MapPin size={24} color="#1F2937" />
                               <Text style={styles.distanceText} numberOfLines={1}>
                                 {`${place.distance_km} km`}
@@ -1049,6 +1064,7 @@ function makeStyles(colors: ThemeColors) {
     distanceBadge: {
       flexGrow: 0,
       flexShrink: 0,
+      overflow: 'hidden',
       flexDirection: 'row',
       alignItems: 'center',
       height: 32,
@@ -1059,7 +1075,20 @@ function makeStyles(colors: ThemeColors) {
       paddingRight: 10,
       paddingBottom: 4,
       paddingLeft: 8,
-      backgroundColor: 'rgba(255,255,255,0.6)',
+      backgroundColor: '#FFFFFF99',
+    },
+    distanceBlur: {
+      position: 'absolute',
+      top: -16,
+      right: -16,
+    },
+    distanceTint: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      backgroundColor: '#FFFFFF99',
     },
     distanceText: {
       fontFamily: 'Rubik-Medium',

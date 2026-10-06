@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
-import { useThemedStyles } from '@/context/ThemeContext';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import { HeaderScrollScreen } from '@/components/ui/HeaderScrollLayout';
-import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
 /** Users write here; Cloudflare forwards to pettoservices@gmail.com. */
 const SUPPORT_EMAIL = 'support@ragly.cloud';
@@ -17,6 +17,7 @@ function buildSupportMailto(): string {
 }
 
 export default function HelpSettingsScreen() {
+  const colors = useColors();
   const styles = useThemedStyles(makeStyles);
 
   const handleEmailPress = async () => {
@@ -32,22 +33,28 @@ export default function HelpSettingsScreen() {
 
   return (
     <HeaderScrollScreen
-      header={<SettingsHeader title={t('settings.support_title')} />}
+      header={<SettingsHeader title={t('settings.support_title')} rounded />}
+      contentGap={4}
+      chromePaddingBottom={0}
       contentContainerStyle={styles.content}
     >
-      <TouchableOpacity
-        style={styles.card}
-        onPress={handleEmailPress}
-        activeOpacity={0.7}
-        accessibilityRole="button"
-        accessibilityLabel={t('settings.contact_support')}
-      >
-        <View style={styles.emailSection}>
+      <View style={styles.card}>
+        <View style={styles.block}>
           <Text style={styles.label}>{t('settings.contact_support')}</Text>
-          <Text style={styles.email}>{SUPPORT_EMAIL}</Text>
-          <Text style={styles.hint}>{t('settings.support_tap_hint')}</Text>
+          <TouchableOpacity
+            style={styles.emailRow}
+            onPress={handleEmailPress}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('settings.contact_support')}
+          >
+            <Ionicons name="mail-outline" size={24} color={colors.primaryText} />
+            <Text style={styles.email} numberOfLines={1}>
+              {SUPPORT_EMAIL}
+            </Text>
+          </TouchableOpacity>
         </View>
-      </TouchableOpacity>
+      </View>
     </HeaderScrollScreen>
   );
 }
@@ -55,19 +62,17 @@ export default function HelpSettingsScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     content: {
-      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+      flexGrow: 1,
     },
     card: {
       backgroundColor: c.surface,
-      borderRadius: 12,
-      padding: 16,
-      shadowColor: '#2D2D2A',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.04,
-      shadowRadius: 20,
-      elevation: 2,
+      borderRadius: 24,
+      paddingTop: 22,
+      paddingRight: 20,
+      paddingBottom: 22,
+      paddingLeft: 20,
     },
-    emailSection: {
+    block: {
       gap: 6,
     },
     label: {
@@ -76,17 +81,21 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 20,
       color: c.secondaryText,
     },
+    emailRow: {
+      height: 56,
+      boxSizing: 'border-box',
+      borderRadius: 16,
+      padding: 16,
+      backgroundColor: c.background,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
     email: {
+      flexShrink: 1,
       fontFamily: 'Rubik-Regular',
       fontSize: 16,
       lineHeight: 24,
       color: c.primaryText,
-    },
-    hint: {
-      fontFamily: 'Rubik-Regular',
-      fontSize: 13,
-      lineHeight: 18,
-      color: c.secondaryText,
-      marginTop: 4,
     },
   });

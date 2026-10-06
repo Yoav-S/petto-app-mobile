@@ -199,6 +199,8 @@ interface HeaderScrollScreenProps {
   bottomFade?: boolean;
   fadeColor?: string;
   fadeMode?: FadeMode;
+  contentGap?: number;
+  chromePaddingBottom?: number;
 }
 
 export function HeaderScrollScreen({
@@ -210,6 +212,8 @@ export function HeaderScrollScreen({
   bottomFade = false,
   fadeColor,
   fadeMode = 'scroll',
+  contentGap,
+  chromePaddingBottom,
 }: HeaderScrollScreenProps) {
   return (
     <HeaderScrollLayout
@@ -219,6 +223,8 @@ export function HeaderScrollScreen({
       bottomFade={bottomFade}
       fadeColor={fadeColor}
       fadeMode={fadeMode}
+      contentGap={contentGap}
+      chromePaddingBottom={chromePaddingBottom}
     >
       {({ paddingTop, paddingBottom, fadeBottomInset, scrollMetricsProps }) => (
         <ScrollView

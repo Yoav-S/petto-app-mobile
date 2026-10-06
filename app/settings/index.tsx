@@ -9,21 +9,19 @@ import { useAuth } from '@/context/AuthContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import { HeaderScrollScreen } from '@/components/ui/HeaderScrollLayout';
 import { SignOutModal } from '@/components/ui/ConfirmModal';
-import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
 interface SettingsRow {
   key: string;
   route: string;
-  value?: string;
 }
 
 const ROWS: SettingsRow[] = [
   { key: 'notifications', route: '/settings/notifications' },
   { key: 'theme', route: '/settings/theme' },
   { key: 'language', route: '/settings/language' },
+  { key: 'help', route: '/settings/help' },
   { key: 'privacy', route: '/settings/privacy' },
   { key: 'terms', route: '/settings/terms' },
-  { key: 'help', route: '/settings/help' },
 ];
 
 export default function SettingsScreen() {
@@ -32,37 +30,36 @@ export default function SettingsScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const [signOutVisible, setSignOutVisible] = useState(false);
-
   const languageLabel = t(`settings.language_${currentLocale}`);
 
   return (
     <>
     <HeaderScrollScreen
-      header={<SettingsHeader title={t('settings.title')} />}
+      header={<SettingsHeader title={t('settings.title')} rounded />}
+      contentGap={4}
+      chromePaddingBottom={0}
       contentContainerStyle={styles.content}
     >
       <View style={styles.card}>
-        <View style={styles.inner}>
-          {ROWS.map((row, index) => (
-            <React.Fragment key={row.key}>
-              <TouchableOpacity
-                style={styles.row}
-                onPress={() => router.push(row.route as never)}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-              >
-                <Text style={styles.rowLabel}>{t(`settings.${row.key}`)}</Text>
-                <View style={styles.rowRight}>
-                  {row.key === 'language' ? (
-                    <Text style={styles.rowValue}>{languageLabel}</Text>
-                  ) : null}
-                  <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
-                </View>
-              </TouchableOpacity>
-              {index < ROWS.length - 1 ? <View style={styles.divider} /> : null}
-            </React.Fragment>
-          ))}
-        </View>
+        {ROWS.map((row) => (
+          <TouchableOpacity
+            key={row.key}
+            style={styles.row}
+            onPress={() => router.push(row.route as never)}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+          >
+            <Text style={styles.rowLabel} numberOfLines={1}>
+              {t(`settings.${row.key}`)}
+            </Text>
+            <View style={styles.rowEnd}>
+              {row.key === 'language' ? (
+                <Text style={styles.rowValue}>{languageLabel}</Text>
+              ) : null}
+              <Ionicons name="chevron-forward" size={24} color={colors.primaryText} />
+            </View>
+          </TouchableOpacity>
+        ))}
       </View>
 
       <TouchableOpacity
@@ -90,41 +87,38 @@ export default function SettingsScreen() {
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   content: {
     flexGrow: 1,
-    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
   },
   card: {
     backgroundColor: c.surface,
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#2D2D2A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 20,
-    elevation: 2,
-  },
-  inner: {
-    gap: 12,
+    borderRadius: 24,
+    paddingTop: 22,
+    paddingRight: 20,
+    paddingBottom: 22,
+    paddingLeft: 20,
+    gap: 4,
   },
   row: {
-    minHeight: 24,
+    height: 56,
+    boxSizing: 'border-box',
+    borderRadius: 16,
+    padding: 16,
+    backgroundColor: c.background,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: c.border,
+    gap: 6,
   },
   rowLabel: {
+    flexShrink: 1,
     fontFamily: 'Rubik-Medium',
     fontSize: 16,
     lineHeight: 20,
-    letterSpacing: 0,
     color: c.primaryText,
   },
-  rowRight: {
+  rowEnd: {
     flexDirection: 'row',
     alignItems: 'center',
+    height: 24,
     gap: 16,
   },
   rowValue: {
@@ -139,6 +133,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     gap: 8,
     marginTop: 'auto',
     paddingVertical: 8,
+    paddingHorizontal: 20,
   },
   signOutText: {
     fontFamily: 'Rubik-Medium',

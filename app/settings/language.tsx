@@ -7,7 +7,6 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import { HeaderScrollScreen } from '@/components/ui/HeaderScrollLayout';
-import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
 const OPTIONS: { code: AppLocale; label: string }[] = [
   { code: 'en', label: 'English' },
@@ -22,33 +21,31 @@ export default function LanguageSettingsScreen() {
 
   return (
     <HeaderScrollScreen
-      header={<SettingsHeader title={t('settings.language')} />}
+      header={<SettingsHeader title={t('settings.language')} rounded />}
+      contentGap={4}
+      chromePaddingBottom={0}
       contentContainerStyle={styles.content}
     >
       <View style={styles.card}>
-        <View style={styles.inner}>
-          {OPTIONS.map((option, index) => {
-            const selected = locale === option.code;
-            return (
-              <React.Fragment key={option.code}>
-                <Pressable
-                  style={styles.row}
-                  onPress={() => setLocale(option.code)}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected }}
-                >
-                  <Text style={styles.rowLabel}>{option.label}</Text>
-                  <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
-                    {selected && (
-                      <Ionicons name="checkmark" size={16} color={colors.button.primaryText} />
-                    )}
-                  </View>
-                </Pressable>
-                {index < OPTIONS.length - 1 ? <View style={styles.divider} /> : null}
-              </React.Fragment>
-            );
-          })}
-        </View>
+        {OPTIONS.map((option) => {
+          const selected = locale === option.code;
+          return (
+            <Pressable
+              key={option.code}
+              style={styles.row}
+              onPress={() => setLocale(option.code)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
+            >
+              <Text style={styles.rowLabel}>{option.label}</Text>
+              <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
+                {selected && (
+                  <Ionicons name="checkmark" size={16} color={colors.button.primaryText} />
+                )}
+              </View>
+            </Pressable>
+          );
+        })}
       </View>
     </HeaderScrollScreen>
   );
@@ -57,39 +54,43 @@ export default function LanguageSettingsScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     content: {
-      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+      flexGrow: 1,
     },
     card: {
       backgroundColor: c.surface,
-      borderRadius: 12,
-      padding: 16,
-      shadowColor: '#2D2D2A',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.04,
-      shadowRadius: 20,
-      elevation: 2,
-    },
-    inner: {
-      gap: 22,
+      borderRadius: 24,
+      paddingTop: 22,
+      paddingRight: 20,
+      paddingBottom: 22,
+      paddingLeft: 20,
+      gap: 4,
     },
     row: {
+      minHeight: 56,
+      boxSizing: 'border-box',
+      borderRadius: 16,
+      padding: 16,
+      backgroundColor: c.background,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      minHeight: 24,
+      gap: 6,
     },
     rowLabel: {
-      fontFamily: 'Rubik-Regular',
+      flexShrink: 1,
+      fontFamily: 'Rubik-Medium',
       fontSize: 16,
-      lineHeight: 24,
+      lineHeight: 20,
       color: c.primaryText,
     },
     checkbox: {
-      width: 24,
-      height: 24,
+      width: 20,
+      height: 20,
+      margin: 2,
+      boxSizing: 'border-box',
       borderRadius: 999,
       borderWidth: 2,
-      borderColor: c.border,
+      borderColor: c.brand,
       alignItems: 'center',
       justifyContent: 'center',
       overflow: 'hidden',
@@ -97,9 +98,5 @@ const makeStyles = (c: ThemeColors) =>
     checkboxChecked: {
       backgroundColor: c.brand,
       borderColor: c.brand,
-    },
-    divider: {
-      height: 1,
-      backgroundColor: c.border,
     },
   });

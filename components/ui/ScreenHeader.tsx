@@ -62,7 +62,15 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     wrap: {
       width: '100%',
-      backgroundColor: c.background,
+      paddingBottom: 22,
+      backgroundColor: c.surface,
+      borderBottomLeftRadius: 24,
+      borderBottomRightRadius: 24,
+      shadowColor: '#2D2D2A',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0x14 / 255,
+      shadowRadius: 20,
+      elevation: 4,
     },
     container: {
       flexDirection: 'row',

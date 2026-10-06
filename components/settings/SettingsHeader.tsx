@@ -13,20 +13,28 @@ import HeaderIconButton, {
 interface SettingsHeaderProps {
   title: string;
   backgroundColor?: string;
+  /** White title card with rounded bottom corners. */
+  rounded?: boolean;
 }
 
 /**
  * Settings-style header. Owns top inset like ScreenHeader so it matches
  * Add Health title height. Parent must NOT pad the top safe area.
  */
-export default function SettingsHeader({ title, backgroundColor }: SettingsHeaderProps) {
+export default function SettingsHeader({ title, backgroundColor, rounded = false }: SettingsHeaderProps) {
   const router = useRouter();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const paddingTop = useHeaderTopPadding();
 
   return (
-    <View style={[styles.wrap, { paddingTop, backgroundColor }]}>
+    <View
+      style={[
+        styles.wrap,
+        { paddingTop, backgroundColor },
+        rounded ? styles.rounded : null,
+      ]}
+    >
       <View style={styles.header}>
         <HeaderIconButton
           onPress={() => router.back()}
@@ -67,5 +75,16 @@ const makeStyles = (c: ThemeColors) =>
     rightSpacer: {
       width: HEADER_ICON_BTN.size,
       height: HEADER_ICON_BTN.size,
+    },
+    rounded: {
+      paddingBottom: 22,
+      backgroundColor: c.surface,
+      borderBottomLeftRadius: 24,
+      borderBottomRightRadius: 24,
+      shadowColor: '#2D2D2A',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0x14 / 255,
+      shadowRadius: 20,
+      elevation: 4,
     },
   });

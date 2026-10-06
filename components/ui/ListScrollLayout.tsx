@@ -60,6 +60,8 @@ interface ListScrollLayoutProps {
   documentFade?: boolean;
   /** Override the top fade band height (defaults to the list/document preset). */
   topFadeHeight?: number;
+  /** Override the bottom fade band height. */
+  bottomFadeHeight?: number;
   /** Start content at the end of the top fade band so nothing is dimmed at rest. */
   clearTopFade?: boolean;
   /**
@@ -67,6 +69,10 @@ interface ListScrollLayoutProps {
    * when coming back to a list that was already known to scroll.
    */
   fadeKey?: string;
+  /** Replaces the default end padding. 0 lets the last line reach the screen bottom under the fade. */
+  contentBottomPadding?: number;
+  /** Solid cover under the bottom fade. 0 keeps the fade and lets text reach the screen edge. */
+  fadeBottomInset?: number;
 }
 
 export default function ListScrollLayout({
@@ -81,8 +87,11 @@ export default function ListScrollLayout({
   contentGap = LIST_TABS_CONTENT_GAP,
   documentFade = false,
   topFadeHeight: topFadeHeightOverride,
+  bottomFadeHeight: bottomFadeHeightOverride,
   clearTopFade = false,
   fadeKey,
+  contentBottomPadding,
+  fadeBottomInset,
 }: ListScrollLayoutProps) {
   const styles = useThemedStyles(makeStyles);
   const surface = backgroundColor;
@@ -118,13 +127,14 @@ export default function ListScrollLayout({
   }
   const {
     topFadeHeight: presetTopFadeHeight,
-    bottomFadeHeight,
+    bottomFadeHeight: presetBottomFadeHeight,
     bottomSolidAt,
     bottomInset,
     bottomPadding,
     topSolidAt,
   } = useListScrollFadeLayout(documentFade);
   const topFadeHeight = topFadeHeightOverride ?? presetTopFadeHeight;
+  const bottomFadeHeight = bottomFadeHeightOverride ?? presetBottomFadeHeight;
   const { metrics, reportViewport, reportContent, reportPinnedFooterOverflow } =
     useScrollFadeMetricsState();
 
@@ -180,16 +190,20 @@ export default function ListScrollLayout({
     : chrome != null
       ? chromeContentHeight + contentOffset
       : contentOffset;
-  const paddingBottom = documentFade
-    ? bottomPadding()
-    : listScrollable
-      ? LIST_SCROLL_END_CLEARANCE
-      : 0;
+  const paddingBottom = contentBottomPadding != null
+    ? contentBottomPadding
+    : documentFade
+      ? bottomPadding()
+      : listScrollable
+        ? LIST_SCROLL_END_CLEARANCE
+        : 0;
   if (!documentFade) listBottomPadRef.current = paddingBottom;
   /** Documents: 22pt button cover under the fade. Lists: home inset. */
-  const fadeBottomStrip = documentFade
-    ? Math.max(DOCUMENT_BOTTOM_SOLID, bottomInset)
-    : bottomInset;
+  const fadeBottomStrip = fadeBottomInset != null
+    ? fadeBottomInset
+    : documentFade
+      ? Math.max(DOCUMENT_BOTTOM_SOLID, bottomInset)
+      : bottomInset;
   const bottomFadeInset = fadeBottomStrip;
   /** Overlay lists: fade starts at chrome bottom. In-flow documents: scroll slot top. */
   const fadeTop = pinChrome ? 0 : chrome != null ? chromeContentHeight : 0;

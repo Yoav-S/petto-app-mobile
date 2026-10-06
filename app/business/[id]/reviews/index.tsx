@@ -16,10 +16,13 @@ import { useToast } from '@/context/ToastContext';
 import { useCursorPagination } from '@/hooks/useCursorPagination';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import ReviewListCard from '@/components/business/ReviewListCard';
+import ReviewActionsSheet from '@/components/business/ReviewActionsSheet';
 import WriteReviewSheet from '@/components/business/WriteReviewSheet';
+import { waitForBottomSheetsToSettle } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
+import { getErrorMessage } from '@/services/errors';
 import { queryKeys } from '@/services/queryKeys';
-import { listPlaceReviews, type PlaceReview } from '@/services/places';
+import { deletePlaceReview, listPlaceReviews, reportPlaceReview, type PlaceReview } from '@/services/places';
 
 export default function BusinessReviewsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -30,6 +33,7 @@ export default function BusinessReviewsScreen() {
   const toast = useToast();
   const [footerHeight, setFooterHeight] = useState(88);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [menuReview, setMenuReview] = useState<PlaceReview | null>(null);
   const openedOnce = useRef(false);
 
   const fetchPage = useCallback(
@@ -69,7 +73,7 @@ export default function BusinessReviewsScreen() {
 
   return (
     <View style={styles.screen}>
-      <SettingsHeader title={t('business.review')} />
+      <SettingsHeader title={t('business.review')} rounded />
       {loading && reviews.length === 0 ? (
         <ActivityIndicator color={colors.brand} style={styles.loader} />
       ) : (
@@ -88,23 +92,7 @@ export default function BusinessReviewsScreen() {
           }}
           onEndReachedThreshold={0.35}
           renderItem={({ item }) => (
-            <ReviewListCard
-              review={item}
-              onPress={
-                item.is_mine
-                  ? () =>
-                      router.push({
-                        pathname: '/business/[id]/reviews/[reviewId]',
-                        params: {
-                          id,
-                          reviewId: item.id,
-                          rating: String(item.rating),
-                          comment: item.comment ?? '',
-                        },
-                      } as never)
-                  : undefined
-              }
-            />
+            <ReviewListCard review={item} onMenuPress={() => setMenuReview(item)} />
           )}
           ListFooterComponent={
             loadingMore ? <ActivityIndicator color={colors.brand} style={styles.loader} /> : null
@@ -119,6 +107,48 @@ export default function BusinessReviewsScreen() {
           <Text style={styles.writeLabel}>{t('business.write_review')}</Text>
         </TouchableOpacity>
       </View>
+      <ReviewActionsSheet
+        visible={menuReview !== null}
+        isMine={menuReview?.is_mine === true}
+        onClose={() => setMenuReview(null)}
+        onEdit={() => {
+          if (!id || !menuReview) return;
+          router.push({
+            pathname: '/business/[id]/reviews/[reviewId]',
+            params: {
+              id,
+              reviewId: menuReview.id,
+              rating: String(menuReview.rating),
+              comment: menuReview.comment ?? '',
+            },
+          } as never);
+        }}
+        onRemove={() => {
+          if (!id) return;
+          void deletePlaceReview(id)
+            .then(() => refresh())
+            .catch((err) => toast.showError(getErrorMessage(err)));
+        }}
+        onReport={(reason) => {
+          const review = menuReview;
+          const businessId = id;
+          setMenuReview(null);
+          if (!review || !businessId) return;
+          void waitForBottomSheetsToSettle().then(() => {
+            toast.showUndo({
+              message: t('business.report_submitted'),
+              onUndo: () => {},
+              onCommit: async () => {
+                try {
+                  await reportPlaceReview(businessId, review.id, reason);
+                } catch (err) {
+                  toast.showError(getErrorMessage(err));
+                }
+              },
+            });
+          });
+        }}
+      />
       <WriteReviewSheet
         visible={reviewOpen}
         businessId={id}
