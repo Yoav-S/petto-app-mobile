@@ -13,6 +13,9 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -29,9 +32,10 @@ import {
 import { getErrorMessage } from '@/services/errors';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { uploadAccountPhoto } from '@/services/storage';
-import SettingsHeader from '@/components/settings/SettingsHeader';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
+import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { HealthFormScreen } from '@/components/health/HealthKeyboardFooter';
 import EditPhotoSheet from '@/components/health/EditPhotoSheet';
 import { OnboardingPhotoAdd } from '@/components/brand/onboarding';
@@ -39,6 +43,33 @@ import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHOTO_SIZE = 128;
+/** Space under the status bar, then the 32px title row, then the card’s bottom padding. */
+const PROFILE_HEADER_GAP = 10;
+const PROFILE_HEADER_ROW = 32;
+const PROFILE_HEADER_BOTTOM = 22;
+
+function MyProfileHeader() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+
+  return (
+    <View style={[styles.profileHeader, { paddingTop: insets.top + PROFILE_HEADER_GAP }]}>
+      <View style={styles.profileTitleRow}>
+        <HeaderIconButton
+          onPress={() => router.back()}
+          accessibilityLabel={t('petOnboarding.back')}
+        >
+          <Ionicons name="chevron-back" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
+        </HeaderIconButton>
+        <Text style={styles.profileTitle} numberOfLines={1}>
+          {t('settings.my_profile')}
+        </Text>
+      </View>
+    </View>
+  );
+}
 
 type Draft = {
   name: string;
@@ -56,6 +87,7 @@ export default function AccountSettingsScreen() {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
   const toast = useToast();
+  const { scrollRef, onScroll, onInputFocus } = useKeyboardAwareScroll(0);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState(user?.email ?? '');
@@ -307,13 +339,18 @@ export default function AccountSettingsScreen() {
   return (
     <>
       <HeaderScrollLayout
-        header={<SettingsHeader title={t('settings.account')} />}
+        header={<MyProfileHeader />}
         edges={['left', 'right']}
         bottomFade
         fadeMode="form"
+        contentGap={16}
+        chromePaddingBottom={0}
       >
         {({ paddingTop }) => (
           <HealthFormScreen
+            scrollRef={scrollRef}
+            onScroll={onScroll}
+            scrollEventThrottle={16}
             scrollInsetTop={paddingTop}
             contentContainerStyle={styles.form}
             footer={{
@@ -340,6 +377,7 @@ export default function AccountSettingsScreen() {
             <TextInput
               value={name}
               onChangeText={setName}
+              onFocus={onInputFocus}
               onBlur={() => {
                 void commitProfile().catch((err) => toast.showError(getErrorMessage(err)));
               }}
@@ -355,6 +393,7 @@ export default function AccountSettingsScreen() {
               <TextInput
                 value={email}
                 onChangeText={setEmail}
+                onFocus={onInputFocus}
                 onBlur={() => {
                   Keyboard.dismiss();
                   void commitEmail();
@@ -373,6 +412,7 @@ export default function AccountSettingsScreen() {
               <TextInput
                 value={phone}
                 onChangeText={setPhone}
+                onFocus={onInputFocus}
                 onBlur={() => {
                   void commitProfile().catch((err) => toast.showError(getErrorMessage(err)));
                 }}
@@ -441,6 +481,34 @@ export default function AccountSettingsScreen() {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    profileHeader: {
+      paddingBottom: PROFILE_HEADER_BOTTOM,
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+      borderBottomLeftRadius: 24,
+      borderBottomRightRadius: 24,
+      backgroundColor: c.surface,
+      shadowColor: '#2D2D2A',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0x14 / 255,
+      shadowRadius: 20,
+      elevation: 4,
+    },
+    profileTitleRow: {
+      height: PROFILE_HEADER_ROW,
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      maxWidth: '100%',
+      justifyContent: 'space-between',
+      gap: PROFILE_HEADER_GAP,
+    },
+    profileTitle: {
+      flexShrink: 1,
+      fontFamily: 'Rubik-Regular',
+      fontSize: 24,
+      lineHeight: 28,
+      color: c.primaryText,
+    },
     form: {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       gap: 22,

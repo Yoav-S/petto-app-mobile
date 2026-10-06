@@ -79,6 +79,10 @@ interface HeaderScrollLayoutProps {
   fadeMode?: FadeMode;
   /** Scroll ends above a footer outside the layout — no home-indicator strip. */
   fadeAboveFooter?: boolean;
+  /** Space from the bottom of the header chrome to the first content line. */
+  contentGap?: number;
+  /** Padding under the floating header. The header card’s own padding is separate. */
+  chromePaddingBottom?: number;
 }
 
 export default function HeaderScrollLayout({
@@ -91,6 +95,8 @@ export default function HeaderScrollLayout({
   fadeColor,
   fadeMode = 'form',
   fadeAboveFooter = false,
+  contentGap = HEADER_CONTENT_GAP,
+  chromePaddingBottom = HEADER_SCROLL_GAP,
 }: HeaderScrollLayoutProps) {
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
@@ -112,7 +118,7 @@ export default function HeaderScrollLayout({
     chromeHeight +
     (fadeMode === 'list'
       ? LIST_TABS_CONTENT_GAP + LIST_CONTENT_TOP_NUDGE
-      : HEADER_CONTENT_GAP);
+      : contentGap);
   const paddingBottom = Math.max(insets.bottom, 8);
   const fadeBottomInset = !bottomFade
     ? 0
@@ -172,7 +178,7 @@ export default function HeaderScrollLayout({
             />
           ) : null}
           <View
-            style={styles.chrome}
+            style={[styles.chrome, { paddingBottom: chromePaddingBottom }]}
             onLayout={(e) => setChromeHeight(e.nativeEvent.layout.height)}
             pointerEvents="box-none"
           >

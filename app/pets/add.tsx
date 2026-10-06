@@ -10,13 +10,15 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
+import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { type ThemeColors } from '@/constants/theme';
 import { centeredInputText } from '@/constants/textField';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
-import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import { ProfilePillField, ProfileSelectField } from '@/components/profile/ProfileFormFields';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
 import EditPhotoSheet from '@/components/health/EditPhotoSheet';
@@ -33,8 +35,36 @@ import { useActivePet } from '@/store/petStore';
 import { formatDisplayDate, parseIsoDate } from '@/utils/calendar';
 import type { PetType } from '@/store/petOnboardingDraft';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { DiscardChangesModal } from '@/components/ui/ConfirmModal';
+
+const HEADER_GAP = 10;
+const HEADER_ROW = 32;
+const HEADER_BOTTOM = 22;
+
+function AddPetHeader() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+
+  return (
+    <View style={[styles.header, { paddingTop: insets.top + HEADER_GAP }]}>
+      <View style={styles.headerRow}>
+        <HeaderIconButton
+          onPress={() => router.back()}
+          accessibilityLabel={t('common.close')}
+        >
+          <Ionicons name="close" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
+        </HeaderIconButton>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {t('pets.add_title')}
+        </Text>
+      </View>
+    </View>
+  );
+}
 
 const TYPE_DOG_EMOJI = require('@/assets/images/pets/type-dog.png');
 const TYPE_CAT_EMOJI = require('@/assets/images/pets/type-cat.png');
@@ -165,10 +195,12 @@ export default function AddPetScreen() {
   return (
     <>
       <HeaderScrollLayout
-        header={<VaccineScreenHeader title={t('pets.add_title')} icon="close" />}
+        header={<AddPetHeader />}
         edges={['left', 'right']}
-        topFade
         bottomFade
+        fadeMode="form"
+        contentGap={16}
+        chromePaddingBottom={0}
       >
         {({ paddingTop }) => (
           <HealthFormScreen
@@ -356,6 +388,34 @@ export default function AddPetScreen() {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    header: {
+      paddingBottom: HEADER_BOTTOM,
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+      borderBottomLeftRadius: 24,
+      borderBottomRightRadius: 24,
+      backgroundColor: c.surface,
+      shadowColor: '#2D2D2A',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0x14 / 255,
+      shadowRadius: 20,
+      elevation: 4,
+    },
+    headerRow: {
+      height: HEADER_ROW,
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      maxWidth: '100%',
+      justifyContent: 'space-between',
+      gap: HEADER_GAP,
+    },
+    headerTitle: {
+      flexShrink: 1,
+      fontFamily: 'Rubik-Regular',
+      fontSize: 24,
+      lineHeight: 28,
+      color: c.primaryText,
+    },
     safeArea: {
       flex: 1,
       backgroundColor: c.background,

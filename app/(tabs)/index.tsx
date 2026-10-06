@@ -19,6 +19,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { ChevronDown, ChevronUp, MapPin, Plus, Settings, Star, User, X } from 'lucide-react-native';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
@@ -37,9 +38,7 @@ const NIGHT_HOUR = 21;
 
 /** Greeting line 24 + 2px gap + name line 20. */
 const GREETING_AVATAR = 24 + 2 + 20;
-/** Overlay chip on a photo: white at 60% (#FFFFFF99), text stays #1F2937. */
-const DISTANCE_CHIP = 'rgba(255,255,255,0.6)';
-const DISTANCE_TEXT = '#1F2937';
+const CARD_IMAGE_HEIGHT = 278;
 const PET_SIZE = 72;
 const PET_GAP = 16;
 const PET_SCROLL_WIDTH = PET_SIZE * 2 + PET_GAP;
@@ -456,7 +455,7 @@ export default function DiscoverHomeScreen() {
                 style={styles.avatar}
                 onPress={() => router.push('/settings/account' as never)}
                 accessibilityRole="button"
-                accessibilityLabel={t('settings.account')}
+                accessibilityLabel={t('settings.my_profile')}
               >
                 {accountPhotoUrl ? (
                   <Image
@@ -686,11 +685,13 @@ export default function DiscoverHomeScreen() {
                           <View style={styles.cardImage} />
                         )}
                         {place.distance_km != null ? (
-                          <View style={styles.distanceBadge}>
-                            <MapPin size={24} color={DISTANCE_TEXT} />
-                            <Text style={styles.distanceText}>
-                              {`${place.distance_km} km`}
-                            </Text>
+                          <View style={styles.distanceSlot} pointerEvents="none">
+                            <View style={styles.distanceBadge}>
+                              <MapPin size={24} color="#1F2937" />
+                              <Text style={styles.distanceText} numberOfLines={1}>
+                                {`${place.distance_km} km`}
+                              </Text>
+                            </View>
                           </View>
                         ) : null}
                       </View>
@@ -1010,7 +1011,7 @@ function makeStyles(colors: ThemeColors) {
     },
     placeListContent: {
       gap: 10,
-      paddingHorizontal: 20,
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     },
     placeCard: {
       borderRadius: 24,
@@ -1024,36 +1025,48 @@ function makeStyles(colors: ThemeColors) {
       elevation: 4,
     },
     cardImageWrap: {
-      height: 278,
+      height: CARD_IMAGE_HEIGHT,
       borderRadius: 24,
       overflow: 'hidden',
       backgroundColor: colors.background,
     },
     cardImage: {
       width: '100%',
-      height: 278,
+      height: CARD_IMAGE_HEIGHT,
+    },
+    distanceSlot: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      zIndex: 20,
+      elevation: 20,
+      paddingTop: 16,
+      paddingRight: 16,
+      alignItems: 'flex-end',
     },
     distanceBadge: {
-      position: 'absolute',
-      top: 16,
-      left: 16,
-      height: 32,
+      flexGrow: 0,
+      flexShrink: 0,
       flexDirection: 'row',
       alignItems: 'center',
-      alignSelf: 'flex-start',
+      height: 32,
+      boxSizing: 'border-box',
       gap: 4,
       borderRadius: 10,
       paddingTop: 4,
       paddingRight: 10,
       paddingBottom: 4,
       paddingLeft: 8,
-      backgroundColor: DISTANCE_CHIP,
+      backgroundColor: 'rgba(255,255,255,0.6)',
     },
     distanceText: {
       fontFamily: 'Rubik-Medium',
       fontSize: 14,
       lineHeight: 20,
-      color: DISTANCE_TEXT,
+      color: '#1F2937',
+      includeFontPadding: false,
     },
     cardBody: {
       paddingHorizontal: 12,
