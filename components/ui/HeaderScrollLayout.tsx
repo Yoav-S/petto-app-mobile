@@ -14,9 +14,7 @@ import {
 import {
   HEADER_CONTENT_GAP,
   HEADER_SCROLL_GAP,
-  LIST_CONTENT_TOP_NUDGE,
   LIST_SCROLL_END_CLEARANCE,
-  LIST_TABS_CONTENT_GAP,
   LIST_TOP_FADE_SOLID_STRIP,
   SCROLL_BOTTOM_FADE_GRADIENT,
   SCROLL_DOCUMENT_BOTTOM_FADE_GRADIENT,
@@ -114,11 +112,7 @@ export default function HeaderScrollLayout({
     !keyboardOpen;
   const bands = fadeHeights(fadeMode);
 
-  const paddingTop =
-    chromeHeight +
-    (fadeMode === 'list'
-      ? LIST_TABS_CONTENT_GAP + LIST_CONTENT_TOP_NUDGE
-      : contentGap);
+  const paddingTop = chromeHeight + contentGap;
   const paddingBottom = Math.max(insets.bottom, 8);
   const fadeBottomInset = !bottomFade
     ? 0

@@ -460,7 +460,8 @@ export default function EditReminderScreen() {
         <HeaderScrollLayout
           header={header}
           edges={['left', 'right']}
-          topFade
+          contentGap={16}
+          chromePaddingBottom={0}
         >
           {({ paddingTop }) => (
             <ReminderFormBody

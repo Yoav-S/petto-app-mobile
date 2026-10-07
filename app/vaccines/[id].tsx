@@ -53,7 +53,7 @@ type PickerTarget = 'date' | 'next' | null;
 const DELETE_ROW_H = 42;
 /** Gap under delete above the home indicator / keyboard Done bar. */
 const DELETE_BOTTOM_GAP = 22;
-const CONTENT_TOP_PAD = 20;
+const CONTENT_TOP_PAD = 16;
 
 type PendingLeave = Parameters<Parameters<typeof usePreventRemove>[1]>[0]['data']['action'];
 

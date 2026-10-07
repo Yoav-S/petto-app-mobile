@@ -13,9 +13,10 @@ import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { type ThemeColors } from '@/constants/theme';
 import ListScrollLayout from '@/components/ui/ListScrollLayout';
 import { rowFadeIntensity } from '@/components/ui/listItemFade';
-import { PAGE_HORIZONTAL_PADDING, LIST_HEADER_TABS_GAP } from '@/constants/layout';
+import { LIST_CONTENT_TOP_NUDGE, LIST_TABS_CONTENT_GAP, LIST_TABS_SCROLL_CLEARANCE, PAGE_HORIZONTAL_PADDING, LIST_HEADER_TABS_GAP } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
+import { useHomePanelLayout } from '@/hooks/useHomePanelLayout';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import EmptyState from '@/components/ui/EmptyState';
@@ -85,6 +86,7 @@ export default function RemindersScreen() {
   const router = useRouter();
   const toast = useToast();
   const { activePetId } = useActivePet();
+  const { fabBottom } = useHomePanelLayout();
   const { present, visible: promptVisible } = useReminderPrompt();
   const params = useLocalSearchParams<{
     deletedId?: string;
@@ -415,6 +417,11 @@ export default function RemindersScreen() {
     <>
       <ListScrollLayout
         fadeKey={`reminders:${activeTab}`}
+        contentGap={LIST_TABS_CONTENT_GAP - LIST_TABS_SCROLL_CLEARANCE - LIST_CONTENT_TOP_NUDGE}
+        topFade={false}
+        bottomFade
+        contentBottomPadding={0}
+        fadeBottomInset={0}
         chrome={
           <>
             <ScreenHeader title={t('reminders.title')} />
@@ -513,10 +520,10 @@ export default function RemindersScreen() {
                       </SwipeToDeleteRow>
                     );
                   }}
-                  contentContainerStyle={[
-                    styles.listContent,
-                    { paddingTop, paddingBottom },
-                  ]}
+                  contentContainerStyle={{ paddingTop, paddingBottom }}
+                  contentInsetAdjustmentBehavior="never"
+                  automaticallyAdjustContentInsets={false}
+                  automaticallyAdjustsScrollIndicatorInsets={false}
                   showsVerticalScrollIndicator={false}
                   scrollEnabled={scrollable}
                   bounces={scrollable}
@@ -550,6 +557,7 @@ export default function RemindersScreen() {
             },
           ]}
           accessibilityLabel={t('reminders.add')}
+          bottom={fabBottom}
         />
       ) : null}
 
@@ -569,6 +577,7 @@ const makeStyles = (c: ThemeColors) =>
     tabs: {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       marginTop: LIST_HEADER_TABS_GAP,
+      marginBottom: LIST_TABS_SCROLL_CLEARANCE,
     },
     centered: {
       flex: 1,
@@ -577,8 +586,5 @@ const makeStyles = (c: ThemeColors) =>
     },
     listWrap: {
       flex: 1,
-    },
-    listContent: {
-      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     },
   });

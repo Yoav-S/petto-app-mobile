@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -8,25 +8,22 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
-import { useThemedStyles } from '@/context/ThemeContext';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 
 interface SegmentedControlProps {
   tabs: string[];
   activeTab: string;
   onTabChange: (tab: string) => void;
   getLabel?: (tab: string) => string;
-  /** Optional design width. Acts as a floor — tabs grow for longer labels. Compact tabs pass 220. */
-  width?: number;
   style?: StyleProp<ViewStyle>;
 }
 
-const SEGMENT = {
-  height: 36,
-  padV: 2,
-  padH: 4,
-  gap: 4,
-  radius: 10,
+const TAB_SHADOW = {
+  shadowColor: '#2D2D2A',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0x14 / 255,
+  shadowRadius: 20,
+  elevation: 4,
 } as const;
 
 export default function SegmentedControl({
@@ -34,96 +31,62 @@ export default function SegmentedControl({
   activeTab,
   onTabChange,
   getLabel,
-  width: designWidthCap,
   style,
 }: SegmentedControlProps) {
+  const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const { contentWidth } = useResponsiveLayout();
-
-  const minSegmentWidth = useMemo(
-    () => (designWidthCap == null ? contentWidth : Math.min(contentWidth, designWidthCap)),
-    [contentWidth, designWidthCap],
-  );
 
   return (
-    <View style={[styles.wrap, style]}>
-      <View
-        style={[
-          styles.container,
-          {
-            minWidth: minSegmentWidth,
-            maxWidth: '100%',
-          },
-        ]}
-      >
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab;
-          return (
-            <TouchableOpacity
-              key={tab}
-              style={[styles.tab, isActive && styles.tabActive]}
-              onPress={() => onTabChange(tab)}
-              activeOpacity={0.85}
-            >
-              <Text style={[styles.tabText, isActive && styles.tabTextActive]} numberOfLines={1}>
-                {getLabel ? getLabel(tab) : tab}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+    <View style={[styles.row, style]}>
+      {tabs.map((tab) => {
+        const isActive = activeTab === tab;
+        return (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, isActive && { backgroundColor: colors.brand }]}
+            onPress={() => onTabChange(tab)}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.label, isActive && styles.labelActive]} numberOfLines={1}>
+              {getLabel ? getLabel(tab) : tab}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    wrap: {
-      width: '100%',
-      alignItems: 'center',
-    },
-    container: {
+    row: {
       flexDirection: 'row',
-      height: SEGMENT.height,
-      borderRadius: SEGMENT.radius,
-      paddingVertical: SEGMENT.padV,
-      paddingHorizontal: SEGMENT.padH,
-      gap: SEGMENT.gap,
-      backgroundColor: c.border,
       alignItems: 'center',
-      shadowColor: '#1F1F1F',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 2,
+      alignSelf: 'flex-start',
+      height: 28,
+      gap: 8,
     },
     tab: {
-      flexGrow: 1,
-      flexShrink: 1,
-      flexBasis: 'auto',
-      minWidth: 0,
-      paddingHorizontal: 10,
       height: 28,
+      boxSizing: 'border-box',
+      borderRadius: 10,
+      paddingTop: 4,
+      paddingBottom: 4,
+      paddingLeft: 8,
+      paddingRight: 8,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: Math.max(6, SEGMENT.radius - 2),
-    },
-    tabActive: {
       backgroundColor: c.surface,
-      shadowColor: '#1F1F1F',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.06,
-      shadowRadius: 4,
-      elevation: 2,
+      ...TAB_SHADOW,
     },
-    tabText: {
-      fontFamily: 'Rubik-Regular',
+    label: {
+      fontFamily: 'Rubik-Medium',
       fontSize: 14,
       lineHeight: 20,
-      color: c.tabInactiveText,
-    },
-    tabTextActive: {
-      fontFamily: 'Rubik-Medium',
       color: c.primaryText,
+      textAlign: 'center',
+    },
+    labelActive: {
+      color: c.button.primaryText,
     },
   });

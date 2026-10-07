@@ -14,28 +14,27 @@ import { t } from '@/i18n';
 import { formatHealthDateMeta, truncatePreviewText } from '@/utils/calendar';
 
 export const HEALTH_LIST_CARD_WIDTH = '100%';
-export const HEALTH_LIST_ITEM_GAP = 12;
+export const HEALTH_LIST_ITEM_GAP = 4;
 
 const TITLE_CHARS = 20;
-const CARD_PAD_V = 14;
-/** Title → description. */
-const TITLE_GAP = 6;
-/** Description → meta line (double the title gap). */
-const META_GAP = 12;
+const CARD_PAD_V = 22;
+const CARD_PAD_H = 20;
+/** Space between the title, description, and meta. */
+const STACK_GAP = 10;
 const TITLE_LINE = 20;
 const SUBTITLE_LINE = 20;
 const META_LINE = 16;
-/** Description wraps to at most two lines. */
-const SUBTITLE_MAX_LINES = 2;
-/** Rough chars that fit on one description line at 14/20 inside a 303pt card. */
-const SUBTITLE_CHARS_PER_LINE = 42;
+/** Description wraps to at most three lines; the card grows with it. */
+const SUBTITLE_MAX_LINES = 3;
+/** Rough chars that fit on one description line at 14/20 inside a full-width card. */
+const SUBTITLE_CHARS_PER_LINE = 46;
 
 /** Title + meta + padding (no description). */
 export const HEALTH_LIST_CARD_COMPACT_HEIGHT =
-  CARD_PAD_V * 2 + TITLE_LINE + TITLE_GAP + META_LINE;
+  CARD_PAD_V * 2 + TITLE_LINE + STACK_GAP + META_LINE;
 /** Title + one description line + meta + padding. */
 export const HEALTH_LIST_CARD_FULL_HEIGHT =
-  CARD_PAD_V * 2 + TITLE_LINE + TITLE_GAP + SUBTITLE_LINE + META_GAP + META_LINE;
+  CARD_PAD_V * 2 + TITLE_LINE + STACK_GAP + SUBTITLE_LINE + STACK_GAP + META_LINE;
 /** @deprecated Use HEALTH_LIST_CARD_FULL_HEIGHT or estimate per row. */
 export const HEALTH_LIST_CARD_HEIGHT = HEALTH_LIST_CARD_FULL_HEIGHT;
 
@@ -127,11 +126,7 @@ export default function HealthListItem({
         ) : null}
 
         {metaLabel ? (
-          <Text
-            style={[styles.meta, !hasSubtitle && styles.metaTight]}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
+          <Text style={styles.meta} numberOfLines={1} ellipsizeMode="tail">
             {metaLabel}
           </Text>
         ) : null}
@@ -142,7 +137,7 @@ export default function HealthListItem({
   );
 }
 
-/** Description shown in the topics list — wraps to two lines, no char cap. */
+/** Description shown in the topics list — wraps to three lines, no char cap. */
 export function healthRecordSubtitle(description?: string | null): string {
   return description?.trim() ?? '';
 }
@@ -154,10 +149,12 @@ const makeStyles = (c: ThemeColors) =>
       alignSelf: 'center',
       backgroundColor: c.surface,
       overflow: 'hidden',
-      borderRadius: 12,
+      borderRadius: 24,
       marginBottom: HEALTH_LIST_ITEM_GAP,
-      paddingVertical: CARD_PAD_V,
-      paddingHorizontal: 16,
+      paddingTop: CARD_PAD_V,
+      paddingBottom: CARD_PAD_V,
+      paddingLeft: CARD_PAD_H,
+      paddingRight: CARD_PAD_H,
       shadowColor: '#2D2D2A',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.04,
@@ -166,6 +163,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     body: {
       width: '100%',
+      gap: STACK_GAP,
     },
     titleRow: {
       width: '100%',
@@ -198,17 +196,12 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: SUBTITLE_LINE,
       color: c.primaryText,
       width: '100%',
-      marginTop: TITLE_GAP,
     },
     meta: {
       fontFamily: 'Rubik-Regular',
       fontSize: 12,
       lineHeight: META_LINE,
       color: c.secondaryText,
-      marginTop: META_GAP,
       width: '100%',
-    },
-    metaTight: {
-      marginTop: TITLE_GAP,
     },
   });

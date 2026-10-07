@@ -13,9 +13,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
 import ListScrollLayout from '@/components/ui/ListScrollLayout';
 import { rowFadeIntensity } from '@/components/ui/listItemFade';
-import { PAGE_HORIZONTAL_PADDING, LIST_HEADER_TABS_GAP } from '@/constants/layout';
+import { LIST_CONTENT_TOP_NUDGE, LIST_TABS_CONTENT_GAP, LIST_TABS_SCROLL_CLEARANCE, PAGE_HORIZONTAL_PADDING, LIST_HEADER_TABS_GAP } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
+import { useHomePanelLayout } from '@/hooks/useHomePanelLayout';
 import { TOPICS_FAB_ICON } from '@/components/home/categoryIcons';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import SegmentedControl from '@/components/ui/SegmentedControl';
@@ -46,6 +47,7 @@ export default function HealthScreen() {
   const router = useRouter();
   const toast = useToast();
   const { activePetId } = useActivePet();
+  const { fabBottom } = useHomePanelLayout();
   const { deletedNote } = useLocalSearchParams();
 
   const [activeTab, setActiveTab] = useState<TabName>('Active');
@@ -275,6 +277,11 @@ export default function HealthScreen() {
     <>
       <ListScrollLayout
         fadeKey={`topics:${activeTab}`}
+        contentGap={LIST_TABS_CONTENT_GAP - LIST_TABS_SCROLL_CLEARANCE - LIST_CONTENT_TOP_NUDGE}
+        topFade={false}
+        bottomFade
+        contentBottomPadding={0}
+        fadeBottomInset={0}
         chrome={
           <>
             <ScreenHeader title={t('topics.title')} />
@@ -283,7 +290,6 @@ export default function HealthScreen() {
               activeTab={activeTab}
               onTabChange={(tab) => setActiveTab(tab as TabName)}
               getLabel={(tab) => t(`topics.tab_${tab.toLowerCase()}`)}
-              width={220}
               style={styles.tabs}
             />
           </>
@@ -387,10 +393,10 @@ export default function HealthScreen() {
                       />
                     </SwipeToDeleteRow>
                   )}
-                  contentContainerStyle={[
-                    styles.listContent,
-                    { paddingTop, paddingBottom },
-                  ]}
+                  contentContainerStyle={{ paddingTop, paddingBottom }}
+                  contentInsetAdjustmentBehavior="never"
+                  automaticallyAdjustContentInsets={false}
+                  automaticallyAdjustsScrollIndicatorInsets={false}
                   showsVerticalScrollIndicator={false}
                   scrollEnabled={scrollable}
                   bounces={scrollable}
@@ -422,6 +428,7 @@ export default function HealthScreen() {
             },
           ]}
           accessibilityLabel={t('topics.add_health')}
+          bottom={fabBottom}
         />
       ) : null}
 
@@ -437,6 +444,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   tabs: {
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     marginTop: LIST_HEADER_TABS_GAP,
+    marginBottom: LIST_TABS_SCROLL_CLEARANCE,
   },
   centered: {
     flex: 1,
@@ -448,8 +456,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   list: {
     flex: 1,
-  },
-  listContent: {
-    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
   },
 });

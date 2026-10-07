@@ -123,6 +123,15 @@ export default function SpeedDialFab({
 
   const close = () => setOpen(false);
   const toggle = () => setOpen(!open);
+  const direct = items.length === 1;
+
+  const onFabPress = () => {
+    if (direct) {
+      items[0].onPress();
+      return;
+    }
+    toggle();
+  };
 
   return (
     <View
@@ -152,7 +161,7 @@ export default function SpeedDialFab({
             { gap: ADD_FAB.menuGap * s, marginBottom: ADD_FAB.menuGap * s },
             menuStyle,
           ]}
-          pointerEvents={open ? 'box-none' : 'none'}
+          pointerEvents={open && !direct ? 'box-none' : 'none'}
         >
           {items.map((item) => (
             <TouchableOpacity
@@ -185,11 +194,11 @@ export default function SpeedDialFab({
               borderRadius: ADD_FAB.radius * s,
             },
           ]}
-          onPress={toggle}
+          onPress={onFabPress}
           activeOpacity={0.9}
           accessibilityRole="button"
-          accessibilityLabel={accessibilityLabel}
-          accessibilityState={{ expanded: open }}
+          accessibilityLabel={accessibilityLabel ?? (direct ? items[0].label : undefined)}
+          accessibilityState={{ expanded: direct ? false : open }}
         >
           <Animated.View style={iconStyle}>
             <Ionicons name="add" size={ADD_FAB.iconSize} color={colors.button.primaryText} />

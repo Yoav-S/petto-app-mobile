@@ -1,23 +1,36 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Radius, type ThemeColors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import CardBottomFadeOverlay from '@/components/ui/CardBottomFadeOverlay';
 
+const CARD_PAD_V = 22;
+const STACK_GAP = 10;
+const LINE = 20;
+/** Description wraps to at most three lines; the card grows with it. */
+const DESC_MAX_LINES = 3;
+/** Rough chars on one description line when the time or day shares the row. */
+const DESC_CHARS_PER_LINE = 32;
+
+function descriptionLineCount(description?: string | null): number {
+  const text = description?.trim() ?? '';
+  if (!text) return 0;
+  return Math.min(DESC_MAX_LINES, Math.max(1, Math.ceil(text.length / DESC_CHARS_PER_LINE)));
+}
+
 /** Title + time only. */
-export const REMINDER_LIST_CARD_COMPACT_HEIGHT = 48;
-/** Two stacked rows (description and/or day label). */
-export const REMINDER_LIST_CARD_FULL_HEIGHT = 76;
-export const REMINDER_LIST_ITEM_GAP = 12;
+export const REMINDER_LIST_CARD_COMPACT_HEIGHT = CARD_PAD_V * 2 + LINE;
+/** Title row plus one description line. */
+export const REMINDER_LIST_CARD_FULL_HEIGHT = CARD_PAD_V * 2 + LINE + STACK_GAP + LINE;
+export const REMINDER_LIST_ITEM_GAP = 4;
 
 export function estimateReminderListItemHeight(options: {
   description?: string | null;
   dayLabel?: string | null;
 }): number {
-  const hasDescription = Boolean(options.description?.trim());
-  return !options.dayLabel && !hasDescription
-    ? REMINDER_LIST_CARD_COMPACT_HEIGHT
-    : REMINDER_LIST_CARD_FULL_HEIGHT;
+  const secondRowLines = Math.max(descriptionLineCount(options.description), options.dayLabel ? 1 : 0);
+  if (secondRowLines === 0) return REMINDER_LIST_CARD_COMPACT_HEIGHT;
+  return CARD_PAD_V * 2 + LINE + STACK_GAP + secondRowLines * LINE;
 }
 
 interface ReminderListItemProps {
@@ -69,9 +82,9 @@ export default function ReminderListItem({
                 {time}
               </Text>
             </View>
-            <View style={styles.row}>
+            <View style={[styles.row, styles.rowTop]}>
               {hasDescription ? (
-                <Text style={[styles.description, styles.rowMain]} numberOfLines={1}>
+                <Text style={[styles.description, styles.rowMain]} numberOfLines={DESC_MAX_LINES}>
                   {description}
                 </Text>
               ) : (
@@ -88,8 +101,8 @@ export default function ReminderListItem({
             <Text style={styles.title} numberOfLines={1}>
               {title}
             </Text>
-            <View style={styles.row}>
-              <Text style={[styles.description, styles.rowMain]} numberOfLines={1}>
+            <View style={[styles.row, styles.rowTop]}>
+              <Text style={[styles.description, styles.rowMain]} numberOfLines={DESC_MAX_LINES}>
                 {description}
               </Text>
               <Text style={styles.time} numberOfLines={1}>
@@ -119,7 +132,7 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     card: {
       backgroundColor: c.surface,
-      borderRadius: Radius.md,
+      borderRadius: 24,
       marginBottom: REMINDER_LIST_ITEM_GAP,
       width: '100%',
       maxWidth: '100%',
@@ -144,20 +157,24 @@ const makeStyles = (c: ThemeColors) =>
     },
     content: {
       flex: 1,
-      paddingTop: 14,
-      paddingBottom: 14,
-      paddingHorizontal: 16,
+      paddingTop: CARD_PAD_V,
+      paddingBottom: CARD_PAD_V,
+      paddingLeft: 20,
+      paddingRight: 20,
       justifyContent: 'center',
     },
     stack: {
-      gap: 6,
+      gap: STACK_GAP,
     },
     row: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: 10,
-      minHeight: 20,
+      minHeight: LINE,
+    },
+    rowTop: {
+      alignItems: 'flex-start',
     },
     rowMain: {
       flex: 1,

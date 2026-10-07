@@ -43,6 +43,9 @@ export const LIST_HEADER_CONTENT_GAP = 20;
 /** Gap between segmented tabs and the scrollable list below. */
 export const LIST_TABS_CONTENT_GAP = 16;
 
+/** Rows scroll out of view this far below the tab pills, not flush against them. */
+export const LIST_TABS_SCROLL_CLEARANCE = 12;
+
 /** Extra offset so the first row sits just below the top fade, not under it. */
 export const LIST_CONTENT_TOP_NUDGE = 16;
 

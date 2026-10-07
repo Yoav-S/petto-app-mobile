@@ -26,7 +26,7 @@ import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
 import TopicActionsSheet from '@/components/topics/TopicActionsSheet';
 import { LIST_PAGE_SIZE } from '@/constants/pagination';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
-import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { LIST_TABS_SCROLL_CLEARANCE, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import {
@@ -384,10 +384,12 @@ export default function HealthDetailsScreen() {
       <HeaderScrollLayout
         header={<ScreenHeader title={record.title} right={menuButton} />}
         edges={['left', 'right']}
-        topFade
+        topFade={false}
         bottomFade
         fadeMode="list"
         fadeAboveFooter
+        chromePaddingBottom={LIST_TABS_SCROLL_CLEARANCE}
+        contentGap={16 - LIST_TABS_SCROLL_CLEARANCE}
       >
         {({ paddingTop, fadeBottomInset, scrollMetricsProps }) => (
           <FlatList
@@ -402,6 +404,9 @@ export default function HealthDetailsScreen() {
               { paddingBottom: fadeBottomInset },
             ]}
             showsVerticalScrollIndicator={false}
+            contentInsetAdjustmentBehavior="never"
+            automaticallyAdjustContentInsets={false}
+            automaticallyAdjustsScrollIndicatorInsets={false}
             onLayout={scrollMetricsProps.onLayout}
             onContentSizeChange={scrollMetricsProps.onContentSizeChange}
             onEndReached={() => {
@@ -544,7 +549,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     marginBottom: 10,
   },
   dateHeaderFirst: {
-    marginTop: 10,
+    marginTop: 0,
   },
   emptyNotes: {
     fontFamily: 'Rubik-Regular',

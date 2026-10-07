@@ -146,15 +146,15 @@ export default function ReviewActionsSheet({
           {isMine ? (
             <>
               <TouchableOpacity
-                style={styles.menuItem}
+                style={styles.mineItem}
                 onPress={() => runAfterClose(onEdit)}
                 accessibilityRole="button"
               >
                 <Text style={styles.menuItemText}>{t('business.edit_review')}</Text>
               </TouchableOpacity>
-              <View style={styles.divider} />
+              <View style={styles.mineDivider} />
               <TouchableOpacity
-                style={styles.menuItem}
+                style={styles.mineItem}
                 onPress={() => runAfterClose(onRemove)}
                 accessibilityRole="button"
               >
@@ -198,7 +198,7 @@ const makeStyles = (c: ThemeColors) =>
       elevation: 12,
     },
     sheetMine: {
-      minHeight: 328,
+      minHeight: 288,
     },
     reportSheet: {
       minHeight: 0,
@@ -253,7 +253,19 @@ const makeStyles = (c: ThemeColors) =>
       elevation: 2,
     },
     menuMine: {
-      minHeight: 136,
+      padding: 16,
+      gap: 8,
+      borderRadius: 12,
+    },
+    mineItem: {
+      height: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    mineDivider: {
+      height: 0,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
     },
     menuOther: {
       minHeight: 72,

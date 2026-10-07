@@ -12,10 +12,11 @@ import {
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
-import { PAGE_HORIZONTAL_PADDING, LIST_HEADER_CONTENT_GAP } from '@/constants/layout';
+import { type ThemeColors } from '@/constants/theme';
+import { LIST_CONTENT_TOP_NUDGE } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
+import { useHomePanelLayout } from '@/hooks/useHomePanelLayout';
 import ListScrollLayout, { type ListScrollInsets } from '@/components/ui/ListScrollLayout';
 import CardBottomFadeOverlay from '@/components/ui/CardBottomFadeOverlay';
 import { rowFadeIntensity } from '@/components/ui/listItemFade';
@@ -37,8 +38,16 @@ import { useCursorPagination } from '@/hooks/useCursorPagination';
 import type { Vaccination } from '@/types/api';
 
 
-const VACCINE_CARD_HEIGHT = 100;
-const VACCINE_CARD_GAP = 12;
+const VACCINE_CARD_PAD_V = 22;
+const VACCINE_CARD_GAP = 4;
+const VACCINE_THUMB = 48;
+const VACCINE_TITLE_LINE = 20;
+const VACCINE_BODY_GAP = 10;
+/** Date label, its gap, and the date value. */
+const VACCINE_DATE_BLOCK = 36;
+const VACCINE_CARD_HEIGHT =
+  VACCINE_CARD_PAD_V * 2 +
+  Math.max(VACCINE_THUMB, VACCINE_TITLE_LINE + VACCINE_BODY_GAP + VACCINE_DATE_BLOCK);
 
 function VaccineThumbnail({ uri }: { uri?: string | null }) {
   const styles = useThemedStyles(makeStyles);
@@ -57,6 +66,7 @@ export default function VaccinesScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const { activePetId } = useActivePet();
+  const { fabBottom } = useHomePanelLayout();
 
   const fetchPage = useCallback(
     async (params: { limit: number; cursor?: string }) => {
@@ -267,7 +277,10 @@ export default function VaccinesScreen() {
             </TouchableOpacity>
           </SwipeToDeleteRow>
         )}
-        contentContainerStyle={[styles.listContent, { paddingTop, paddingBottom }]}
+        contentContainerStyle={{ paddingTop, paddingBottom }}
+        contentInsetAdjustmentBehavior="never"
+        automaticallyAdjustContentInsets={false}
+        automaticallyAdjustsScrollIndicatorInsets={false}
         showsVerticalScrollIndicator={false}
         scrollEnabled={scrollable}
         bounces={scrollable}
@@ -289,7 +302,11 @@ export default function VaccinesScreen() {
     <>
       <ListScrollLayout
         fadeKey="vaccines"
-        contentGap={LIST_HEADER_CONTENT_GAP}
+        contentGap={16 - LIST_CONTENT_TOP_NUDGE}
+        topFade={false}
+        bottomFade
+        contentBottomPadding={0}
+        fadeBottomInset={0}
         chrome={<VaccineScreenHeader title={t('vaccines.list_title')} />}
       >
         {({ paddingTop, paddingBottom, bottomFadeInset, scrollable, scrollMetricsProps }) =>
@@ -307,6 +324,7 @@ export default function VaccinesScreen() {
             },
           ]}
           accessibilityLabel={t('vaccines.add')}
+          bottom={fabBottom}
         />
       ) : null}
       <ListFetchBlocker visible={loadingMore} />
@@ -324,28 +342,26 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    listContent: {
-      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-    },
     card: {
       backgroundColor: c.surface,
-      borderRadius: Radius.md,
+      borderRadius: 24,
       marginBottom: VACCINE_CARD_GAP,
       width: '100%',
       maxWidth: '100%',
       alignSelf: 'center',
-      paddingVertical: 14,
-      paddingHorizontal: 16,
+      paddingTop: VACCINE_CARD_PAD_V,
+      paddingBottom: VACCINE_CARD_PAD_V,
+      paddingLeft: 20,
+      paddingRight: 20,
       gap: 10,
-      height: VACCINE_CARD_HEIGHT,
       flexDirection: 'row',
       alignItems: 'flex-start',
       overflow: 'hidden',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 4,
-      elevation: 2,
+      shadowColor: '#2D2D2A',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.04,
+      shadowRadius: 20,
+      elevation: 3,
     },
     thumb: {
       width: 48,
@@ -365,8 +381,7 @@ const makeStyles = (c: ThemeColors) =>
     cardBody: {
       flex: 1,
       minWidth: 0,
-      height: 72,
-      gap: Spacing.md,
+      gap: VACCINE_BODY_GAP,
     },
     cardTitle: {
       fontFamily: 'Rubik-Medium',

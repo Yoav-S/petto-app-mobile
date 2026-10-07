@@ -29,7 +29,7 @@ const TRASH_BUTTON = {
 } as const;
 
 /** Vertical gap the row children reserve below the card (list item spacing). */
-const DEFAULT_ROW_BOTTOM_GAP = 12;
+const DEFAULT_ROW_BOTTOM_GAP = 4;
 
 /** Disabled-state wash shown over the card while the trash is revealed. */
 const DISABLED_BG_LIGHT = '#E5E7EB';
@@ -285,7 +285,7 @@ const makeStyles = (_c: ThemeColors) =>
       left: 0,
       right: 0,
       top: 0,
-      borderRadius: 12,
+      borderRadius: 24,
     },
     washLight: {
       backgroundColor: DISABLED_BG_LIGHT,
