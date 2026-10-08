@@ -43,6 +43,9 @@ export const LIST_HEADER_CONTENT_GAP = 20;
 /** Gap between segmented tabs and the scrollable list below. */
 export const LIST_TABS_CONTENT_GAP = 16;
 
+/** Gap from the tab pills to the first list row. Rows scroll out on this same line. */
+export const LIST_TABS_LIST_GAP = 8;
+
 /** Rows scroll out of view this far below the tab pills, not flush against them. */
 export const LIST_TABS_SCROLL_CLEARANCE = 12;
 

@@ -1,18 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ActivityIndicator,
-  TouchableOpacity,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
-import ScrollFadeBand from '@/components/ui/ScrollFadeBand';
-import {
-  FOOTER_FADE_BAND,
-  FOOTER_FADE_CONTENT_INSET,
-} from '@/constants/layout';
+import { FOOTER_FADE_BAND } from '@/constants/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   useFocusEffect,
@@ -29,6 +22,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import ReminderFormBody from '@/components/reminders/ReminderFormBody';
 import ReminderFireHistoryList from '@/components/reminders/ReminderFireHistoryList';
+import { setRemindersTab } from '@/components/reminders/remindersTabMemory';
 import SavingOverlay from '@/components/ui/SavingOverlay';
 import {
   clampAlertForSchedule,
@@ -56,14 +50,24 @@ import {
 } from '@/utils/reminderCategory';
 import type { Reminder } from '@/types/api';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { useKeyboardOpen } from '@/components/ui/keyboardUtils';
 import { todayIsoDate } from '@/utils/calendar';
 
 type PendingLeave = Parameters<Parameters<typeof usePreventRemove>[1]>[0]['data']['action'];
 
+function ClearanceReporter({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  useEffect(() => {
+    onChange(value);
+  }, [value, onChange]);
+  return null;
+}
+
 const AUTOSAVE_MS = 700;
-/** Delete sits on the solid tail of the fade band, clear of the home indicator. */
-const DELETE_FOOTER_MIN_BOTTOM = 10;
 
 function parseCategory(value: string | null | undefined, title: string): ReminderCategory {
   if (value && (REMINDER_CATEGORIES as string[]).includes(value)) {
@@ -81,8 +85,6 @@ export default function EditReminderScreen() {
   const { id, recent } = useLocalSearchParams<{ id: string; recent?: string }>();
   const { activePetId } = useActivePet();
   const { contentWidth } = useResponsiveLayout();
-  const insets = useSafeAreaInsets();
-  const keyboardOpen = useKeyboardOpen();
 
   /** Recent rows announce themselves in the route, so the title never flips. */
   const openedFromRecent = (Array.isArray(recent) ? recent[0] : recent) === '1';
@@ -109,6 +111,9 @@ export default function EditReminderScreen() {
   const [dirty, setDirty] = useState(false);
   const [pendingLeave, setPendingLeave] = useState<PendingLeave | null>(null);
   const [fireHistory, setFireHistory] = useState<Reminder[]>([]);
+  const [fieldsHeight, setFieldsHeight] = useState(0);
+  const [headerClearance, setHeaderClearance] = useState(0);
+  const [sheetPeek, setSheetPeek] = useState(220);
 
   const hydratedRef = useRef(false);
   const snapshotRef = useRef('');
@@ -413,6 +418,7 @@ export default function EditReminderScreen() {
       onCommit: async () => {
         try {
           await deleteReminder(activePetId, id);
+          if (readOnly) setRemindersTab('Recent');
           router.replace('/reminders' as never);
         } catch (err) {
           toast.showError(getErrorMessage(err));
@@ -422,7 +428,18 @@ export default function EditReminderScreen() {
   };
 
   const headerTitle = readOnly ? t('reminders.recent_title') : t('reminders.edit_title');
-  const header = <VaccineScreenHeader title={headerTitle} icon="close" />;
+  const leaveRecent = () => {
+    setRemindersTab('Recent');
+    if (router.canGoBack()) router.back();
+    else router.replace('/reminders' as never);
+  };
+  const header = (
+    <VaccineScreenHeader
+      title={headerTitle}
+      icon={readOnly ? 'back' : 'close'}
+      onBack={readOnly ? leaveRecent : undefined}
+    />
+  );
   const showHistory = readOnly && fireHistory.length > 0;
 
   if (loading) {
@@ -457,17 +474,30 @@ export default function EditReminderScreen() {
   return (
     <>
       <View style={styles.screen}>
+        <View style={styles.formSlot}>
         <HeaderScrollLayout
+          style={styles.formSlot}
           header={header}
           edges={['left', 'right']}
-          contentGap={16}
+          contentGap={readOnly ? 0 : 16}
           chromePaddingBottom={0}
         >
           {({ paddingTop }) => (
+            <>
+            <ClearanceReporter value={paddingTop} onChange={setHeaderClearance} />
             <ReminderFormBody
               scrollInsetTop={paddingTop}
               /** The recent list runs under the fade band; its own scroll clears it. */
-              scrollPaddingBottom={showHistory ? 0 : FOOTER_FADE_CONTENT_INSET}
+              scrollPaddingBottom={showHistory ? sheetPeek + FOOTER_FADE_BAND : 0}
+              autoFocus={!readOnly}
+              saveFooter={{
+                label: t('reminders.delete'),
+                tone: 'destructive-text',
+                onPress: () => {
+                  setSheet(null);
+                  setDeleteVisible(true);
+                },
+              }}
               layout={layout}
               title={title}
               onTitleChange={handleTitleChange}
@@ -499,47 +529,30 @@ export default function EditReminderScreen() {
               onRepeatSelect={setRepeat}
               onAlertConfirm={setAlert}
               readOnly={readOnly}
-              showCategoryField={!readOnly}
+              fullBleed={false}
+              showCategoryField={false}
               showAlertField={!readOnly}
-              fillAfterFields={showHistory}
-              afterFields={
-                showHistory ? (
-                  <ReminderFireHistoryList
-                    items={fireHistory}
-                    width={layout.cardWidth}
-                    fill
-                    bottomFade={false}
-                  />
-                ) : null
-              }
+              onFieldsLayout={(height) => {
+                const next = Math.round(height);
+                setFieldsHeight((current) => (current === next ? current : next));
+              }}
             />
+            </>
           )}
         </HeaderScrollLayout>
-
-        <View
-          style={[
-            styles.deleteFooter,
-            {
-              height: FOOTER_FADE_BAND,
-              paddingBottom: Math.max(insets.bottom, DELETE_FOOTER_MIN_BOTTOM),
-            },
-            /** Never let delete ride up on the keyboard while a field is open. */
-            keyboardOpen ? styles.hidden : null,
-          ]}
-          pointerEvents={keyboardOpen ? 'none' : 'box-none'}
-        >
-          <ScrollFadeBand edge="bottom" height={FOOTER_FADE_BAND} />
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => {
-              setSheet(null);
-              setDeleteVisible(true);
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.deleteText}>{t('reminders.delete')}</Text>
-          </TouchableOpacity>
         </View>
+
+        {showHistory ? (
+          <ReminderFireHistoryList
+            items={fireHistory}
+            anchorTop={headerClearance + fieldsHeight}
+            footerInset={FOOTER_FADE_BAND}
+            onPeekHeight={(height) => {
+              const next = Math.round(height);
+              setSheetPeek((current) => (current === next ? current : next));
+            }}
+          />
+        ) : null}
       </View>
 
       <ConfirmModal
@@ -561,30 +574,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
     backgroundColor: c.background,
   },
+  formSlot: {
+    flex: 1,
+    minHeight: 0,
+    overflow: 'hidden',
+  },
   centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  /** Sits on the fade band so the list above dissolves into the button. */
-  deleteFooter: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'flex-end',
-  },
-  hidden: {
-    opacity: 0,
-  },
-  deleteButton: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  deleteText: {
-    fontFamily: 'Rubik-Medium',
-    fontSize: 16,
-    lineHeight: 18,
-    color: c.error,
   },
 });

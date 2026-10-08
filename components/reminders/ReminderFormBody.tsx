@@ -25,6 +25,7 @@ import {
   HealthKeyboardAvoidingView,
   type HealthKeyboardFooterProps,
 } from '@/components/health/HealthKeyboardFooter';
+import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { t } from '@/i18n';
 import type { AlertOption, RepeatOption } from '@/services/reminders';
 import {
@@ -111,6 +112,10 @@ interface ReminderFormBodyProps {
   /** Recent occurrences show the schedule only — no category / alert rows. */
   showCategoryField?: boolean;
   showAlertField?: boolean;
+  /** Edit screen: full-width cards with 4px between them. Add keeps the inset form. */
+  fullBleed?: boolean;
+  /** Height of the field stack, so a bottom sheet can rest just under it. */
+  onFieldsLayout?: (height: number) => void;
 }
 
 export default function ReminderFormBody({
@@ -149,9 +154,14 @@ export default function ReminderFormBody({
   fillAfterFields = false,
   showCategoryField = true,
   showAlertField = true,
+  fullBleed = false,
+  onFieldsLayout,
 }: ReminderFormBodyProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const { scrollRef, keyboardOffset, onScroll, onInputFocus } = useKeyboardAwareScroll(
+    scrollPaddingBottom,
+  );
 
   const openSheet = (next: ReminderSheet) => {
     if (readOnly) return;
@@ -165,7 +175,9 @@ export default function ReminderFormBody({
     styles.content,
     {
       paddingTop: scrollInsetTop + layout.formTop,
-      paddingBottom: scrollPaddingBottom,
+      paddingBottom: saveFooter
+        ? scrollPaddingBottom
+        : scrollPaddingBottom + (fullBleed && keyboardOffset > 0 ? keyboardOffset : 0),
       gap: layout.formGap,
       alignItems: 'center' as const,
     },
@@ -173,11 +185,42 @@ export default function ReminderFormBody({
 
   const formFields = (
     <View
+      onLayout={
+        onFieldsLayout
+          ? (event) => onFieldsLayout(event.nativeEvent.layout.height)
+          : undefined
+      }
       style={[
-        { gap: layout.formGap, alignItems: 'center', width: '100%' },
+        {
+          gap: readOnly || fullBleed ? 0 : layout.formGap,
+          alignItems: 'center',
+          width: '100%',
+        },
         fillAfterFields ? styles.fieldsFill : null,
       ]}
     >
+          {readOnly || fullBleed ? (
+            <View style={styles.recentTitle}>
+              {readOnly ? (
+                <Text style={styles.recentTitleText} numberOfLines={1}>
+                  {title}
+                </Text>
+              ) : (
+                <TextInput
+                  style={styles.recentTitleInput}
+                  value={title}
+                  onChangeText={onTitleChange}
+                  onBlur={onTitleBlur}
+                  onFocus={onInputFocus}
+                  placeholder={t('reminders.field_name_placeholder')}
+                  placeholderTextColor={colors.secondaryText}
+                  autoFocus={autoFocus}
+                  returnKeyType="next"
+                  textAlignVertical="center"
+                />
+              )}
+            </View>
+          ) : (
           <View
             style={[
               styles.card,
@@ -201,10 +244,12 @@ export default function ReminderFormBody({
               placeholderTextColor={colors.secondaryText}
               autoFocus={autoFocus && !readOnly}
               editable={!readOnly}
+              onFocus={onInputFocus}
               returnKeyType="next"
               textAlignVertical="center"
             />
           </View>
+          )}
 
           {showCategoryField ? (
             <TouchableOpacity
@@ -238,112 +283,155 @@ export default function ReminderFormBody({
             </TouchableOpacity>
           ) : null}
 
-          <View style={{ width: layout.cardWidth, gap: 20 }}>
+          <View style={{ width: '100%', gap: readOnly || fullBleed ? 0 : 20, alignItems: 'center' }}>
+            {readOnly || fullBleed ? (
+              <View style={styles.recentSchedule}>
+                <View style={styles.recentProps}>
+                  <ScheduleSlot
+                    readOnly={readOnly}
+                    style={styles.recentProp}
+                    onPress={() => openSheet('start')}
+                  >
+                    <View style={styles.scheduleRow}>
+                      <Text style={styles.scheduleLabel}>{t('reminders.field_start')}</Text>
+                      <Text style={[styles.scheduleValue, !date && styles.placeholder]} numberOfLines={1}>
+                        {date ? formatDisplayDate(date) : t('reminders.field_date_placeholder')}
+                      </Text>
+                    </View>
+                  </ScheduleSlot>
+                  <ScheduleSlot
+                    readOnly={readOnly}
+                    style={styles.recentProp}
+                    onPress={() => openSheet('end')}
+                  >
+                    <View style={styles.scheduleRow}>
+                      <Text style={styles.scheduleLabel}>{t('reminders.field_end')}</Text>
+                      <Text
+                        style={endDate ? styles.scheduleValue : styles.scheduleRepeatValue}
+                        numberOfLines={1}
+                      >
+                        {endDate ? formatDisplayDate(endDate) : t('reminders.field_end_off')}
+                      </Text>
+                    </View>
+                  </ScheduleSlot>
+                  <ScheduleSlot
+                    readOnly={readOnly}
+                    style={styles.recentProp}
+                    onPress={() => openSheet('time')}
+                  >
+                    <View style={styles.scheduleRow}>
+                      <Text style={styles.scheduleLabel}>{t('reminders.field_time')}</Text>
+                      <Text style={[styles.scheduleValue, !time && styles.placeholder]} numberOfLines={1}>
+                        {time ? formatTimeDisplay(time) : t('reminders.field_time_placeholder')}
+                      </Text>
+                    </View>
+                  </ScheduleSlot>
+                  <ScheduleSlot
+                    readOnly={readOnly}
+                    style={styles.recentProp}
+                    onPress={() => openSheet('repeat')}
+                  >
+                    <View style={styles.scheduleRow}>
+                      <Text style={styles.scheduleLabel}>{t('reminders.field_repeat')}</Text>
+                      <Text style={styles.scheduleRepeatValue} numberOfLines={1}>
+                        {repeatToggleLabel(repeat)}
+                      </Text>
+                    </View>
+                  </ScheduleSlot>
+                  {showAlertField ? (
+                    <ScheduleSlot
+                      readOnly={readOnly}
+                      style={styles.recentProp}
+                      onPress={() => openSheet('alert')}
+                    >
+                      <View style={styles.scheduleRow}>
+                        <Text style={styles.scheduleLabel}>{t('reminders.field_alert')}</Text>
+                        <Text
+                          style={alert === 'off' ? styles.scheduleRepeatValue : styles.scheduleValue}
+                          numberOfLines={1}
+                        >
+                          {alertFieldLabel(alert)}
+                        </Text>
+                      </View>
+                    </ScheduleSlot>
+                  ) : null}
+                </View>
+              </View>
+            ) : (
             <View
               style={[
                 styles.card,
+                styles.addSchedule,
                 CARD_SHADOW,
-                {
-                  width: layout.cardWidth,
-                  borderRadius: layout.cardRadius,
-                  paddingHorizontal: layout.cardPadH,
-                  paddingVertical: 0,
-                },
+                { width: layout.cardWidth },
               ]}
             >
-              <TouchableOpacity
-                style={[styles.scheduleRow, { paddingVertical: layout.cardPadV }]}
-                onPress={() => openSheet('start')}
-                activeOpacity={0.6}
-                disabled={readOnly}
-              >
-                <Text style={styles.scheduleLabel}>{t('reminders.field_start')}</Text>
-                <Text style={[styles.scheduleValue, !date && styles.placeholder]}>
-                  {date ? formatDisplayDate(date) : t('reminders.field_date_placeholder')}
-                </Text>
-              </TouchableOpacity>
-
-              <View style={styles.scheduleDivider} />
-
-              <TouchableOpacity
-                style={[styles.scheduleRow, { paddingVertical: layout.cardPadV }]}
-                onPress={() => openSheet('end')}
-                activeOpacity={0.6}
-                disabled={readOnly}
-              >
-                <Text style={styles.scheduleLabel}>{t('reminders.field_end')}</Text>
-                <Text style={endDate ? styles.scheduleValue : styles.scheduleRepeatValue}>
-                  {endDate ? formatDisplayDate(endDate) : t('reminders.field_end_off')}
-                </Text>
-              </TouchableOpacity>
-
-              <View style={styles.scheduleDivider} />
-
-              <TouchableOpacity
-                style={[styles.scheduleRow, { paddingVertical: layout.cardPadV }]}
-                onPress={() => openSheet('time')}
-                activeOpacity={0.6}
-                disabled={readOnly}
-              >
-                <Text style={styles.scheduleLabel}>{t('reminders.field_time')}</Text>
-                <Text style={[styles.scheduleValue, !time && styles.placeholder]}>
-                  {time ? formatTimeDisplay(time) : t('reminders.field_time_placeholder')}
-                </Text>
-              </TouchableOpacity>
-
-              <View style={styles.scheduleDivider} />
-
-              <TouchableOpacity
-                style={[styles.scheduleRow, { paddingVertical: layout.cardPadV }]}
-                onPress={() => openSheet('repeat')}
-                activeOpacity={0.6}
-                disabled={readOnly}
-              >
-                <Text style={styles.scheduleLabel}>{t('reminders.field_repeat')}</Text>
-                <Text style={styles.scheduleRepeatValue}>{repeatToggleLabel(repeat)}</Text>
-              </TouchableOpacity>
+              <View style={styles.addScheduleRows}>
+                <ScheduleSlot readOnly={readOnly} style={styles.addScheduleRow} onPress={() => openSheet('start')}>
+                  <View style={styles.scheduleRow}>
+                    <Text style={styles.scheduleLabel}>{t('reminders.field_start')}</Text>
+                    <Text style={[styles.scheduleValue, !date && styles.placeholder]} numberOfLines={1}>
+                      {date ? formatDisplayDate(date) : t('reminders.field_date_placeholder')}
+                    </Text>
+                  </View>
+                </ScheduleSlot>
+                <ScheduleSlot readOnly={readOnly} style={styles.addScheduleRow} onPress={() => openSheet('end')}>
+                  <View style={styles.scheduleRow}>
+                    <Text style={styles.scheduleLabel}>{t('reminders.field_end')}</Text>
+                    <Text style={endDate ? styles.scheduleValue : styles.scheduleRepeatValue} numberOfLines={1}>
+                      {endDate ? formatDisplayDate(endDate) : t('reminders.field_end_off')}
+                    </Text>
+                  </View>
+                </ScheduleSlot>
+                <ScheduleSlot readOnly={readOnly} style={styles.addScheduleRow} onPress={() => openSheet('time')}>
+                  <View style={styles.scheduleRow}>
+                    <Text style={styles.scheduleLabel}>{t('reminders.field_time')}</Text>
+                    <Text style={[styles.scheduleValue, !time && styles.placeholder]} numberOfLines={1}>
+                      {time ? formatTimeDisplay(time) : t('reminders.field_time_placeholder')}
+                    </Text>
+                  </View>
+                </ScheduleSlot>
+                <ScheduleSlot readOnly={readOnly} style={styles.addScheduleRow} onPress={() => openSheet('repeat')}>
+                  <View style={styles.scheduleRow}>
+                    <Text style={styles.scheduleLabel}>{t('reminders.field_repeat')}</Text>
+                    <Text style={styles.scheduleRepeatValue} numberOfLines={1}>
+                      {repeatToggleLabel(repeat)}
+                    </Text>
+                  </View>
+                </ScheduleSlot>
+                {showAlertField ? (
+                  <ScheduleSlot readOnly={readOnly} style={styles.addScheduleRow} onPress={() => openSheet('alert')}>
+                    <View style={styles.scheduleRow}>
+                      <Text style={styles.scheduleLabel}>{t('reminders.field_alert')}</Text>
+                      <Text
+                        style={alert === 'off' ? styles.scheduleRepeatValue : styles.scheduleValue}
+                        numberOfLines={1}
+                      >
+                        {alertFieldLabel(alert)}
+                      </Text>
+                    </View>
+                  </ScheduleSlot>
+                ) : null}
+              </View>
             </View>
-
-            {showAlertField ? (
-              <TouchableOpacity
-                style={[
-                  styles.card,
-                  styles.scheduleRow,
-                  CARD_SHADOW,
-                  {
-                    width: layout.cardWidth,
-                    borderRadius: layout.cardRadius,
-                    paddingHorizontal: layout.cardPadH,
-                    paddingVertical: layout.cardPadV,
-                  },
-                ]}
-                onPress={() => openSheet('alert')}
-                activeOpacity={0.6}
-                disabled={readOnly}
-              >
-                <Text style={styles.scheduleLabel}>{t('reminders.field_alert')}</Text>
-                <Text
-                  style={
-                    alert === 'off' ? styles.scheduleRepeatValue : styles.scheduleValue
-                  }
-                >
-                  {alertFieldLabel(alert)}
-                </Text>
-              </TouchableOpacity>
-            ) : null}
+            )}
           </View>
 
           <View
             style={[
               styles.card,
-              CARD_SHADOW,
+              fullBleed ? null : CARD_SHADOW,
               {
-                width: layout.cardWidth,
-                borderRadius: layout.cardRadius,
-                paddingHorizontal: layout.cardPadH,
-                paddingVertical: layout.cardPadV,
+                width: readOnly || fullBleed ? '100%' : layout.cardWidth,
+                borderRadius: fullBleed ? 24 : layout.cardRadius,
+                paddingTop: fullBleed ? 22 : layout.cardPadV,
+                paddingBottom: fullBleed ? 22 : layout.cardPadV,
+                paddingLeft: fullBleed ? 20 : layout.cardPadH,
+                paddingRight: fullBleed ? 20 : layout.cardPadH,
                 minHeight: layout.noteHeight,
                 gap: 10,
+                marginTop: readOnly || fullBleed ? 4 : 0,
+                marginBottom: readOnly || fullBleed ? 4 : 0,
               },
             ]}
           >
@@ -353,7 +441,10 @@ export default function ReminderFormBody({
                 style={styles.noteInput}
                 value={note}
                 onChangeText={onNoteChange}
-                onFocus={onNoteFocus}
+                onFocus={(event) => {
+                  onNoteFocus();
+                  if (!readOnly) onInputFocus(event);
+                }}
                 onBlur={onNoteBlur}
                 placeholder={readOnly ? undefined : t('reminders.field_note_placeholder')}
                 placeholderTextColor={colors.secondaryText}
@@ -381,6 +472,9 @@ export default function ReminderFormBody({
           <HealthFormSaveScroll
             footer={saveFooter}
             fieldsStyle={formFieldsStyle}
+            scrollRef={scrollRef}
+            onScroll={onScroll}
+            scrollEventThrottle={16}
           >
             {formFields}
             {!pinFooterToBottom && footer ? (
@@ -395,6 +489,9 @@ export default function ReminderFormBody({
           </HealthFormSaveScroll>
         ) : (
           <HealthFormScroll
+            scrollRef={fullBleed ? scrollRef : undefined}
+            onScroll={fullBleed ? onScroll : undefined}
+            scrollEventThrottle={fullBleed ? 16 : undefined}
             contentContainerStyle={[
               ...formFieldsStyle,
               pinFooterToBottom || fillAfterFields ? styles.scrollWithSave : null,
@@ -474,6 +571,25 @@ export default function ReminderFormBody({
   );
 }
 
+function ScheduleSlot({
+  readOnly,
+  style,
+  onPress,
+  children,
+}: {
+  readOnly: boolean;
+  style: object;
+  onPress: () => void;
+  children: React.ReactNode;
+}) {
+  if (readOnly) return <View style={style}>{children}</View>;
+  return (
+    <TouchableOpacity style={style} onPress={onPress} activeOpacity={0.6}>
+      {children}
+    </TouchableOpacity>
+  );
+}
+
 export function ReminderSaveButton({
   layout,
   canSave,
@@ -522,6 +638,44 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
       color: c.primaryText,
     }),
   },
+  nameInputReadOnly: {
+    fontFamily: 'Rubik-Regular',
+    fontSize: 16,
+    lineHeight: 20,
+    height: 20,
+    textAlign: 'left',
+  },
+  recentTitle: {
+    width: '100%',
+    height: 68,
+    boxSizing: 'border-box',
+    borderRadius: 24,
+    paddingTop: 22,
+    paddingBottom: 22,
+    paddingLeft: 20,
+    paddingRight: 20,
+    gap: 10,
+    justifyContent: 'center',
+    backgroundColor: c.surface,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  recentTitleText: {
+    fontFamily: 'Rubik-Medium',
+    fontSize: 20,
+    lineHeight: 24,
+    color: c.primaryText,
+  },
+  recentTitleInput: {
+    fontFamily: 'Rubik-Medium',
+    fontSize: 20,
+    lineHeight: 24,
+    height: 24,
+    padding: 0,
+    margin: 0,
+    color: c.primaryText,
+    includeFontPadding: false,
+  },
   categoryRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -537,10 +691,56 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 16,
     color: c.primaryText,
   },
+  recentSchedule: {
+    width: '100%',
+    borderRadius: 24,
+    paddingTop: 22,
+    paddingBottom: 22,
+    paddingLeft: 20,
+    paddingRight: 20,
+    gap: 10,
+    backgroundColor: c.surface,
+  },
+  recentProps: {
+    width: '100%',
+    gap: 6,
+  },
+  recentProp: {
+    width: '100%',
+    height: 52,
+    boxSizing: 'border-box',
+    borderRadius: 16,
+    padding: 16,
+    gap: 6,
+    justifyContent: 'center',
+    backgroundColor: c.background,
+  },
+  addSchedule: {
+    borderRadius: 12,
+    paddingTop: 14,
+    paddingRight: 16,
+    paddingBottom: 14,
+    paddingLeft: 16,
+    gap: 10,
+  },
+  addScheduleRows: {
+    width: '100%',
+    gap: 4,
+  },
+  addScheduleRow: {
+    width: '100%',
+    height: 52,
+    borderRadius: 16,
+    padding: 16,
+    gap: 6,
+    justifyContent: 'center',
+    backgroundColor: c.background,
+  },
   scheduleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    height: 20,
   },
   scheduleLabel: {
     fontFamily: 'Rubik-Medium',

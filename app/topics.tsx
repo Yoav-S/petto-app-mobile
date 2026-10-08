@@ -13,7 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
 import ListScrollLayout from '@/components/ui/ListScrollLayout';
 import { rowFadeIntensity } from '@/components/ui/listItemFade';
-import { LIST_CONTENT_TOP_NUDGE, LIST_TABS_CONTENT_GAP, LIST_TABS_SCROLL_CLEARANCE, PAGE_HORIZONTAL_PADDING, LIST_HEADER_TABS_GAP } from '@/constants/layout';
+import { LIST_CONTENT_TOP_NUDGE, LIST_TABS_LIST_GAP, PAGE_HORIZONTAL_PADDING, LIST_HEADER_TABS_GAP } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import { useHomePanelLayout } from '@/hooks/useHomePanelLayout';
@@ -277,7 +277,7 @@ export default function HealthScreen() {
     <>
       <ListScrollLayout
         fadeKey={`topics:${activeTab}`}
-        contentGap={LIST_TABS_CONTENT_GAP - LIST_TABS_SCROLL_CLEARANCE - LIST_CONTENT_TOP_NUDGE}
+        contentGap={-LIST_CONTENT_TOP_NUDGE}
         topFade={false}
         bottomFade
         contentBottomPadding={0}
@@ -444,7 +444,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   tabs: {
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     marginTop: LIST_HEADER_TABS_GAP,
-    marginBottom: LIST_TABS_SCROLL_CLEARANCE,
+    marginBottom: LIST_TABS_LIST_GAP,
   },
   centered: {
     flex: 1,

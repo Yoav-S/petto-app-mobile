@@ -1,32 +1,54 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Radius, type ThemeColors } from '@/constants/theme';
-import { useThemedStyles } from '@/context/ThemeContext';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  FOOTER_FADE_BAND,
-  FOOTER_FADE_CONTENT_INSET,
-  SCROLL_LIST_TOP_FADE_GRADIENT,
-} from '@/constants/layout';
+  Animated,
+  Easing,
+  PanResponder,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { X } from 'lucide-react-native';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { type ThemeColors } from '@/constants/theme';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import ScrollFadeBand from '@/components/ui/ScrollFadeBand';
+import { categoryLabel } from '@/components/pickers/CategoryPickerSheet';
+import { formatSheetClockTime } from '@/components/reminders/reminderFormShared';
 import { t } from '@/i18n';
 import type { Reminder } from '@/types/api';
-import { formatSheetClockTime } from '@/components/reminders/reminderFormShared';
+import {
+  REMINDER_CATEGORIES,
+  resolveReminderCategory,
+  type ReminderCategory,
+} from '@/utils/reminderCategory';
 import {
   addDaysToIsoDate,
   formatDisplayDate,
   todayIsoDate,
 } from '@/utils/calendar';
 
-/** Figma compact history row. */
-export const HISTORY_ITEM_HEIGHT = 54;
-export const HISTORY_ITEM_GAP = 12;
-export const HISTORY_LIST_MAX_HEIGHT = 404;
-/** Figma shows roughly this much of the list on landing (375×812). */
-export const HISTORY_LIST_MIN_HEIGHT = 200;
-/** Figma fade band (375×812 → 122pt). */
-export const HISTORY_LIST_FADE_HEIGHT = FOOTER_FADE_BAND;
-const TITLE_TO_LIST = 16;
+const SHEET_SNAP_MS = 320;
+const LIST_ROW = 90;
+const LIST_ROW_GAP = 16;
+/** Handle, the gap under it, the title, and the gap before the rows. */
+const SHEET_CHROME = 16 + 10 + 28 + 16;
+/** Collapsed curtain shows two rows. The lower one sits in the fade. */
+const COLLAPSED_PEEK = SHEET_CHROME + LIST_ROW + LIST_ROW_GAP + LIST_ROW;
+const COMPLETED_BAR = '#1EC876';
+const ITEM_GAP = 16;
 
+function rowCategory(item: Reminder): ReminderCategory {
+  const value = item.category;
+  if (value && (REMINDER_CATEGORIES as string[]).includes(value)) {
+    return value as ReminderCategory;
+  }
+  return resolveReminderCategory(item.title);
+}
+
+/** Today and yesterday keep a word. Older rows show the date next to the time. */
 function historyDayLabel(date: string): string {
   const today = todayIsoDate();
   if (date === today) return t('common.today');
@@ -37,16 +59,22 @@ function historyDayLabel(date: string): string {
 
 function HistoryRow({ item }: { item: Reminder }) {
   const styles = useThemedStyles(makeRowStyles);
+  const completed = item.status === 'completed';
   return (
     <View style={styles.card}>
-      {item.status === 'completed' ? <View style={styles.completedBar} /> : null}
-      <View style={styles.inner}>
-        <Text style={styles.title} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <View style={styles.meta}>
+      {completed ? <View style={styles.completedBar} /> : null}
+      <View style={[styles.content, !completed && styles.contentInset]}>
+        <View style={styles.line}>
+          <Text style={styles.category} numberOfLines={1}>
+            {categoryLabel(rowCategory(item))}
+          </Text>
           <Text style={styles.time} numberOfLines={1}>
             {formatSheetClockTime(item.time)}
+          </Text>
+        </View>
+        <View style={styles.line}>
+          <Text style={styles.desc} numberOfLines={1}>
+            {item.title}
           </Text>
           <Text style={styles.day} numberOfLines={1}>
             {historyDayLabel(item.date)}
@@ -59,98 +87,248 @@ function HistoryRow({ item }: { item: Reminder }) {
 
 export default function ReminderFireHistoryList({
   items,
-  width,
-  fill = false,
-  bottomFade = true,
-  contentBottomInset,
+  anchorTop,
+  footerInset,
+  onPeekHeight,
 }: {
   items: Reminder[];
-  width: number;
-  /** Take the remaining screen height instead of sizing to the rows. */
-  fill?: boolean;
-  /** Off when the screen already paints a fade band over the list bottom. */
-  bottomFade?: boolean;
-  /** Scroll room below the last row so it can clear the fade band. */
-  contentBottomInset?: number;
+  /** Distance from the top of the screen to the bottom of the fields above. */
+  anchorTop: number;
+  /** Delete footer height the collapsed sheet rests above. */
+  footerInset: number;
+  onPeekHeight?: (height: number) => void;
 }) {
+  const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const [overflows, setOverflows] = useState(false);
-  const viewportHeight = useRef(0);
-  const contentHeight = useRef(0);
+  const insets = useSafeAreaInsets();
+  const shift = useRef(new Animated.Value(1200)).current;
+  const shiftRef = useRef(800);
+  const screenRef = useRef(0);
+  const anchorRef = useRef(anchorTop);
+  const footerRef = useRef(footerInset);
+  const expandedRef = useRef(false);
+  const draggingRef = useRef(false);
+  const animatingRef = useRef(false);
+  const dragOriginRef = useRef(0);
+  const [frameHeight, setFrameHeight] = useState(0);
+  const [expanded, setExpanded] = useState(false);
+  const [dragging, setDragging] = useState(false);
 
-  const rowsHeight = useMemo(() => {
-    if (items.length === 0) return 0;
-    return items.length * HISTORY_ITEM_HEIGHT + (items.length - 1) * HISTORY_ITEM_GAP;
-  }, [items.length]);
+  anchorRef.current = anchorTop;
+  footerRef.current = footerInset;
 
-  const fixedHeight = Math.min(
-    Math.max(rowsHeight, HISTORY_ITEM_HEIGHT),
-    HISTORY_LIST_MAX_HEIGHT,
+  const peekFor = useCallback((screen: number) => {
+    const anchor = anchorRef.current;
+    if (!screen || anchor <= 0) return 72;
+    const room = screen - footerRef.current - anchor;
+    if (room <= 48) return Math.max(0, room);
+    return Math.min(COLLAPSED_PEEK, room);
+  }, []);
+
+  const collapsedShift = useCallback(() => {
+    const screen = screenRef.current;
+    if (!screen) return 0;
+    return Math.max(0, screen - footerRef.current - peekFor(screen));
+  }, [peekFor]);
+
+  const syncRest = useCallback(() => {
+    const screen = screenRef.current;
+    if (!screen) return;
+    const peek = peekFor(screen);
+    onPeekHeight?.(peek);
+    if (draggingRef.current || animatingRef.current) return;
+    const next = expandedRef.current ? 0 : collapsedShift();
+    shiftRef.current = next;
+    shift.setValue(next);
+  }, [collapsedShift, onPeekHeight, peekFor, shift]);
+
+  useEffect(() => {
+    const id = shift.addListener(({ value }) => {
+      shiftRef.current = value;
+    });
+    return () => shift.removeListener(id);
+  }, [shift]);
+
+  useEffect(() => {
+    syncRest();
+  }, [anchorTop, footerInset, syncRest]);
+
+  const snapSheet = useCallback((toExpanded: boolean) => {
+    const screen = screenRef.current;
+    if (!screen) return;
+    const target = toExpanded ? 0 : collapsedShift();
+    expandedRef.current = toExpanded;
+    setExpanded(toExpanded);
+    animatingRef.current = true;
+    Animated.timing(shift, {
+      toValue: target,
+      duration: SHEET_SNAP_MS,
+      easing: Easing.bezier(0.22, 0.61, 0.36, 1),
+      useNativeDriver: true,
+    }).start(() => {
+      animatingRef.current = false;
+    });
+  }, [collapsedShift, shift]);
+
+  const snapRef = useRef(snapSheet);
+  snapRef.current = snapSheet;
+
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gesture) =>
+          Math.abs(gesture.dy) > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+        onPanResponderGrant: () => {
+          draggingRef.current = true;
+          animatingRef.current = false;
+          setDragging(true);
+          dragOriginRef.current = shiftRef.current;
+          shift.stopAnimation();
+        },
+        onPanResponderMove: (_, gesture) => {
+          const maxShift = collapsedShift();
+          const next = Math.min(maxShift, Math.max(0, dragOriginRef.current + gesture.dy));
+          shiftRef.current = next;
+          shift.setValue(next);
+        },
+        onPanResponderRelease: () => {
+          draggingRef.current = false;
+          setDragging(false);
+          const maxShift = collapsedShift();
+          snapRef.current(shiftRef.current < maxShift / 2);
+        },
+        onPanResponderTerminate: () => {
+          draggingRef.current = false;
+          setDragging(false);
+          const maxShift = collapsedShift();
+          snapRef.current(shiftRef.current < maxShift / 2);
+        },
+      }),
+    [collapsedShift, shift],
   );
-  const scrollRoom = contentBottomInset ?? FOOTER_FADE_CONTENT_INSET;
-
-  const syncOverflow = () => {
-    setOverflows(contentHeight.current > viewportHeight.current + 1);
-  };
 
   if (items.length === 0) return null;
 
+  const raised = expanded || dragging;
+
   return (
-    <View style={[styles.wrap, { width }, fill ? styles.wrapFill : null]}>
-      <Text style={styles.heading}>{t('reminders.recent_list')}</Text>
-      <View
-        style={[
-          styles.listFrame,
-          fill ? styles.listFrameFill : { height: fixedHeight },
-        ]}
-      >
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[
-            styles.scrollContent,
-            scrollRoom > 0 ? { paddingBottom: scrollRoom } : null,
-          ]}
-          nestedScrollEnabled
-          keyboardShouldPersistTaps="always"
-          keyboardDismissMode="none"
-          showsVerticalScrollIndicator={false}
-          onLayout={(e) => {
-            viewportHeight.current = e.nativeEvent.layout.height;
-            syncOverflow();
-          }}
-          onContentSizeChange={(_w, h) => {
-            contentHeight.current = h;
-            syncOverflow();
-          }}
-        >
-          {items.map((item, index) => (
-            <View
-              key={item.id}
-              style={index < items.length - 1 ? { marginBottom: HISTORY_ITEM_GAP } : null}
+    <Animated.View
+      onLayout={(event) => {
+        const height = event.nativeEvent.layout.height;
+        if (!height || height === screenRef.current) return;
+        screenRef.current = height;
+        setFrameHeight(height);
+        syncRest();
+      }}
+      style={[
+        styles.sheet,
+        {
+          height: frameHeight || '100%',
+          zIndex: raised ? 20 : 4,
+          borderRadius: expanded ? 0 : 24,
+          paddingTop: expanded ? insets.top + 10 : 0,
+          transform: [{ translateY: shift }],
+        },
+      ]}
+    >
+      {expanded ? null : (
+        <View style={styles.handleHit} {...pan.panHandlers}>
+          <View style={styles.handle} />
+        </View>
+      )}
+      <View style={[styles.body, expanded ? null : styles.bodyCollapsed]}>
+        {expanded ? (
+          <View style={styles.expandedHeader} {...pan.panHandlers}>
+            <TouchableOpacity
+              style={styles.close}
+              onPress={() => snapSheet(false)}
+              accessibilityLabel={t('home.close_list')}
             >
-              <HistoryRow item={item} />
-            </View>
-          ))}
-        </ScrollView>
-        {overflows ? (
-          <ScrollFadeBand edge="top" height={SCROLL_LIST_TOP_FADE_GRADIENT} />
-        ) : null}
-        {bottomFade && overflows ? <ScrollFadeBand edge="bottom" /> : null}
+              <X size={18} color={colors.primaryText} />
+            </TouchableOpacity>
+            <Text style={[styles.heading, styles.headingCenter]} numberOfLines={1}>
+              {t('reminders.recent_list')}
+            </Text>
+            <View style={styles.closeSpacer} />
+          </View>
+        ) : (
+          <View {...pan.panHandlers}>
+            <Text style={styles.heading} numberOfLines={1}>
+              {t('reminders.recent_list')}
+            </Text>
+          </View>
+        )}
+        <View style={styles.listFrame}>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={[
+              styles.scrollContent,
+              !expanded && items.length > 1 ? { paddingBottom: LIST_ROW } : null,
+            ]}
+            nestedScrollEnabled
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="always"
+          >
+            {items.map((item) => (
+              <HistoryRow key={item.id} item={item} />
+            ))}
+          </ScrollView>
+          {!expanded && items.length > 1 ? (
+            <ScrollFadeBand
+              edge="bottom"
+              height={LIST_ROW}
+              solidAt={1}
+              color={colors.surface}
+            />
+          ) : null}
+        </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    wrap: {
-      gap: TITLE_TO_LIST,
+    sheet: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: c.surface,
+      overflow: 'hidden',
     },
-    wrapFill: {
-      flexGrow: 1,
-      flexShrink: 0,
-      flexBasis: 'auto',
-      minHeight: HISTORY_LIST_MIN_HEIGHT,
+    body: {
+      flex: 1,
+      gap: 16,
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+    },
+    bodyCollapsed: {
+      marginTop: 10,
+    },
+    handleHit: {
+      height: 16,
+      alignItems: 'center',
+    },
+    handle: {
+      marginTop: 8,
+      width: 36,
+      height: 5,
+      borderRadius: 100,
+      backgroundColor: c.border,
+    },
+    expandedHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+      minHeight: 28,
+    },
+    close: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.background,
     },
     heading: {
       fontFamily: 'Rubik-Regular',
@@ -158,21 +336,24 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 28,
       color: c.primaryText,
     },
-    listFrame: {
-      width: '100%',
-      overflow: 'hidden',
+    headingCenter: {
+      flex: 1,
+      textAlign: 'center',
     },
-    listFrameFill: {
-      flexGrow: 1,
-      flexShrink: 1,
-      flexBasis: 0,
-      minHeight: HISTORY_ITEM_HEIGHT,
+    closeSpacer: {
+      width: 32,
+      height: 32,
     },
     scroll: {
       flex: 1,
     },
+    listFrame: {
+      flex: 1,
+      minHeight: 0,
+    },
     scrollContent: {
-      flexGrow: 1,
+      paddingBottom: 24,
+      gap: ITEM_GAP,
     },
   });
 
@@ -180,57 +361,68 @@ const makeRowStyles = (c: ThemeColors) =>
   StyleSheet.create({
     card: {
       width: '100%',
-      height: HISTORY_ITEM_HEIGHT,
-      backgroundColor: c.surface,
-      borderRadius: Radius.md,
+      minHeight: 90,
+      boxSizing: 'border-box',
       flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      borderRadius: 24,
+      paddingTop: 7,
+      paddingBottom: 7,
+      paddingRight: 16,
+      backgroundColor: c.background,
       overflow: 'hidden',
-      shadowColor: '#2D2D2A',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.04,
-      shadowRadius: 20,
-      elevation: 3,
     },
     completedBar: {
-      width: 4,
-      alignSelf: 'stretch',
+      width: 6,
+      height: 76,
       borderRadius: 2,
-      backgroundColor: c.success,
+      backgroundColor: COMPLETED_BAR,
     },
-    /** Name top-left, time over date top-right — the row is not vertically centered. */
-    inner: {
+    content: {
       flex: 1,
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      gap: 10,
+      minWidth: 0,
+      gap: 6,
     },
-    title: {
+    contentInset: {
+      marginLeft: 16,
+    },
+    line: {
+      height: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 8,
+    },
+    category: {
       flex: 1,
       minWidth: 0,
       fontFamily: 'Rubik-Medium',
-      fontSize: 14,
+      fontSize: 16,
       lineHeight: 20,
       color: c.primaryText,
     },
-    meta: {
-      flexShrink: 0,
-      alignItems: 'flex-end',
-      gap: 4,
-    },
     time: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 12,
-      lineHeight: 16,
+      flexShrink: 0,
+      fontFamily: 'Rubik-Regular',
+      fontSize: 14,
+      lineHeight: 20,
       color: c.primaryText,
       textAlign: 'right',
     },
-    day: {
+    desc: {
+      flex: 1,
+      minWidth: 0,
       fontFamily: 'Rubik-Regular',
-      fontSize: 12,
-      lineHeight: 16,
+      fontSize: 14,
+      lineHeight: 20,
+      color: c.secondaryText,
+    },
+    day: {
+      flexShrink: 0,
+      fontFamily: 'Rubik-Regular',
+      fontSize: 14,
+      lineHeight: 20,
       color: c.secondaryText,
       textAlign: 'right',
     },

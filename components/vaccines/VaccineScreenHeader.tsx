@@ -5,6 +5,7 @@ import { getHeaderContentOffset } from '@/utils/headerLayout';
 interface VaccineScreenHeaderProps {
   title: string;
   icon?: 'back' | 'close';
+  onBack?: () => void;
   right?: React.ReactNode;
   /** @deprecated Ignored — header spacing is unified via headerLayout. */
   extraTopOffset?: number;
@@ -14,9 +15,10 @@ interface VaccineScreenHeaderProps {
 export default function VaccineScreenHeader({
   title,
   icon = 'back',
+  onBack,
   right,
 }: VaccineScreenHeaderProps) {
-  return <ScreenHeader title={title} icon={icon} right={right} />;
+  return <ScreenHeader title={title} icon={icon} onBack={onBack} right={right} />;
 }
 
 /** @deprecated Prefer getHeaderContentOffset from @/utils/headerLayout */

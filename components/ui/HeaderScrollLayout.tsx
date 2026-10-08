@@ -260,6 +260,7 @@ const makeStyles = (c: ThemeColors) =>
     scrollSlot: {
       flex: 1,
       minHeight: 0,
+      overflow: 'hidden',
     },
     chrome: {
       position: 'absolute',

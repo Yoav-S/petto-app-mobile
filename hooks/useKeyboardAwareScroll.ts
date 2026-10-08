@@ -15,6 +15,7 @@ import {
 import {
   KEYBOARD_DONE_BAR_HEIGHT,
   useKeyboardBottomOffset,
+  useKeyboardWindowResized,
 } from '@/components/ui/keyboardUtils';
 
 /** Shared TextInput onFocus handler for keyboard-aware screens. */
@@ -31,6 +32,8 @@ interface UseKeyboardAwareScrollOptions {
   bottomClearance?: number;
   /** When false, focus does not auto-scroll (layout stays put; user scrolls manually). */
   autoScrollOnFocus?: boolean;
+  /** Space kept clear above the keyboard when a focused field is scrolled into view. */
+  focusClearance?: number;
 }
 
 function focusEventTarget(
@@ -73,10 +76,12 @@ export function useKeyboardAwareScroll(
   onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
   onInputFocus: TextFieldFocusHandler;
 } {
-  const { bottomAnchorRef, bottomClearance = 0, autoScrollOnFocus = true } = options;
+  const { bottomAnchorRef, bottomClearance = 0, autoScrollOnFocus = true, focusClearance = FOCUS_CLEARANCE } = options;
   const scrollRef = useRef<ScrollView>(null);
   const scrollYRef = useRef(0);
+  const focusedTargetRef = useRef<number | null>(null);
   const keyboardOffset = useKeyboardBottomOffset();
+  const windowResized = useKeyboardWindowResized();
   const keyboardShowSub = useRef<EmitterSubscription | null>(null);
   const [keyboardScrollRoom, setKeyboardScrollRoom] = useState(0);
 
@@ -121,10 +126,12 @@ export function useKeyboardAwareScroll(
   const scrollFocusedIntoView = useCallback((target: number, keyboard: number) => {
     if (!scrollRef.current) return;
     UIManager.measureInWindow(target, (_x, inputY, _w, inputH) => {
-      if (!Number.isFinite(inputY) || !Number.isFinite(inputH)) return;
+      if (!Number.isFinite(inputY) || !Number.isFinite(inputH) || inputH <= 0) return;
       const winH = Dimensions.get('window').height;
+      /** adjustResize already shrank the window, so do not subtract the keyboard again. */
+      const covered = windowResized ? 0 : keyboard;
       const visibleBottom =
-        winH - keyboard - (keyboard > 0 ? FOCUS_CLEARANCE : 0) - FOCUS_GAP;
+        winH - covered - (keyboard > 0 ? focusClearance : 0) - FOCUS_GAP;
       const fieldBottom = inputY + inputH;
 
       if (fieldBottom <= visibleBottom && inputY >= FOCUS_GAP) return;
@@ -133,7 +140,22 @@ export function useKeyboardAwareScroll(
       const nextY = Math.max(0, scrollYRef.current + delta);
       scrollRef.current?.scrollTo({ y: nextY, animated: true });
     });
-  }, []);
+  }, [focusClearance, windowResized]);
+
+  useEffect(() => {
+    if (keyboardOffset <= 0) {
+      focusedTargetRef.current = null;
+      return;
+    }
+    const target = focusedTargetRef.current;
+    if (target == null) return;
+    const soon = setTimeout(() => scrollFocusedIntoView(target, keyboardOffset), FOCUS_SCROLL_DELAY_MS);
+    const afterLayout = setTimeout(() => scrollFocusedIntoView(target, keyboardOffset), 360);
+    return () => {
+      clearTimeout(soon);
+      clearTimeout(afterLayout);
+    };
+  }, [keyboardOffset, scrollFocusedIntoView]);
 
   const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     scrollYRef.current = e.nativeEvent.contentOffset.y;
@@ -145,6 +167,7 @@ export function useKeyboardAwareScroll(
 
       const target = focusEventTarget(e);
       if (target == null) return;
+      focusedTargetRef.current = target;
 
       keyboardShowSub.current?.remove();
       keyboardShowSub.current = null;
@@ -164,7 +187,7 @@ export function useKeyboardAwareScroll(
         runScroll(keyboardHeightFromEvent(ev));
       });
     },
-    [autoScrollOnFocus, keyboardOffset, scrollFocusedIntoView],
+    [autoScrollOnFocus, focusClearance, keyboardOffset, scrollFocusedIntoView],
   );
 
   return {
