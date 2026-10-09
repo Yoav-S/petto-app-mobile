@@ -22,7 +22,14 @@ import { waitForBottomSheetsToSettle } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 import { getErrorMessage } from '@/services/errors';
 import { queryKeys } from '@/services/queryKeys';
-import { deletePlaceReview, listPlaceReviews, reportPlaceReview, type PlaceReview } from '@/services/places';
+import {
+  deletePlaceReview,
+  listPlaceReviews,
+  rememberPlaceReview,
+  reportPlaceReview,
+  upsertOwnReview,
+  type PlaceReview,
+} from '@/services/places';
 
 export default function BusinessReviewsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -48,6 +55,7 @@ export default function BusinessReviewsScreen() {
     error,
     loadMore,
     refresh,
+    setItems,
   } = useCursorPagination<PlaceReview>({
     fetchPage,
     enabled: Boolean(id),
@@ -124,10 +132,34 @@ export default function BusinessReviewsScreen() {
           } as never);
         }}
         onRemove={() => {
-          if (!id) return;
-          void deletePlaceReview(id)
-            .then(() => refresh())
-            .catch((err) => toast.showError(getErrorMessage(err)));
+          const businessId = id;
+          const review = menuReview;
+          if (!businessId || !review) return;
+          const index = reviews.findIndex((item) => item.id === review.id);
+          setMenuReview(null);
+          setItems((prev) => prev.filter((item) => item.id !== review.id));
+          const restore = () => {
+            setItems((prev) => {
+              if (prev.some((item) => item.id === review.id)) return prev;
+              const list = [...prev];
+              list.splice(Math.max(0, Math.min(index, list.length)), 0, review);
+              return list;
+            });
+          };
+          void waitForBottomSheetsToSettle().then(() => {
+            toast.showUndo({
+              message: t('business.review_deleted'),
+              onUndo: restore,
+              onCommit: async () => {
+                try {
+                  await deletePlaceReview(businessId);
+                } catch (err) {
+                  restore();
+                  toast.showError(getErrorMessage(err));
+                }
+              },
+            });
+          });
         }}
         onReport={(reason) => {
           const review = menuReview;
@@ -155,8 +187,10 @@ export default function BusinessReviewsScreen() {
         initialRating={mine?.rating}
         initialComment={mine?.comment}
         onClose={() => setReviewOpen(false)}
-        onSaved={() => {
-          void refresh();
+        onSaved={(review) => {
+          if (!id) return;
+          rememberPlaceReview(id, review);
+          setItems((prev) => upsertOwnReview(prev, review));
         }}
       />
     </View>

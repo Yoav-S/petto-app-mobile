@@ -1,4 +1,6 @@
 import { apiDelete, apiGet, apiPost } from './api';
+import { queryClient } from './queryClient';
+import { queryKeys } from './queryKeys';
 
 export type BusinessCategory =
   | 'veterinarian'
@@ -127,6 +129,19 @@ export function listPlaceReviews(
   const params = new URLSearchParams({ limit: String(options.limit) });
   if (options.cursor) params.set('cursor', options.cursor);
   return apiGet<PlaceReview[]>(`/businesses/${id}/reviews?${params.toString()}`);
+}
+
+/** Newest first. Replaces this user's previous review. */
+export function upsertOwnReview(list: PlaceReview[], review: PlaceReview): PlaceReview[] {
+  const next = { ...review, is_mine: true };
+  return [next, ...list.filter((item) => item.id !== next.id && !item.is_mine)];
+}
+
+/** Keep the reviews list cache in step with a review that was just saved. */
+export function rememberPlaceReview(businessId: string, review: PlaceReview): void {
+  const key = queryKeys.businesses.reviews(businessId);
+  const cached = queryClient.getQueryData<PlaceReview[]>(key) ?? [];
+  queryClient.setQueryData(key, upsertOwnReview(cached, review));
 }
 
 export function savePlaceReview(

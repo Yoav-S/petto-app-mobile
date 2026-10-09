@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -32,10 +32,13 @@ import { postedLabel } from '@/utils/reviewPosted';
 import { useToast } from '@/context/ToastContext';
 import {
   getPlace,
+  rememberPlaceReview,
+  upsertOwnReview,
   type BusinessCategory,
   type BusinessPlaceDetail,
   type OpeningHours,
   type PlaceLocation,
+  type PlaceReview,
   type Weekday,
 } from '@/services/places';
 
@@ -201,6 +204,7 @@ export default function BusinessScreen() {
   const [mapTarget, setMapTarget] = useState<PlaceLocation | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
+  const savedReviewRef = useRef<PlaceReview | null>(null);
   const [openLocationIds, setOpenLocationIds] = useState<string[]>([]);
 
   const previewImage = params.image || null;
@@ -221,7 +225,13 @@ export default function BusinessScreen() {
       let active = true;
       getPlace(id, coords)
         .then((detail) => {
-          if (active) setPlace(detail);
+          if (!active) return;
+          const pending = savedReviewRef.current;
+          setPlace(
+            pending
+              ? { ...detail, reviews: upsertOwnReview(detail.reviews ?? [], pending) }
+              : detail,
+          );
         })
         .catch((err) => {
           if (active) toast.showError(getErrorMessage(err));
@@ -460,7 +470,12 @@ export default function BusinessScreen() {
           return (
             <View key={branch.id} style={styles.locationCard}>
               <View style={styles.locationBody}>
-                <View style={styles.locationAddressBlock}>
+                <Pressable
+                  style={styles.locationAddressBlock}
+                  onPress={() => showMaps(branch)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('business.directions')}
+                >
                   {typeof branchDistance === 'number' ? (
                     <View style={styles.locationDistanceRow}>
                       <MapPin size={12} color={colors.primaryText} />
@@ -470,7 +485,7 @@ export default function BusinessScreen() {
                   <Text style={styles.locationAddress}>
                     {addressText(branch.address, branch.city)}
                   </Text>
-                </View>
+                </Pressable>
                 <View style={styles.locationStatusRow}>
                   {status ? (
                     <View style={styles.locationStatus}>
@@ -503,26 +518,28 @@ export default function BusinessScreen() {
                 </View>
               </View>
               {expanded ? (
-                <View style={styles.locationExtra}>
+                <View style={styles.hoursList}>
                   {WEEK.map((day) => (
                     <View key={`${branch.id}-${day}`} style={styles.hoursRow}>
                       <Text style={styles.dayLabel}>{t(DAY_KEY[day])}</Text>
                       <Text style={styles.hoursValue}>{dayHours(branch.opening_hours, day)}</Text>
                     </View>
                   ))}
-                  {phonesOnEachLocation
-                    ? branchPhones.map((phone) => (
-                        <Pressable
-                          key={phone}
-                          style={styles.locationPhone}
-                          onPress={() => showPhones([phone])}
-                          accessibilityRole="button"
-                        >
-                          <Phone size={24} color={colors.primaryText} />
-                          <Text style={styles.contactValue} numberOfLines={1}>{phone}</Text>
-                        </Pressable>
-                      ))
-                    : null}
+                </View>
+              ) : null}
+              {phonesOnEachLocation ? (
+                <View style={styles.locationPhones}>
+                  {branchPhones.map((phone) => (
+                    <Pressable
+                      key={phone}
+                      style={styles.locationPhone}
+                      onPress={() => showPhones([phone])}
+                      accessibilityRole="button"
+                    >
+                      <Phone size={24} color={colors.primaryText} />
+                      <Text style={styles.contactValue} numberOfLines={1}>{phone}</Text>
+                    </Pressable>
+                  ))}
                 </View>
               ) : null}
             </View>
@@ -569,7 +586,7 @@ export default function BusinessScreen() {
           </View>
         ) : null}
 
-        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <View style={[styles.actions, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <TouchableOpacity
             style={[styles.callButton, contactPhones.length === 0 && styles.buttonDisabled]}
             disabled={contactPhones.length === 0}
@@ -612,7 +629,16 @@ export default function BusinessScreen() {
         initialRating={reviews.find((review) => review.is_mine)?.rating}
         initialComment={reviews.find((review) => review.is_mine)?.comment}
         onClose={() => setReviewOpen(false)}
-        onSaved={() => setReloadToken((value) => value + 1)}
+        onSaved={(review) => {
+          savedReviewRef.current = review;
+          if (params.id) rememberPlaceReview(params.id, review);
+          setPlace((current) =>
+            current
+              ? { ...current, reviews: upsertOwnReview(current.reviews ?? [], review) }
+              : current,
+          );
+          setReloadToken((value) => value + 1);
+        }}
       />
 
       <PhoneSheet
@@ -756,8 +782,9 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 16,
       color: c.secondaryText,
     },
-    locationExtra: {
-      gap: 4,
+    locationPhones: {
+      gap: 6,
+      marginTop: 10,
     },
     locationPhone: {
       height: 24,
@@ -1026,7 +1053,15 @@ const makeStyles = (c: ThemeColors) =>
     },
     hoursList: {
       gap: 6,
-      marginTop: 2,
+      marginTop: 10,
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: 8,
+      marginTop: 12,
+      paddingTop: 12,
+      paddingHorizontal: 20,
+      paddingBottom: 0,
     },
     hoursRow: {
       flexDirection: 'row',
@@ -1046,15 +1081,6 @@ const makeStyles = (c: ThemeColors) =>
       fontSize: 16,
       lineHeight: 24,
       color: c.primaryText,
-    },
-    footer: {
-      flexDirection: 'row',
-      gap: 8,
-      paddingTop: 12,
-      paddingHorizontal: 20,
-      borderTopLeftRadius: 24,
-      borderTopRightRadius: 24,
-      backgroundColor: c.surface,
     },
     callButton: {
       flex: 1,

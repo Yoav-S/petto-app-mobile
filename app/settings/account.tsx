@@ -15,6 +15,7 @@ import { Image } from 'expo-image';
 import { useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Pencil } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
@@ -373,6 +374,9 @@ export default function AccountSettingsScreen() {
               ) : (
                 <OnboardingPhotoAdd width={PHOTO_SIZE} height={PHOTO_SIZE} />
               )}
+              <View style={styles.photoEdit} pointerEvents="none">
+                <Pencil size={16} color={colors.primaryText} strokeWidth={1} />
+              </View>
             </Pressable>
 
             <TextInput
@@ -439,7 +443,7 @@ export default function AccountSettingsScreen() {
         visible={confirmVisible}
         title={t('settings.delete_account_confirm_title')}
         message={t('settings.delete_account_confirm_body')}
-        confirmText={t('settings.delete_account')}
+        confirmText={t('common.delete')}
         variant="danger"
         onConfirm={() => void handleDelete()}
         onCancel={() => setConfirmVisible(false)}
@@ -532,6 +536,23 @@ const makeStyles = (c: ThemeColors) =>
       width: PHOTO_SIZE,
       height: PHOTO_SIZE,
       borderRadius: 22,
+    },
+    photoEdit: {
+      position: 'absolute',
+      right: 8,
+      bottom: 8,
+      width: 24,
+      height: 24,
+      padding: 4,
+      borderRadius: 6,
+      backgroundColor: c.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#1F1F1F',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 15 / 255,
+      shadowRadius: 8,
+      elevation: 3,
     },
     nameInput: {
       alignSelf: 'stretch',

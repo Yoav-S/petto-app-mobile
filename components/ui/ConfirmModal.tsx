@@ -24,6 +24,8 @@ interface ConfirmModalProps {
   onCancel: () => void;
   cancelText?: string;
   variant?: 'danger' | 'primary';
+  /** One button. Used for notices that only dismiss. */
+  hideCancel?: boolean;
 }
 
 const MODAL = {
@@ -65,6 +67,7 @@ export function ConfirmDialogSurface({
   onCancel,
   cancelText,
   variant = 'danger',
+  hideCancel = false,
 }: Omit<ConfirmModalProps, 'visible'>) {
   const styles = useThemedStyles(makeStyles);
   const { contentWidth } = useResponsiveLayout();
@@ -92,13 +95,15 @@ export function ConfirmDialogSurface({
             </View>
 
             <View style={[styles.buttonRow, { gap: MODAL.buttonRowGap }]}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={onCancel}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.cancelText}>{cancelText ?? t('common.cancel')}</Text>
-              </TouchableOpacity>
+              {hideCancel ? null : (
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={onCancel}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.cancelText}>{cancelText ?? t('common.cancel')}</Text>
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity
                 style={

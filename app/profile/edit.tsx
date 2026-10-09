@@ -143,6 +143,7 @@ export default function EditProfileScreen() {
   const [dateSheetVisible, setDateSheetVisible] = useState(false);
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
+  const [lastPetVisible, setLastPetVisible] = useState(false);
   const originalRef = useRef<ProfileSnapshot | null>(null);
 
   const petsQuery = usePetsQuery();
@@ -319,10 +320,9 @@ export default function EditProfileScreen() {
 
   const handleRemovePress = () => {
     if (petCount <= 1) {
-      Alert.alert(
-        t('profile.edit.last_pet_title'),
-        t('profile.edit.last_pet_body'),
-      );
+      setPhotoSheetVisible(false);
+      setDateSheetVisible(false);
+      setLastPetVisible(true);
       return;
     }
     setPhotoSheetVisible(false);
@@ -516,6 +516,17 @@ export default function EditProfileScreen() {
       />
 
       <ConfirmModal
+        visible={lastPetVisible}
+        title={t('profile.edit.last_pet_title')}
+        message={t('profile.edit.last_pet_body')}
+        confirmText={t('common.close')}
+        variant="primary"
+        hideCancel
+        onConfirm={() => setLastPetVisible(false)}
+        onCancel={() => setLastPetVisible(false)}
+      />
+
+      <ConfirmModal
         visible={deleteVisible}
         title={t('profile.edit.remove_confirm_title')}
         message={t('profile.edit.remove_confirm_body')}
@@ -589,7 +600,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
 
   photoWrap: {
     alignSelf: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   photo: {
     backgroundColor: '#E8E2D8',

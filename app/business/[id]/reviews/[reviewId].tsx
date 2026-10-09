@@ -14,7 +14,7 @@ import SettingsHeader from '@/components/settings/SettingsHeader';
 import { HealthFormScreen } from '@/components/health/HealthKeyboardFooter';
 import { t } from '@/i18n';
 import { getErrorMessage } from '@/services/errors';
-import { savePlaceReview } from '@/services/places';
+import { rememberPlaceReview, savePlaceReview } from '@/services/places';
 
 const SCORES = [1, 2, 3, 4, 5] as const;
 
@@ -40,7 +40,8 @@ export default function BusinessReviewScreen() {
     if (!id || !rating || saving) return;
     try {
       setSaving(true);
-      await savePlaceReview(id, { rating, comment });
+      const saved = await savePlaceReview(id, { rating, comment });
+      rememberPlaceReview(id, saved);
       router.back();
     } catch (err) {
       toast.showError(getErrorMessage(err));
@@ -50,7 +51,7 @@ export default function BusinessReviewScreen() {
 
   return (
     <View style={styles.screen}>
-      <SettingsHeader title={t('business.review')} rounded />
+      <SettingsHeader title={t('business.edit_review')} rounded />
       <HealthFormScreen
         contentContainerStyle={styles.form}
         footer={{

@@ -22,7 +22,7 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import { t } from '@/i18n';
 import { getErrorMessage } from '@/services/errors';
-import { savePlaceReview } from '@/services/places';
+import { savePlaceReview, type PlaceReview } from '@/services/places';
 
 /** Distance from the keyboard top to the bottom of the physical screen. */
 function keyboardLiftFromEvent(event: KeyboardEvent): number {
@@ -62,7 +62,7 @@ interface WriteReviewSheetProps {
   initialRating?: number | null;
   initialComment?: string | null;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (review: PlaceReview) => void;
 }
 
 export default function WriteReviewSheet({
@@ -109,8 +109,8 @@ export default function WriteReviewSheet({
     dismissKeyboard();
     try {
       setSaving(true);
-      await savePlaceReview(businessId, { rating, comment });
-      onSaved();
+      const saved = await savePlaceReview(businessId, { rating, comment });
+      onSaved(saved);
       onClose();
     } catch (err) {
       toast.showError(getErrorMessage(err));
