@@ -34,6 +34,7 @@ import { getErrorMessage } from '@/services/errors';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { uploadAccountPhoto } from '@/services/storage';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import { useSettledModalVisible } from '@/components/ui/BottomSheetModal';
 import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
@@ -102,6 +103,7 @@ export default function AccountSettingsScreen() {
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [otpVisible, setOtpVisible] = useState(false);
+  const otpPresented = useSettledModalVisible(otpVisible);
   const [otp, setOtp] = useState('');
   const [savingEmail, setSavingEmail] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -449,7 +451,7 @@ export default function AccountSettingsScreen() {
         onCancel={() => setConfirmVisible(false)}
       />
 
-      <Modal visible={otpVisible} transparent animationType="fade" onRequestClose={cancelEmailChange}>
+      <Modal visible={otpPresented} transparent animationType="fade" onRequestClose={cancelEmailChange}>
         <View style={styles.otpBackdrop}>
           <View style={styles.otpCard}>
             <Text style={styles.otpTitle}>{t('settings.account_email_otp_title')}</Text>

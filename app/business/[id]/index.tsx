@@ -304,7 +304,12 @@ export default function BusinessScreen() {
         <Pressable
           style={styles.coverImage}
           disabled={!image}
-          onPress={() => setPhotoOpen(true)}
+          onPress={() => {
+            setPhoneOpen(false);
+            setMapsOpen(false);
+            setReviewOpen(false);
+            setPhotoOpen(true);
+          }}
           accessibilityRole="button"
         >
           {image ? (
