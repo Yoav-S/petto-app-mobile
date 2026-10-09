@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   View,
   Text,
   StyleSheet,
@@ -14,7 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { useFocusEffect } from '@react-navigation/native';
-import { Spacing, type ThemeColors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -35,7 +36,22 @@ import {
   resolveRecord,
   reopenRecord,
   deleteRecord,
+  updateNote,
 } from '@/services/health';
+import { parseAlert } from '@/services/reminders';
+import {
+  healthReminderTitle,
+  removeHealthReminder,
+  resolveEditableReminder,
+  upsertHealthReminder,
+  type HealthReminderDraft,
+} from '@/services/healthReminder';
+import { uploadHealthNotePhoto } from '@/services/storage';
+import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
+import { presentPremiumLimitFromError } from '@/services/subscription';
+import EditPhotoSheet from '@/components/health/EditPhotoSheet';
+import ReminderPickerSheet from '@/components/health/ReminderPickerSheet';
+import SavingOverlay from '@/components/ui/SavingOverlay';
 import { getErrorMessage } from '@/services/errors';
 import HealthReminderLine from '@/components/health/HealthReminderLine';
 import { normalizeRouteParam } from '@/utils/routeParams';
@@ -133,6 +149,140 @@ export default function HealthDetailsScreen() {
     notesCursorRef.current = next.length > 0 ? next[next.length - 1].id : null;
     setNotesHasMore(page.length === LIST_PAGE_SIZE);
   }, []);
+
+  const patchNote = useCallback((noteId: string, patch: Partial<HealthNote>) => {
+    const next = notesRef.current.map((note) => (note.id === noteId ? { ...note, ...patch } : note));
+    notesRef.current = next;
+    setNotes(next);
+  }, []);
+
+  const [photoNote, setPhotoNote] = useState<HealthNote | null>(null);
+  const [reminderNote, setReminderNote] = useState<HealthNote | null>(null);
+  const [reminderDraft, setReminderDraft] = useState<HealthReminderDraft | null>(null);
+  const [editingReminderId, setEditingReminderId] = useState<string | null>(null);
+  const [noteSaving, setNoteSaving] = useState(false);
+
+  const saveNotePhoto = useCallback(
+    async (note: HealthNote, uri: string | null, mime: string | null) => {
+      if (!activePetId || !recordId) return;
+      setNoteSaving(true);
+      try {
+        const photoUrl = uri ? await uploadHealthNotePhoto(uri, mime) : null;
+        await updateNote(activePetId, recordId, note.id, { photo_url: photoUrl });
+        patchNote(note.id, { photo_url: photoUrl });
+        setFailedPhotoIds((prev) => {
+          if (!prev[note.id]) return prev;
+          const next = { ...prev };
+          delete next[note.id];
+          return next;
+        });
+      } catch (err) {
+        if (!presentPremiumLimitFromError(err)) toast.showError(getErrorMessage(err));
+      } finally {
+        setNoteSaving(false);
+      }
+    },
+    [activePetId, patchNote, recordId, toast],
+  );
+
+  const handlePickedPhoto = useCallback(
+    async (source: 'camera' | 'library') => {
+      const note = photoNote;
+      setPhotoNote(null);
+      if (!note) return;
+      const picked = source === 'camera' ? await pickImageFromCamera() : await pickImageFromLibrary();
+      if (picked === 'denied') {
+        Alert.alert(t('petOnboarding.photo_permission_title'), t('petOnboarding.photo_permission_body'));
+        return;
+      }
+      if (picked?.uri) await saveNotePhoto(note, picked.uri, picked.mimeType);
+    },
+    [photoNote, saveNotePhoto],
+  );
+
+  const openReminder = useCallback(
+    async (note: HealthNote) => {
+      setPhotoNote(null);
+      let draft: HealthReminderDraft | null = note.linked_reminder_date
+        ? {
+            date: note.linked_reminder_date,
+            time: note.linked_reminder_time ?? '09:00',
+            repeat: 'off',
+            alert: 'off',
+          }
+        : null;
+      let editingId = note.linked_reminder_id ?? null;
+      if (activePetId && note.linked_reminder_id) {
+        try {
+          const reminder = await resolveEditableReminder(activePetId, note.linked_reminder_id);
+          editingId = reminder.id;
+          draft = {
+            date: reminder.date,
+            endDate: reminder.end_date ?? null,
+            time: reminder.time,
+            repeat: (reminder.repeat as HealthReminderDraft['repeat']) ?? 'off',
+            alert: parseAlert(reminder.alert),
+          };
+        } catch {
+          // Keep the date stored on the note.
+        }
+      }
+      setEditingReminderId(editingId);
+      setReminderDraft(draft);
+      setReminderNote(note);
+    },
+    [activePetId],
+  );
+
+  const saveReminder = useCallback(
+    async (draft: HealthReminderDraft) => {
+      const note = reminderNote;
+      if (!activePetId || !recordId || !note) return;
+      setNoteSaving(true);
+      try {
+        const reminderId = await upsertHealthReminder(
+          activePetId,
+          draft,
+          healthReminderTitle(note.text, record?.title),
+          editingReminderId ?? note.linked_reminder_id,
+        );
+        await updateNote(activePetId, recordId, note.id, { linked_reminder_id: reminderId });
+        patchNote(note.id, {
+          linked_reminder_id: reminderId,
+          linked_reminder_date: draft.date,
+          linked_reminder_time: draft.time,
+        });
+      } catch (err) {
+        if (!presentPremiumLimitFromError(err)) toast.showError(getErrorMessage(err));
+      } finally {
+        setNoteSaving(false);
+      }
+    },
+    [activePetId, editingReminderId, patchNote, record?.title, recordId, reminderNote, toast],
+  );
+
+  const removeReminder = useCallback(async () => {
+    const note = reminderNote;
+    if (!activePetId || !recordId || !note) return;
+    setReminderNote(null);
+    setNoteSaving(true);
+    try {
+      const reminderId = editingReminderId ?? note.linked_reminder_id;
+      if (reminderId) await removeHealthReminder(activePetId, reminderId);
+      await updateNote(activePetId, recordId, note.id, { linked_reminder_id: null });
+      patchNote(note.id, {
+        linked_reminder_id: null,
+        linked_reminder_date: null,
+        linked_reminder_time: null,
+      });
+      setEditingReminderId(null);
+      setReminderDraft(null);
+    } catch (err) {
+      if (!presentPremiumLimitFromError(err)) toast.showError(getErrorMessage(err));
+    } finally {
+      setNoteSaving(false);
+    }
+  }, [activePetId, editingReminderId, patchNote, recordId, reminderNote, toast]);
 
   const loadMoreNotes = useCallback(async () => {
     if (!activePetId || !recordId || notesLoadingMoreRef.current || !notesHasMore) return;
@@ -288,7 +438,7 @@ export default function HealthDetailsScreen() {
   const listBlocked = notesLoadingMore || resolving || reopening;
 
   const renderNoteItem = useCallback(
-    ({ item }: { item: NoteListItem }) => {
+    ({ item, index }: { item: NoteListItem; index: number }) => {
       if (item.type === 'header') {
         return (
           <Text
@@ -303,40 +453,66 @@ export default function HealthDetailsScreen() {
       }
 
       const note = item.note;
+      const canEdit = record?.status === 'active';
+      const followedByNote = noteListItems[index + 1]?.type === 'note';
       return (
-        <ListRowPressable
-          style={styles.noteCard}
-          onPress={() => openNote(note.id)}
-        >
-          {note.photo_url && !failedPhotoIds[note.id] ? (
-            <View style={styles.noteImageWrap}>
-              <Image
-                source={{ uri: note.photo_url }}
-                style={styles.noteImage}
-                contentFit="cover"
-                cachePolicy="memory-disk"
-                recyclingKey={note.id}
-                onError={() =>
-                  setFailedPhotoIds((prev) => ({ ...prev, [note.id]: true }))
-                }
-              />
+        <View style={[styles.noteCard, followedByNote ? styles.noteCardSameDay : null]}>
+          <ListRowPressable style={styles.noteBody} onPress={() => openNote(note.id)}>
+            {note.photo_url && !failedPhotoIds[note.id] ? (
+              <View style={styles.noteImageWrap}>
+                <Image
+                  source={{ uri: note.photo_url }}
+                  style={styles.noteImage}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  recyclingKey={note.id}
+                  onError={() =>
+                    setFailedPhotoIds((prev) => ({ ...prev, [note.id]: true }))
+                  }
+                />
+              </View>
+            ) : null}
+            <Text style={styles.noteText} numberOfLines={1}>
+              {truncatePreviewText(note.text, NOTE_PREVIEW_CHARS)}
+            </Text>
+            {note.linked_reminder_date || note.linked_reminder_time ? (
+              <View style={styles.reminderRow}>
+                <HealthReminderLine
+                  date={note.linked_reminder_date}
+                  time={note.linked_reminder_time}
+                />
+              </View>
+            ) : null}
+          </ListRowPressable>
+          {canEdit ? (
+            <View style={styles.iconRow}>
+              <TouchableOpacity
+                onPress={() => {
+                  setReminderNote(null);
+                  setPhotoNote(note);
+                }}
+                hitSlop={8}
+                activeOpacity={0.7}
+                accessibilityLabel={t('petOnboarding.photo_sheet_title')}
+              >
+                <Ionicons name="image-outline" size={24} color={colors.secondaryText} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  void openReminder(note);
+                }}
+                hitSlop={8}
+                activeOpacity={0.7}
+                accessibilityLabel={t('topics.set_reminder')}
+              >
+                <Ionicons name="notifications-outline" size={24} color={colors.secondaryText} />
+              </TouchableOpacity>
             </View>
           ) : null}
-          <Text style={styles.noteText} numberOfLines={1}>
-            {truncatePreviewText(note.text, NOTE_PREVIEW_CHARS)}
-          </Text>
-          {note.linked_reminder_date || note.linked_reminder_time ? (
-            <View style={styles.reminderRow}>
-              <HealthReminderLine
-                date={note.linked_reminder_date}
-                time={note.linked_reminder_time}
-              />
-            </View>
-          ) : null}
-        </ListRowPressable>
+        </View>
       );
     },
-    [failedPhotoIds, openNote, styles],
+    [colors.secondaryText, failedPhotoIds, noteListItems, openNote, openReminder, record?.status, styles],
   );
 
   if (loading) {
@@ -385,13 +561,11 @@ export default function HealthDetailsScreen() {
         header={<ScreenHeader title={record.title} right={menuButton} />}
         edges={['left', 'right']}
         topFade={false}
-        bottomFade
-        fadeMode="list"
-        fadeAboveFooter
+        bottomFade={false}
         chromePaddingBottom={LIST_TABS_SCROLL_CLEARANCE}
         contentGap={16 - LIST_TABS_SCROLL_CLEARANCE}
       >
-        {({ paddingTop, fadeBottomInset, scrollMetricsProps }) => (
+        {({ paddingTop, scrollMetricsProps }) => (
           <FlatList
             data={noteListItems}
             keyExtractor={(item) => (item.type === 'header' ? item.key : item.note.id)}
@@ -401,7 +575,7 @@ export default function HealthDetailsScreen() {
               styles.content,
               { paddingTop },
               noteListItems.length === 0 ? styles.contentEmpty : null,
-              { paddingBottom: fadeBottomInset },
+              { paddingBottom: 16 },
             ]}
             showsVerticalScrollIndicator={false}
             contentInsetAdjustmentBehavior="never"
@@ -519,6 +693,42 @@ export default function HealthDetailsScreen() {
         onCancel={() => setDeleteVisible(false)}
       />
 
+      <EditPhotoSheet
+        visible={photoNote != null}
+        hasPhoto={Boolean(photoNote?.photo_url)}
+        onClose={() => setPhotoNote(null)}
+        onTake={() => {
+          void handlePickedPhoto('camera');
+        }}
+        onChoose={() => {
+          void handlePickedPhoto('library');
+        }}
+        onRemove={
+          photoNote?.photo_url
+            ? () => {
+                const note = photoNote;
+                setPhotoNote(null);
+                void saveNotePhoto(note, null, null);
+              }
+            : undefined
+        }
+      />
+
+      <ReminderPickerSheet
+        visible={reminderNote != null}
+        initialDate={reminderDraft?.date}
+        initialEndDate={reminderDraft?.endDate}
+        initialTime={reminderDraft?.time}
+        initialRepeat={reminderDraft?.repeat}
+        initialAlert={reminderDraft?.alert}
+        onClose={() => setReminderNote(null)}
+        onConfirm={(draft) => {
+          void saveReminder(draft);
+        }}
+        onRemove={editingReminderId ? () => { void removeReminder(); } : undefined}
+      />
+
+      <SavingOverlay visible={noteSaving} />
       <ListFetchBlocker visible={listBlocked} />
     </>
   );
@@ -531,7 +741,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+    paddingHorizontal: 0,
+    backgroundColor: c.background,
   },
   contentEmpty: {
     flexGrow: 1,
@@ -539,14 +750,16 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    backgroundColor: c.background,
   },
   dateHeader: {
-    fontFamily: 'Rubik-Regular',
-    fontSize: 14,
+    fontFamily: 'Rubik-Medium',
+    fontSize: 16,
     lineHeight: 20,
     color: c.secondaryText,
     marginTop: 16,
-    marginBottom: 10,
+    marginBottom: 8,
+    paddingHorizontal: PAGE_HORIZONTAL_PADDING,
   },
   dateHeaderFirst: {
     marginTop: 0,
@@ -560,19 +773,26 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignSelf: 'center',
     maxWidth: 300,
   },
+  noteBody: {
+    gap: NOTE_CARD.innerGap,
+  },
   noteCard: {
+    width: '100%',
     backgroundColor: c.surface,
     borderRadius: NOTE_CARD.radius,
     paddingTop: NOTE_CARD.padTop,
     paddingHorizontal: NOTE_CARD.padH,
     paddingBottom: NOTE_CARD.padBottom,
-    marginBottom: Spacing.md,
+    marginBottom: 0,
     gap: NOTE_CARD.innerGap,
     shadowColor: '#2D2D2A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.04,
     shadowRadius: 20,
     elevation: 3,
+  },
+  noteCardSameDay: {
+    marginBottom: 4,
   },
   noteImageWrap: {
     width: '100%',
@@ -594,6 +814,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   reminderRow: {
     width: '100%',
     minHeight: 20,
+  },
+  iconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 24,
+    gap: 16,
   },
   footer: {
     width: '100%',

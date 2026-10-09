@@ -55,6 +55,10 @@ export function useHomePanelLayout() {
       cardRowGap: DESIGN_HOME_CARD_ROW_GAP,
       halfCardGap: DESIGN_HOME_HALF_GAP,
       fabBottom,
+      /** Screen Y of the add button’s top edge. */
+      fabTop,
+      /** Screen bottom to the top of the add button. Lists end here. */
+      fabTopInset: fabBottom + fabSize,
       secondLineInset,
     };
   }, [height, insets.bottom, structuralScale]);

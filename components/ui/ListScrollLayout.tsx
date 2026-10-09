@@ -57,6 +57,11 @@ interface ListScrollLayoutProps {
   fadeColor?: string;
   /** Solid strip below tabs before list content. */
   contentGap?: number;
+  /**
+   * Keep the header in flow so the list starts under it.
+   * Overlay chrome lets rows scroll underneath the header.
+   */
+  pinHeader?: boolean;
   documentFade?: boolean;
   /** Override the top fade band height (defaults to the list/document preset). */
   topFadeHeight?: number;
@@ -85,6 +90,7 @@ export default function ListScrollLayout({
   bottomFade = true,
   fadeColor,
   contentGap = LIST_TABS_CONTENT_GAP,
+  pinHeader = false,
   documentFade = false,
   topFadeHeight: topFadeHeightOverride,
   bottomFadeHeight: bottomFadeHeightOverride,
@@ -148,7 +154,7 @@ export default function ListScrollLayout({
    * Documents pin the header in flow so the first line can never sit under it.
    * Lists keep overlay chrome so rows scroll through the tabs.
    */
-  const pinChrome = documentFade;
+  const pinChrome = documentFade || pinHeader;
 
   /**
    * Ignore list end-clearance when deciding whether rows actually overflow.
@@ -314,7 +320,9 @@ export default function ListScrollLayout({
               {chrome}
             </View>
           ) : null}
-          <View style={styles.scrollSlot}>
+          <View
+            style={[styles.scrollSlot, surface ? { backgroundColor: surface } : null]}
+          >
             {children({
               paddingTop,
               paddingBottom,
@@ -354,6 +362,7 @@ const makeStyles = (c: ThemeColors) =>
       flex: 1,
       minHeight: 0,
       position: 'relative',
+      backgroundColor: c.background,
     },
     chrome: {
       position: 'absolute',

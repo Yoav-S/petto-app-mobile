@@ -61,7 +61,7 @@ export default function AddReminderScreen() {
   const layout = useMemo(
     () => ({
       formTop: 0,
-      formGap: 22,
+      formGap: 16,
       cardWidth: contentWidth,
       cardRadius: 12,
       cardPadH: 16,

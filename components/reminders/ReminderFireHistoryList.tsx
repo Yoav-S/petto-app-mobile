@@ -1,16 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
+  BackHandler,
   Easing,
   PanResponder,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import { usePreventRemove } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { X } from 'lucide-react-native';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -88,12 +88,15 @@ function HistoryRow({ item }: { item: Reminder }) {
 export default function ReminderFireHistoryList({
   items,
   anchorTop,
+  expandedTop,
   footerInset,
   onPeekHeight,
 }: {
   items: Reminder[];
   /** Distance from the top of the screen to the bottom of the fields above. */
   anchorTop: number;
+  /** Open sheet starts here, just under the Recent title. */
+  expandedTop: number;
   /** Delete footer height the collapsed sheet rests above. */
   footerInset: number;
   onPeekHeight?: (height: number) => void;
@@ -113,9 +116,13 @@ export default function ReminderFireHistoryList({
   const [frameHeight, setFrameHeight] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [placed, setPlaced] = useState(false);
 
   anchorRef.current = anchorTop;
   footerRef.current = footerInset;
+  const expandedTopRef = useRef(expandedTop);
+  expandedTopRef.current = Math.max(0, expandedTop);
+  const placedRef = useRef(false);
 
   const peekFor = useCallback((screen: number) => {
     const anchor = anchorRef.current;
@@ -131,16 +138,39 @@ export default function ReminderFireHistoryList({
     return Math.max(0, screen - footerRef.current - peekFor(screen));
   }, [peekFor]);
 
+  const moveTo = useCallback((next: number) => {
+    if (Math.abs(shiftRef.current - next) < 1) {
+      shift.setValue(next);
+      shiftRef.current = next;
+      return;
+    }
+    animatingRef.current = true;
+    Animated.timing(shift, {
+      toValue: next,
+      duration: SHEET_SNAP_MS,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) animatingRef.current = false;
+    });
+  }, [shift]);
+
   const syncRest = useCallback(() => {
     const screen = screenRef.current;
-    if (!screen) return;
+    if (!screen || anchorRef.current <= 0) return;
     const peek = peekFor(screen);
     onPeekHeight?.(peek);
     if (draggingRef.current || animatingRef.current) return;
-    const next = expandedRef.current ? 0 : collapsedShift();
-    shiftRef.current = next;
-    shift.setValue(next);
-  }, [collapsedShift, onPeekHeight, peekFor, shift]);
+    const next = expandedRef.current ? expandedTopRef.current : collapsedShift();
+    if (!placedRef.current) {
+      placedRef.current = true;
+      shift.setValue(next);
+      shiftRef.current = next;
+      setPlaced(true);
+      return;
+    }
+    moveTo(next);
+  }, [collapsedShift, moveTo, onPeekHeight, peekFor, shift]);
 
   useEffect(() => {
     const id = shift.addListener(({ value }) => {
@@ -151,12 +181,12 @@ export default function ReminderFireHistoryList({
 
   useEffect(() => {
     syncRest();
-  }, [anchorTop, footerInset, syncRest]);
+  }, [anchorTop, expandedTop, footerInset, syncRest]);
 
   const snapSheet = useCallback((toExpanded: boolean) => {
     const screen = screenRef.current;
     if (!screen) return;
-    const target = toExpanded ? 0 : collapsedShift();
+    const target = toExpanded ? expandedTopRef.current : collapsedShift();
     expandedRef.current = toExpanded;
     setExpanded(toExpanded);
     animatingRef.current = true;
@@ -173,6 +203,19 @@ export default function ReminderFireHistoryList({
   const snapRef = useRef(snapSheet);
   snapRef.current = snapSheet;
 
+  usePreventRemove(expanded, () => {
+    snapRef.current(false);
+  });
+
+  useEffect(() => {
+    if (!expanded) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      snapRef.current(false);
+      return true;
+    });
+    return () => sub.remove();
+  }, [expanded]);
+
   const pan = useMemo(
     () =>
       PanResponder.create({
@@ -187,7 +230,10 @@ export default function ReminderFireHistoryList({
         },
         onPanResponderMove: (_, gesture) => {
           const maxShift = collapsedShift();
-          const next = Math.min(maxShift, Math.max(0, dragOriginRef.current + gesture.dy));
+          const next = Math.min(
+            maxShift,
+            Math.max(expandedTopRef.current, dragOriginRef.current + gesture.dy),
+          );
           shiftRef.current = next;
           shift.setValue(next);
         },
@@ -195,13 +241,15 @@ export default function ReminderFireHistoryList({
           draggingRef.current = false;
           setDragging(false);
           const maxShift = collapsedShift();
-          snapRef.current(shiftRef.current < maxShift / 2);
+          const mid = (expandedTopRef.current + maxShift) / 2;
+          snapRef.current(shiftRef.current < mid);
         },
         onPanResponderTerminate: () => {
           draggingRef.current = false;
           setDragging(false);
           const maxShift = collapsedShift();
-          snapRef.current(shiftRef.current < maxShift / 2);
+          const mid = (expandedTopRef.current + maxShift) / 2;
+          snapRef.current(shiftRef.current < mid);
         },
       }),
     [collapsedShift, shift],
@@ -210,8 +258,20 @@ export default function ReminderFireHistoryList({
   if (items.length === 0) return null;
 
   const raised = expanded || dragging;
+  const openY = Math.max(0, expandedTop);
+  const closedY = Math.max(openY + 1, collapsedShift());
+  const backdropOpacity = shift.interpolate({
+    inputRange: [openY, closedY],
+    outputRange: [0.2, 0],
+    extrapolate: 'clamp',
+  });
 
   return (
+    <>
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.backdrop, { opacity: backdropOpacity }]}
+    />
     <Animated.View
       onLayout={(event) => {
         const height = event.nativeEvent.layout.height;
@@ -225,45 +285,33 @@ export default function ReminderFireHistoryList({
         {
           height: frameHeight || '100%',
           zIndex: raised ? 20 : 4,
-          borderRadius: expanded ? 0 : 24,
-          paddingTop: expanded ? insets.top + 10 : 0,
+          elevation: raised ? 8 : 4,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          opacity: placed ? 1 : 0,
           transform: [{ translateY: shift }],
         },
       ]}
     >
-      {expanded ? null : (
-        <View style={styles.handleHit} {...pan.panHandlers}>
-          <View style={styles.handle} />
-        </View>
-      )}
+      <View style={styles.handleHit} {...pan.panHandlers}>
+        <View style={styles.handle} />
+      </View>
       <View style={[styles.body, expanded ? null : styles.bodyCollapsed]}>
-        {expanded ? (
-          <View style={styles.expandedHeader} {...pan.panHandlers}>
-            <TouchableOpacity
-              style={styles.close}
-              onPress={() => snapSheet(false)}
-              accessibilityLabel={t('home.close_list')}
-            >
-              <X size={18} color={colors.primaryText} />
-            </TouchableOpacity>
-            <Text style={[styles.heading, styles.headingCenter]} numberOfLines={1}>
-              {t('reminders.recent_list')}
-            </Text>
-            <View style={styles.closeSpacer} />
-          </View>
-        ) : (
-          <View {...pan.panHandlers}>
-            <Text style={styles.heading} numberOfLines={1}>
-              {t('reminders.recent_list')}
-            </Text>
-          </View>
-        )}
+        <View {...pan.panHandlers}>
+          <Text style={styles.heading} numberOfLines={1}>
+            {t('reminders.recent_list')}
+          </Text>
+        </View>
         <View style={styles.listFrame}>
           <ScrollView
             style={styles.scroll}
             contentContainerStyle={[
               styles.scrollContent,
-              !expanded && items.length > 1 ? { paddingBottom: LIST_ROW } : null,
+              expanded
+                ? { paddingBottom: Math.max(0, expandedTop) + footerInset + insets.bottom }
+                : items.length > 1
+                  ? { paddingBottom: LIST_ROW }
+                  : null,
             ]}
             nestedScrollEnabled
             showsVerticalScrollIndicator={false}
@@ -283,12 +331,19 @@ export default function ReminderFireHistoryList({
           ) : null}
         </View>
       </View>
-    </Animated.View>
+      </Animated.View>
+    </>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: '#000000',
+      zIndex: 5,
+      elevation: 5,
+    },
     sheet: {
       position: 'absolute',
       top: 0,
@@ -316,33 +371,12 @@ const makeStyles = (c: ThemeColors) =>
       borderRadius: 100,
       backgroundColor: c.border,
     },
-    expandedHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 16,
-      minHeight: 28,
-    },
-    close: {
-      width: 32,
-      height: 32,
-      borderRadius: 10,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: c.background,
-    },
     heading: {
       fontFamily: 'Rubik-Regular',
       fontSize: 24,
       lineHeight: 28,
       color: c.primaryText,
-    },
-    headingCenter: {
-      flex: 1,
-      textAlign: 'center',
-    },
-    closeSpacer: {
-      width: 32,
-      height: 32,
+      textAlign: 'left',
     },
     scroll: {
       flex: 1,

@@ -2,13 +2,20 @@ import {
   createReminder,
   updateReminder,
   deleteReminder,
+  getReminder,
+  listReminders,
+  type AlertOption,
   type RepeatOption,
 } from '@/services/reminders';
+import type { Reminder } from '@/types/api';
+import { isRecentOccurrence } from '@/components/reminders/reminderFormShared';
 
 export interface HealthReminderDraft {
   date: string;
+  endDate?: string | null;
   time: string;
   repeat: RepeatOption;
+  alert?: AlertOption;
 }
 
 /** Short title for a reminder created from a health note. */
@@ -30,8 +37,10 @@ export async function upsertHealthReminder(
   const payload = {
     title,
     date: draft.date,
+    end_date: draft.endDate ?? null,
     time: draft.time,
     repeat: draft.repeat,
+    alert: draft.alert ?? 'off',
   };
 
   if (existingReminderId) {
@@ -46,4 +55,22 @@ export async function upsertHealthReminder(
 /** Remove a reminder that was linked to a health note. */
 export async function removeHealthReminder(petId: string, reminderId: string): Promise<void> {
   await deleteReminder(petId, reminderId);
+}
+
+/**
+ * A repeating reminder that already fired keeps the note pointed at that
+ * occurrence. Edits belong on the next scheduled row in the same series.
+ */
+export async function resolveEditableReminder(petId: string, reminderId: string): Promise<Reminder> {
+  const reminder = await getReminder(petId, reminderId);
+  const repeat = reminder.repeat || 'off';
+  if (repeat === 'off' || !isRecentOccurrence(reminder)) return reminder;
+
+  const seriesId = reminder.series_id || reminder.id;
+  const [today, upcoming] = await Promise.all([
+    listReminders(petId, 'today', { limit: 100 }),
+    listReminders(petId, 'upcoming', { limit: 100 }),
+  ]);
+  const live = [...today, ...upcoming].find((row) => (row.series_id || row.id) === seriesId);
+  return live ?? reminder;
 }

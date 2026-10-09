@@ -1,11 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
+  TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
-import { FOOTER_FADE_BAND } from '@/constants/layout';
+import ScrollFadeBand from '@/components/ui/ScrollFadeBand';
+import { FOOTER_FADE_BAND, FOOTER_FADE_SOLID_AT } from '@/constants/layout';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   useFocusEffect,
@@ -113,7 +117,11 @@ export default function EditReminderScreen() {
   const [fireHistory, setFireHistory] = useState<Reminder[]>([]);
   const [fieldsHeight, setFieldsHeight] = useState(0);
   const [headerClearance, setHeaderClearance] = useState(0);
-  const [sheetPeek, setSheetPeek] = useState(220);
+  const insets = useSafeAreaInsets();
+  /** Nav-bar inset only. Ignore a jump when the keyboard reports itself as the inset. */
+  const homeInsetRef = useRef(Math.max(insets.bottom, 16));
+  if (insets.bottom < 96) homeInsetRef.current = Math.max(insets.bottom, 16);
+  const deletePadBottom = Math.max(homeInsetRef.current, 48);
 
   const hydratedRef = useRef(false);
   const snapshotRef = useRef('');
@@ -125,7 +133,7 @@ export default function EditReminderScreen() {
   const layout = useMemo(
     () => ({
       formTop: 0,
-      formGap: 22,
+      formGap: 16,
       cardWidth: contentWidth,
       cardRadius: 12,
       cardPadH: 16,
@@ -487,17 +495,20 @@ export default function EditReminderScreen() {
             <ClearanceReporter value={paddingTop} onChange={setHeaderClearance} />
             <ReminderFormBody
               scrollInsetTop={paddingTop}
-              /** The recent list runs under the fade band; its own scroll clears it. */
-              scrollPaddingBottom={showHistory ? sheetPeek + FOOTER_FADE_BAND : 0}
+              scrollPaddingBottom={readOnly ? 0 : 16}
+              saveFooter={
+                readOnly
+                  ? undefined
+                  : {
+                      label: t('reminders.delete'),
+                      tone: 'destructive-text',
+                      onPress: () => {
+                        setSheet(null);
+                        setDeleteVisible(true);
+                      },
+                    }
+              }
               autoFocus={!readOnly}
-              saveFooter={{
-                label: t('reminders.delete'),
-                tone: 'destructive-text',
-                onPress: () => {
-                  setSheet(null);
-                  setDeleteVisible(true);
-                },
-              }}
               layout={layout}
               title={title}
               onTitleChange={handleTitleChange}
@@ -542,16 +553,40 @@ export default function EditReminderScreen() {
         </HeaderScrollLayout>
         </View>
 
-        {showHistory ? (
+        {showHistory && headerClearance > 0 && fieldsHeight > 0 ? (
           <ReminderFireHistoryList
             items={fireHistory}
             anchorTop={headerClearance + fieldsHeight}
+            expandedTop={headerClearance}
             footerInset={FOOTER_FADE_BAND}
-            onPeekHeight={(height) => {
-              const next = Math.round(height);
-              setSheetPeek((current) => (current === next ? current : next));
-            }}
           />
+        ) : null}
+
+        {readOnly ? (
+          <View pointerEvents="none" style={styles.footerFade}>
+            <ScrollFadeBand
+              edge="bottom"
+              height={FOOTER_FADE_BAND}
+              solidAt={0.5056}
+              clearUntil={0.0257}
+              color={colors.surface}
+            />
+          </View>
+        ) : null}
+        {readOnly ? (
+          <View style={[styles.deleteBar, styles.deleteBarOverlay, { paddingBottom: deletePadBottom }]}>
+            <View pointerEvents="none" style={styles.deleteUnderlay} />
+            <TouchableOpacity
+              style={styles.deleteButton}
+              activeOpacity={0.7}
+              onPress={() => {
+                setSheet(null);
+                setDeleteVisible(true);
+              }}
+            >
+              <Text style={styles.deleteText}>{t('reminders.delete')}</Text>
+            </TouchableOpacity>
+          </View>
         ) : null}
       </View>
 
@@ -578,6 +613,50 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
     minHeight: 0,
     overflow: 'hidden',
+  },
+  footerFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: FOOTER_FADE_BAND,
+    zIndex: 30,
+    elevation: 6,
+    overflow: 'hidden',
+  },
+  deleteBar: {
+    zIndex: 80,
+    elevation: 30,
+    paddingTop: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  deleteBarOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  deleteUnderlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 58,
+    bottom: 0,
+    backgroundColor: c.surface,
+  },
+  deleteButton: {
+    width: '100%',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  deleteText: {
+    fontFamily: 'Rubik-Medium',
+    fontSize: 16,
+    lineHeight: 24,
+    color: c.error,
+    textAlign: 'center',
   },
   centered: {
     flex: 1,

@@ -133,6 +133,8 @@ export function HealthFormScroll({
 interface HealthFormSaveScrollProps extends HealthFormScrollProps {
   footer: HealthKeyboardFooterProps;
   fieldsStyle?: StyleProp<ViewStyle>;
+  /** Keep the form still when the fields already fit. Scroll only if they don't. */
+  fitScroll?: boolean;
 }
 
 /**
@@ -147,6 +149,8 @@ export function HealthFormSaveScroll({
   scrollRef,
   onScroll,
   scrollEventThrottle,
+  scrollEnabled = true,
+  fitScroll = false,
 }: HealthFormSaveScrollProps) {
   const keyboardHeight = useKeyboardBottomOffset();
   const keyboardOpen = useKeyboardOpen();
@@ -215,6 +219,10 @@ export function HealthFormSaveScroll({
     [onScroll],
   );
 
+  const contentOverflow =
+    viewportH > 0 && fieldsH + footerH + scrollRoom > viewportH + 1;
+  const canScroll = fitScroll ? contentOverflow : scrollEnabled;
+
   return (
     <ScrollView
       ref={setScrollRef}
@@ -226,6 +234,7 @@ export function HealthFormSaveScroll({
       keyboardShouldPersistTaps="always"
       keyboardDismissMode="none"
       showsVerticalScrollIndicator={false}
+      scrollEnabled={canScroll}
       bounces={false}
       alwaysBounceVertical={false}
       overScrollMode="never"

@@ -145,7 +145,14 @@ export default function AddNoteScreen() {
 
   return (
     <>
-    <HeaderScrollLayout header={header} edges={['left', 'right']} topFade bottomFade>
+    <HeaderScrollLayout
+      header={header}
+      edges={['left', 'right']}
+      topFade={false}
+      bottomFade
+      contentGap={16}
+      chromePaddingBottom={0}
+    >
       {({ paddingTop }) => (
         <>
           <HealthFormScreen
@@ -206,10 +213,20 @@ export default function AddNoteScreen() {
       <ReminderPickerSheet
         visible={reminderSheetVisible}
         initialDate={reminderDraft?.date}
+        initialEndDate={reminderDraft?.endDate}
         initialTime={reminderDraft?.time}
         initialRepeat={reminderDraft?.repeat}
+        initialAlert={reminderDraft?.alert}
         onClose={() => setReminderSheetVisible(false)}
         onConfirm={setReminderDraft}
+        onRemove={
+          reminderDraft
+            ? () => {
+                setReminderDraft(null);
+                setReminderSheetVisible(false);
+              }
+            : undefined
+        }
       />
         </>
       )}

@@ -171,6 +171,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     scroll: {
       flex: 1,
+      backgroundColor: c.background,
     },
     separator: {
       height: 4,

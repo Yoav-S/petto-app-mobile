@@ -75,18 +75,19 @@ export interface Time12Parts {
   isPm: boolean;
 }
 
-/** Parse stored "HH:MM" (24h) into hour/minute. Defaults to 08:00. */
-export function parseHourMinute(value?: string | null): { hour: number; minute: number } {
+/** Parse stored "HH:MM" or "HH:MM:SS" (24h). Defaults to 08:00:00. */
+export function parseHourMinute(value?: string | null): { hour: number; minute: number; second: number } {
   if (value) {
-    const [h, m] = value.split(':').map(Number);
+    const [h, m, s] = value.split(':').map(Number);
     if (Number.isFinite(h) && Number.isFinite(m)) {
       return {
         hour: Math.min(23, Math.max(0, Math.trunc(h))),
         minute: Math.min(59, Math.max(0, Math.trunc(m))),
+        second: Number.isFinite(s) ? Math.min(59, Math.max(0, Math.trunc(s))) : 0,
       };
     }
   }
-  return { hour: 8, minute: 0 };
+  return { hour: 8, minute: 0, second: 0 };
 }
 
 /** Format 24h hour/minute as stored "HH:MM" (internal / API). */
@@ -94,16 +95,24 @@ export function formatHourMinute(hour: number, minute: number): string {
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
 
-/** User-facing clock: "4:46" (no leading zero on hour; minutes stay padded). */
-export function formatDisplayHourMinute(hour: number, minute: number): string {
-  return `${hour}:${String(minute).padStart(2, '0')}`;
+/** Format 24h clock as stored "HH:MM:SS". */
+export function formatHourMinuteSecond(hour: number, minute: number, second: number): string {
+  return `${formatHourMinute(hour, minute)}:${String(second).padStart(2, '0')}`;
 }
 
-/** Format stored "HH:MM" for display. */
+/** User-facing clock: "4:46", or "4:46:00" when a seconds value is passed. */
+export function formatDisplayHourMinute(hour: number, minute: number, second?: number): string {
+  const clock = `${hour}:${String(minute).padStart(2, '0')}`;
+  if (second == null) return clock;
+  return `${clock}:${String(second).padStart(2, '0')}`;
+}
+
+/** Format stored "HH:MM" or "HH:MM:SS" for display. */
 export function formatDisplayTime(time: string | null | undefined): string {
   if (!time?.trim()) return '';
-  const { hour, minute } = parseHourMinute(time);
-  return formatDisplayHourMinute(hour, minute);
+  const { hour, minute, second } = parseHourMinute(time);
+  const hasSeconds = time.split(':').length >= 3;
+  return formatDisplayHourMinute(hour, minute, hasSeconds ? second : undefined);
 }
 
 /** Parse "HH:MM" (24h) into 12-hour parts. Defaults to 8:00 AM. */
@@ -226,12 +235,11 @@ export function isBeforeIsoDate(date: Date, minIso: string): boolean {
 export function isReminderDateTimeInPast(isoDate: string, time: string): boolean {
   const date = parseIsoDate(isoDate);
   if (!date) return true;
-  const [h, m] = time.split(':').map(Number);
+  const [h, m, s] = time.split(':').map(Number);
   if (!Number.isFinite(h) || !Number.isFinite(m)) return true;
-  const scheduled = new Date(date.getFullYear(), date.getMonth(), date.getDate(), h, m, 0, 0);
-  const now = new Date();
-  now.setSeconds(0, 0);
-  return scheduled.getTime() <= now.getTime();
+  const second = Number.isFinite(s) ? s : 0;
+  const scheduled = new Date(date.getFullYear(), date.getMonth(), date.getDate(), h, m, second, 0);
+  return scheduled.getTime() <= Date.now();
 }
 
 /** Earliest HH:MM on `isoDate` that is still in the future. Null if the day is over. */

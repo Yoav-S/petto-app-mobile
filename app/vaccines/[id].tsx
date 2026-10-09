@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { pickImageFromLibrary } from '@/services/imagePicker';
+import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import {
   useFocusEffect,
   useNavigation,
@@ -31,6 +31,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import SavingOverlay from '@/components/ui/SavingOverlay';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
+import EditPhotoSheet from '@/components/health/EditPhotoSheet';
 import VaccinePhotoViewer from '@/components/vaccines/VaccinePhotoViewer';
 import VaccineClinicField from '@/components/vaccines/VaccineClinicField';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
@@ -79,6 +80,7 @@ export default function VaccineDetailsScreen() {
   const [flushing, setFlushing] = useState(false);
   const [pendingLeave, setPendingLeave] = useState<PendingLeave | null>(null);
   const [viewerVisible, setViewerVisible] = useState(false);
+  const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
   const [bodyH, setBodyH] = useState(0);
   const [formH, setFormH] = useState(0);
@@ -201,10 +203,26 @@ export default function VaccineDetailsScreen() {
     navigation.dispatch(pendingLeave);
   }, [navigation, pendingLeave]);
 
-  const pickImage = async () => {
-    const picked = await pickImageFromLibrary();
+  const openPhotoSheet = () => {
+    setPicker(null);
+    setViewerVisible(false);
+    setDeleteVisible(false);
+    setPhotoSheetVisible(true);
+  };
+
+  const pickImage = async (source: 'camera' | 'library') => {
+    setPhotoSheetVisible(false);
+    const picked =
+      source === 'camera' ? await pickImageFromCamera() : await pickImageFromLibrary();
     if (picked === 'denied') {
-      Alert.alert(t('petOnboarding.photo_permission_title'), t('petOnboarding.photo_permission_body'));
+      Alert.alert(
+        source === 'camera'
+          ? t('petOnboarding.photo_camera_permission_title')
+          : t('petOnboarding.photo_permission_title'),
+        source === 'camera'
+          ? t('petOnboarding.photo_camera_permission_body')
+          : t('petOnboarding.photo_permission_body'),
+      );
       return;
     }
     if (!picked?.uri) return;
@@ -290,6 +308,7 @@ export default function VaccineDetailsScreen() {
         <TouchableOpacity
           style={styles.dateRow}
           onPress={() => {
+            setPhotoSheetVisible(false);
             setViewerVisible(false);
             setDeleteVisible(false);
             setPicker('date');
@@ -303,6 +322,7 @@ export default function VaccineDetailsScreen() {
         <TouchableOpacity
           style={styles.dateRow}
           onPress={() => {
+            setPhotoSheetVisible(false);
             setViewerVisible(false);
             setDeleteVisible(false);
             setPicker('next');
@@ -323,12 +343,13 @@ export default function VaccineDetailsScreen() {
         <Text style={styles.sectionLabel}>{t('vaccines.proof_photo')}</Text>
         {vaccine.photo_url ? (
           <View style={styles.photoWrap}>
-            <TouchableOpacity activeOpacity={0.9} onPress={pickImage} style={styles.photoTouchable}>
+            <TouchableOpacity activeOpacity={0.9} onPress={openPhotoSheet} style={styles.photoTouchable}>
               <Image source={{ uri: vaccine.photo_url }} style={styles.photo} contentFit="cover" />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.expandButton}
               onPress={() => {
+                setPhotoSheetVisible(false);
                 setPicker(null);
                 setDeleteVisible(false);
                 setViewerVisible(true);
@@ -344,7 +365,7 @@ export default function VaccineDetailsScreen() {
             ) : null}
           </View>
         ) : (
-          <TouchableOpacity style={styles.photoPlaceholder} onPress={pickImage} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.photoPlaceholder} onPress={openPhotoSheet} activeOpacity={0.7}>
             {uploading ? (
               <ActivityIndicator color={colors.secondaryText} />
             ) : (
@@ -375,6 +396,7 @@ export default function VaccineDetailsScreen() {
     <TouchableOpacity
       style={styles.deleteButton}
       onPress={() => {
+        setPhotoSheetVisible(false);
         setPicker(null);
         setViewerVisible(false);
         setDeleteVisible(true);
@@ -473,6 +495,14 @@ export default function VaccineDetailsScreen() {
         confirmText={t('common.delete')}
         onConfirm={handleDelete}
         onCancel={() => setDeleteVisible(false)}
+      />
+
+      <EditPhotoSheet
+        visible={photoSheetVisible}
+        hasPhoto={Boolean(vaccine.photo_url)}
+        onClose={() => setPhotoSheetVisible(false)}
+        onTake={() => pickImage('camera')}
+        onChoose={() => pickImage('library')}
       />
 
       <VaccinePhotoViewer

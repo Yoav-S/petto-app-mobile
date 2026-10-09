@@ -10,6 +10,8 @@ interface ScrollFadeBandProps {
   height?: number;
   /** Fraction of the band where the gradient reaches full opacity. */
   solidAt?: number;
+  /** Fraction that stays clear before the ramp starts. */
+  clearUntil?: number;
   /**
    * 'linear' is the Figma ramp. 'soft' ramps late (bottom of long lists).
    * 'listTop' is opaque at the tabs and already visible on the first row.
@@ -30,6 +32,7 @@ interface GradientStop {
 function rampStops(
   solidAt: number,
   ramp: 'linear' | 'soft' | 'listTop' | 'documentTop' | 'documentBottom',
+  clearUntil = 0,
 ): GradientStop[] {
   const stops =
     ramp === 'documentBottom'
@@ -66,6 +69,7 @@ function rampStops(
             ]
           : [
               { offset: 0, opacity: 0 },
+              { offset: clearUntil, opacity: 0 },
               { offset: solidAt, opacity: 1 },
               { offset: 1, opacity: 1 },
             ];
@@ -82,6 +86,7 @@ export default function ScrollFadeBand({
   edge = 'bottom',
   height = FOOTER_FADE_BAND,
   solidAt: solidAtProp,
+  clearUntil = 0,
   ramp = 'linear',
   color,
   style,
@@ -90,7 +95,7 @@ export default function ScrollFadeBand({
   const colors = useColors();
   const fadeColor = color ?? colors.background;
   const gradientId = `fade-band-${useId().replace(/:/g, '')}`;
-  const ramped = rampStops(solidAt, ramp);
+  const ramped = rampStops(solidAt, ramp, clearUntil);
   /** Stops run top → bottom, so the top band is the mirror of the bottom one. */
   const stops =
     edge === 'bottom'

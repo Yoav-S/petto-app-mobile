@@ -12,7 +12,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
 import ListScrollLayout from '@/components/ui/ListScrollLayout';
-import { rowFadeIntensity } from '@/components/ui/listItemFade';
 import { LIST_CONTENT_TOP_NUDGE, LIST_TABS_LIST_GAP, PAGE_HORIZONTAL_PADDING, LIST_HEADER_TABS_GAP } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
@@ -22,7 +21,6 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import EmptyState from '@/components/ui/EmptyState';
 import HealthListItem, {
-  estimateHealthListItemHeight,
   HEALTH_LIST_ITEM_GAP,
   healthRecordSubtitle,
 } from '@/components/health/HealthListItem';
@@ -47,16 +45,12 @@ export default function HealthScreen() {
   const router = useRouter();
   const toast = useToast();
   const { activePetId } = useActivePet();
-  const { fabBottom } = useHomePanelLayout();
+  const { fabBottom, fabTopInset } = useHomePanelLayout();
   const { deletedNote } = useLocalSearchParams();
 
   const [activeTab, setActiveTab] = useState<TabName>('Active');
   const [refreshing, setRefreshing] = useState(false);
   const [swipeOpenId, setSwipeOpenId] = useState<string | null>(null);
-  const [scrollY, setScrollY] = useState(0);
-  const [listHeight, setListHeight] = useState(0);
-  const itemGap = HEALTH_LIST_ITEM_GAP;
-  const fadeZone = estimateHealthListItemHeight('placeholder') * 0.89;
 
   const fetchActivePage = useCallback(
     async (params: { limit: number; cursor?: string }) => {
@@ -110,24 +104,6 @@ export default function HealthScreen() {
       Resolved: resolvedPagination.items,
     }),
     [activePagination.items, resolvedPagination.items],
-  );
-
-  const getItemFadeIntensity = useCallback(
-    (index: number, contentTop: number, bottomFadeInset: number) => {
-      let rowBottom = 0;
-      for (let i = 0; i <= index; i += 1) {
-        rowBottom += estimateHealthListItemHeight(items[i]?.description);
-        if (i < index) rowBottom += itemGap;
-      }
-      return rowFadeIntensity({
-        rowBottom,
-        contentTop,
-        scrollY,
-        fadeLine: listHeight - bottomFadeInset,
-        fadeZone,
-      });
-    },
-    [fadeZone, itemGap, items, listHeight, scrollY],
   );
 
   const tabPresence = useMemo(
@@ -279,9 +255,8 @@ export default function HealthScreen() {
         fadeKey={`topics:${activeTab}`}
         contentGap={-LIST_CONTENT_TOP_NUDGE}
         topFade={false}
-        bottomFade
-        contentBottomPadding={0}
-        fadeBottomInset={0}
+        bottomFade={false}
+        contentBottomPadding={Math.max(0, fabTopInset - HEALTH_LIST_ITEM_GAP + 16)}
         chrome={
           <>
             <ScreenHeader title={t('topics.title')} />
@@ -295,7 +270,7 @@ export default function HealthScreen() {
           </>
         }
       >
-        {({ paddingTop, paddingBottom, bottomFadeInset, scrollable, scrollMetricsProps }) => (
+        {({ paddingTop, paddingBottom, scrollable, scrollMetricsProps }) => (
           <>
             {showSpinner ? (
               <View
@@ -338,7 +313,6 @@ export default function HealthScreen() {
               <View
                 style={styles.listWrap}
                 onLayout={(e) => {
-                  setListHeight(e.nativeEvent.layout.height);
                   scrollMetricsProps.onLayout(e);
                   scrollMetricsProps.markScrollable();
                 }}
@@ -349,8 +323,7 @@ export default function HealthScreen() {
                   keyExtractor={(item) => item.id}
                   scrollEventThrottle={16}
                   onContentSizeChange={scrollMetricsProps.onContentSizeChange}
-                  onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
-                  renderItem={({ item, index }) => (
+                  renderItem={({ item }) => (
                     <SwipeToDeleteRow
                       open={swipeOpenId === item.id}
                       onOpenChange={(open) => setSwipeOpenId(open ? item.id : null)}
@@ -366,11 +339,6 @@ export default function HealthScreen() {
                         }
                         metaKind={activeTab === 'Resolved' ? 'resolved' : 'created'}
                         hasReminder={Boolean(item.linked_reminder_date || item.linked_reminder_time)}
-                        fadeIntensity={getItemFadeIntensity(
-                          index,
-                          paddingTop,
-                          bottomFadeInset,
-                        )}
                         onPress={() => {
                           setSwipeOpenId(null);
                           router.push(`/topics/${item.id}` as never);
@@ -393,7 +361,11 @@ export default function HealthScreen() {
                       />
                     </SwipeToDeleteRow>
                   )}
-                  contentContainerStyle={{ paddingTop, paddingBottom }}
+                  contentContainerStyle={{
+                    paddingTop,
+                    paddingBottom,
+                    backgroundColor: colors.background,
+                  }}
                   contentInsetAdjustmentBehavior="never"
                   automaticallyAdjustContentInsets={false}
                   automaticallyAdjustsScrollIndicatorInsets={false}
@@ -456,5 +428,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   list: {
     flex: 1,
+    backgroundColor: c.background,
   },
 });

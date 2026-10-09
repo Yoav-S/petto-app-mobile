@@ -261,6 +261,7 @@ const makeStyles = (c: ThemeColors) =>
       flex: 1,
       minHeight: 0,
       overflow: 'hidden',
+      backgroundColor: c.background,
     },
     chrome: {
       position: 'absolute',

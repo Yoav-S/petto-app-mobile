@@ -16,7 +16,7 @@ import { type ThemeColors } from '@/constants/theme';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
-import { formatDisplayTime, formatHourMinute, parseHourMinute } from '@/utils/calendar';
+import { formatHourMinuteSecond, parseHourMinute } from '@/utils/calendar';
 
 interface TimePickerSheetProps {
   visible: boolean;
@@ -28,12 +28,16 @@ interface TimePickerSheetProps {
   onConfirm: (time: string) => void;
 }
 
-const ITEM_HEIGHT = 44;
-const VISIBLE_ROWS = 5;
-const WHEEL_HEIGHT = ITEM_HEIGHT * VISIBLE_ROWS;
-const SPACER = ((VISIBLE_ROWS - 1) / 2) * ITEM_HEIGHT;
+/** Three bands: previous, selected, next. 24 + 36 + 24 inside each band. */
+const ROW_HEIGHT = 84;
+const VISIBLE_ROWS = 3;
+const WHEEL_HEIGHT = ROW_HEIGHT * VISIBLE_ROWS;
+const SPACER = ROW_HEIGHT;
+const COLUMN_GAP = 36;
+const FRAME_PAD_H = 15;
 const HOURS_24 = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
+const SECONDS = MINUTES;
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
@@ -47,7 +51,6 @@ interface WheelColumnProps {
   items: readonly number[];
   selectedIndex: number;
   onIndexChange: (index: number) => void;
-  label: string;
   mountKey: number;
 }
 
@@ -55,7 +58,6 @@ function WheelColumn({
   items,
   selectedIndex,
   onIndexChange,
-  label,
   mountKey,
 }: WheelColumnProps) {
   const styles = useThemedStyles(makeStyles);
@@ -63,13 +65,13 @@ function WheelColumn({
   const [visualIndex, setVisualIndex] = useState(selectedIndex);
   const snappingRef = useRef(false);
   const snapOffsets = useMemo(
-    () => items.map((_, index) => index * ITEM_HEIGHT),
+    () => items.map((_, index) => index * ROW_HEIGHT),
     [items],
   );
 
   useEffect(() => {
     setVisualIndex(selectedIndex);
-    const y = selectedIndex * ITEM_HEIGHT;
+    const y = selectedIndex * ROW_HEIGHT;
     requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({ y, animated: false });
     });
@@ -79,7 +81,7 @@ function WheelColumn({
 
   const commitFromOffset = useCallback(
     (y: number) => {
-      const index = clampIndex(Math.round(y / ITEM_HEIGHT), items.length);
+      const index = clampIndex(Math.round(y / ROW_HEIGHT), items.length);
       setVisualIndex(index);
       if (index !== selectedIndex) onIndexChange(index);
     },
@@ -89,7 +91,7 @@ function WheelColumn({
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (snappingRef.current) return;
     const index = clampIndex(
-      Math.round(event.nativeEvent.contentOffset.y / ITEM_HEIGHT),
+      Math.round(event.nativeEvent.contentOffset.y / ROW_HEIGHT),
       items.length,
     );
     setVisualIndex(index);
@@ -105,7 +107,6 @@ function WheelColumn({
 
   return (
     <View style={styles.column}>
-      <Text style={styles.columnLabel}>{label}</Text>
       <View style={styles.wheelWrap}>
         <ScrollView
           ref={scrollRef}
@@ -133,11 +134,17 @@ function WheelColumn({
         >
           <View style={{ height: SPACER }} />
           {items.map((item, index) => {
-            const isActive = index === visualIndex;
+            const offset = index - visualIndex;
             return (
               <View key={item} style={styles.cell}>
                 <Text
-                  style={[styles.cellText, isActive && styles.cellTextActive]}
+                  style={[
+                    styles.cellText,
+                    offset === 0 && styles.cellTextSelected,
+                    offset === -1 && styles.cellTextBefore,
+                    offset === 1 && styles.cellTextAfter,
+                    Math.abs(offset) > 1 && styles.cellTextFar,
+                  ]}
                   allowFontScaling={false}
                 >
                   {pad2(item)}
@@ -147,9 +154,6 @@ function WheelColumn({
           })}
           <View style={{ height: SPACER }} />
         </ScrollView>
-        <View style={styles.selectionBand} pointerEvents="none" />
-        <View style={[styles.fade, styles.fadeTop]} pointerEvents="none" />
-        <View style={[styles.fade, styles.fadeBottom]} pointerEvents="none" />
       </View>
     </View>
   );
@@ -167,34 +171,39 @@ export default function TimePickerSheet({
   const insets = useSafeAreaInsets();
 
   const clampToMin = useCallback(
-    (hour: number, minute: number) => {
-      const candidate = formatHourMinute(hour, minute);
-      if (!minTime) return { hour, minute, time: candidate };
-      if (candidate >= minTime) return { hour, minute, time: candidate };
-      const parsed = parseHourMinute(minTime);
-      return { hour: parsed.hour, minute: parsed.minute, time: minTime };
+    (hour: number, minute: number, second: number) => {
+      const candidate = formatHourMinuteSecond(hour, minute, second);
+      if (!minTime) return { hour, minute, second, time: candidate };
+      const floor = parseHourMinute(minTime);
+      const floorClock = formatHourMinuteSecond(floor.hour, floor.minute, floor.second);
+      if (candidate >= floorClock) return { hour, minute, second, time: candidate };
+      return { hour: floor.hour, minute: floor.minute, second: floor.second, time: floorClock };
     },
     [minTime],
   );
 
-  const initial = clampToMin(parseHourMinute(value).hour, parseHourMinute(value).minute);
+  const initial = clampToMin(
+    parseHourMinute(value).hour,
+    parseHourMinute(value).minute,
+    parseHourMinute(value).second,
+  );
   const [hourIndex, setHourIndex] = useState(initial.hour);
   const [minuteIndex, setMinuteIndex] = useState(initial.minute);
+  const [secondIndex, setSecondIndex] = useState(initial.second);
   const [mountKey, setMountKey] = useState(0);
 
   useEffect(() => {
     if (!visible) return;
     const parsed = parseHourMinute(value);
-    const clamped = clampToMin(parsed.hour, parsed.minute);
+    const clamped = clampToMin(parsed.hour, parsed.minute, parsed.second);
     setHourIndex(clamped.hour);
     setMinuteIndex(clamped.minute);
+    setSecondIndex(clamped.second);
     setMountKey((k) => k + 1);
   }, [visible, value, clampToMin]);
 
-  const preview = formatDisplayTime(clampToMin(hourIndex, minuteIndex).time);
-
   const handleConfirm = () => {
-    const clamped = clampToMin(hourIndex, minuteIndex);
+    const clamped = clampToMin(hourIndex, minuteIndex, secondIndex);
     onConfirm(clamped.time);
     onClose();
   };
@@ -210,23 +219,31 @@ export default function TimePickerSheet({
           </Pressable>
         </View>
 
-        <Text style={styles.preview}>{preview}</Text>
-
-        <View style={styles.columns}>
-          <WheelColumn
-            items={HOURS_24}
-            selectedIndex={hourIndex}
-            onIndexChange={setHourIndex}
-            label={t('pickers.hours')}
-            mountKey={mountKey}
-          />
-          <WheelColumn
-            items={MINUTES}
-            selectedIndex={minuteIndex}
-            onIndexChange={setMinuteIndex}
-            label={t('pickers.minutes')}
-            mountKey={mountKey + 1}
-          />
+        <View style={styles.timeCard}>
+          <View style={styles.timeFrame}>
+            <View style={styles.columns}>
+              <WheelColumn
+                items={HOURS_24}
+                selectedIndex={hourIndex}
+                onIndexChange={setHourIndex}
+                mountKey={mountKey}
+              />
+              <WheelColumn
+                items={MINUTES}
+                selectedIndex={minuteIndex}
+                onIndexChange={setMinuteIndex}
+                mountKey={mountKey + 1}
+              />
+              <WheelColumn
+                items={SECONDS}
+                selectedIndex={secondIndex}
+                onIndexChange={setSecondIndex}
+                mountKey={mountKey + 2}
+              />
+            </View>
+            <View style={[styles.rule, { top: ROW_HEIGHT }]} pointerEvents="none" />
+            <View style={[styles.rule, { top: ROW_HEIGHT * 2 }]} pointerEvents="none" />
+          </View>
         </View>
 
         <Pressable style={styles.doneButton} onPress={handleConfirm}>
@@ -265,80 +282,74 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    preview: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 18,
-      lineHeight: 22,
-      color: c.primaryText,
-      textAlign: 'center',
+    timeCard: {
+      alignSelf: 'center',
+      width: '100%',
+      maxWidth: 430,
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 16,
+      gap: 10,
+      shadowColor: '#1F1F1F',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0x0f / 255,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    timeFrame: {
+      width: '100%',
+      overflow: 'hidden',
     },
     columns: {
       flexDirection: 'row',
-      gap: 12,
       alignItems: 'flex-start',
+      paddingHorizontal: FRAME_PAD_H,
+      gap: COLUMN_GAP,
     },
     column: {
       flex: 1,
     },
-    columnLabel: {
-      fontFamily: 'Rubik-Regular',
-      fontSize: 13,
-      lineHeight: 16,
-      color: c.secondaryText,
-      textAlign: 'center',
-      marginBottom: 8,
-    },
     wheelWrap: {
       height: WHEEL_HEIGHT,
       overflow: 'hidden',
-      position: 'relative',
+    },
+    rule: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      height: 1.5,
+      backgroundColor: c.button.disabledBg,
     },
     cell: {
-      height: ITEM_HEIGHT,
+      height: ROW_HEIGHT,
       alignItems: 'center',
       justifyContent: 'center',
     },
     cellText: {
-      fontFamily: 'Rubik-Regular',
-      fontSize: 20,
-      lineHeight: 24,
-      color: c.disabled,
+      fontFamily: 'Rubik-Medium',
       textAlign: 'center',
       includeFontPadding: false,
       ...(Platform.OS === 'android' ? { textAlignVertical: 'center' as const } : {}),
     },
-    cellTextActive: {
+    cellTextBefore: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: c.border,
+    },
+    cellTextSelected: {
+      fontSize: 20,
+      lineHeight: 24,
       color: c.primaryText,
-      fontFamily: 'Rubik-Medium',
-      fontSize: 22,
-      lineHeight: 26,
     },
-    selectionBand: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      top: SPACER,
-      height: ITEM_HEIGHT,
-      borderRadius: 12,
-      backgroundColor: 'rgba(31, 41, 55, 0.06)',
-      borderWidth: 1,
-      borderColor: c.border,
+    cellTextAfter: {
+      fontSize: 16,
+      lineHeight: 20,
+      color: c.border,
     },
-    fade: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      height: ITEM_HEIGHT * 1.5,
-    },
-    fadeTop: {
-      top: 0,
-      backgroundColor: c.surface,
-      opacity: 0.72,
-    },
-    fadeBottom: {
-      bottom: 0,
-      backgroundColor: c.surface,
-      opacity: 0.72,
+    cellTextFar: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: c.border,
     },
     doneButton: {
       ...PRIMARY_BUTTON,

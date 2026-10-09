@@ -123,6 +123,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     scroll: {
       flex: 1,
+      backgroundColor: c.background,
     },
     content: {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,

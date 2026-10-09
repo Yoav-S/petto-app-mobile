@@ -13,13 +13,12 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
-import { LIST_CONTENT_TOP_NUDGE } from '@/constants/layout';
+import { FOOTER_FADE_BAND } from '@/constants/layout';
+import ScrollFadeBand from '@/components/ui/ScrollFadeBand';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import { useHomePanelLayout } from '@/hooks/useHomePanelLayout';
 import ListScrollLayout, { type ListScrollInsets } from '@/components/ui/ListScrollLayout';
-import CardBottomFadeOverlay from '@/components/ui/CardBottomFadeOverlay';
-import { rowFadeIntensity } from '@/components/ui/listItemFade';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
@@ -66,7 +65,7 @@ export default function VaccinesScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const { activePetId } = useActivePet();
-  const { fabBottom } = useHomePanelLayout();
+  const { fabBottom, fabTopInset } = useHomePanelLayout();
 
   const fetchPage = useCallback(
     async (params: { limit: number; cursor?: string }) => {
@@ -94,21 +93,7 @@ export default function VaccinesScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [swipeOpenId, setSwipeOpenId] = useState<string | null>(null);
-  const [scrollY, setScrollY] = useState(0);
-  const [listHeight, setListHeight] = useState(0);
   const toast = useToast();
-
-  const getItemFadeIntensity = useCallback(
-    (index: number, contentTop: number, bottomFadeInset: number) =>
-      rowFadeIntensity({
-        rowBottom: index * (VACCINE_CARD_HEIGHT + VACCINE_CARD_GAP) + VACCINE_CARD_HEIGHT,
-        contentTop,
-        scrollY,
-        fadeLine: listHeight - bottomFadeInset,
-        fadeZone: VACCINE_CARD_HEIGHT * 0.89,
-      }),
-    [listHeight, scrollY],
-  );
 
   useFocusEffect(
     useCallback(() => {
@@ -165,7 +150,6 @@ export default function VaccinesScreen() {
   const renderContent = (
     paddingTop: number,
     paddingBottom: number,
-    bottomFadeInset: number,
     scrollable: boolean,
     scrollMetricsProps: ListScrollInsets['scrollMetricsProps'],
   ) => {
@@ -231,13 +215,11 @@ export default function VaccinesScreen() {
         keyExtractor={(item) => item.id}
         scrollEventThrottle={16}
         onLayout={(e) => {
-          setListHeight(e.nativeEvent.layout.height);
           scrollMetricsProps.onLayout(e);
           scrollMetricsProps.markScrollable();
         }}
         onContentSizeChange={scrollMetricsProps.onContentSizeChange}
-        onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
-        renderItem={({ item, index }) => (
+        renderItem={({ item }) => (
           <SwipeToDeleteRow
             open={swipeOpenId === item.id}
             onOpenChange={(open) => setSwipeOpenId(open ? item.id : null)}
@@ -270,14 +252,14 @@ export default function VaccinesScreen() {
                   ) : null}
                 </View>
               </View>
-
-              <CardBottomFadeOverlay
-                intensity={getItemFadeIntensity(index, paddingTop, bottomFadeInset)}
-              />
             </TouchableOpacity>
           </SwipeToDeleteRow>
         )}
-        contentContainerStyle={{ paddingTop, paddingBottom }}
+        contentContainerStyle={{
+          paddingTop,
+          paddingBottom,
+          backgroundColor: colors.background,
+        }}
         contentInsetAdjustmentBehavior="never"
         automaticallyAdjustContentInsets={false}
         automaticallyAdjustsScrollIndicatorInsets={false}
@@ -299,20 +281,28 @@ export default function VaccinesScreen() {
   };
 
   return (
-    <>
+    <View style={styles.screen}>
       <ListScrollLayout
         fadeKey="vaccines"
-        contentGap={16 - LIST_CONTENT_TOP_NUDGE}
+        pinHeader
+        contentGap={4}
         topFade={false}
-        bottomFade
-        contentBottomPadding={0}
-        fadeBottomInset={0}
+        bottomFade={false}
+        contentBottomPadding={Math.max(0, fabTopInset - VACCINE_CARD_GAP + 16)}
         chrome={<VaccineScreenHeader title={t('vaccines.list_title')} />}
       >
-        {({ paddingTop, paddingBottom, bottomFadeInset, scrollable, scrollMetricsProps }) =>
-          renderContent(paddingTop, paddingBottom, bottomFadeInset, scrollable, scrollMetricsProps)
+        {({ paddingTop, paddingBottom, scrollable, scrollMetricsProps }) =>
+          renderContent(paddingTop, paddingBottom, scrollable, scrollMetricsProps)
         }
       </ListScrollLayout>
+      <View pointerEvents="none" style={styles.bottomFade}>
+        <ScrollFadeBand
+          edge="bottom"
+          height={FOOTER_FADE_BAND}
+          solidAt={0.8913}
+          color={colors.surface}
+        />
+      </View>
       {items.length > 0 && !loading && !(error && !items.length) ? (
         <SpeedDialFab
           items={[
@@ -328,14 +318,27 @@ export default function VaccinesScreen() {
         />
       ) : null}
       <ListFetchBlocker visible={loadingMore} />
-    </>
+    </View>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    screen: {
+      flex: 1,
+    },
     list: {
       flex: 1,
+      backgroundColor: c.background,
+    },
+    bottomFade: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: FOOTER_FADE_BAND,
+      zIndex: 1,
+      overflow: 'hidden',
     },
     centered: {
       flex: 1,

@@ -12,7 +12,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { type ThemeColors } from '@/constants/theme';
 import ListScrollLayout from '@/components/ui/ListScrollLayout';
-import { rowFadeIntensity } from '@/components/ui/listItemFade';
 import { LIST_CONTENT_TOP_NUDGE, LIST_TABS_LIST_GAP, PAGE_HORIZONTAL_PADDING, LIST_HEADER_TABS_GAP } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
@@ -21,7 +20,6 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import EmptyState from '@/components/ui/EmptyState';
 import ReminderListItem, {
-  estimateReminderListItemHeight,
   REMINDER_LIST_ITEM_GAP,
 } from '@/components/reminders/ReminderListItem';
 import SwipeToDeleteRow from '@/components/ui/SwipeToDeleteRow';
@@ -88,7 +86,7 @@ export default function RemindersScreen() {
   const router = useRouter();
   const toast = useToast();
   const { activePetId } = useActivePet();
-  const { fabBottom } = useHomePanelLayout();
+  const { fabBottom, fabTopInset } = useHomePanelLayout();
   const { present, visible: promptVisible } = useReminderPrompt();
   const params = useLocalSearchParams<{
     deletedId?: string;
@@ -107,8 +105,6 @@ export default function RemindersScreen() {
   }, []);
   const [refreshing, setRefreshing] = useState(false);
   const [swipeOpenId, setSwipeOpenId] = useState<string | null>(null);
-  const [scrollY, setScrollY] = useState(0);
-  const [listHeight, setListHeight] = useState(0);
 
   const todayPagination = useCursorPagination<Reminder>({
     fetchPage: useCallback(
@@ -181,33 +177,6 @@ export default function RemindersScreen() {
   const allTabsLoaded =
     todayPagination.loaded && upcomingPagination.loaded && recentPagination.loaded;
   const showSpinner = loading && items.length === 0 && !allTabsLoaded;
-
-  const rowHeightFor = useCallback(
-    (item: Reminder | undefined) =>
-      estimateReminderListItemHeight({
-        description: item?.note,
-        dayLabel: activeTab === 'Today' ? null : 'day',
-      }),
-    [activeTab],
-  );
-
-  const getItemFadeIntensity = useCallback(
-    (index: number, contentTop: number, bottomFadeInset: number) => {
-      let rowBottom = 0;
-      for (let i = 0; i <= index; i += 1) {
-        rowBottom += rowHeightFor(items[i]);
-        if (i < index) rowBottom += REMINDER_LIST_ITEM_GAP;
-      }
-      return rowFadeIntensity({
-        rowBottom,
-        contentTop,
-        scrollY,
-        fadeLine: listHeight - bottomFadeInset,
-        fadeZone: rowHeightFor(items[index]) * 0.89,
-      });
-    },
-    [items, listHeight, rowHeightFor, scrollY],
-  );
 
   React.useEffect(() => {
     if (params.deletedId) {
@@ -423,9 +392,8 @@ export default function RemindersScreen() {
         fadeKey={`reminders:${activeTab}`}
         contentGap={-LIST_CONTENT_TOP_NUDGE}
         topFade={false}
-        bottomFade
-        contentBottomPadding={0}
-        fadeBottomInset={0}
+        bottomFade={false}
+        contentBottomPadding={Math.max(0, fabTopInset - REMINDER_LIST_ITEM_GAP + 16)}
         chrome={
           <>
             <ScreenHeader title={t('reminders.title')} />
@@ -439,7 +407,7 @@ export default function RemindersScreen() {
           </>
         }
       >
-        {({ paddingTop, paddingBottom, bottomFadeInset, scrollable, scrollMetricsProps }) => (
+        {({ paddingTop, paddingBottom, scrollable, scrollMetricsProps }) => (
           <>
             {showSpinner ? (
               <View
@@ -482,7 +450,6 @@ export default function RemindersScreen() {
               <View
                 style={styles.listWrap}
                 onLayout={(e) => {
-                  setListHeight(e.nativeEvent.layout.height);
                   scrollMetricsProps.onLayout(e);
                   scrollMetricsProps.markScrollable();
                 }}
@@ -493,8 +460,7 @@ export default function RemindersScreen() {
                   keyExtractor={(item) => item.id}
                   scrollEventThrottle={16}
                   onContentSizeChange={scrollMetricsProps.onContentSizeChange}
-                  onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
-                  renderItem={({ item, index }) => {
+                  renderItem={({ item }) => {
                     return (
                       <SwipeToDeleteRow
                         open={swipeOpenId === item.id}
@@ -511,11 +477,6 @@ export default function RemindersScreen() {
                           showCompletedBar={
                             activeTab === 'Recent' && item.status === 'completed'
                           }
-                          fadeIntensity={getItemFadeIntensity(
-                            index,
-                            paddingTop,
-                            bottomFadeInset,
-                          )}
                           onPress={() => {
                             setSwipeOpenId(null);
                             handleReminderPress(item);
@@ -524,7 +485,11 @@ export default function RemindersScreen() {
                       </SwipeToDeleteRow>
                     );
                   }}
-                  contentContainerStyle={{ paddingTop, paddingBottom }}
+                  contentContainerStyle={{
+                    paddingTop,
+                    paddingBottom,
+                    backgroundColor: colors.background,
+                  }}
                   contentInsetAdjustmentBehavior="never"
                   automaticallyAdjustContentInsets={false}
                   automaticallyAdjustsScrollIndicatorInsets={false}
@@ -577,6 +542,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     list: {
       flex: 1,
+      backgroundColor: c.background,
     },
     tabs: {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,

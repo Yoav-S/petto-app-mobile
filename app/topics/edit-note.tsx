@@ -30,11 +30,12 @@ import EditPhotoSheet from '@/components/health/EditPhotoSheet';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import { getRecord, updateNote, deleteNote } from '@/services/health';
-import { getReminder } from '@/services/reminders';
+import { parseAlert } from '@/services/reminders';
 import {
   healthReminderTitle,
   upsertHealthReminder,
   removeHealthReminder,
+  resolveEditableReminder,
   type HealthReminderDraft,
 } from '@/services/healthReminder';
 import { uploadHealthNotePhoto } from '@/services/storage';
@@ -138,12 +139,15 @@ export default function EditNoteScreen() {
 
           if (note.linked_reminder_id) {
             try {
-              const reminder = await getReminder(activePetId, note.linked_reminder_id);
+              const reminder = await resolveEditableReminder(activePetId, note.linked_reminder_id);
               if (!cancelled) {
+                setLinkedReminderId(reminder.id);
                 setReminderDraft({
                   date: reminder.date,
+                  endDate: reminder.end_date ?? null,
                   time: reminder.time,
                   repeat: (reminder.repeat as HealthReminderDraft['repeat']) ?? 'off',
+                  alert: parseAlert(reminder.alert),
                 });
               }
             } catch {
@@ -394,7 +398,14 @@ export default function EditNoteScreen() {
   }
 
   return (
-    <HeaderScrollLayout header={header} edges={['left', 'right']} topFade bottomFade>
+    <HeaderScrollLayout
+      header={header}
+      edges={['left', 'right']}
+      topFade={false}
+      bottomFade
+      contentGap={16}
+      chromePaddingBottom={0}
+    >
       {({ paddingTop }) => (
         <View style={styles.flex}>
           <HealthFormScreen
@@ -460,12 +471,22 @@ export default function EditNoteScreen() {
           <ReminderPickerSheet
             visible={reminderSheetVisible}
             initialDate={reminderDraft?.date}
+            initialEndDate={reminderDraft?.endDate}
             initialTime={reminderDraft?.time}
             initialRepeat={reminderDraft?.repeat}
+            initialAlert={reminderDraft?.alert}
             onClose={() => setReminderSheetVisible(false)}
             onConfirm={(draft) => {
               void persistReminder(draft);
             }}
+            onRemove={
+              linkedReminderId
+                ? () => {
+                    setReminderSheetVisible(false);
+                    void persistReminder(null);
+                  }
+                : undefined
+            }
           />
 
           <ConfirmModal

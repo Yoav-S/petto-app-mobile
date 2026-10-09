@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Keyboard,
   Image,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
@@ -26,6 +27,10 @@ import {
   type HealthKeyboardFooterProps,
 } from '@/components/health/HealthKeyboardFooter';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
+import {
+  KEYBOARD_DONE_BAR_HEIGHT,
+  useKeyboardWindowResized,
+} from '@/components/ui/keyboardUtils';
 import { t } from '@/i18n';
 import type { AlertOption, RepeatOption } from '@/services/reminders';
 import {
@@ -162,6 +167,14 @@ export default function ReminderFormBody({
   const { scrollRef, keyboardOffset, onScroll, onInputFocus } = useKeyboardAwareScroll(
     scrollPaddingBottom,
   );
+  const windowResized = useKeyboardWindowResized();
+  /** Extra scroll extent only while the keyboard is open. Does not stretch the resting form. */
+  const keyboardRoom =
+    saveFooter || readOnly || keyboardOffset <= 0
+      ? 0
+      : Platform.OS === 'android' && windowResized
+        ? KEYBOARD_DONE_BAR_HEIGHT
+        : keyboardOffset + KEYBOARD_DONE_BAR_HEIGHT;
 
   const openSheet = (next: ReminderSheet) => {
     if (readOnly) return;
@@ -475,6 +488,7 @@ export default function ReminderFormBody({
             scrollRef={scrollRef}
             onScroll={onScroll}
             scrollEventThrottle={16}
+            fitScroll={readOnly}
           >
             {formFields}
             {!pinFooterToBottom && footer ? (
@@ -489,9 +503,9 @@ export default function ReminderFormBody({
           </HealthFormSaveScroll>
         ) : (
           <HealthFormScroll
-            scrollRef={fullBleed ? scrollRef : undefined}
-            onScroll={fullBleed ? onScroll : undefined}
-            scrollEventThrottle={fullBleed ? 16 : undefined}
+            scrollRef={scrollRef}
+            onScroll={onScroll}
+            scrollEventThrottle={16}
             contentContainerStyle={[
               ...formFieldsStyle,
               pinFooterToBottom || fillAfterFields ? styles.scrollWithSave : null,
@@ -499,6 +513,7 @@ export default function ReminderFormBody({
             nestedScrollEnabled
           >
             {formFields}
+            {keyboardRoom > 0 ? <View style={{ height: keyboardRoom }} /> : null}
             {!pinFooterToBottom && footer ? (
               <View style={{ marginTop: layout.formGap }}>{footer}</View>
             ) : null}
@@ -687,7 +702,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   categoryLabel: {
     flex: 1,
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Rubik-Medium',
     fontSize: 16,
     color: c.primaryText,
   },

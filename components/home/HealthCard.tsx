@@ -47,7 +47,7 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
   const colors = useColors();
   const homeCardTypography = useThemedStyles(makeHomeCardTypography);
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
-  const { secondLineInset } = useHomePanelLayout();
+  const { secondLineInset, fabTop } = useHomePanelLayout();
 
   useEffect(() => {
     if (loading) {
@@ -119,6 +119,7 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
                     <TopicsWrapDescription
                       text={latestRecord.description}
                       secondLineInset={secondLineInset}
+                      fabTop={fabTop}
                       style={homeCardTypography.note}
                     />
                   ) : null}

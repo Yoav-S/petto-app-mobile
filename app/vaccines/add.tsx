@@ -18,7 +18,7 @@ import { centeredInputText, NAME_FIELD_TEXT } from '@/constants/textField';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
-import VaccinePhotoSourceSheet from '@/components/vaccines/VaccinePhotoSourceSheet';
+import EditPhotoSheet from '@/components/health/EditPhotoSheet';
 import VaccinePhotoViewer from '@/components/vaccines/VaccinePhotoViewer';
 import VaccineClinicField from '@/components/vaccines/VaccineClinicField';
 import BirthDatePickerSheet from '@/components/onboarding/BirthDatePickerSheet';
@@ -341,11 +341,12 @@ export default function AddVaccineScreen() {
         )}
       </HeaderScrollLayout>
 
-      <VaccinePhotoSourceSheet
+      <EditPhotoSheet
         visible={photoSheetVisible}
+        hasPhoto={Boolean(photoUri)}
         onClose={() => setPhotoSheetVisible(false)}
-        onTakePhoto={() => pickImage('camera')}
-        onChooseLibrary={() => pickImage('library')}
+        onTake={() => pickImage('camera')}
+        onChoose={() => pickImage('library')}
       />
 
       <BirthDatePickerSheet

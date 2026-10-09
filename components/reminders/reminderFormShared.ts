@@ -30,9 +30,11 @@ export const CARD_SHADOW = {
 export type ReminderSheet = 'category' | 'start' | 'end' | 'time' | 'repeat' | 'alert' | null;
 
 export function normalizeTime(time: string): string {
-  const [h, m] = time.split(':').map(Number);
+  const [h, m, s] = time.split(':').map(Number);
   if (!Number.isFinite(h) || !Number.isFinite(m)) return time;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  const clock = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  if (!Number.isFinite(s)) return clock;
+  return `${clock}:${String(s).padStart(2, '0')}`;
 }
 
 export function formatTimeDisplay(time: string): string {

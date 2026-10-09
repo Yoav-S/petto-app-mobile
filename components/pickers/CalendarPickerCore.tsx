@@ -338,7 +338,7 @@ const makeStyles = (c: ThemeColors) =>
       gap: 8,
     },
     chipText: {
-      fontFamily: 'Rubik-Regular',
+      fontFamily: 'Rubik-Medium',
       fontSize: 14,
       lineHeight: 20,
       color: c.primaryText,
@@ -419,6 +419,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     optionTextSelected: {
       color: c.button.primaryText,
+      fontFamily: 'Rubik-Medium',
     },
     optionTextDisabled: {
       color: c.secondaryText,

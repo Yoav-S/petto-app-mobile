@@ -72,7 +72,9 @@ export default function CategoryPickerSheet({
                       style={styles.rowIcon}
                       resizeMode="contain"
                     />
-                    <Text style={styles.rowText}>{categoryLabel(option)}</Text>
+                    <Text style={[styles.rowText, isActive && styles.rowTextActive]}>
+                      {categoryLabel(option)}
+                    </Text>
                   </View>
                   {isActive ? (
                     <Ionicons name="checkmark" size={20} color={colors.primaryText} />
@@ -165,6 +167,9 @@ const makeStyles = (c: ThemeColors) =>
       fontFamily: 'Rubik-Regular',
       fontSize: 16,
       color: c.primaryText,
+    },
+    rowTextActive: {
+      fontFamily: 'Rubik-Medium',
     },
     divider: {
       position: 'absolute',
