@@ -1000,9 +1000,17 @@ const makeStyles = (c: ThemeColors) =>
     },
     actions: {
       flexDirection: 'row',
-      gap: 8,
+      gap: 10,
       paddingTop: 12,
       paddingHorizontal: 20,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      backgroundColor: c.surface,
+      shadowColor: '#1E1E1E',
+      shadowOffset: { width: 0, height: -1 },
+      shadowOpacity: 15 / 255,
+      shadowRadius: 8,
+      elevation: 8,
     },
     hoursRow: {
       flexDirection: 'row',

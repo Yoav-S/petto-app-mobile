@@ -1,14 +1,12 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { MapPin, Star } from 'lucide-react-native';
-import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { type ThemeColors } from '@/constants/theme';
-import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import type { BusinessPlace, Weekday } from '@/services/places';
 
-const CARD_IMAGE_HEIGHT = 278;
 const OPEN_COLOR = '#1EC876';
 const CLOSED_COLOR = '#E5484D';
 
@@ -57,6 +55,27 @@ function placeStatus(place: BusinessPlace): { open: boolean; detail: string | nu
   return { open: false, detail: null };
 }
 
+function BusinessPhoto({ uri }: { uri: string }) {
+  const [ratio, setRatio] = useState(4 / 3);
+  return (
+    <Image
+      source={{ uri }}
+      style={[stylesPhoto, { aspectRatio: ratio }]}
+      contentFit="contain"
+      contentPosition="center"
+      onLoad={(event) => {
+        const width = event.source?.width;
+        const height = event.source?.height;
+        if (width > 0 && height > 0) setRatio(width / height);
+      }}
+    />
+  );
+}
+
+const stylesPhoto = {
+  width: '100%' as const,
+};
+
 export default function PlaceCard({
   place,
   onPress,
@@ -64,10 +83,7 @@ export default function PlaceCard({
   place: BusinessPlace;
   onPress: () => void;
 }) {
-  const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const { width: windowWidth } = useWindowDimensions();
-  const cardImageWidth = windowWidth - PAGE_HORIZONTAL_PADDING * 2;
   const status = placeStatus(place);
   const statusColor = status ? (status.open ? OPEN_COLOR : CLOSED_COLOR) : CLOSED_COLOR;
 
@@ -75,14 +91,9 @@ export default function PlaceCard({
     <TouchableOpacity style={styles.placeCard} activeOpacity={0.9} onPress={onPress}>
       <View style={styles.cardImageWrap}>
         {place.image ? (
-          <Image
-            source={{ uri: place.image }}
-            style={styles.cardImage}
-            contentFit="contain"
-            contentPosition="center"
-          />
+          <BusinessPhoto uri={place.image} />
         ) : (
-          <View style={styles.cardImage} />
+          <View style={styles.cardImagePlaceholder} />
         )}
         {place.distance_km != null ? (
           <View style={styles.distanceSlot} pointerEvents="none">
@@ -90,7 +101,7 @@ export default function PlaceCard({
               {place.image ? (
                 <Image
                   source={{ uri: place.image }}
-                  style={[styles.distanceBlur, { width: cardImageWidth, height: CARD_IMAGE_HEIGHT }]}
+                  style={styles.distanceBlur}
                   contentFit="cover"
                   blurRadius={40}
                 />
@@ -159,16 +170,14 @@ function makeStyles(colors: ThemeColors) {
       elevation: 4,
     },
     cardImageWrap: {
-      height: CARD_IMAGE_HEIGHT,
+      width: '100%',
       borderRadius: 24,
       overflow: 'hidden',
       backgroundColor: colors.background,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
-    cardImage: {
+    cardImagePlaceholder: {
       width: '100%',
-      height: CARD_IMAGE_HEIGHT,
+      aspectRatio: 4 / 3,
     },
     distanceSlot: {
       position: 'absolute',
@@ -201,6 +210,8 @@ function makeStyles(colors: ThemeColors) {
       position: 'absolute',
       top: -16,
       right: -16,
+      width: 360,
+      height: 280,
     },
     distanceTint: {
       position: 'absolute',
