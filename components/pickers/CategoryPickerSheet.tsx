@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import HeaderIconButton, {

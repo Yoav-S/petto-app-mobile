@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';

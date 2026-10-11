@@ -86,10 +86,57 @@ export interface BusinessPlaceDetail extends BusinessPlace {
 
 const PAGE_SIZE = 15;
 
+export type NearbyCoords = { latitude: number; longitude: number };
+
+type NearbySnapshot = { items: BusinessPlace[]; hasMore: boolean };
+
+const nearbySnapshots = new Map<string, NearbySnapshot>();
+let lastNearbyCoords: NearbyCoords | null = null;
+
+function nearbyKey(coords: NearbyCoords | null, category: BusinessCategory | null): string {
+  const lat = coords ? coords.latitude.toFixed(3) : '';
+  const lng = coords ? coords.longitude.toFixed(3) : '';
+  return `${lat},${lng},${category ?? ''}`;
+}
+
+export function readLastNearbyCoords(): NearbyCoords | null {
+  return lastNearbyCoords;
+}
+
+/** Last list for this spot and category. A category with no own page falls back to the mixed nearby list. */
+export function readNearby(
+  coords: NearbyCoords | null,
+  category: BusinessCategory | null,
+): NearbySnapshot | null {
+  const exact = nearbySnapshots.get(nearbyKey(coords, category));
+  if (exact) return exact;
+  if (!category) return null;
+  const mixed = nearbySnapshots.get(nearbyKey(coords, null));
+  if (!mixed) return null;
+  const items = mixed.items.filter((item) => item.category === category);
+  return items.length ? { items, hasMore: false } : null;
+}
+
+export function rememberNearby(
+  coords: NearbyCoords | null,
+  category: BusinessCategory | null,
+  items: BusinessPlace[],
+  hasMore: boolean,
+): void {
+  if (coords) lastNearbyCoords = coords;
+  nearbySnapshots.set(nearbyKey(coords, category), { items, hasMore });
+}
+
+export function clearNearbyCache(): void {
+  nearbySnapshots.clear();
+  lastNearbyCoords = null;
+}
+
 export function listPlaces(options: {
   latitude?: number;
   longitude?: number;
   offset?: number;
+  category?: BusinessCategory;
 }): Promise<BusinessPlacePage> {
   const params = new URLSearchParams({
     limit: String(PAGE_SIZE),
@@ -99,6 +146,7 @@ export function listPlaces(options: {
     params.set('latitude', String(options.latitude));
     params.set('longitude', String(options.longitude));
   }
+  if (options.category) params.set('category', options.category);
   return apiGet<BusinessPlace[] | BusinessPlacePage>(
     `/businesses/nearby?${params.toString()}`,
   ).then((data) => {

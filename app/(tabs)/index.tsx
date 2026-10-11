@@ -12,14 +12,13 @@ import {
   PanResponder,
   Animated,
   Easing,
-  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { requireOptionalNativeModule } from 'expo-modules-core';
-import { ChevronDown, ChevronUp, MapPin, Plus, Settings, Star, User, X } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, Plus, Settings, User, X } from 'lucide-react-native';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -28,8 +27,15 @@ import { t } from '@/i18n';
 import { usePetsQuery } from '@/hooks/useCachedQueries';
 import { useActivePet } from '@/store/petStore';
 import { guardAddPet, guardSelectPet } from '@/services/subscription';
-import { listPlaces, type BusinessPlace, type Weekday } from '@/services/places';
+import {
+  clearNearbyCache,
+  listPlaces,
+  rememberNearby,
+  type BusinessPlace,
+} from '@/services/places';
 import { petPhotoSource } from '@/utils/petPhotoSource';
+import PlaceCard from '@/components/business/PlaceCard';
+import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import type { Pet } from '@/types/api';
 
 /** Greeting switches at these local hours. */
@@ -37,9 +43,8 @@ const MORNING_HOUR = 5;
 const EVENING_HOUR = 17;
 const NIGHT_HOUR = 21;
 
-/** Greeting line 24 + 2px gap + name line 20. */
-const GREETING_AVATAR = 24 + 2 + 20;
-const CARD_IMAGE_HEIGHT = 278;
+/** Profile photo on the greeting row. The text stack is 24 + 2 + 20. */
+const GREETING_AVATAR = 42;
 const PET_SIZE = 72;
 const PET_GAP = 16;
 const PET_SCROLL_WIDTH = PET_SIZE * 2 + PET_GAP;
@@ -71,9 +76,11 @@ const CATEGORY_ART = {
   veterinarian: require('@/assets/images/categories/veterinary.png'),
   groomer: require('@/assets/images/categories/grooming.png'),
   pet_store: require('@/assets/images/categories/shops.png'),
+  pharmacy: require('@/assets/images/categories/pharmacy.png'),
+  pet_friendly: require('@/assets/images/categories/pet-friendly.png'),
 } as const;
 
-const CATEGORIES: { key: keyof typeof CATEGORY_ART | 'pharmacy' | 'pet_friendly'; label: string }[] = [
+const CATEGORIES: { key: keyof typeof CATEGORY_ART; label: string }[] = [
   { key: 'veterinarian', label: 'home.category_veterinary' },
   { key: 'groomer', label: 'home.category_grooming' },
   { key: 'pet_store', label: 'home.category_shops' },
@@ -96,64 +103,22 @@ function greetingKey(now = new Date()): string {
   return 'home.greeting_morning';
 }
 
-const OPEN_COLOR = '#1EC876';
-const CLOSED_COLOR = '#E5484D';
-
-const DAY_LABEL: Record<Weekday, string> = {
-  mon: 'home.day_mon',
-  tue: 'home.day_tue',
-  wed: 'home.day_wed',
-  thu: 'home.day_thu',
-  fri: 'home.day_fri',
-  sat: 'home.day_sat',
-  sun: 'home.day_sun',
-};
-
-function categoryLabel(category: BusinessPlace['category']): string {
-  const match = CATEGORIES.find((item) => item.key === category);
-  return match ? t(match.label) : category;
-}
-
-function placeStatus(place: BusinessPlace): { open: boolean; detail: string | null } | null {
-  if (typeof place.open_now !== 'boolean') return null;
-  if (place.open_24_7) return { open: true, detail: t('home.opens_24_7') };
-  if (place.open_now) {
-    return {
-      open: true,
-      detail: place.closes_at ? `${t('home.closes')} ${place.closes_at}` : null,
-    };
-  }
-  const when = place.opens_at;
-  if (place.opens_tomorrow) {
-    return {
-      open: false,
-      detail: when ? `${t('home.opens_tomorrow')} ${when}` : t('home.opens_tomorrow'),
-    };
-  }
-  if (place.next_open_day) {
-    const day = t(DAY_LABEL[place.next_open_day]);
-  return {
-      open: false,
-      detail: when ? `${t('home.opens')} ${day} ${when}` : `${t('home.opens')} ${day}`,
-    };
-  }
-  if (when) return { open: false, detail: `${t('home.opens')} ${when}` };
-  return { open: false, detail: null };
-}
-
 export default function DiscoverHomeScreen() {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { width: windowWidth } = useWindowDimensions();
-  const cardImageWidth = windowWidth - PAGE_HORIZONTAL_PADDING * 2;
   const { accountName, accountPhotoUrl } = useAuth();
   const { setActivePetId } = useActivePet();
   const petsQuery = usePetsQuery();
   const pets = petsQuery.data ?? [];
 
-  const [coords, setCoords] = useState<HomeCoords | null>(savedNearby?.coords ?? null);
+  const [coords, setCoords] = useState<HomeCoords | null>(() => {
+    if (savedNearby) {
+      rememberNearby(savedNearby.coords, null, savedNearby.places, savedNearby.hasMore);
+    }
+    return savedNearby?.coords ?? null;
+  });
   const [places, setPlaces] = useState<BusinessPlace[]>(savedNearby?.places ?? []);
   const [placesLoading, setPlacesLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -260,6 +225,7 @@ export default function DiscoverHomeScreen() {
 
   const clearNearby = useCallback(() => {
     savedNearby = null;
+    clearNearbyCache();
     placesRef.current = [];
     hasMoreRef.current = false;
     setCoords(null);
@@ -357,6 +323,7 @@ export default function DiscoverHomeScreen() {
         placesRef.current = merged;
         hasMoreRef.current = more;
         savedNearby = { coords, places: merged, hasMore: more };
+        rememberNearby(coords, null, merged, more);
         setPlaces(merged);
         setHasMore(more);
       })
@@ -397,6 +364,7 @@ export default function DiscoverHomeScreen() {
           places: placesRef.current,
           hasMore: page.has_more,
         };
+        rememberNearby(here, null, placesRef.current, page.has_more);
       }
       setPlaces(placesRef.current);
       setHasMore(page.has_more);
@@ -430,8 +398,6 @@ export default function DiscoverHomeScreen() {
     if (!(await guardAddPet(router, pets.length))) return;
     router.push('/pets/add' as never);
   }
-
-  const statusColor = (open: boolean) => (open ? OPEN_COLOR : CLOSED_COLOR);
 
   return (
     <View
@@ -486,7 +452,7 @@ export default function DiscoverHomeScreen() {
               onPress={() => router.push('/settings' as never)}
               accessibilityLabel={t('home.settings')}
             >
-              <Settings size={18} color={colors.primaryText} />
+              <Settings size={24} color={colors.primaryText} />
             </TouchableOpacity>
           </View>
 
@@ -554,25 +520,35 @@ export default function DiscoverHomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoryScroll}
           >
-            {CATEGORIES.map((category) => {
-              const art = category.key in CATEGORY_ART
-                ? CATEGORY_ART[category.key as keyof typeof CATEGORY_ART]
-                : null;
-              return (
-                <View key={category.key} style={styles.categoryCard}>
-                  <View style={styles.categoryInner}>
-                    {art ? (
-                      <Image source={art} style={styles.categoryArt} contentFit="contain" />
-                    ) : (
-                      <View style={styles.categoryArt} />
-                    )}
-                    <Text style={styles.categoryLabel} numberOfLines={2}>
-                      {t(category.label)}
-                    </Text>
-                  </View>
+            {CATEGORIES.map((category) => (
+              <TouchableOpacity
+                key={category.key}
+                style={styles.categoryCard}
+                activeOpacity={0.85}
+                onPress={() =>
+                  router.push({
+                    pathname: '/business/category/[category]',
+                    params: { category: category.key },
+                  } as never)
+                }
+              >
+                <View style={styles.categoryInner}>
+                  <Image
+                    source={CATEGORY_ART[category.key]}
+                    style={styles.categoryArt}
+                    contentFit="contain"
+                  />
+                  <Text
+                    style={styles.categoryLabel}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                  >
+                    {t(category.label)}
+                  </Text>
                 </View>
-              );
-            })}
+              </TouchableOpacity>
+            ))}
           </ScrollView>
         </View>
         </View>
@@ -598,13 +574,12 @@ export default function DiscoverHomeScreen() {
             )}
               <View style={[styles.nearHeader, expanded && styles.nearHeaderExpanded]}>
                 {expanded ? (
-                  <TouchableOpacity
-                    style={styles.sheetClose}
+                  <HeaderIconButton
                     onPress={() => snapSheet(false)}
                     accessibilityLabel={t('home.close_list')}
                   >
-                    <X size={18} color={colors.primaryText} />
-                  </TouchableOpacity>
+                    <X size={20} color={colors.primaryText} />
+                  </HeaderIconButton>
                 ) : null}
                 <Text style={[styles.sectionTitle, styles.nearTitle]} numberOfLines={1}>
                   {t('home.near_you')}
@@ -653,114 +628,28 @@ export default function DiscoverHomeScreen() {
                     <ActivityIndicator color={colors.brand} style={styles.nearStatus} />
                   ) : null
                 }
-                renderItem={({ item: place }) => {
-                  const status = placeStatus(place);
-                  return (
-                    <TouchableOpacity
-                      style={styles.placeCard}
-                      activeOpacity={0.9}
-                      onPress={() =>
-                        router.push({
-                          pathname: '/business/[id]',
-                          params: {
-                            id: place.id,
-                            name: place.name,
-                            image: place.image ?? '',
-                            category: place.category,
-                            distance: place.distance_km != null ? String(place.distance_km) : '',
-                            rating: typeof place.rating === 'number' ? String(place.rating) : '',
-                            openNow: place.open_now ? '1' : '0',
-                            open247: place.open_24_7 ? '1' : '0',
-                            lat: coords ? String(coords.latitude) : '',
-                            lng: coords ? String(coords.longitude) : '',
-                          },
-                        } as never)
-                      }
-                    >
-                      <View style={styles.cardImageWrap}>
-                        {place.image ? (
-                          <Image
-                            source={{ uri: place.image }}
-                            style={styles.cardImage}
-                            contentFit="cover"
-                          />
-                        ) : (
-                          <View style={styles.cardImage} />
-                        )}
-                        {place.distance_km != null ? (
-                          <View style={styles.distanceSlot} pointerEvents="none">
-                            <View style={styles.distanceBadge}>
-                              {place.image ? (
-                                <Image
-                                  source={{ uri: place.image }}
-                                  style={[
-                                    styles.distanceBlur,
-                                    { width: cardImageWidth, height: CARD_IMAGE_HEIGHT },
-                                  ]}
-                                  contentFit="cover"
-                                  blurRadius={40}
-                                />
-                              ) : null}
-                              <View style={styles.distanceTint} />
-                              <MapPin size={24} color="#1F2937" />
-                              <Text style={styles.distanceText} numberOfLines={1}>
-                                {`${place.distance_km} km`}
-                              </Text>
-                            </View>
-                          </View>
-                        ) : null}
-                      </View>
-                      <View style={styles.cardBody}>
-                        <View style={styles.cardTop}>
-                          <View style={styles.cardMeta}>
-                            <View style={styles.categoryChip}>
-                              <Text style={styles.categoryChipText}>
-                                {categoryLabel(place.category)}
-                              </Text>
-                            </View>
-                            {typeof place.rating === 'number' ? (
-                              <View style={styles.ratingChip}>
-                                <Star size={12} color="#F6F7F9" fill="#F6F7F9" />
-                                <Text style={styles.ratingText}>{place.rating.toFixed(1)}</Text>
-                              </View>
-                            ) : (
-                              <Text style={styles.noReviews}>{t('home.no_reviews')}</Text>
-                            )}
-                          </View>
-                          <Text style={styles.placeName} numberOfLines={1}>
-                            {place.name}
-                          </Text>
-                          {place.address ? (
-                            <Text style={styles.noReviews} numberOfLines={1}>
-                              {place.address}
-                            </Text>
-                          ) : null}
-                          {(place.location_count ?? 1) > 1 ? (
-                            <Text style={styles.noReviews}>
-                              {`${place.location_count} ${t('business.locations')}`}
-                            </Text>
-          ) : null}
-        </View>
-                        {status ? (
-                          <View style={styles.statusRow}>
-                            <Text style={[styles.statusText, { color: statusColor(status.open) }]}>
-                              {status.open ? t('home.open') : t('home.closed')}
-                            </Text>
-                            <View
-                              style={[
-                                styles.statusDot,
-                                { backgroundColor: statusColor(status.open) },
-                              ]}
-                            />
-                            {status.detail ? (
-                              <Text style={styles.statusDetail}>{status.detail}</Text>
-                            ) : null}
-                          </View>
-        ) : null}
-      </View>
-                    </TouchableOpacity>
-                  );
-                }}
+                renderItem={({ item: place }) => (
+                  <PlaceCard
+                    place={place}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/business/[id]',
+                        params: {
+                          id: place.id,
+                          name: place.name,
+                          image: place.image ?? '',
+                          category: place.category,
+                          distance: place.distance_km != null ? String(place.distance_km) : '',
+                          rating: typeof place.rating === 'number' ? String(place.rating) : '',
+                          openNow: place.open_now ? '1' : '0',
+                          open247: place.open_24_7 ? '1' : '0',
+                          lat: coords ? String(coords.latitude) : '',
+                          lng: coords ? String(coords.longitude) : '',
+                        },
+                      } as never)
+                    }
+                  />
+                )}
               />
             )}
           </Animated.View>
@@ -810,17 +699,17 @@ function makeStyles(colors: ThemeColors) {
       flexShrink: 0,
     },
     welcomeRow: {
-      minHeight: 46,
+      height: 46,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
     },
     greeting: {
       flex: 1,
+      minWidth: 0,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
-      paddingRight: 12,
+      gap: 12,
     },
     greetingCopy: {
       flex: 1,
@@ -829,8 +718,9 @@ function makeStyles(colors: ThemeColors) {
     avatar: {
       width: GREETING_AVATAR,
       height: GREETING_AVATAR,
-      borderRadius: GREETING_AVATAR / 2,
+      borderRadius: 12,
       overflow: 'hidden',
+      flexShrink: 0,
       backgroundColor: colors.background,
     },
     avatarImage: {
@@ -859,12 +749,13 @@ function makeStyles(colors: ThemeColors) {
       width: 32,
       height: 32,
       borderRadius: 10,
+      flexShrink: 0,
       backgroundColor: colors.surface,
       alignItems: 'center',
       justifyContent: 'center',
       shadowColor: '#2D2D2A',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
+      shadowOpacity: 20 / 255,
       shadowRadius: 20,
       elevation: 4,
     },
@@ -989,14 +880,6 @@ function makeStyles(colors: ThemeColors) {
     nearTitle: {
       flex: 1,
     },
-    sheetClose: {
-      width: 32,
-      height: 32,
-      borderRadius: 10,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.background,
-    },
     seeAll: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1027,157 +910,6 @@ function makeStyles(colors: ThemeColors) {
     placeListContent: {
       gap: 10,
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-    },
-    placeCard: {
-      borderRadius: 24,
-      backgroundColor: colors.surface,
-      paddingBottom: 22,
-      gap: 16,
-      shadowColor: '#2D2D2A',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 20,
-      elevation: 4,
-    },
-    cardImageWrap: {
-      height: CARD_IMAGE_HEIGHT,
-      borderRadius: 24,
-      overflow: 'hidden',
-      backgroundColor: colors.background,
-    },
-    cardImage: {
-      width: '100%',
-      height: CARD_IMAGE_HEIGHT,
-    },
-    distanceSlot: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-      zIndex: 20,
-      elevation: 20,
-      paddingTop: 16,
-      paddingRight: 16,
-      alignItems: 'flex-end',
-    },
-    distanceBadge: {
-      flexGrow: 0,
-      flexShrink: 0,
-      overflow: 'hidden',
-      flexDirection: 'row',
-      alignItems: 'center',
-      height: 32,
-      boxSizing: 'border-box',
-      gap: 4,
-      borderRadius: 10,
-      paddingTop: 4,
-      paddingRight: 10,
-      paddingBottom: 4,
-      paddingLeft: 8,
-      backgroundColor: '#FFFFFF99',
-    },
-    distanceBlur: {
-      position: 'absolute',
-      top: -16,
-      right: -16,
-    },
-    distanceTint: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-      backgroundColor: '#FFFFFF99',
-    },
-    distanceText: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 14,
-      lineHeight: 20,
-      color: '#1F2937',
-      includeFontPadding: false,
-    },
-    cardBody: {
-      paddingHorizontal: 12,
-      gap: 8,
-    },
-    cardTop: {
-      gap: 4,
-    },
-    cardMeta: {
-      height: 20,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 10,
-    },
-    categoryChip: {
-      borderRadius: 6,
-      backgroundColor: colors.background,
-      paddingTop: 2,
-      paddingRight: 6,
-      paddingBottom: 2,
-      paddingLeft: 6,
-    },
-    categoryChipText: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 10,
-      lineHeight: 16,
-      textAlign: 'center',
-      color: colors.secondaryText,
-    },
-    ratingChip: {
-      height: 20,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      borderRadius: 6,
-      backgroundColor: '#004741',
-      paddingTop: 2,
-      paddingRight: 6,
-      paddingBottom: 2,
-      paddingLeft: 6,
-    },
-    ratingText: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 10,
-      lineHeight: 16,
-      textAlign: 'center',
-      color: '#F6F7F9',
-    },
-    noReviews: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 10,
-      lineHeight: 16,
-      color: colors.secondaryText,
-    },
-    placeName: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 20,
-      lineHeight: 24,
-      color: colors.primaryText,
-    },
-    statusRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    statusText: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 12,
-      lineHeight: 16,
-      textAlign: 'center',
-    },
-    statusDot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3,
-    },
-    statusDetail: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 12,
-      lineHeight: 16,
-      color: colors.secondaryText,
     },
     locationCard: {
       flexGrow: 1,

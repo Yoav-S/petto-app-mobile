@@ -8,7 +8,6 @@ import {
   Pressable,
   Linking,
   Modal,
-  Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -27,7 +26,7 @@ import { useSettledModalVisible } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 import { getErrorMessage } from '@/services/errors';
 import WriteReviewSheet from '@/components/business/WriteReviewSheet';
-import { LocationSheet, PhoneSheet } from '@/components/business/ContactSheets';
+import { openSystemDirections, openSystemPhones } from '@/services/systemApps';
 import { postedLabel } from '@/utils/reviewPosted';
 import { useToast } from '@/context/ToastContext';
 import {
@@ -152,26 +151,6 @@ function openInstagram(value: string) {
   if (handle) void Linking.openURL(`https://instagram.com/${handle}`);
 }
 
-type NavApp = 'google' | 'waze' | 'apple';
-
-function directionUrl(
-  app: NavApp,
-  target: { address: string; city: string; location?: { coordinates: [number, number] } | null },
-): string | null {
-  const point = target.location?.coordinates;
-  const query = encodeURIComponent(addressText(target.address, target.city));
-  if (!point && !query) return null;
-  if (point) {
-    const [lng, lat] = point;
-    if (app === 'waze') return `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
-    if (app === 'apple') return `http://maps.apple.com/?daddr=${lat},${lng}`;
-    return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-  }
-  if (app === 'waze') return `https://waze.com/ul?q=${query}&navigate=yes`;
-  if (app === 'apple') return `http://maps.apple.com/?q=${query}`;
-  return `https://www.google.com/maps/dir/?api=1&destination=${query}`;
-}
-
 export default function BusinessScreen() {
   const params = useLocalSearchParams<{
     id: string;
@@ -198,10 +177,6 @@ export default function BusinessScreen() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [aboutLineCount, setAboutLineCount] = useState(0);
   const [photoOpen, setPhotoOpen] = useState(false);
-  const [phoneOpen, setPhoneOpen] = useState(false);
-  const [mapsOpen, setMapsOpen] = useState(false);
-  const [callPhones, setCallPhones] = useState<string[]>([]);
-  const [mapTarget, setMapTarget] = useState<PlaceLocation | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
   const savedReviewRef = useRef<PlaceReview | null>(null);
@@ -281,17 +256,11 @@ export default function BusinessScreen() {
   const showPhones = (numbers?: string[]) => {
     const list = numbers ?? phones;
     if (!list.length) return;
-    setCallPhones(list);
-    setMapsOpen(false);
-    setPhoneOpen(true);
+    void openSystemPhones(list);
   };
 
   const showMaps = (target?: PlaceLocation) => {
-    const next = target ?? place;
-    if (!next || !directionUrl('google', next)) return;
-    setMapTarget(target ?? null);
-    setPhoneOpen(false);
-    setMapsOpen(true);
+    void openSystemDirections(target ?? place);
   };
 
   const website = place?.website?.trim() ?? '';
@@ -300,43 +269,29 @@ export default function BusinessScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.cover, { height: coverHeight }]}>
-        <Pressable
-          style={styles.coverImage}
-          disabled={!image}
-          onPress={() => {
-            setPhoneOpen(false);
-            setMapsOpen(false);
-            setReviewOpen(false);
-            setPhotoOpen(true);
-          }}
-          accessibilityRole="button"
-        >
-          {image ? (
-            <Image source={{ uri: image }} style={styles.coverImage} contentFit="cover" />
-          ) : (
-            <View style={styles.coverImage} />
-          )}
-        </Pressable>
-        <View style={[styles.actionBar, { top: insets.top }]}>
-          <HeaderIconButton
-            onPress={() => router.back()}
-            accessibilityLabel={t('petOnboarding.back')}
-            style={styles.backButton}
-          >
-            <MaterialIcons name="chevron-left" size={24} color="#1F2937" />
-          </HeaderIconButton>
-        </View>
-      </View>
-
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={{
-          paddingTop: coverHeight + 4,
-          gap: 4,
-        }}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        <View style={[styles.cover, { height: coverHeight }]}>
+          <Pressable
+            style={styles.coverImage}
+            disabled={!image}
+            onPress={() => {
+              setReviewOpen(false);
+              setPhotoOpen(true);
+            }}
+            accessibilityRole="button"
+          >
+            {image ? (
+              <Image source={{ uri: image }} style={styles.coverImage} contentFit="cover" />
+            ) : (
+              <View style={styles.coverImage} />
+            )}
+          </Pressable>
+        </View>
+        <View style={styles.scrollBody}>
         <View style={styles.card}>
           <View style={styles.metaRow}>
             <View style={styles.metaLead}>
@@ -357,9 +312,7 @@ export default function BusinessScreen() {
                 <Star size={12} color="#F6F7F9" fill="#F6F7F9" />
                 <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
               </View>
-            ) : (
-              <Text style={styles.noReviews}>{t('home.no_reviews')}</Text>
-            )}
+            ) : null}
           </View>
           <Text style={styles.businessName}>{name}</Text>
           {description ? (
@@ -526,7 +479,9 @@ export default function BusinessScreen() {
                 <View style={styles.hoursList}>
                   {WEEK.map((day) => (
                     <View key={`${branch.id}-${day}`} style={styles.hoursRow}>
-                      <Text style={styles.dayLabel}>{t(DAY_KEY[day])}</Text>
+                      <Text style={styles.dayLabel} numberOfLines={1}>
+                        {t(DAY_KEY[day])}
+                      </Text>
                       <Text style={styles.hoursValue}>{dayHours(branch.opening_hours, day)}</Text>
                     </View>
                   ))}
@@ -591,6 +546,7 @@ export default function BusinessScreen() {
           </View>
         ) : null}
 
+        <View style={styles.footerSpacer} />
         <View style={[styles.actions, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <TouchableOpacity
             style={[styles.callButton, contactPhones.length === 0 && styles.buttonDisabled]}
@@ -602,14 +558,25 @@ export default function BusinessScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.directionsButton}
-            disabled={!place || !directionUrl('google', place)}
+            disabled={!place || (!place.address && !place.city && !place.location)}
             onPress={() => showMaps()}
           >
             <Send size={20} color={colors.primaryText} />
             <Text style={styles.directionsLabel}>{t('business.directions')}</Text>
           </TouchableOpacity>
         </View>
+        </View>
       </ScrollView>
+
+      <View style={[styles.actionBar, { top: insets.top }]} pointerEvents="box-none">
+        <HeaderIconButton
+          onPress={() => router.back()}
+          accessibilityLabel={t('petOnboarding.back')}
+          style={styles.backButton}
+        >
+          <MaterialIcons name="chevron-left" size={24} color="#1F2937" />
+        </HeaderIconButton>
+      </View>
 
       {photoPresented && image ? (
         <Modal visible transparent animationType="fade" onRequestClose={() => setPhotoOpen(false)}>
@@ -645,37 +612,6 @@ export default function BusinessScreen() {
           setReloadToken((value) => value + 1);
         }}
       />
-
-      <PhoneSheet
-        visible={phoneOpen}
-        phones={callPhones.length ? callPhones : phones}
-        onClose={() => setPhoneOpen(false)}
-      />
-      <LocationSheet
-        visible={mapsOpen}
-        options={(
-          ['google', 'waze', ...(Platform.OS === 'ios' ? (['apple'] as const) : [])] as NavApp[]
-        ).flatMap((app) => {
-          const target = mapTarget ?? place;
-          if (!target) return [];
-          const url = directionUrl(app, target);
-          if (!url) return [];
-          return [
-            {
-              key: app,
-              label: t(
-                app === 'google'
-                  ? 'business.google_maps'
-                  : app === 'waze'
-                    ? 'business.waze'
-                    : 'business.apple_maps',
-              ),
-              url,
-            },
-          ];
-        })}
-        onClose={() => setMapsOpen(false)}
-      />
     </View>
   );
 }
@@ -687,11 +623,7 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.background,
     },
     cover: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 2,
+      width: '100%',
       backgroundColor: c.border,
       overflow: 'hidden',
       borderBottomLeftRadius: 24,
@@ -708,13 +640,25 @@ const makeStyles = (c: ThemeColors) =>
       height: 44,
       justifyContent: 'center',
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+      zIndex: 3,
     },
     backButton: {
       backgroundColor: '#FFFFFF',
     },
     scroll: {
       flex: 1,
-      zIndex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+    },
+    scrollBody: {
+      flexGrow: 1,
+      gap: 4,
+      marginTop: 4,
+    },
+    footerSpacer: {
+      flexGrow: 1,
+      minHeight: 12,
     },
     card: {
       backgroundColor: c.surface,
@@ -861,12 +805,6 @@ const makeStyles = (c: ThemeColors) =>
       fontSize: 10,
       lineHeight: 16,
       color: '#F6F7F9',
-    },
-    noReviews: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 10,
-      lineHeight: 16,
-      color: c.secondaryText,
     },
     businessName: {
       fontFamily: 'Rubik-Regular',
@@ -1063,18 +1001,18 @@ const makeStyles = (c: ThemeColors) =>
     actions: {
       flexDirection: 'row',
       gap: 8,
-      marginTop: 12,
       paddingTop: 12,
       paddingHorizontal: 20,
-      paddingBottom: 0,
     },
     hoursRow: {
       flexDirection: 'row',
       alignItems: 'center',
+      flexWrap: 'nowrap',
       gap: 22,
     },
     dayLabel: {
-      width: 32,
+      flexGrow: 0,
+      flexShrink: 0,
       fontFamily: 'Rubik-Regular',
       fontSize: 16,
       lineHeight: 24,
