@@ -61,6 +61,8 @@ interface SpeedDialFabProps {
   onOpenChange?: (open: boolean) => void;
   /** Distance from the screen bottom to the button. Omit for the default corner. */
   bottom?: number;
+  /** Menu row press feedback. 1 keeps the row the same color. */
+  menuActiveOpacity?: number;
 }
 
 /**
@@ -73,6 +75,7 @@ export default function SpeedDialFab({
   open: openProp,
   onOpenChange,
   bottom,
+  menuActiveOpacity = 0.85,
 }: SpeedDialFabProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -171,7 +174,7 @@ export default function SpeedDialFab({
                 item.onPress();
                 requestAnimationFrame(() => close());
               }}
-              activeOpacity={0.85}
+              activeOpacity={menuActiveOpacity}
             >
               {item.icon ? (
                 <Image

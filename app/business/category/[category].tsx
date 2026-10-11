@@ -214,7 +214,8 @@ export default function CategoryPlacesScreen() {
         <FlatList
           data={places}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
           renderItem={({ item }) => <PlaceCard place={item} onPress={() => openPlace(item)} />}
           onEndReached={() => {
             if (hasMore) void loadMore();
@@ -237,6 +238,10 @@ function makeStyles(colors: ThemeColors) {
       backgroundColor: colors.background,
     },
     list: {
+      flex: 1,
+      marginTop: 16,
+    },
+    listContent: {
       gap: 10,
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       paddingBottom: 24,

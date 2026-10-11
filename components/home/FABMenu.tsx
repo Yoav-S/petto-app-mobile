@@ -49,6 +49,7 @@ export default function FABMenu({
       items={items}
       accessibilityLabel={t('fab.add')}
       bottom={bottom}
+      menuActiveOpacity={1}
     />
   );
 }

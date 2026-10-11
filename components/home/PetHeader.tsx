@@ -23,9 +23,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { petPhotoRecyclingKey, petPhotoSource, prefetchPetPhoto } from '@/utils/petPhotoSource';
 import PetPhotoImage from '@/components/ui/PetPhotoImage';
-import HeaderIconButton, {
-  HEADER_ICON_BTN,
-} from '@/components/ui/HeaderIconButton';
+import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import { useHomePanelLayout } from '@/hooks/useHomePanelLayout';
 
 import {
@@ -148,7 +146,7 @@ export default function PetHeader({
           >
             <MaterialIcons
               name="chevron-left"
-              size={HEADER_ICON_BTN.iconSize}
+              size={24}
               color={colors.primaryText}
               style={styles.backIcon}
             />
@@ -190,14 +188,14 @@ export default function PetHeader({
                 <View style={styles.metaRow}>
                   {pet.breed ? (
                     <View style={styles.metaBubble}>
-                      <Text style={styles.metaText} numberOfLines={1} ellipsizeMode="tail">
+                      <Text style={[styles.metaText, { color: nameColor }]} numberOfLines={1} ellipsizeMode="tail">
                         {pet.breed}
                       </Text>
                     </View>
                   ) : null}
                   {petAge ? (
                     <View style={styles.metaBubble}>
-                      <Text style={styles.metaText} numberOfLines={1} ellipsizeMode="tail">
+                      <Text style={[styles.metaText, { color: nameColor }]} numberOfLines={1} ellipsizeMode="tail">
                         {petAge}
                       </Text>
                     </View>

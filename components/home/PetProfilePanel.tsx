@@ -102,12 +102,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 20,
-    color: '#101623',
+    color: c.secondaryText,
   },
   value: {
-    fontFamily: 'Rubik-Medium',
+    fontFamily: 'Rubik-Regular',
     fontSize: 20,
     lineHeight: 24,
-    color: '#1F2937',
+    color: c.primaryText,
   },
 });

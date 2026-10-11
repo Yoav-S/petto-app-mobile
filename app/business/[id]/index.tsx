@@ -976,6 +976,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     contactList: {
       gap: 6,
+      marginTop: 12,
     },
     contactRow: {
       height: 56,
