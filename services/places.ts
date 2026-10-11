@@ -117,6 +117,10 @@ export function readNearby(
   return items.length ? { items, hasMore: false } : null;
 }
 
+export function rememberNearbyCoords(coords: NearbyCoords): void {
+  lastNearbyCoords = coords;
+}
+
 export function rememberNearby(
   coords: NearbyCoords | null,
   category: BusinessCategory | null,

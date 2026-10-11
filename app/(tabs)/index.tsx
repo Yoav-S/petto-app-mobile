@@ -31,6 +31,7 @@ import {
   clearNearbyCache,
   listPlaces,
   rememberNearby,
+  rememberNearbyCoords,
   type BusinessPlace,
 } from '@/services/places';
 import { petPhotoSource } from '@/utils/petPhotoSource';
@@ -220,6 +221,7 @@ export default function DiscoverHomeScreen() {
   ).current;
 
   const publishCoords = useCallback((next: HomeCoords) => {
+    rememberNearbyCoords(next);
     setCoords((current) => (current && sameSpot(current, next) ? current : next));
   }, []);
 

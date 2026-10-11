@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, FlatList, ActivityIndicator, Text } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 import { type ThemeColors } from '@/constants/theme';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -12,8 +13,10 @@ import {
   readLastNearbyCoords,
   readNearby,
   rememberNearby,
+  rememberNearbyCoords,
   type BusinessCategory,
   type BusinessPlace,
+  type NearbyCoords,
 } from '@/services/places';
 
 const CATEGORY_LABEL: Record<BusinessCategory, string> = {
@@ -32,18 +35,39 @@ function isCategory(value: string | undefined): value is BusinessCategory {
     || value === 'pet_store';
 }
 
+type LocationModule = typeof import('expo-location');
+
+function locationModule(): LocationModule | null {
+  if (!requireOptionalNativeModule('ExpoLocation')) return null;
+  return require('expo-location') as LocationModule;
+}
+
+function sameSpot(a: NearbyCoords, b: NearbyCoords): boolean {
+  return Math.abs(a.latitude - b.latitude) < 0.0002
+    && Math.abs(a.longitude - b.longitude) < 0.0002;
+}
+
+function nearestFirst(items: BusinessPlace[]): BusinessPlace[] {
+  return [...items].sort((a, b) => {
+    if (a.distance_km == null) return 1;
+    if (b.distance_km == null) return -1;
+    return a.distance_km - b.distance_km;
+  });
+}
+
 export default function CategoryPlacesScreen() {
   const params = useLocalSearchParams<{ category?: string }>();
   const category = isCategory(params.category) ? params.category : null;
   const router = useRouter();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const known = readLastNearbyCoords();
-  const seed = category ? readNearby(known, category) : null;
-  const coords = known;
-  const [places, setPlaces] = useState<BusinessPlace[]>(seed?.items ?? []);
+  const [coords, setCoords] = useState<NearbyCoords | null>(() => readLastNearbyCoords());
+  const seed = coords && category ? readNearby(coords, category) : null;
+  const [places, setPlaces] = useState<BusinessPlace[]>(() => nearestFirst(seed?.items ?? []));
   const [hasMore, setHasMore] = useState(seed?.hasMore ?? false);
   const [loading, setLoading] = useState(places.length === 0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [locationReady, setLocationReady] = useState(coords != null);
   const placesRef = useRef(places);
   const hasMoreRef = useRef(hasMore);
   const loadingMoreRef = useRef(false);
@@ -53,8 +77,51 @@ export default function CategoryPlacesScreen() {
   hasMoreRef.current = hasMore;
   coordsRef.current = coords;
 
+  const publishCoords = useCallback((next: NearbyCoords) => {
+    rememberNearbyCoords(next);
+    setCoords((current) => (current && sameSpot(current, next) ? current : next));
+  }, []);
+
   useEffect(() => {
-    if (!category) return;
+    let cancelled = false;
+    const location = locationModule();
+    if (!location) {
+      setLocationReady(true);
+      return;
+    }
+    void (async () => {
+      try {
+        const permission = await location.getForegroundPermissionsAsync();
+        if (permission.status !== 'granted' || cancelled) return;
+        const last = await location.getLastKnownPositionAsync();
+        if (cancelled) return;
+        if (last) {
+          publishCoords({
+            latitude: last.coords.latitude,
+            longitude: last.coords.longitude,
+          });
+        }
+        const position = await location.getCurrentPositionAsync({
+          accuracy: location.Accuracy.Balanced,
+        });
+        if (cancelled) return;
+        publishCoords({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      } catch {
+        // Keep the last spot already used for the nearby list.
+      } finally {
+        if (!cancelled) setLocationReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [publishCoords]);
+
+  useEffect(() => {
+    if (!category || !locationReady) return;
     let cancelled = false;
     const here = coordsRef.current;
     const refreshing = placesRef.current.length > 0;
@@ -85,11 +152,12 @@ export default function CategoryPlacesScreen() {
     return () => {
       cancelled = true;
     };
-  }, [category, coords]);
+  }, [category, coords, locationReady]);
 
   const loadMore = useCallback(async () => {
     if (!category || !hasMoreRef.current || loadingMoreRef.current || refreshingRef.current) return;
     loadingMoreRef.current = true;
+    setLoadingMore(true);
     const here = coordsRef.current;
     try {
       const page = await listPlaces({
@@ -112,6 +180,7 @@ export default function CategoryPlacesScreen() {
       setHasMore(false);
     } finally {
       loadingMoreRef.current = false;
+      setLoadingMore(false);
     }
   }, [category]);
 
@@ -151,6 +220,9 @@ export default function CategoryPlacesScreen() {
             if (hasMore) void loadMore();
           }}
           onEndReachedThreshold={0.4}
+          ListFooterComponent={
+            loadingMore ? <ActivityIndicator color={colors.brand} style={styles.status} /> : null
+          }
           ListEmptyComponent={<Text style={styles.empty}>{t('home.near_empty')}</Text>}
         />
       )}
