@@ -159,6 +159,8 @@ export default function PlaceCard({
 function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     placeCard: {
+      width: '100%',
+      alignSelf: 'stretch',
       borderRadius: 24,
       backgroundColor: colors.surface,
       paddingBottom: 22,
