@@ -48,7 +48,6 @@ const NIGHT_HOUR = 21;
 const GREETING_AVATAR = 42;
 const PET_SIZE = 72;
 const PET_GAP = 16;
-const PET_SCROLL_WIDTH = PET_SIZE * 2 + PET_GAP;
 const SHEET_SNAP_MS = 320;
 const PAGE_END_PX = 480;
 
@@ -104,6 +103,16 @@ function greetingKey(now = new Date()): string {
   return 'home.greeting_morning';
 }
 
+function surfaceAlpha(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const full = h.length === 3 ? h.split('').map((channel) => channel + channel).join('') : h;
+  const value = parseInt(full, 16);
+  const red = (value >> 16) & 255;
+  const green = (value >> 8) & 255;
+  const blue = value & 255;
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+}
+
 export default function DiscoverHomeScreen() {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
@@ -126,6 +135,8 @@ export default function DiscoverHomeScreen() {
   const [hasMore, setHasMore] = useState(savedNearby?.hasMore ?? false);
   const [placesEpoch, setPlacesEpoch] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  const [listTall, setListTall] = useState(false);
+  const [collapsedHeight, setCollapsedHeight] = useState(0);
   const [locating, setLocating] = useState(false);
   const askedOnLoad = useRef(false);
   const loadingMoreRef = useRef(false);
@@ -138,6 +149,10 @@ export default function DiscoverHomeScreen() {
   const screenHeightRef = useRef(0);
   const topHeightRef = useRef(0);
   const expandedRef = useRef(false);
+  const listTallRef = useRef(false);
+  const listArmedRef = useRef(false);
+  const listTopRef = useRef(0);
+  const skipCloseRef = useRef(false);
   const draggingRef = useRef(false);
   const animatingRef = useRef(false);
   const dragOriginRef = useRef(0);
@@ -165,9 +180,16 @@ export default function DiscoverHomeScreen() {
     const top = topHeightRef.current;
     if (!screen || !top) return;
     const collapsed = Math.max(180, screen - top - 4);
-    collapsedHeightRef.current = collapsed;
-    if (draggingRef.current || animatingRef.current) return;
-    sheetShift.setValue(expandedRef.current ? 0 : Math.max(0, screen - collapsed));
+    if (collapsedHeightRef.current !== collapsed) {
+      collapsedHeightRef.current = collapsed;
+      setCollapsedHeight(collapsed);
+    }
+    if (draggingRef.current || animatingRef.current || listTallRef.current) return;
+    if (expandedRef.current) {
+      sheetShift.setValue(0);
+      return;
+    }
+    sheetShift.setValue(Math.max(0, screen - collapsed));
   }, [sheetShift]);
 
   const snapSheet = useCallback((toExpanded: boolean) => {
@@ -176,7 +198,11 @@ export default function DiscoverHomeScreen() {
     if (!screen || !collapsed) return;
     const target = toExpanded ? 0 : Math.max(0, screen - collapsed);
     expandedRef.current = toExpanded;
+    listTallRef.current = false;
+    listArmedRef.current = false;
+    skipCloseRef.current = false;
     setExpanded(toExpanded);
+    setListTall(false);
     animatingRef.current = true;
     Animated.timing(sheetShift, {
       toValue: target,
@@ -191,6 +217,24 @@ export default function DiscoverHomeScreen() {
   const snapSheetRef = useRef(snapSheet);
   snapSheetRef.current = snapSheet;
 
+  const openBrowsingList = useCallback(() => {
+    if (expandedRef.current || listTallRef.current) return;
+    listTallRef.current = true;
+    listArmedRef.current = false;
+    skipCloseRef.current = true;
+    setListTall(true);
+    sheetShift.setValue(0);
+  }, [sheetShift]);
+
+  const closeBrowsingList = useCallback(() => {
+    if (!listTallRef.current || expandedRef.current) return;
+    listTallRef.current = false;
+    listArmedRef.current = false;
+    skipCloseRef.current = false;
+    setListTall(false);
+    syncSheetRest();
+  }, [syncSheetRest]);
+
   const sheetPan = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gesture) =>
@@ -198,8 +242,19 @@ export default function DiscoverHomeScreen() {
       onPanResponderGrant: () => {
         draggingRef.current = true;
         animatingRef.current = false;
-        dragOriginRef.current = sheetShiftRef.current;
         sheetShift.stopAnimation();
+        if (listTallRef.current) {
+          listTallRef.current = false;
+          listArmedRef.current = false;
+          skipCloseRef.current = false;
+          setListTall(false);
+          const top = listTopRef.current;
+          sheetShift.setValue(top);
+          sheetShiftRef.current = top;
+          dragOriginRef.current = top;
+          return;
+        }
+        dragOriginRef.current = sheetShiftRef.current;
       },
       onPanResponderMove: (_, gesture) => {
         const maxShift = collapsedShift();
@@ -401,6 +456,56 @@ export default function DiscoverHomeScreen() {
     router.push('/pets/add' as never);
   }
 
+  const headerHeight = insets.top + 10 + 46;
+  const ninetyTop = frameHeight ? frameHeight - Math.round(frameHeight * 0.9) : 0;
+  const browsingListTop = Math.max(ninetyTop, headerHeight);
+  const browsingListHeight = frameHeight ? frameHeight - browsingListTop : 0;
+  listTopRef.current = browsingListTop;
+  const browsing = listTall && !expanded;
+  const greetingBg = surfaceAlpha(colors.surface, 0.85);
+
+  function renderGreeting(dimmed: boolean) {
+    return (
+      <View style={[styles.welcomeRow, dimmed && styles.greetingHidden]} pointerEvents={dimmed ? 'none' : 'auto'}>
+        <View style={styles.greeting}>
+          <TouchableOpacity
+            style={styles.avatar}
+            onPress={() => router.push('/settings/account' as never)}
+            accessibilityRole="button"
+            accessibilityLabel={t('settings.my_profile')}
+          >
+            {accountPhotoUrl ? (
+              <Image
+                source={{ uri: accountPhotoUrl }}
+                style={styles.avatarImage}
+                contentFit="cover"
+              />
+            ) : (
+              <View style={styles.avatarFallback}>
+                <User size={24} color={colors.primaryText} />
+              </View>
+            )}
+          </TouchableOpacity>
+          <View style={styles.greetingCopy}>
+            <Text style={styles.greetingLine}>{t(greetingKey())}</Text>
+            {accountName ? (
+              <Text style={styles.nameLine} numberOfLines={1}>
+                {`${accountName} !`}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={() => router.push('/settings' as never)}
+          accessibilityLabel={t('home.settings')}
+        >
+          <Settings size={24} color={colors.primaryText} />
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View
       style={styles.screen}
@@ -419,98 +524,41 @@ export default function DiscoverHomeScreen() {
             syncSheetRest();
           }}
         >
-        <View style={[styles.welcomeCard, { paddingTop: insets.top + 10 }]}>
-          <View style={styles.welcomeRow}>
-            <View style={styles.greeting}>
-              <TouchableOpacity
-                style={styles.avatar}
-                onPress={() => router.push('/settings/account' as never)}
-                accessibilityRole="button"
-                accessibilityLabel={t('settings.my_profile')}
-              >
-                {accountPhotoUrl ? (
-                  <Image
-                    source={{ uri: accountPhotoUrl }}
-                    style={styles.avatarImage}
-                    contentFit="cover"
-                  />
-                ) : (
-                  <View style={styles.avatarFallback}>
-                    <User size={24} color={colors.primaryText} />
-                  </View>
-                )}
-              </TouchableOpacity>
-              <View style={styles.greetingCopy}>
-                <Text style={styles.greetingLine}>{t(greetingKey())}</Text>
-                {accountName ? (
-                  <Text style={styles.nameLine} numberOfLines={1}>
-                    {`${accountName} !`}
-                  </Text>
-                ) : null}
-              </View>
-            </View>
-            <TouchableOpacity
-              style={styles.settingsButton}
-              onPress={() => router.push('/settings' as never)}
-              accessibilityLabel={t('home.settings')}
-            >
-              <Settings size={24} color={colors.primaryText} />
-            </TouchableOpacity>
-          </View>
+        <View style={[styles.welcomeCard, { paddingTop: insets.top + 10 }, browsing && styles.welcomeBrowsing]}>
+          {renderGreeting(browsing)}
 
           <View style={styles.petsBlock}>
             <Text style={styles.sectionTitle}>{t('home.my_pets')}</Text>
-            <View style={styles.petsRow}>
-              {pets.length > 1 ? (
-                <ScrollView
-                  horizontal
-                  nestedScrollEnabled
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.petScroll}
-                  contentContainerStyle={styles.petScrollContent}
-                >
-                  {pets.map((pet) => (
-                    <TouchableOpacity
-                      key={pet.id}
-                      style={styles.petItem}
-                      onPress={() => void openPet(pet)}
-                    >
-                      <Image
-                        source={petPhotoSource(pet)}
-                        style={styles.petPhoto}
-                        contentFit="cover"
-                      />
-                      <Text style={styles.petName} numberOfLines={1}>
-                        {pet.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              ) : (
-                pets.map((pet) => (
-                  <TouchableOpacity
-                    key={pet.id}
-                    style={styles.petItem}
-                    onPress={() => void openPet(pet)}
-                  >
-                    <Image
-                      source={petPhotoSource(pet)}
-                      style={styles.petPhoto}
-                      contentFit="cover"
-                    />
-                    <Text style={styles.petName} numberOfLines={1}>
-                      {pet.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))
-              )}
+            <ScrollView
+              horizontal
+              nestedScrollEnabled
+              showsHorizontalScrollIndicator={false}
+              style={styles.petScroll}
+              contentContainerStyle={styles.petScrollContent}
+            >
               <TouchableOpacity style={styles.petItem} onPress={() => void addPet()}>
                 <View style={styles.addPhoto}>
                   <Plus size={24} color={colors.primaryText} />
                 </View>
                 <Text style={styles.petName}>{t('home.add')}</Text>
               </TouchableOpacity>
-            </View>
+              {pets.map((pet) => (
+                <TouchableOpacity
+                  key={pet.id}
+                  style={styles.petItem}
+                  onPress={() => void openPet(pet)}
+                >
+                  <Image
+                    source={petPhotoSource(pet)}
+                    style={styles.petPhoto}
+                    contentFit="cover"
+                  />
+                  <Text style={styles.petName} numberOfLines={1}>
+                    {pet.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
                 </View>
 
@@ -559,78 +607,114 @@ export default function DiscoverHomeScreen() {
           <Animated.View
             style={[
               styles.nearSheet,
-              {
-                height: frameHeight || undefined,
-                transform: [{ translateY: sheetShift }],
-                paddingTop: expanded ? insets.top + 10 : 0,
-                gap: expanded ? 0 : 10,
-                borderRadius: expanded ? 0 : 24,
-              },
+              browsing
+                ? {
+                    top: browsingListTop,
+                    height: browsingListHeight,
+                    transform: [{ translateY: 0 }],
+                    paddingTop: 0,
+                    gap: 0,
+                    borderRadius: 0,
+                  }
+                : {
+                    height: frameHeight || undefined,
+                    transform: [{ translateY: sheetShift }],
+                    paddingTop: expanded ? insets.top + 10 : 0,
+                    gap: 0,
+                    borderRadius: expanded ? 0 : 24,
+                  },
             ]}
           >
-            <View {...sheetPan.panHandlers}>
-              {expanded ? null : (
+            <View {...(browsing ? {} : sheetPan.panHandlers)}>
+              {expanded || browsing ? null : (
                 <View style={styles.handleHit}>
                   <View style={styles.sheetHandle} />
-              </View>
-            )}
-              <View style={[styles.nearHeader, expanded && styles.nearHeaderExpanded]}>
-                {expanded ? (
-                  <HeaderIconButton
-                    onPress={() => snapSheet(false)}
-                    accessibilityLabel={t('home.close_list')}
-                  >
-                    <X size={20} color={colors.primaryText} />
-                  </HeaderIconButton>
-                ) : null}
-                <Text style={[styles.sectionTitle, styles.nearTitle]} numberOfLines={1}>
-                  {t('home.near_you')}
-                </Text>
-                <TouchableOpacity
-                  style={styles.seeAll}
-                  onPress={() => snapSheet(!expanded)}
-                  hitSlop={8}
-                >
-                  <Text style={styles.seeAllText}>
-                    {expanded ? t('home.see_less') : t('home.see_all')}
-                  </Text>
-                  {expanded ? (
-                    <ChevronDown size={16} color={colors.primaryText} />
-                  ) : (
-                    <ChevronUp size={16} color={colors.primaryText} />
-                  )}
-                </TouchableOpacity>
-              </View>
+                </View>
+              )}
             </View>
-            {placesLoading ? (
-              <ActivityIndicator color={colors.brand} style={styles.nearStatus} />
-            ) : (
-              <FlatList
-                style={styles.placeList}
-                data={places}
-                keyExtractor={(place) => place.id}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={[
-                  styles.placeListContent,
-                  { paddingTop: expanded ? 12 : 0, paddingBottom: insets.bottom + 22 },
-                ]}
-                scrollEventThrottle={16}
-                onScroll={(event) => {
-                  const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-                  const distance = contentSize.height - layoutMeasurement.height - contentOffset.y;
-                  if (distance < PAGE_END_PX) void loadMore();
-                }}
-                onEndReached={() => void loadMore()}
-                onEndReachedThreshold={0.8}
-                ListEmptyComponent={
+            <FlatList
+              style={[
+                styles.placeList,
+                !browsing && !expanded && collapsedHeight > 0
+                  ? { maxHeight: Math.max(80, collapsedHeight - 28) }
+                  : null,
+              ]}
+              data={placesLoading ? [] : places}
+              keyExtractor={(place) => place.id}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={[
+                styles.placeListContent,
+                { paddingBottom: insets.bottom + 22 },
+              ]}
+              scrollEventThrottle={16}
+              onScrollBeginDrag={() => {
+                openBrowsingList();
+              }}
+              onScroll={(event) => {
+                const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+                if (contentOffset.y > 4) listArmedRef.current = true;
+                const distance = contentSize.height - layoutMeasurement.height - contentOffset.y;
+                if (distance < PAGE_END_PX) void loadMore();
+              }}
+              onScrollEndDrag={(event) => {
+                const velocity = event.nativeEvent.velocity?.y ?? 0;
+                if (skipCloseRef.current) {
+                  if (Math.abs(velocity) < 0.05) skipCloseRef.current = false;
+                  return;
+                }
+                if (event.nativeEvent.contentOffset.y <= 0 && listArmedRef.current) closeBrowsingList();
+              }}
+              onMomentumScrollEnd={(event) => {
+                if (skipCloseRef.current) {
+                  skipCloseRef.current = false;
+                  return;
+                }
+                if (event.nativeEvent.contentOffset.y <= 0 && listArmedRef.current) closeBrowsingList();
+              }}
+              onEndReached={() => void loadMore()}
+              onEndReachedThreshold={0.8}
+              ListHeaderComponent={
+                <View style={[styles.nearHeader, expanded && styles.nearHeaderExpanded]}>
+                  {expanded ? (
+                    <HeaderIconButton
+                      onPress={() => snapSheet(false)}
+                      accessibilityLabel={t('home.close_list')}
+                    >
+                      <X size={20} color={colors.primaryText} />
+                    </HeaderIconButton>
+                  ) : null}
+                  <Text style={[styles.sectionTitle, styles.nearTitle]} numberOfLines={1}>
+                    {t('home.near_you')}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.seeAll}
+                    onPress={() => snapSheet(!expanded)}
+                    hitSlop={8}
+                  >
+                    <Text style={styles.seeAllText}>
+                      {expanded ? t('home.see_less') : t('home.see_all')}
+                    </Text>
+                    {expanded ? (
+                      <ChevronDown size={16} color={colors.primaryText} />
+                    ) : (
+                      <ChevronUp size={16} color={colors.primaryText} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              }
+              ListEmptyComponent={
+                placesLoading ? (
+                  <ActivityIndicator color={colors.brand} style={styles.nearStatus} />
+                ) : (
                   <Text style={styles.nearEmpty}>{t('home.near_empty')}</Text>
-                }
-                ListFooterComponent={
-                  loadingMore ? (
-                    <ActivityIndicator color={colors.brand} style={styles.nearStatus} />
-                  ) : null
-                }
-                renderItem={({ item: place }) => (
+                )
+              }
+              ListFooterComponent={
+                loadingMore ? (
+                  <ActivityIndicator color={colors.brand} style={styles.nearStatus} />
+                ) : null
+              }
+              renderItem={({ item: place }) => (
                   <PlaceCard
                     place={place}
                     onPress={() =>
@@ -653,7 +737,6 @@ export default function DiscoverHomeScreen() {
                   />
                 )}
               />
-            )}
           </Animated.View>
         ) : (
           <View style={styles.locationCard}>
@@ -673,6 +756,20 @@ export default function DiscoverHomeScreen() {
             </View>
           </View>
         )}
+        {browsing ? (
+          <View
+            style={[
+              styles.greetingOverlay,
+              {
+                height: browsingListTop,
+                paddingTop: insets.top + 10,
+                backgroundColor: greetingBg,
+              },
+            ]}
+          >
+            {renderGreeting(false)}
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -699,6 +796,20 @@ function makeStyles(colors: ThemeColors) {
       paddingBottom: 22,
       gap: 22,
       flexShrink: 0,
+    },
+    welcomeBrowsing: {
+      backgroundColor: 'transparent',
+    },
+    greetingHidden: {
+      opacity: 0,
+    },
+    greetingOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 6,
+      paddingHorizontal: 20,
     },
     welcomeRow: {
       height: 46,
@@ -762,7 +873,7 @@ function makeStyles(colors: ThemeColors) {
       elevation: 4,
     },
     petsBlock: {
-      alignSelf: 'flex-start',
+      width: '100%',
       gap: 16,
     },
     sectionTitle: {
@@ -771,13 +882,8 @@ function makeStyles(colors: ThemeColors) {
       lineHeight: 28,
       color: colors.primaryText,
     },
-    petsRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: PET_GAP,
-    },
     petScroll: {
-      width: PET_SCROLL_WIDTH,
+      width: '100%',
       flexGrow: 0,
     },
     petScrollContent: {
@@ -875,6 +981,7 @@ function makeStyles(colors: ThemeColors) {
       alignItems: 'center',
       gap: 8,
       paddingHorizontal: 20,
+      marginBottom: 10,
     },
     nearHeaderExpanded: {
       marginBottom: 12,

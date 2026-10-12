@@ -266,12 +266,14 @@ export default function BusinessScreen() {
   const website = place?.website?.trim() ?? '';
   const instagram = place?.instagram?.trim() ?? '';
   const statusColor = open ? OPEN_COLOR : CLOSED_COLOR;
+  const actionBottom = Math.max(insets.bottom, 16);
+  const actionBarHeight = 12 + 48 + actionBottom;
 
   return (
     <View style={styles.screen}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: actionBarHeight + 4 }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.cover, { height: coverHeight }]}>
@@ -545,9 +547,10 @@ export default function BusinessScreen() {
             </View>
           </View>
         ) : null}
+        </View>
+      </ScrollView>
 
-        <View style={styles.footerSpacer} />
-        <View style={[styles.actions, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+      <View style={[styles.actions, { paddingBottom: actionBottom }]}>
           <TouchableOpacity
             style={[styles.callButton, contactPhones.length === 0 && styles.buttonDisabled]}
             disabled={contactPhones.length === 0}
@@ -564,9 +567,7 @@ export default function BusinessScreen() {
             <Send size={20} color={colors.primaryText} />
             <Text style={styles.directionsLabel}>{t('business.directions')}</Text>
           </TouchableOpacity>
-        </View>
-        </View>
-      </ScrollView>
+      </View>
 
       <View style={[styles.actionBar, { top: insets.top }]} pointerEvents="box-none">
         <HeaderIconButton
@@ -649,16 +650,11 @@ const makeStyles = (c: ThemeColors) =>
       flex: 1,
     },
     scrollContent: {
-      flexGrow: 1,
+      paddingBottom: 0,
     },
     scrollBody: {
-      flexGrow: 1,
       gap: 4,
       marginTop: 4,
-    },
-    footerSpacer: {
-      flexGrow: 1,
-      minHeight: 12,
     },
     card: {
       backgroundColor: c.surface,
@@ -1000,6 +996,11 @@ const makeStyles = (c: ThemeColors) =>
       marginTop: 10,
     },
     actions: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 4,
       flexDirection: 'row',
       gap: 10,
       paddingTop: 12,
