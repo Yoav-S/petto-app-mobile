@@ -66,8 +66,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Ragly to access your photos to add a pet picture.",
-          "cameraPermission": "Allow Ragly to access your camera to take a pet picture."
+          "photosPermission": "Allow Ragly to access your photos to add a profile, pet, or vaccine photo.",
+          "cameraPermission": "Allow Ragly to access your camera to take a profile, pet, or vaccine photo."
         }
       ],
       [
