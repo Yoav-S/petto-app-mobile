@@ -128,7 +128,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
     minWidth: 0,
     height: '100%',
-    overflow: 'hidden',
     ...cardShadow,
   },
   contentContainer: {

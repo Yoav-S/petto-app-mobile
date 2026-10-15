@@ -139,26 +139,6 @@ export default function PetHeader({
 
         <View style={styles.coverShade} pointerEvents="none" />
 
-        <View style={[styles.actionBar, { top: insets.top }]}>
-          <HeaderIconButton
-            onPress={onReturnHome}
-            accessibilityLabel={t('profile.return_home')}
-          >
-            <MaterialIcons
-              name="chevron-left"
-              size={24}
-              color={colors.primaryText}
-              style={styles.backIcon}
-            />
-          </HeaderIconButton>
-          <HeaderIconButton
-            onPress={onEditProfile}
-            accessibilityLabel={t('profile.edit_profile')}
-          >
-            <Pencil size={18} color={colors.primaryText} strokeWidth={2} />
-          </HeaderIconButton>
-        </View>
-
         <View style={[styles.identity, { maxWidth: nameBlockWidth }]} pointerEvents="box-none">
           {loading ? (
             <View>
@@ -207,10 +187,33 @@ export default function PetHeader({
         </View>
       </View>
 
+      <View style={[styles.actionBar, { top: insets.top }]}>
+        <HeaderIconButton
+          onPress={onReturnHome}
+          accessibilityLabel={t('profile.return_home')}
+        >
+          <MaterialIcons
+            name="chevron-left"
+            size={24}
+            color={colors.primaryText}
+            style={styles.backIcon}
+          />
+        </HeaderIconButton>
+        <HeaderIconButton
+          onPress={onEditProfile}
+          accessibilityLabel={t('profile.edit_profile')}
+        >
+          <Pencil size={18} color={colors.primaryText} strokeWidth={2} />
+        </HeaderIconButton>
+      </View>
+
       <View
         style={[styles.panelBody, { paddingBottom: cardsBottomInset }]}
         pointerEvents="box-none"
       >
+        <View style={styles.handleRow} pointerEvents="none">
+          <View style={styles.handle} />
+        </View>
         {children}
       </View>
     </View>
@@ -258,7 +261,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     paddingVertical: 6,
-    zIndex: 90,
+    zIndex: 4,
   },
   backIcon: {
     // Material chevron glyph is optically left-heavy inside its box.
@@ -278,6 +281,19 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
     paddingTop: 32,
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+  },
+  handleRow: {
+    position: 'absolute',
+    top: 8,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  handle: {
+    width: 36,
+    height: 5,
+    borderRadius: 100,
+    backgroundColor: c.border,
   },
   nameRow: {
     maxWidth: '100%',

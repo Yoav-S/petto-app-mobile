@@ -13,9 +13,9 @@ interface PetProfilePanelProps {
 
 function formatBirthDate(iso?: string | null): string {
   if (!iso) return EMPTY_VALUE;
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return EMPTY_VALUE;
-  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (match) return `${match[3]}.${match[2]}.${match[1]}`;
+  return EMPTY_VALUE;
 }
 
 function formatSex(sex?: string | null): string {

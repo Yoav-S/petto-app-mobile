@@ -159,7 +159,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderRadius: TOPICS.radius,
     padding: TOPICS.padding,
     width: '100%',
-    overflow: 'hidden',
     ...cardShadow,
   },
   inner: {

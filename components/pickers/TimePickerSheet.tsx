@@ -277,7 +277,7 @@ const makeStyles = (c: ThemeColors) =>
     closeButton: {
       width: 32,
       height: 32,
-      borderRadius: 16,
+      borderRadius: 10,
       backgroundColor: c.background,
       alignItems: 'center',
       justifyContent: 'center',

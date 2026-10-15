@@ -327,7 +327,47 @@ export default function DiscoverHomeScreen() {
     router.push('/pets/add' as never);
   }
 
-  const greetingHeight = insets.top + 10 + 46 + 8;
+  const greeting = (
+    <View style={[styles.greetingBar, { paddingTop: insets.top + 10, paddingBottom: 8 }]}>
+      <View style={styles.welcomeRow}>
+        <View style={styles.greeting}>
+          <TouchableOpacity
+            style={styles.avatar}
+            onPress={() => router.push('/settings/account' as never)}
+            accessibilityRole="button"
+            accessibilityLabel={t('settings.my_profile')}
+          >
+            {accountPhotoUrl ? (
+              <Image
+                source={{ uri: accountPhotoUrl }}
+                style={styles.avatarImage}
+                contentFit="cover"
+              />
+            ) : (
+              <View style={styles.avatarFallback}>
+                <User size={24} color={colors.primaryText} />
+              </View>
+            )}
+          </TouchableOpacity>
+          <View style={styles.greetingCopy}>
+            <Text style={styles.greetingLine}>{t(greetingKey())}</Text>
+            {accountName ? (
+              <Text style={styles.nameLine} numberOfLines={1}>
+                {`${accountName} !`}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={() => router.push('/settings' as never)}
+          accessibilityLabel={t('home.settings')}
+        >
+          <Settings size={24} color={colors.primaryText} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   const homeHeader = (
     <View style={styles.scrollStack}>
@@ -433,7 +473,6 @@ export default function DiscoverHomeScreen() {
               styles.placeListContent,
               {
                 width: frameWidth || '100%',
-                paddingTop: greetingHeight,
                 flexGrow: 1,
               },
             ]}
@@ -447,6 +486,7 @@ export default function DiscoverHomeScreen() {
             onEndReachedThreshold={0.8}
             ListHeaderComponent={
               <View>
+                {greeting}
                 <View style={styles.scrollStack}>{homeHeader}</View>
                 <View style={styles.nearSheet}>
                   <View style={styles.nearHeader}>
@@ -501,16 +541,13 @@ export default function DiscoverHomeScreen() {
           <ScrollView
             style={styles.placeList}
             contentContainerStyle={[
-              styles.scrollStack,
               styles.locationScroll,
-              {
-                width: frameWidth || '100%',
-                paddingTop: greetingHeight,
-              },
+              { width: frameWidth || '100%' },
             ]}
             showsVerticalScrollIndicator={false}
           >
-            {homeHeader}
+            {greeting}
+            <View style={styles.scrollStack}>{homeHeader}</View>
             <View style={[styles.locationCard, { paddingBottom: insets.bottom + 22 }]}>
               <View style={styles.locationHandle} />
               <View style={styles.locationBody}>
@@ -530,51 +567,6 @@ export default function DiscoverHomeScreen() {
           </ScrollView>
         )}
       </View>
-
-      <View
-        style={[
-          styles.greetingBar,
-          { height: greetingHeight, paddingTop: insets.top + 10, paddingBottom: 8, width: frameWidth || '100%' },
-        ]}
-      >
-        <View style={styles.welcomeRow}>
-          <View style={styles.greeting}>
-            <TouchableOpacity
-              style={styles.avatar}
-              onPress={() => router.push('/settings/account' as never)}
-              accessibilityRole="button"
-              accessibilityLabel={t('settings.my_profile')}
-            >
-              {accountPhotoUrl ? (
-                <Image
-                  source={{ uri: accountPhotoUrl }}
-                  style={styles.avatarImage}
-                  contentFit="cover"
-                />
-              ) : (
-                <View style={styles.avatarFallback}>
-                  <User size={24} color={colors.primaryText} />
-                </View>
-              )}
-            </TouchableOpacity>
-            <View style={styles.greetingCopy}>
-              <Text style={styles.greetingLine}>{t(greetingKey())}</Text>
-              {accountName ? (
-                <Text style={styles.nameLine} numberOfLines={1}>
-                  {`${accountName} !`}
-                </Text>
-              ) : null}
-            </View>
-          </View>
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={() => router.push('/settings' as never)}
-            accessibilityLabel={t('home.settings')}
-          >
-            <Settings size={24} color={colors.primaryText} />
-          </TouchableOpacity>
-        </View>
-      </View>
     </View>
   );
 }
@@ -586,20 +578,12 @@ function makeStyles(colors: ThemeColors) {
       overflow: 'hidden',
     },
     greetingBar: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
       width: '100%',
-      zIndex: 2,
       backgroundColor: colors.surface,
       paddingHorizontal: 20,
     },
     homeScroll: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
+      flex: 1,
       width: '100%',
     },
     scrollStack: {

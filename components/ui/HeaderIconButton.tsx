@@ -36,7 +36,6 @@ export function makeHeaderIconButtonStyle(c: ThemeColors) {
     backgroundColor: c.surface,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    overflow: 'hidden' as const,
     ...HEADER_ICON_BTN_SHADOW,
   };
 }
