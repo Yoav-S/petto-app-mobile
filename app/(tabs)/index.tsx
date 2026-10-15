@@ -433,7 +433,7 @@ export default function DiscoverHomeScreen() {
               {
                 width: frameWidth || '100%',
                 paddingTop: greetingHeight,
-                paddingBottom: insets.bottom + 22,
+                flexGrow: 1,
               },
             ]}
             scrollEventThrottle={16}
@@ -445,48 +445,57 @@ export default function DiscoverHomeScreen() {
             onEndReached={() => void loadMore()}
             onEndReachedThreshold={0.8}
             ListHeaderComponent={
-              <View style={styles.scrollStack}>
-                {homeHeader}
-                <View style={styles.nearHeader}>
-                  <Text style={[styles.sectionTitle, styles.nearTitle]} numberOfLines={1}>
-                    {t('home.near_you')}
-                  </Text>
+              <View>
+                <View style={styles.scrollStack}>{homeHeader}</View>
+                <View style={styles.nearSheet}>
+                  <View style={styles.nearHeader}>
+                    <Text style={[styles.sectionTitle, styles.nearTitle]} numberOfLines={1}>
+                      {t('home.near_you')}
+                    </Text>
+                  </View>
                 </View>
               </View>
             }
             ListEmptyComponent={
-              placesLoading ? (
-                <ActivityIndicator color={colors.brand} style={styles.nearStatus} />
-              ) : (
-                <Text style={styles.nearEmpty}>{t('home.near_empty')}</Text>
-              )
+              <View style={styles.nearBody}>
+                {placesLoading ? (
+                  <ActivityIndicator color={colors.brand} style={styles.nearStatus} />
+                ) : (
+                  <Text style={styles.nearEmpty}>{t('home.near_empty')}</Text>
+                )}
+              </View>
             }
             ListFooterComponent={
-              loadingMore ? (
-                <ActivityIndicator color={colors.brand} style={styles.nearStatus} />
-              ) : null
+              <View style={{ paddingBottom: insets.bottom + 22 }}>
+                {loadingMore ? (
+                  <ActivityIndicator color={colors.brand} style={styles.nearStatus} />
+                ) : null}
+              </View>
             }
+            ListFooterComponentStyle={styles.nearFooter}
             renderItem={({ item: place }) => (
-              <PlaceCard
-                place={place}
-                onPress={() =>
-                  router.push({
-                    pathname: '/business/[id]',
-                    params: {
-                      id: place.id,
-                      name: place.name,
-                      image: place.image ?? '',
-                      category: place.category,
-                      distance: place.distance_km != null ? String(place.distance_km) : '',
-                      rating: typeof place.rating === 'number' ? String(place.rating) : '',
-                      openNow: place.open_now ? '1' : '0',
-                      open247: place.open_24_7 ? '1' : '0',
-                      lat: coords ? String(coords.latitude) : '',
-                      lng: coords ? String(coords.longitude) : '',
-                    },
-                  } as never)
-                }
-              />
+              <View style={styles.nearBody}>
+                <PlaceCard
+                  place={place}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/business/[id]',
+                      params: {
+                        id: place.id,
+                        name: place.name,
+                        image: place.image ?? '',
+                        category: place.category,
+                        distance: place.distance_km != null ? String(place.distance_km) : '',
+                        rating: typeof place.rating === 'number' ? String(place.rating) : '',
+                        openNow: place.open_now ? '1' : '0',
+                        open247: place.open_24_7 ? '1' : '0',
+                        lat: coords ? String(coords.latitude) : '',
+                        lng: coords ? String(coords.longitude) : '',
+                      },
+                    } as never)
+                  }
+                />
+              </View>
             )}
           />
         ) : (
@@ -755,11 +764,26 @@ function makeStyles(colors: ThemeColors) {
       lineHeight: 20,
       color: colors.primaryText,
     },
+    nearSheet: {
+      marginTop: 4,
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+    },
+    nearBody: {
+      backgroundColor: colors.surface,
+      paddingBottom: 10,
+    },
+    nearFooter: {
+      flexGrow: 1,
+      backgroundColor: colors.surface,
+    },
     nearHeader: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
       paddingHorizontal: 20,
+      paddingTop: 22,
       marginBottom: 10,
     },
     nearTitle: {
@@ -781,11 +805,11 @@ function makeStyles(colors: ThemeColors) {
       flex: 1,
       width: '100%',
       alignSelf: 'stretch',
+      backgroundColor: colors.background,
     },
     placeListContent: {
       width: '100%',
       alignSelf: 'stretch',
-      gap: 10,
     },
     locationScroll: {
       flexGrow: 1,
