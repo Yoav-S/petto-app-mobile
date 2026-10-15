@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Linking,
   Platform,
+  AppState,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -118,10 +119,9 @@ export default function DiscoverHomeScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(savedNearby?.hasMore ?? false);
   const [placesEpoch, setPlacesEpoch] = useState(0);
-  const [frameHeight, setFrameHeight] = useState(0);
   const [frameWidth, setFrameWidth] = useState(0);
   const [locating, setLocating] = useState(false);
-  const askedOnLoad = useRef(false);
+  const locatingRef = useRef(false);
   const loadingMoreRef = useRef(false);
   const hasMoreRef = useRef(savedNearby?.hasMore ?? false);
   const placesRef = useRef<BusinessPlace[]>(savedNearby?.places ?? []);
@@ -146,39 +146,7 @@ export default function DiscoverHomeScreen() {
     setPlacesLoading(false);
   }, []);
 
-  const resolveLocation = useCallback(async (ask: boolean) => {
-    const location = locationModule();
-    if (!location) return;
-    let permission = await location.getForegroundPermissionsAsync();
-    if (permission.status !== 'granted') {
-      if (!ask) {
-        clearNearby();
-        return;
-      }
-      if (!permission.canAskAgain) {
-        await Linking.openSettings();
-        return;
-      }
-      permission = await location.requestForegroundPermissionsAsync();
-      if (permission.status !== 'granted') {
-        clearNearby();
-        return;
-      }
-    }
-    if (!(await location.hasServicesEnabledAsync())) {
-      if (ask && Platform.OS === 'android') {
-        try {
-          await location.enableNetworkProviderAsync();
-        } catch {
-          clearNearby();
-          return;
-        }
-      }
-      if (!(await location.hasServicesEnabledAsync())) {
-        clearNearby();
-        return;
-      }
-    }
+  const readPosition = useCallback(async (location: LocationModule) => {
     const last = await location.getLastKnownPositionAsync();
     if (last) {
       publishCoords({
@@ -197,15 +165,26 @@ export default function DiscoverHomeScreen() {
     } catch {
       // Permission is still on. Keep the list that is already on screen.
     }
-  }, [clearNearby, publishCoords]);
+  }, [publishCoords]);
+
+  /** Load businesses only when location is already allowed. Never opens a dialog. */
+  const refreshGrantedLocation = useCallback(async () => {
+    const location = locationModule();
+    if (!location) return;
+    const permission = await location.getForegroundPermissionsAsync();
+    if (permission.status !== 'granted' || !(await location.hasServicesEnabledAsync())) {
+      clearNearby();
+      return;
+    }
+    await readPosition(location);
+  }, [clearNearby, readPosition]);
 
   useFocusEffect(
     useCallback(() => {
       void petsQuery.refetch();
-      const ask = !askedOnLoad.current;
-      askedOnLoad.current = true;
+      if (locatingRef.current) return;
       const before = coordsRef.current;
-      void resolveLocation(ask)
+      void refreshGrantedLocation()
         .catch(() => {
           if (!placesRef.current.length) clearNearby();
         })
@@ -215,8 +194,18 @@ export default function DiscoverHomeScreen() {
             setPlacesEpoch((value) => value + 1);
           }
         });
-    }, [petsQuery.refetch, resolveLocation, clearNearby]),
+    }, [petsQuery.refetch, refreshGrantedLocation, clearNearby]),
   );
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (next) => {
+      if (next !== 'active' || locatingRef.current) return;
+      void refreshGrantedLocation().catch(() => {
+        if (!placesRef.current.length) clearNearby();
+      });
+    });
+    return () => subscription.remove();
+  }, [refreshGrantedLocation, clearNearby]);
 
   useEffect(() => {
     if (!coords) return;
@@ -289,13 +278,39 @@ export default function DiscoverHomeScreen() {
   }, []);
 
   async function enableLocation() {
-    if (locating) return;
+    if (locatingRef.current) return;
+    const location = locationModule();
+    if (!location) return;
+    locatingRef.current = true;
     setLocating(true);
     try {
-      await resolveLocation(true);
+      if (Platform.OS === 'android' && !(await location.hasServicesEnabledAsync())) {
+        try {
+          await location.enableNetworkProviderAsync();
+        } catch {
+          return;
+        }
+        if (!(await location.hasServicesEnabledAsync())) return;
+      }
+      let permission = await location.getForegroundPermissionsAsync();
+      if (permission.status !== 'granted') {
+        permission = await location.requestForegroundPermissionsAsync();
+      }
+      if (permission.status !== 'granted') {
+        if (!permission.canAskAgain) {
+          await Linking.openSettings();
+        }
+        return;
+      }
+      if (!(await location.hasServicesEnabledAsync())) {
+        if (Platform.OS === 'ios') await Linking.openSettings();
+        return;
+      }
+      await readPosition(location);
     } catch {
       if (!placesRef.current.length) clearNearby();
     } finally {
+      locatingRef.current = false;
       setLocating(false);
     }
   }
@@ -397,8 +412,7 @@ export default function DiscoverHomeScreen() {
     <View
       style={styles.screen}
       onLayout={(event) => {
-        const { width, height } = event.nativeEvent.layout;
-        if (height && height !== frameHeight) setFrameHeight(height);
+        const { width } = event.nativeEvent.layout;
         if (width && width !== frameWidth) setFrameWidth(width);
       }}
     >
@@ -406,7 +420,6 @@ export default function DiscoverHomeScreen() {
         style={[
           styles.homeScroll,
           frameWidth ? { width: frameWidth } : null,
-          frameHeight ? { height: frameHeight } : null,
         ]}
       >
         {coords ? (
@@ -481,16 +494,16 @@ export default function DiscoverHomeScreen() {
             style={styles.placeList}
             contentContainerStyle={[
               styles.scrollStack,
+              styles.locationScroll,
               {
                 width: frameWidth || '100%',
                 paddingTop: greetingHeight,
-                paddingBottom: insets.bottom + 22,
               },
             ]}
             showsVerticalScrollIndicator={false}
           >
             {homeHeader}
-            <View style={styles.locationCard}>
+            <View style={[styles.locationCard, { paddingBottom: insets.bottom + 22 }]}>
               <View style={styles.locationHandle} />
               <View style={styles.locationBody}>
                 <View style={styles.locationCopy}>
@@ -577,6 +590,8 @@ function makeStyles(colors: ThemeColors) {
       position: 'absolute',
       top: 0,
       left: 0,
+      right: 0,
+      bottom: 0,
       width: '100%',
     },
     scrollStack: {
@@ -772,10 +787,17 @@ function makeStyles(colors: ThemeColors) {
       alignSelf: 'stretch',
       gap: 10,
     },
+    locationScroll: {
+      flexGrow: 1,
+    },
     locationCard: {
+      flex: 1,
+      width: '100%',
       backgroundColor: colors.surface,
-      borderRadius: 24,
-      paddingBottom: 22,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      borderBottomLeftRadius: 0,
+      borderBottomRightRadius: 0,
       alignItems: 'center',
     },
     locationHandle: {
