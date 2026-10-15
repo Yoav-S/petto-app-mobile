@@ -6,7 +6,6 @@ import {
   ScrollView,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   Linking,
   Platform,
   AppState,
@@ -33,6 +32,7 @@ import {
 } from '@/services/places';
 import { petPhotoSource } from '@/utils/petPhotoSource';
 import PlaceCard from '@/components/business/PlaceCard';
+import { PlaceCardSkeletons } from '@/components/business/PlaceCardSkeleton';
 import type { Pet } from '@/types/api';
 
 /** Greeting switches at these local hours. */
@@ -133,6 +133,7 @@ export default function DiscoverHomeScreen() {
   const publishCoords = useCallback((next: HomeCoords) => {
     rememberNearbyCoords(next);
     setCoords((current) => (current && sameSpot(current, next) ? current : next));
+    if (placesRef.current.length === 0) setPlacesLoading(true);
   }, []);
 
   const clearNearby = useCallback(() => {
@@ -457,19 +458,17 @@ export default function DiscoverHomeScreen() {
               </View>
             }
             ListEmptyComponent={
-              <View style={styles.nearBody}>
-                {placesLoading ? (
-                  <ActivityIndicator color={colors.brand} style={styles.nearStatus} />
-                ) : (
-                  <Text style={styles.nearEmpty}>{t('home.near_empty')}</Text>
-                )}
-              </View>
+              placesLoading ? (
+                <View style={styles.skeletonStack}>
+                  <PlaceCardSkeletons />
+                </View>
+              ) : (
+                <Text style={styles.nearEmpty}>{t('home.near_empty')}</Text>
+              )
             }
             ListFooterComponent={
               <View style={{ paddingBottom: insets.bottom + 22 }}>
-                {loadingMore ? (
-                  <ActivityIndicator color={colors.brand} style={styles.nearStatus} />
-                ) : null}
+                {loadingMore ? <PlaceCardSkeletons count={1} /> : null}
               </View>
             }
             ListFooterComponentStyle={styles.nearFooter}
@@ -774,6 +773,11 @@ function makeStyles(colors: ThemeColors) {
       backgroundColor: colors.surface,
       paddingBottom: 10,
     },
+    skeletonStack: {
+      backgroundColor: colors.surface,
+      gap: 10,
+      paddingBottom: 10,
+    },
     nearFooter: {
       flexGrow: 1,
       backgroundColor: colors.surface,
@@ -788,9 +792,6 @@ function makeStyles(colors: ThemeColors) {
     },
     nearTitle: {
       flex: 1,
-    },
-    nearStatus: {
-      paddingVertical: 28,
     },
     nearEmpty: {
       paddingHorizontal: 20,

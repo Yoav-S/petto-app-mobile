@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, FlatList, ActivityIndicator, Text } from 'react-native';
+import { View, StyleSheet, FlatList, Text } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { type ThemeColors } from '@/constants/theme';
@@ -8,6 +8,7 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import PlaceCard from '@/components/business/PlaceCard';
+import { PlaceCardSkeletons } from '@/components/business/PlaceCardSkeleton';
 import {
   listPlaces,
   readLastNearbyCoords,
@@ -209,7 +210,9 @@ export default function CategoryPlacesScreen() {
         backgroundColor={colors.background}
       />
       {loading && places.length === 0 ? (
-        <ActivityIndicator color={colors.brand} style={styles.status} />
+        <View style={styles.skeletons}>
+          <PlaceCardSkeletons />
+        </View>
       ) : (
         <FlatList
           data={places}
@@ -221,9 +224,7 @@ export default function CategoryPlacesScreen() {
             if (hasMore) void loadMore();
           }}
           onEndReachedThreshold={0.4}
-          ListFooterComponent={
-            loadingMore ? <ActivityIndicator color={colors.brand} style={styles.status} /> : null
-          }
+          ListFooterComponent={loadingMore ? <PlaceCardSkeletons count={1} /> : null}
           ListEmptyComponent={<Text style={styles.empty}>{t('home.near_empty')}</Text>}
         />
       )}
@@ -246,8 +247,10 @@ function makeStyles(colors: ThemeColors) {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       paddingBottom: 24,
     },
-    status: {
-      marginTop: 28,
+    skeletons: {
+      marginTop: 16,
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+      gap: 10,
     },
     empty: {
       paddingHorizontal: 20,
