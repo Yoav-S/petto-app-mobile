@@ -498,6 +498,7 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0x14 / 255,
       shadowRadius: 20,
+      boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.078)',
       elevation: 4,
     },
     profileTitleRow: {
@@ -532,6 +533,7 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 20 / 255,
       shadowRadius: 20,
+      boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.078)',
       elevation: 4,
     },
     photoImage: {
@@ -554,6 +556,7 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: 3 },
       shadowOpacity: 15 / 255,
       shadowRadius: 8,
+      boxShadow: '0px 3px 8px rgba(31, 31, 31, 0.059)',
       elevation: 3,
     },
     nameInput: {
@@ -569,6 +572,7 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.04,
       shadowRadius: 20,
+      boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.040)',
       elevation: 1,
     },
     tallField: {
@@ -583,6 +587,7 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.04,
       shadowRadius: 20,
+      boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.040)',
       elevation: 1,
     },
     fieldLabel: {

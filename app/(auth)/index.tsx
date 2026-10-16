@@ -227,6 +227,7 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: -3 },
       shadowOpacity: 0.1,
       shadowRadius: 27,
+      boxShadow: '0px -3px 27px rgba(209, 167, 150, 0.100)',
       elevation: 8,
     },
     copyBlock: {

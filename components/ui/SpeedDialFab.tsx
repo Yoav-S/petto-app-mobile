@@ -241,6 +241,7 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: 3 },
       shadowOpacity: 0.06,
       shadowRadius: 8,
+      boxShadow: '0px 3px 8px rgba(31, 31, 31, 0.060)',
       elevation: 4,
     },
     menuIcon: {
@@ -262,6 +263,7 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: 3 },
       shadowOpacity: 0.06,
       shadowRadius: 8,
+      boxShadow: '0px 3px 8px rgba(31, 31, 31, 0.060)',
       elevation: 6,
     },
   });

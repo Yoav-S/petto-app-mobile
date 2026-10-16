@@ -457,6 +457,7 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.12,
       shadowRadius: 6,
+      boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.120)',
       elevation: 4,
     },
     errorBannerText: {

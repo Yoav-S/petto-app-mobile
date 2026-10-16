@@ -109,6 +109,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
+    boxShadow: '0px -3px 8px rgba(30, 30, 30, 0.080)',
     elevation: 12,
   },
   sheetWithRemove: {
@@ -141,6 +142,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 20,
+    boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.080)',
     elevation: 3,
   },
   menuContainer: {
@@ -152,6 +154,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
+    boxShadow: '0px 3px 8px rgba(31, 31, 31, 0.060)',
     elevation: 2,
   },
   menuWithRemove: {
@@ -185,6 +188,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 20,
+    boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.080)',
     elevation: 3,
   },
   cancelText: {

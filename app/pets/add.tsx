@@ -75,6 +75,7 @@ const CARD_SHADOW = {
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.04,
   shadowRadius: 20,
+  boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.040)',
   elevation: 3,
 };
 
@@ -399,6 +400,7 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0x14 / 255,
       shadowRadius: 20,
+      boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.078)',
       elevation: 4,
     },
     headerRow: {

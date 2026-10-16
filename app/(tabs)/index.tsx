@@ -9,6 +9,8 @@ import {
   Linking,
   Platform,
   AppState,
+  Animated,
+  PanResponder,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -40,11 +42,27 @@ const MORNING_HOUR = 5;
 const EVENING_HOUR = 17;
 const NIGHT_HOUR = 21;
 
-/** Profile photo on the greeting row. The text stack is 24 + 2 + 20. */
-const GREETING_AVATAR = 42;
+/** Profile photo matches the greeting + name stack: line 24, gap 2, line 20. */
+const GREETING_AVATAR = 46;
 const PET_SIZE = 72;
 const PET_GAP = 16;
+const PET_STRIDE = PET_SIZE + PET_GAP;
+/** Visible sliver of the next pet when it would otherwise be cut in half. */
+const PET_PEEK = 4;
+/** Handle (8px from the top, 5px tall) plus the Near you title. */
+const NEAR_SHEET_COLLAPSED = 72;
 const PAGE_END_PX = 480;
+
+function petClipWidth(viewport: number, itemCount: number): number {
+  if (viewport <= 0 || itemCount <= 1) return viewport;
+  let full = 0;
+  while ((full + 1) * PET_STRIDE - PET_GAP <= viewport) full += 1;
+  if (full >= itemCount) return viewport;
+  const nextStart = full * PET_STRIDE;
+  if (nextStart >= viewport) return viewport;
+  const peekEnd = nextStart + PET_PEEK;
+  return peekEnd <= viewport ? peekEnd : nextStart;
+}
 
 type HomeCoords = { latitude: number; longitude: number };
 
@@ -120,7 +138,62 @@ export default function DiscoverHomeScreen() {
   const [hasMore, setHasMore] = useState(savedNearby?.hasMore ?? false);
   const [placesEpoch, setPlacesEpoch] = useState(0);
   const [frameWidth, setFrameWidth] = useState(0);
+  const [petsTrack, setPetsTrack] = useState(0);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [locating, setLocating] = useState(false);
+  const sheetHeight = useRef(new Animated.Value(NEAR_SHEET_COLLAPSED)).current;
+  const sheetHeightRef = useRef(NEAR_SHEET_COLLAPSED);
+  const frameHeightRef = useRef(0);
+  const dragStartRef = useRef(NEAR_SHEET_COLLAPSED);
+  const insetsTopRef = useRef(insets.top);
+  insetsTopRef.current = insets.top;
+  const nearPan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gesture) =>
+        Math.abs(gesture.dy) > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+      onPanResponderGrant: () => {
+        dragStartRef.current = sheetHeightRef.current;
+        sheetHeight.stopAnimation();
+      },
+      onPanResponderMove: (_, gesture) => {
+        const expanded = Math.max(
+          NEAR_SHEET_COLLAPSED,
+          frameHeightRef.current - insetsTopRef.current,
+        );
+        const next = Math.min(
+          expanded,
+          Math.max(NEAR_SHEET_COLLAPSED, dragStartRef.current - gesture.dy),
+        );
+        sheetHeightRef.current = next;
+        sheetHeight.setValue(next);
+      },
+      onPanResponderRelease: (_, gesture) => {
+        const expanded = Math.max(
+          NEAR_SHEET_COLLAPSED,
+          frameHeightRef.current - insetsTopRef.current,
+        );
+        const current = Math.min(
+          expanded,
+          Math.max(NEAR_SHEET_COLLAPSED, dragStartRef.current - gesture.dy),
+        );
+        const open = gesture.vy < -0.35
+          || (gesture.vy <= 0.35 && current > (NEAR_SHEET_COLLAPSED + expanded) / 2);
+        setSheetOpen(open);
+        Animated.spring(sheetHeight, {
+          toValue: open ? expanded : NEAR_SHEET_COLLAPSED,
+          useNativeDriver: false,
+          friction: 9,
+          tension: 70,
+        }).start();
+      },
+    }),
+  ).current;
+  useEffect(() => {
+    const id = sheetHeight.addListener(({ value }) => {
+      sheetHeightRef.current = value;
+    });
+    return () => sheetHeight.removeListener(id);
+  }, [sheetHeight]);
   const locatingRef = useRef(false);
   const loadingMoreRef = useRef(false);
   const hasMoreRef = useRef(savedNearby?.hasMore ?? false);
@@ -374,11 +447,24 @@ export default function DiscoverHomeScreen() {
       <View style={styles.welcomeCard}>
         <View style={styles.petsBlock}>
           <Text style={styles.sectionTitle}>{t('home.my_pets')}</Text>
+          <View
+            onLayout={(event) => {
+              const next = Math.round(event.nativeEvent.layout.width);
+              setPetsTrack((current) => (current === next ? current : next));
+            }}
+          >
           <ScrollView
             horizontal
             nestedScrollEnabled
             showsHorizontalScrollIndicator={false}
-            style={styles.petScroll}
+            decelerationRate="fast"
+            snapToInterval={PET_STRIDE}
+            snapToAlignment="start"
+            disableIntervalMomentum
+            style={[
+              styles.petScroll,
+              petsTrack > 0 ? { width: petClipWidth(petsTrack, 1 + pets.length) } : null,
+            ]}
             contentContainerStyle={styles.petScrollContent}
           >
             <TouchableOpacity style={styles.petItem} onPress={() => void addPet()}>
@@ -404,6 +490,7 @@ export default function DiscoverHomeScreen() {
               </TouchableOpacity>
             ))}
           </ScrollView>
+          </View>
         </View>
       </View>
 
@@ -453,8 +540,9 @@ export default function DiscoverHomeScreen() {
     <View
       style={styles.screen}
       onLayout={(event) => {
-        const { width } = event.nativeEvent.layout;
+        const { width, height } = event.nativeEvent.layout;
         if (width && width !== frameWidth) setFrameWidth(width);
+        if (height) frameHeightRef.current = height;
       }}
     >
       <View
@@ -464,79 +552,88 @@ export default function DiscoverHomeScreen() {
         ]}
       >
         {coords ? (
-          <FlatList
-            style={styles.placeList}
-            data={placesLoading ? [] : places}
-            keyExtractor={(place) => place.id}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={[
-              styles.placeListContent,
-              {
+          <>
+            <ScrollView
+              style={styles.topScroll}
+              contentContainerStyle={{
                 width: frameWidth || '100%',
-                flexGrow: 1,
-              },
-            ]}
-            scrollEventThrottle={16}
-            onScroll={(event) => {
-              const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-              const distance = contentSize.height - layoutMeasurement.height - contentOffset.y;
-              if (distance < PAGE_END_PX) void loadMore();
-            }}
-            onEndReached={() => void loadMore()}
-            onEndReachedThreshold={0.8}
-            ListHeaderComponent={
-              <View>
-                {greeting}
-                <View style={styles.scrollStack}>{homeHeader}</View>
-                <View style={styles.nearSheet}>
-                  <View style={styles.nearHeader}>
-                    <Text style={[styles.sectionTitle, styles.nearTitle]} numberOfLines={1}>
-                      {t('home.near_you')}
-                    </Text>
+                paddingBottom: NEAR_SHEET_COLLAPSED,
+              }}
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled
+            >
+              {greeting}
+              <View style={styles.scrollStack}>{homeHeader}</View>
+            </ScrollView>
+            <Animated.View style={[styles.nearCurtain, { height: sheetHeight }]}>
+              <View style={styles.nearHandleHit} {...nearPan.panHandlers}>
+                <View style={styles.nearHandle} />
+              </View>
+              <View style={styles.nearHeader} {...nearPan.panHandlers}>
+                <Text style={[styles.sectionTitle, styles.nearTitle]} numberOfLines={1}>
+                  {t('home.near_you')}
+                </Text>
+              </View>
+              <FlatList
+                style={[styles.placeList, { backgroundColor: colors.surface }]}
+                data={placesLoading ? [] : places}
+                keyExtractor={(place) => place.id}
+                showsVerticalScrollIndicator={false}
+                scrollEnabled={sheetOpen}
+                contentContainerStyle={[
+                  styles.placeListContent,
+                  { width: frameWidth || '100%', flexGrow: 1 },
+                ]}
+                scrollEventThrottle={16}
+                onScroll={(event) => {
+                  const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+                  const distance = contentSize.height - layoutMeasurement.height - contentOffset.y;
+                  if (distance < PAGE_END_PX) void loadMore();
+                }}
+                onEndReached={() => void loadMore()}
+                onEndReachedThreshold={0.8}
+                ListEmptyComponent={
+                  placesLoading ? (
+                    <View style={styles.skeletonStack}>
+                      <PlaceCardSkeletons />
+                    </View>
+                  ) : (
+                    <Text style={styles.nearEmpty}>{t('home.near_empty')}</Text>
+                  )
+                }
+                ListFooterComponent={
+                  <View style={{ paddingBottom: insets.bottom + 22 }}>
+                    {loadingMore ? <PlaceCardSkeletons count={1} /> : null}
                   </View>
-                </View>
-              </View>
-            }
-            ListEmptyComponent={
-              placesLoading ? (
-                <View style={styles.skeletonStack}>
-                  <PlaceCardSkeletons />
-                </View>
-              ) : (
-                <Text style={styles.nearEmpty}>{t('home.near_empty')}</Text>
-              )
-            }
-            ListFooterComponent={
-              <View style={{ paddingBottom: insets.bottom + 22 }}>
-                {loadingMore ? <PlaceCardSkeletons count={1} /> : null}
-              </View>
-            }
-            ListFooterComponentStyle={styles.nearFooter}
-            renderItem={({ item: place }) => (
-              <View style={styles.nearBody}>
-                <PlaceCard
-                  place={place}
-                  onPress={() =>
-                    router.push({
-                      pathname: '/business/[id]',
-                      params: {
-                        id: place.id,
-                        name: place.name,
-                        image: place.image ?? '',
-                        category: place.category,
-                        distance: place.distance_km != null ? String(place.distance_km) : '',
-                        rating: typeof place.rating === 'number' ? String(place.rating) : '',
-                        openNow: place.open_now ? '1' : '0',
-                        open247: place.open_24_7 ? '1' : '0',
-                        lat: coords ? String(coords.latitude) : '',
-                        lng: coords ? String(coords.longitude) : '',
-                      },
-                    } as never)
-                  }
-                />
-              </View>
-            )}
-          />
+                }
+                ListFooterComponentStyle={styles.nearFooter}
+                renderItem={({ item: place }) => (
+                  <View style={styles.nearBody}>
+                    <PlaceCard
+                      place={place}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/business/[id]',
+                          params: {
+                            id: place.id,
+                            name: place.name,
+                            image: place.image ?? '',
+                            category: place.category,
+                            distance: place.distance_km != null ? String(place.distance_km) : '',
+                            rating: typeof place.rating === 'number' ? String(place.rating) : '',
+                            openNow: place.open_now ? '1' : '0',
+                            open247: place.open_24_7 ? '1' : '0',
+                            lat: String(coords.latitude),
+                            lng: String(coords.longitude),
+                          },
+                        } as never)
+                      }
+                    />
+                  </View>
+                )}
+              />
+            </Animated.View>
+          </>
         ) : (
           <ScrollView
             style={styles.placeList}
@@ -575,7 +672,7 @@ function makeStyles(colors: ThemeColors) {
     screen: {
       flex: 1,
       backgroundColor: colors.background,
-      overflow: 'hidden',
+      overflow: 'visible',
     },
     greetingBar: {
       width: '100%',
@@ -585,6 +682,11 @@ function makeStyles(colors: ThemeColors) {
     homeScroll: {
       flex: 1,
       width: '100%',
+    },
+    topScroll: {
+      flex: 1,
+      width: '100%',
+      backgroundColor: colors.background,
     },
     scrollStack: {
       width: '100%',
@@ -613,7 +715,7 @@ function makeStyles(colors: ThemeColors) {
       flex: 1,
       minWidth: 0,
       flexDirection: 'row',
-      alignItems: 'flex-end',
+      alignItems: 'flex-start',
       gap: 12,
     },
     greetingCopy: {
@@ -662,6 +764,7 @@ function makeStyles(colors: ThemeColors) {
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 20 / 255,
       shadowRadius: 20,
+      boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.078)',
       elevation: 4,
     },
     petsBlock: {
@@ -675,7 +778,8 @@ function makeStyles(colors: ThemeColors) {
       color: colors.primaryText,
     },
     petScroll: {
-      width: '100%',
+      alignSelf: 'flex-start',
+      maxWidth: '100%',
       flexGrow: 0,
     },
     petScrollContent: {
@@ -747,11 +851,27 @@ function makeStyles(colors: ThemeColors) {
       lineHeight: 20,
       color: colors.primaryText,
     },
-    nearSheet: {
-      marginTop: 4,
+    nearCurtain: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 5,
       backgroundColor: colors.surface,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
+      overflow: 'hidden',
+    },
+    nearHandleHit: {
+      alignItems: 'center',
+      paddingTop: 8,
+      paddingBottom: 12,
+    },
+    nearHandle: {
+      width: 36,
+      height: 5,
+      borderRadius: 100,
+      backgroundColor: colors.border,
     },
     nearBody: {
       backgroundColor: colors.surface,
@@ -771,7 +891,7 @@ function makeStyles(colors: ThemeColors) {
       alignItems: 'center',
       gap: 8,
       paddingHorizontal: 20,
-      paddingTop: 22,
+      paddingTop: 0,
       marginBottom: 10,
     },
     nearTitle: {
@@ -812,6 +932,8 @@ function makeStyles(colors: ThemeColors) {
     locationHandle: {
       position: 'absolute',
       top: 8,
+      left: '50%',
+      marginLeft: -18,
       width: 36,
       height: 5,
       borderRadius: 100,

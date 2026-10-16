@@ -352,6 +352,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     shadowOffset: { width: 0, height: -1 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
+    boxShadow: '0px -1px 8px rgba(30, 30, 30, 0.060)',
     elevation: 6,
   },
   continueBtn: {

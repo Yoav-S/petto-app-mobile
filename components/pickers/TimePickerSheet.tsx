@@ -294,6 +294,7 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: 3 },
       shadowOpacity: 0x0f / 255,
       shadowRadius: 8,
+      boxShadow: '0px 3px 8px rgba(31, 31, 31, 0.059)',
       elevation: 3,
     },
     timeFrame: {

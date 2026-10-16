@@ -1012,15 +1012,16 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: -1 },
       shadowOpacity: 15 / 255,
       shadowRadius: 8,
+      boxShadow: '0px -1px 8px rgba(30, 30, 30, 0.059)',
       elevation: 8,
     },
     hoursRow: {
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       flexWrap: 'nowrap',
-      gap: 22,
     },
     dayLabel: {
+      width: 48,
       flexGrow: 0,
       flexShrink: 0,
       fontFamily: 'Rubik-Regular',

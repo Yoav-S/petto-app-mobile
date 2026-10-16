@@ -789,6 +789,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.04,
     shadowRadius: 20,
+    boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.040)',
     elevation: 3,
   },
   noteCardSameDay: {
@@ -830,6 +831,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     shadowOffset: { width: 0, height: -1 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
+    boxShadow: '0px -1px 8px rgba(30, 30, 30, 0.060)',
     elevation: 6,
   },
   addButton: {
@@ -855,6 +857,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     shadowOffset: { width: 0, height: -1 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
+    boxShadow: '0px -1px 8px rgba(30, 30, 30, 0.060)',
     elevation: 6,
   },
   resolvedText: {

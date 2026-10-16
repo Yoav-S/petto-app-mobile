@@ -19,6 +19,7 @@ const CARD_SHADOW = {
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.04,
   shadowRadius: 20,
+  boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.040)',
   elevation: 3,
 };
 
@@ -300,6 +301,7 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: 3 },
       shadowOpacity: 0.04,
       shadowRadius: 10,
+      boxShadow: '0px 3px 10px rgba(30, 30, 30, 0.040)',
       elevation: 2,
     },
     pillUnselected: {

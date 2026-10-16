@@ -125,12 +125,20 @@ export default function CategoryPlacesScreen() {
     if (!category || !locationReady) return;
     let cancelled = false;
     const here = coordsRef.current;
+    if (!here) {
+      placesRef.current = [];
+      hasMoreRef.current = false;
+      setPlaces([]);
+      setHasMore(false);
+      setLoading(false);
+      return;
+    }
     const refreshing = placesRef.current.length > 0;
     if (!refreshing) setLoading(true);
     refreshingRef.current = true;
     listPlaces({
-      latitude: here?.latitude,
-      longitude: here?.longitude,
+      latitude: here.latitude,
+      longitude: here.longitude,
       offset: 0,
       category,
     })
@@ -156,14 +164,14 @@ export default function CategoryPlacesScreen() {
   }, [category, coords, locationReady]);
 
   const loadMore = useCallback(async () => {
-    if (!category || !hasMoreRef.current || loadingMoreRef.current || refreshingRef.current) return;
+    const here = coordsRef.current;
+    if (!category || !here || !hasMoreRef.current || loadingMoreRef.current || refreshingRef.current) return;
     loadingMoreRef.current = true;
     setLoadingMore(true);
-    const here = coordsRef.current;
     try {
       const page = await listPlaces({
-        latitude: here?.latitude,
-        longitude: here?.longitude,
+        latitude: here.latitude,
+        longitude: here.longitude,
         offset: placesRef.current.length,
         category,
       });
@@ -207,7 +215,8 @@ export default function CategoryPlacesScreen() {
     <View style={styles.screen}>
       <SettingsHeader
         title={category ? t(CATEGORY_LABEL[category]) : t('home.categories')}
-        backgroundColor={colors.background}
+        backgroundColor={colors.surface}
+        rounded
       />
       {loading && places.length === 0 ? (
         <View style={styles.skeletons}>
@@ -240,7 +249,7 @@ function makeStyles(colors: ThemeColors) {
     },
     list: {
       flex: 1,
-      marginTop: 16,
+      marginTop: 10,
     },
     listContent: {
       gap: 10,
@@ -248,7 +257,7 @@ function makeStyles(colors: ThemeColors) {
       paddingBottom: 24,
     },
     skeletons: {
-      marginTop: 16,
+      marginTop: 10,
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       gap: 10,
     },

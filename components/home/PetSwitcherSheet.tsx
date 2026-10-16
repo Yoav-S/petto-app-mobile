@@ -91,6 +91,7 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: -3 },
       shadowOpacity: 0.08,
       shadowRadius: 8,
+      boxShadow: '0px -3px 8px rgba(30, 30, 30, 0.080)',
       elevation: 8,
     },
     header: {
@@ -116,6 +117,7 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.08,
       shadowRadius: 20,
+      boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.080)',
       elevation: 3,
     },
     listBlock: {

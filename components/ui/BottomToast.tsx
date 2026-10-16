@@ -214,6 +214,7 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.15,
       shadowRadius: 8,
+      boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.150)',
       elevation: 8,
     },
     message: {
