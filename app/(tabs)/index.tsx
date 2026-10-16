@@ -42,15 +42,13 @@ const MORNING_HOUR = 5;
 const EVENING_HOUR = 17;
 const NIGHT_HOUR = 21;
 
-/** Profile photo matches the greeting + name stack: line 24, gap 2, line 20. */
-const GREETING_AVATAR = 46;
+/** Header profile photo. The greeting row around it is taller than the photo. */
+const GREETING_AVATAR = 42;
 const PET_SIZE = 72;
 const PET_GAP = 16;
 const PET_STRIDE = PET_SIZE + PET_GAP;
 /** Visible sliver of the next pet when it would otherwise be cut in half. */
 const PET_PEEK = 4;
-/** Handle (8px from the top, 5px tall) plus the Near you title. */
-const NEAR_SHEET_COLLAPSED = 72;
 const PAGE_END_PX = 480;
 
 function petClipWidth(viewport: number, itemCount: number): number {
@@ -139,61 +137,101 @@ export default function DiscoverHomeScreen() {
   const [placesEpoch, setPlacesEpoch] = useState(0);
   const [frameWidth, setFrameWidth] = useState(0);
   const [petsTrack, setPetsTrack] = useState(0);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [curtainOn, setCurtainOn] = useState(false);
+  const [curtainFull, setCurtainFull] = useState(false);
   const [locating, setLocating] = useState(false);
-  const sheetHeight = useRef(new Animated.Value(NEAR_SHEET_COLLAPSED)).current;
-  const sheetHeightRef = useRef(NEAR_SHEET_COLLAPSED);
+  const screenRef = useRef<View>(null);
+  const nearAnchorRef = useRef<View>(null);
+  const curtainTop = useRef(new Animated.Value(0)).current;
+  const curtainTopRef = useRef(0);
+  const dragOriginRef = useRef(0);
+  const gestureDyRef = useRef(0);
+  const draggingRef = useRef(false);
+  const curtainOnRef = useRef(false);
   const frameHeightRef = useRef(0);
-  const dragStartRef = useRef(NEAR_SHEET_COLLAPSED);
   const insetsTopRef = useRef(insets.top);
   insetsTopRef.current = insets.top;
+  useEffect(() => {
+    const id = curtainTop.addListener(({ value }) => {
+      curtainTopRef.current = value;
+    });
+    return () => curtainTop.removeListener(id);
+  }, [curtainTop]);
+  const applyCurtain = useCallback((origin: number, dy: number) => {
+    const min = insetsTopRef.current;
+    const next = Math.min(Math.max(min, origin + dy), Math.max(min, frameHeightRef.current));
+    curtainTop.setValue(next);
+    curtainTopRef.current = next;
+  }, [curtainTop]);
+  const closeCurtain = useCallback(() => {
+    curtainOnRef.current = false;
+    setCurtainOn(false);
+    setCurtainFull(false);
+  }, []);
   const nearPan = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gesture) =>
-        Math.abs(gesture.dy) > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+      onMoveShouldSetPanResponder: (_, gesture) => {
+        const vertical = Math.abs(gesture.dy) > Math.abs(gesture.dx) && Math.abs(gesture.dy) > 8;
+        if (!vertical) return false;
+        return curtainOnRef.current ? gesture.dy > 0 : gesture.dy < 0;
+      },
       onPanResponderGrant: () => {
-        dragStartRef.current = sheetHeightRef.current;
-        sheetHeight.stopAnimation();
+        gestureDyRef.current = 0;
+        draggingRef.current = true;
+        curtainTop.stopAnimation();
+        setCurtainFull(false);
+        if (curtainOnRef.current) {
+          dragOriginRef.current = curtainTopRef.current;
+          return;
+        }
+        const anchor = nearAnchorRef.current;
+        const screen = screenRef.current;
+        if (!anchor || !screen) return;
+        screen.measureInWindow((_sx, screenY) => {
+          anchor.measureInWindow((_ax, anchorY) => {
+            if (!draggingRef.current && !curtainOnRef.current) return;
+            const start = Math.max(insetsTopRef.current, anchorY - screenY);
+            dragOriginRef.current = start;
+            if (!curtainOnRef.current) {
+              curtainOnRef.current = true;
+              setCurtainOn(true);
+            }
+            if (draggingRef.current) applyCurtain(start, gestureDyRef.current);
+          });
+        });
       },
       onPanResponderMove: (_, gesture) => {
-        const expanded = Math.max(
-          NEAR_SHEET_COLLAPSED,
-          frameHeightRef.current - insetsTopRef.current,
-        );
-        const next = Math.min(
-          expanded,
-          Math.max(NEAR_SHEET_COLLAPSED, dragStartRef.current - gesture.dy),
-        );
-        sheetHeightRef.current = next;
-        sheetHeight.setValue(next);
+        gestureDyRef.current = gesture.dy;
+        if (!curtainOnRef.current) return;
+        applyCurtain(dragOriginRef.current, gesture.dy);
       },
       onPanResponderRelease: (_, gesture) => {
-        const expanded = Math.max(
-          NEAR_SHEET_COLLAPSED,
-          frameHeightRef.current - insetsTopRef.current,
-        );
-        const current = Math.min(
-          expanded,
-          Math.max(NEAR_SHEET_COLLAPSED, dragStartRef.current - gesture.dy),
-        );
-        const open = gesture.vy < -0.35
-          || (gesture.vy <= 0.35 && current > (NEAR_SHEET_COLLAPSED + expanded) / 2);
-        setSheetOpen(open);
-        Animated.spring(sheetHeight, {
-          toValue: open ? expanded : NEAR_SHEET_COLLAPSED,
-          useNativeDriver: false,
-          friction: 9,
-          tension: 70,
-        }).start();
+        draggingRef.current = false;
+        if (!curtainOnRef.current) return;
+        const min = insetsTopRef.current;
+        const origin = dragOriginRef.current;
+        const current = Math.min(Math.max(min, origin + gesture.dy), Math.max(min, frameHeightRef.current));
+        const open = gesture.vy < -0.35 || current < (origin + min) / 2;
+        if (open) {
+          setCurtainFull(true);
+          Animated.spring(curtainTop, {
+            toValue: min,
+            useNativeDriver: false,
+            friction: 9,
+            tension: 70,
+          }).start();
+        } else {
+          Animated.timing(curtainTop, {
+            toValue: origin,
+            duration: 180,
+            useNativeDriver: false,
+          }).start(({ finished }) => {
+            if (finished) closeCurtain();
+          });
+        }
       },
     }),
   ).current;
-  useEffect(() => {
-    const id = sheetHeight.addListener(({ value }) => {
-      sheetHeightRef.current = value;
-    });
-    return () => sheetHeight.removeListener(id);
-  }, [sheetHeight]);
   const locatingRef = useRef(false);
   const loadingMoreRef = useRef(false);
   const hasMoreRef = useRef(savedNearby?.hasMore ?? false);
@@ -400,6 +438,24 @@ export default function DiscoverHomeScreen() {
     router.push('/pets/add' as never);
   }
 
+  function openPlace(place: BusinessPlace) {
+    router.push({
+      pathname: '/business/[id]',
+      params: {
+        id: place.id,
+        name: place.name,
+        image: place.image ?? '',
+        category: place.category,
+        distance: place.distance_km != null ? String(place.distance_km) : '',
+        rating: typeof place.rating === 'number' ? String(place.rating) : '',
+        openNow: place.open_now ? '1' : '0',
+        open247: place.open_24_7 ? '1' : '0',
+        lat: coordsRef.current ? String(coordsRef.current.latitude) : '',
+        lng: coordsRef.current ? String(coordsRef.current.longitude) : '',
+      },
+    } as never);
+  }
+
   const greeting = (
     <View style={[styles.greetingBar, { paddingTop: insets.top + 10, paddingBottom: 8 }]}>
       <View style={styles.welcomeRow}>
@@ -538,6 +594,7 @@ export default function DiscoverHomeScreen() {
 
   return (
     <View
+      ref={screenRef}
       style={styles.screen}
       onLayout={(event) => {
         const { width, height } = event.nativeEvent.layout;
@@ -552,88 +609,61 @@ export default function DiscoverHomeScreen() {
         ]}
       >
         {coords ? (
-          <>
-            <ScrollView
-              style={styles.topScroll}
-              contentContainerStyle={{
-                width: frameWidth || '100%',
-                paddingBottom: NEAR_SHEET_COLLAPSED,
-              }}
-              showsVerticalScrollIndicator={false}
-              nestedScrollEnabled
-            >
-              {greeting}
-              <View style={styles.scrollStack}>{homeHeader}</View>
-            </ScrollView>
-            <Animated.View style={[styles.nearCurtain, { height: sheetHeight }]}>
-              <View style={styles.nearHandleHit} {...nearPan.panHandlers}>
-                <View style={styles.nearHandle} />
-              </View>
-              <View style={styles.nearHeader} {...nearPan.panHandlers}>
-                <Text style={[styles.sectionTitle, styles.nearTitle]} numberOfLines={1}>
-                  {t('home.near_you')}
-                </Text>
-              </View>
-              <FlatList
-                style={[styles.placeList, { backgroundColor: colors.surface }]}
-                data={placesLoading ? [] : places}
-                keyExtractor={(place) => place.id}
-                showsVerticalScrollIndicator={false}
-                scrollEnabled={sheetOpen}
-                contentContainerStyle={[
-                  styles.placeListContent,
-                  { width: frameWidth || '100%', flexGrow: 1 },
-                ]}
-                scrollEventThrottle={16}
-                onScroll={(event) => {
-                  const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-                  const distance = contentSize.height - layoutMeasurement.height - contentOffset.y;
-                  if (distance < PAGE_END_PX) void loadMore();
-                }}
-                onEndReached={() => void loadMore()}
-                onEndReachedThreshold={0.8}
-                ListEmptyComponent={
-                  placesLoading ? (
-                    <View style={styles.skeletonStack}>
-                      <PlaceCardSkeletons />
-                    </View>
-                  ) : (
-                    <Text style={styles.nearEmpty}>{t('home.near_empty')}</Text>
-                  )
-                }
-                ListFooterComponent={
-                  <View style={{ paddingBottom: insets.bottom + 22 }}>
-                    {loadingMore ? <PlaceCardSkeletons count={1} /> : null}
+          <FlatList
+            style={styles.placeList}
+            data={placesLoading ? [] : places}
+            keyExtractor={(place) => place.id}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={!curtainOn}
+            contentContainerStyle={[
+              styles.placeListContent,
+              { width: frameWidth || '100%', flexGrow: 1 },
+            ]}
+            scrollEventThrottle={16}
+            onScroll={(event) => {
+              const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+              const distance = contentSize.height - layoutMeasurement.height - contentOffset.y;
+              if (distance < PAGE_END_PX) void loadMore();
+            }}
+            onEndReached={() => void loadMore()}
+            onEndReachedThreshold={0.8}
+            ListHeaderComponent={
+              <View>
+                {greeting}
+                <View style={styles.scrollStack}>{homeHeader}</View>
+                <View ref={nearAnchorRef} collapsable={false} style={styles.nearSheet}>
+                  <View style={styles.nearHandleHit} {...nearPan.panHandlers}>
+                    <View style={styles.nearHandle} />
                   </View>
-                }
-                ListFooterComponentStyle={styles.nearFooter}
-                renderItem={({ item: place }) => (
-                  <View style={styles.nearBody}>
-                    <PlaceCard
-                      place={place}
-                      onPress={() =>
-                        router.push({
-                          pathname: '/business/[id]',
-                          params: {
-                            id: place.id,
-                            name: place.name,
-                            image: place.image ?? '',
-                            category: place.category,
-                            distance: place.distance_km != null ? String(place.distance_km) : '',
-                            rating: typeof place.rating === 'number' ? String(place.rating) : '',
-                            openNow: place.open_now ? '1' : '0',
-                            open247: place.open_24_7 ? '1' : '0',
-                            lat: String(coords.latitude),
-                            lng: String(coords.longitude),
-                          },
-                        } as never)
-                      }
-                    />
+                  <View style={styles.nearHeader}>
+                    <Text style={[styles.sectionTitle, styles.nearTitle]} numberOfLines={1}>
+                      {t('home.near_you')}
+                    </Text>
                   </View>
-                )}
-              />
-            </Animated.View>
-          </>
+                </View>
+              </View>
+            }
+            ListEmptyComponent={
+              placesLoading ? (
+                <View style={styles.skeletonStack}>
+                  <PlaceCardSkeletons />
+                </View>
+              ) : (
+                <Text style={styles.nearEmpty}>{t('home.near_empty')}</Text>
+              )
+            }
+            ListFooterComponent={
+              <View style={{ paddingBottom: insets.bottom + 22 }}>
+                {loadingMore ? <PlaceCardSkeletons count={1} /> : null}
+              </View>
+            }
+            ListFooterComponentStyle={styles.nearFooter}
+            renderItem={({ item: place }) => (
+              <View style={styles.nearBody}>
+                <PlaceCard place={place} onPress={() => openPlace(place)} />
+              </View>
+            )}
+          />
         ) : (
           <ScrollView
             style={styles.placeList}
@@ -664,6 +694,54 @@ export default function DiscoverHomeScreen() {
           </ScrollView>
         )}
       </View>
+      {coords && curtainOn ? (
+        <Animated.View style={[styles.curtain, { top: curtainTop }]}>
+          <View style={styles.nearHandleHit} {...nearPan.panHandlers}>
+            <View style={styles.nearHandle} />
+          </View>
+          <View style={styles.nearHeader}>
+            <Text style={[styles.sectionTitle, styles.nearTitle]} numberOfLines={1}>
+              {t('home.near_you')}
+            </Text>
+          </View>
+          <FlatList
+            style={styles.curtainList}
+            data={placesLoading ? [] : places}
+            keyExtractor={(place) => place.id}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={curtainFull}
+            contentContainerStyle={[styles.placeListContent, { flexGrow: 1 }]}
+            scrollEventThrottle={16}
+            onScroll={(event) => {
+              const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+              const distance = contentSize.height - layoutMeasurement.height - contentOffset.y;
+              if (distance < PAGE_END_PX) void loadMore();
+            }}
+            onEndReached={() => void loadMore()}
+            onEndReachedThreshold={0.8}
+            ListEmptyComponent={
+              placesLoading ? (
+                <View style={styles.skeletonStack}>
+                  <PlaceCardSkeletons />
+                </View>
+              ) : (
+                <Text style={styles.nearEmpty}>{t('home.near_empty')}</Text>
+              )
+            }
+            ListFooterComponent={
+              <View style={{ paddingBottom: insets.bottom + 22 }}>
+                {loadingMore ? <PlaceCardSkeletons count={1} /> : null}
+              </View>
+            }
+            ListFooterComponentStyle={styles.nearFooter}
+            renderItem={({ item: place }) => (
+              <View style={styles.nearBody}>
+                <PlaceCard place={place} onPress={() => openPlace(place)} />
+              </View>
+            )}
+          />
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
@@ -682,11 +760,6 @@ function makeStyles(colors: ThemeColors) {
     homeScroll: {
       flex: 1,
       width: '100%',
-    },
-    topScroll: {
-      flex: 1,
-      width: '100%',
-      backgroundColor: colors.background,
     },
     scrollStack: {
       width: '100%',
@@ -715,7 +788,7 @@ function makeStyles(colors: ThemeColors) {
       flex: 1,
       minWidth: 0,
       flexDirection: 'row',
-      alignItems: 'flex-start',
+      alignItems: 'center',
       gap: 12,
     },
     greetingCopy: {
@@ -851,16 +924,26 @@ function makeStyles(colors: ThemeColors) {
       lineHeight: 20,
       color: colors.primaryText,
     },
-    nearCurtain: {
+    nearSheet: {
+      marginTop: 4,
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+    },
+    curtain: {
       position: 'absolute',
       left: 0,
       right: 0,
       bottom: 0,
-      zIndex: 5,
+      zIndex: 8,
       backgroundColor: colors.surface,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       overflow: 'hidden',
+    },
+    curtainList: {
+      flex: 1,
+      backgroundColor: colors.surface,
     },
     nearHandleHit: {
       alignItems: 'center',
@@ -922,6 +1005,7 @@ function makeStyles(colors: ThemeColors) {
     locationCard: {
       flex: 1,
       width: '100%',
+      marginTop: 4,
       backgroundColor: colors.surface,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
