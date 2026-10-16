@@ -2,6 +2,7 @@ import React from 'react';
 import {
   StyleSheet,
   TouchableOpacity,
+  View,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -59,21 +60,39 @@ export default function HeaderIconButton({
 }: HeaderIconButtonProps) {
   const styles = useThemedStyles(makeStyles);
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={disabled || !onPress}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      activeOpacity={0.85}
-      style={[styles.btn, style]}
-    >
-      {children}
-    </TouchableOpacity>
+    <View style={[styles.shadow, style]} collapsable={false}>
+      <TouchableOpacity
+        onPress={onPress}
+        disabled={disabled || !onPress}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        activeOpacity={0.85}
+        style={styles.btn}
+      >
+        {children}
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    btn: makeHeaderIconButtonStyle(c),
+    // Shadow sits on a plain view. iOS drops it when it is on the pressable.
+    shadow: {
+      width: HEADER_ICON_BTN.size,
+      height: HEADER_ICON_BTN.size,
+      borderRadius: HEADER_ICON_BTN.radius,
+      backgroundColor: c.surface,
+      ...HEADER_ICON_BTN_SHADOW,
+    },
+    btn: {
+      width: HEADER_ICON_BTN.size,
+      height: HEADER_ICON_BTN.size,
+      borderRadius: HEADER_ICON_BTN.radius,
+      padding: HEADER_ICON_BTN.padding,
+      backgroundColor: c.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
   });

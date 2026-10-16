@@ -64,6 +64,7 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
   }, [loading, fadeAnim]);
 
   return (
+    <View style={styles.shadowHost} collapsable={false}>
     <TouchableOpacity
       style={styles.card}
       onPress={onPress}
@@ -140,6 +141,7 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
         </View>
       )}
     </TouchableOpacity>
+    </View>
   );
 }
 
@@ -153,6 +155,14 @@ const cardShadow = {
 };
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  shadowHost: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    borderRadius: TOPICS.radius,
+    backgroundColor: c.surface,
+    ...cardShadow,
+  },
   card: {
     flex: 1,
     height: '100%',
@@ -160,7 +170,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderRadius: TOPICS.radius,
     padding: TOPICS.padding,
     width: '100%',
-    ...cardShadow,
   },
   inner: {
     flex: 1,

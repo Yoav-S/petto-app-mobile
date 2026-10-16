@@ -98,6 +98,10 @@ export default function PetHeader({
   useStatusBarOverride(barStyle);
   const nameColor =
     !isDark && !imageContrast.ready ? '#FFFFFF' : foregroundForBarStyle(imageContrast.style);
+  // Same photo read as the status bar. A light cover gets a dark chip; a dark cover keeps the white glass.
+  const bubbleStyle = {
+    backgroundColor: nameColor === '#1F2937' ? 'rgba(31, 41, 55, 0.2)' : 'rgba(255, 255, 255, 0.22)',
+  };
 
   useEffect(() => {
     if (loading) {
@@ -167,14 +171,14 @@ export default function PetHeader({
               {pet && (pet.breed || petAge) ? (
                 <View style={styles.metaRow}>
                   {pet.breed ? (
-                    <View style={styles.metaBubble}>
+                    <View style={[styles.metaBubble, bubbleStyle]}>
                       <Text style={[styles.metaText, { color: nameColor }]} numberOfLines={1} ellipsizeMode="tail">
                         {pet.breed}
                       </Text>
                     </View>
                   ) : null}
                   {petAge ? (
-                    <View style={styles.metaBubble}>
+                    <View style={[styles.metaBubble, bubbleStyle]}>
                       <Text style={[styles.metaText, { color: nameColor }]} numberOfLines={1} ellipsizeMode="tail">
                         {petAge}
                       </Text>
@@ -255,6 +259,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
+    overflow: 'visible',
     height: 44,
     flexDirection: 'row',
     alignItems: 'center',

@@ -136,6 +136,8 @@ export default function DiscoverHomeScreen() {
   const [hasMore, setHasMore] = useState(savedNearby?.hasMore ?? false);
   const [placesEpoch, setPlacesEpoch] = useState(0);
   const [frameWidth, setFrameWidth] = useState(0);
+  const [homeListHeight, setHomeListHeight] = useState(0);
+  const [homeHeaderHeight, setHomeHeaderHeight] = useState(0);
   const [petsTrack, setPetsTrack] = useState(0);
   const [curtainOn, setCurtainOn] = useState(false);
   const [curtainFull, setCurtainFull] = useState(false);
@@ -611,6 +613,10 @@ export default function DiscoverHomeScreen() {
         {coords ? (
           <FlatList
             style={styles.placeList}
+            onLayout={(event) => {
+              const next = Math.round(event.nativeEvent.layout.height);
+              setHomeListHeight((current) => (current === next ? current : next));
+            }}
             data={placesLoading ? [] : places}
             keyExtractor={(place) => place.id}
             showsVerticalScrollIndicator={false}
@@ -628,7 +634,12 @@ export default function DiscoverHomeScreen() {
             onEndReached={() => void loadMore()}
             onEndReachedThreshold={0.8}
             ListHeaderComponent={
-              <View>
+              <View
+                onLayout={(event) => {
+                  const next = Math.round(event.nativeEvent.layout.height);
+                  setHomeHeaderHeight((current) => (current === next ? current : next));
+                }}
+              >
                 {greeting}
                 <View style={styles.scrollStack}>{homeHeader}</View>
                 <View ref={nearAnchorRef} collapsable={false} style={styles.nearSheet}>
@@ -649,15 +660,26 @@ export default function DiscoverHomeScreen() {
                   <PlaceCardSkeletons />
                 </View>
               ) : (
-                <Text style={styles.nearEmpty}>{t('home.near_empty')}</Text>
+                <View
+                  style={[
+                    styles.nearEmptyWrap,
+                    { height: Math.max(160, homeListHeight - homeHeaderHeight) },
+                  ]}
+                >
+                  <Text style={styles.nearEmpty}>{t('home.near_empty')}</Text>
+                </View>
               )
             }
             ListFooterComponent={
-              <View style={{ paddingBottom: insets.bottom + 22 }}>
-                {loadingMore ? <PlaceCardSkeletons count={1} /> : null}
-              </View>
+              placesLoading || places.length > 0 ? (
+                <View style={{ paddingBottom: insets.bottom + 22 }}>
+                  {loadingMore ? <PlaceCardSkeletons count={1} /> : null}
+                </View>
+              ) : null
             }
-            ListFooterComponentStyle={styles.nearFooter}
+            ListFooterComponentStyle={
+              placesLoading || places.length > 0 ? styles.nearFooter : undefined
+            }
             renderItem={({ item: place }) => (
               <View style={styles.nearBody}>
                 <PlaceCard place={place} onPress={() => openPlace(place)} />
@@ -725,15 +747,21 @@ export default function DiscoverHomeScreen() {
                   <PlaceCardSkeletons />
                 </View>
               ) : (
-                <Text style={styles.nearEmpty}>{t('home.near_empty')}</Text>
+                <View style={styles.nearEmptyWrap}>
+                  <Text style={styles.nearEmpty}>{t('home.near_empty')}</Text>
+                </View>
               )
             }
             ListFooterComponent={
-              <View style={{ paddingBottom: insets.bottom + 22 }}>
-                {loadingMore ? <PlaceCardSkeletons count={1} /> : null}
-              </View>
+              placesLoading || places.length > 0 ? (
+                <View style={{ paddingBottom: insets.bottom + 22 }}>
+                  {loadingMore ? <PlaceCardSkeletons count={1} /> : null}
+                </View>
+              ) : null
             }
-            ListFooterComponentStyle={styles.nearFooter}
+            ListFooterComponentStyle={
+              placesLoading || places.length > 0 ? styles.nearFooter : undefined
+            }
             renderItem={({ item: place }) => (
               <View style={styles.nearBody}>
                 <PlaceCard place={place} onPress={() => openPlace(place)} />
@@ -980,9 +1008,16 @@ function makeStyles(colors: ThemeColors) {
     nearTitle: {
       flex: 1,
     },
-    nearEmpty: {
+    nearEmptyWrap: {
+      flexGrow: 1,
+      flex: 1,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
       paddingHorizontal: 20,
       paddingVertical: 28,
+    },
+    nearEmpty: {
       textAlign: 'center',
       fontFamily: 'Rubik-Regular',
       fontSize: 16,

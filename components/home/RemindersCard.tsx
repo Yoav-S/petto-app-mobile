@@ -62,6 +62,7 @@ export default function RemindersCard({
   };
 
   return (
+    <View style={styles.shadowHost} collapsable={false}>
     <TouchableOpacity
       style={styles.card}
       onPress={onPress}
@@ -121,6 +122,7 @@ export default function RemindersCard({
         </View>
       )}
     </TouchableOpacity>
+    </View>
   );
 }
 
@@ -134,6 +136,14 @@ const cardShadow = {
 };
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  shadowHost: {
+    flex: 1,
+    minWidth: 0,
+    height: '100%',
+    borderRadius: 20,
+    backgroundColor: c.surface,
+    ...cardShadow,
+  },
   card: {
     backgroundColor: c.surface,
     borderRadius: 20,
@@ -141,7 +151,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
     minWidth: 0,
     height: '100%',
-    ...cardShadow,
   },
   contentContainer: {
     width: '100%',

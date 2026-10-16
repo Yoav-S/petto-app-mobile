@@ -511,6 +511,7 @@ const makeStyles = (c: ThemeColors) =>
     row: {
       flexDirection: 'row',
       alignItems: 'stretch',
+      overflow: 'visible',
     },
     healthWrap: {
       position: 'relative',
