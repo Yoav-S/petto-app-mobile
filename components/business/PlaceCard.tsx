@@ -180,6 +180,7 @@ function makeStyles(colors: ThemeColors) {
     },
     cardImagePlaceholder: {
       width: '100%',
+      alignSelf: 'stretch',
       aspectRatio: 4 / 3,
     },
     distanceSlot: {

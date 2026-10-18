@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import CalendarPickerCore from '@/components/pickers/CalendarPickerCore';
 import { t } from '@/i18n';
 import { parseIsoDate, minReminderDateIso, toIsoDate, isIsoDateBefore } from '@/utils/calendar';
@@ -72,9 +73,9 @@ export default function ReminderCalendarPickerSheet({
           <View style={styles.header}>
             <View style={styles.headerSpacer} />
             <Text style={styles.title}>{title ?? t('reminders.field_date')}</Text>
-            <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
+            <HeaderIconButton onPress={onClose} accessibilityLabel={t('common.close')}>
               <Ionicons name="close" size={24} color={colors.primaryText} />
-            </Pressable>
+            </HeaderIconButton>
           </View>
 
           <CalendarPickerCore
@@ -144,14 +145,6 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 24,
       color: c.primaryText,
       textAlign: 'center',
-    },
-    closeButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 10,
-      backgroundColor: c.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     offButton: {
       alignItems: 'center',

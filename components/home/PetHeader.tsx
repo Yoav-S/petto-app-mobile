@@ -96,11 +96,18 @@ export default function PetHeader({
   const imageContrast = useImageStatusBarStyle(coverSource, themeBarStyle);
   const barStyle: SystemBarContentStyle = loading ? themeBarStyle : pet ? imageContrast.style : 'dark';
   useStatusBarOverride(barStyle);
-  const nameColor =
-    !isDark && !imageContrast.ready ? '#FFFFFF' : foregroundForBarStyle(imageContrast.style);
-  // Same photo read as the status bar. A light cover gets a dark chip; a dark cover keeps the white glass.
+  const nameColor = foregroundForBarStyle(
+    imageContrast.ready ? imageContrast.style : themeBarStyle,
+  );
+  const lightType = nameColor === '#FFFFFF';
+  // Halo keeps the type readable when a photo is mixed or the read is late.
+  const typeHalo = {
+    textShadowColor: lightType ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.9)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
+  };
   const bubbleStyle = {
-    backgroundColor: nameColor === '#1F2937' ? 'rgba(31, 41, 55, 0.2)' : 'rgba(255, 255, 255, 0.22)',
+    backgroundColor: lightType ? 'rgba(255, 255, 255, 0.28)' : 'rgba(31, 41, 55, 0.28)',
   };
 
   useEffect(() => {
@@ -141,8 +148,6 @@ export default function PetHeader({
           )}
         </View>
 
-        <View style={styles.coverShade} pointerEvents="none" />
-
         <View style={[styles.identity, { maxWidth: nameBlockWidth }]} pointerEvents="box-none">
           {loading ? (
             <View>
@@ -157,7 +162,7 @@ export default function PetHeader({
                 activeOpacity={canSwitch ? 0.7 : 1}
                 disabled={!canSwitch}
               >
-                <Text style={[styles.name, { color: nameColor }]} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={[styles.name, typeHalo, { color: nameColor }]} numberOfLines={1} ellipsizeMode="tail">
                   {pet?.name ?? t('home.noPet')}
                 </Text>
                 {canSwitch ? (
@@ -172,14 +177,14 @@ export default function PetHeader({
                 <View style={styles.metaRow}>
                   {pet.breed ? (
                     <View style={[styles.metaBubble, bubbleStyle]}>
-                      <Text style={[styles.metaText, { color: nameColor }]} numberOfLines={1} ellipsizeMode="tail">
+                      <Text style={[styles.metaText, typeHalo, { color: nameColor }]} numberOfLines={1} ellipsizeMode="tail">
                         {pet.breed}
                       </Text>
                     </View>
                   ) : null}
                   {petAge ? (
                     <View style={[styles.metaBubble, bubbleStyle]}>
-                      <Text style={[styles.metaText, { color: nameColor }]} numberOfLines={1} ellipsizeMode="tail">
+                      <Text style={[styles.metaText, typeHalo, { color: nameColor }]} numberOfLines={1} ellipsizeMode="tail">
                         {petAge}
                       </Text>
                     </View>
@@ -236,10 +241,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     overflow: 'hidden',
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
-  },
-  coverShade: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   coverPressable: {
     width: '100%',

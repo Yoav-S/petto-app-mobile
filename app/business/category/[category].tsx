@@ -69,6 +69,7 @@ export default function CategoryPlacesScreen() {
   const [loading, setLoading] = useState(places.length === 0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [locationReady, setLocationReady] = useState(coords != null);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const placesRef = useRef(places);
   const hasMoreRef = useRef(hasMore);
   const loadingMoreRef = useRef(false);
@@ -213,13 +214,8 @@ export default function CategoryPlacesScreen() {
 
   return (
     <View style={styles.screen}>
-      <SettingsHeader
-        title={category ? t(CATEGORY_LABEL[category]) : t('home.categories')}
-        backgroundColor={colors.surface}
-        rounded
-      />
       {loading && places.length === 0 ? (
-        <View style={styles.skeletons}>
+        <View style={[styles.skeletons, { paddingTop: headerHeight + 12 }]}>
           <PlaceCardSkeletons />
         </View>
       ) : (
@@ -227,7 +223,7 @@ export default function CategoryPlacesScreen() {
           data={places}
           keyExtractor={(item) => item.id}
           style={styles.list}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingTop: headerHeight + 12 }]}
           renderItem={({ item }) => <PlaceCard place={item} onPress={() => openPlace(item)} />}
           onEndReached={() => {
             if (hasMore) void loadMore();
@@ -237,6 +233,20 @@ export default function CategoryPlacesScreen() {
           ListEmptyComponent={<Text style={styles.empty}>{t('home.near_empty')}</Text>}
         />
       )}
+      <View
+        style={styles.headerHost}
+        onLayout={(event) => {
+          const next = Math.round(event.nativeEvent.layout.height);
+          setHeaderHeight((current) => (current === next ? current : next));
+        }}
+      >
+        <SettingsHeader
+          title={category ? t(CATEGORY_LABEL[category]) : t('home.categories')}
+          backgroundColor={colors.surface}
+          rounded
+          roundedBottom={10}
+        />
+      </View>
     </View>
   );
 }
@@ -247,9 +257,15 @@ function makeStyles(colors: ThemeColors) {
       flex: 1,
       backgroundColor: colors.background,
     },
+    headerHost: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 2,
+    },
     list: {
       flex: 1,
-      marginTop: 10,
     },
     listContent: {
       gap: 10,
@@ -257,7 +273,6 @@ function makeStyles(colors: ThemeColors) {
       paddingBottom: 24,
     },
     skeletons: {
-      marginTop: 10,
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       gap: 10,
     },

@@ -1,10 +1,12 @@
-﻿import React from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { t } from '@/i18n';
+import HeaderIconButton from '@/components/ui/HeaderIconButton';
 
 interface PhotoPickerSheetProps {
   visible: boolean;
@@ -25,9 +27,9 @@ export default function PhotoPickerSheet({ visible, onClose, onAdd }: PhotoPicke
           <View style={styles.header}>
             <View style={styles.headerSpacer} />
             <Text style={styles.title}>Change photo</Text>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Ionicons name="close" size={20} color={colors.primaryText} />
-            </TouchableOpacity>
+            <HeaderIconButton onPress={onClose} accessibilityLabel={t('common.close')}>
+              <Ionicons name="close" size={24} color={colors.primaryText} />
+            </HeaderIconButton>
           </View>
           
           <View style={styles.gridContainer}>
@@ -67,7 +69,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   sheet: {
-    backgroundColor: c.surface,
+    backgroundColor: c.panel,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     paddingTop: Spacing.md,
@@ -95,14 +97,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontFamily: 'Rubik-Medium',
     fontSize: 18,
     color: c.primaryText,
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    backgroundColor: c.background,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   gridContainer: {
     flex: 1,

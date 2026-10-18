@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import { t } from '@/i18n';
 
 interface EditPhotoSheetProps {
@@ -44,9 +45,9 @@ export default function EditPhotoSheet({
             <Text style={styles.title}>
               {hasPhoto ? t('profile.edit.change_photo') : t('petOnboarding.photo_sheet_title')}
             </Text>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Ionicons name="close" size={20} color={colors.primaryText} />
-            </TouchableOpacity>
+            <HeaderIconButton onPress={onClose} accessibilityLabel={t('petOnboarding.photo_close_a11y')}>
+              <Ionicons name="close" size={24} color={colors.primaryText} />
+            </HeaderIconButton>
           </View>
           
           <View style={[styles.menuContainer, onRemove ? styles.menuWithRemove : null]}>
@@ -129,21 +130,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 20,
     lineHeight: 24,
     color: c.primaryText,
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    padding: 4,
-    backgroundColor: c.surface,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#2D2D2A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.080)',
-    elevation: 3,
   },
   menuContainer: {
     minHeight: 136,

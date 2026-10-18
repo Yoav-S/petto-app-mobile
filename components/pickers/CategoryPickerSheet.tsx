@@ -102,7 +102,7 @@ export default function CategoryPickerSheet({
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     sheet: {
-      backgroundColor: c.background,
+      backgroundColor: c.panel,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       paddingHorizontal: 20,

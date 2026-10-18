@@ -4,13 +4,10 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  FlatList,
   TouchableOpacity,
   Linking,
   Platform,
   AppState,
-  Animated,
-  PanResponder,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -33,8 +30,7 @@ import {
   type BusinessPlace,
 } from '@/services/places';
 import { petPhotoSource } from '@/utils/petPhotoSource';
-import PlaceCard from '@/components/business/PlaceCard';
-import { PlaceCardSkeletons } from '@/components/business/PlaceCardSkeleton';
+import NearYouSheet from '@/components/home/NearYouSheet';
 import type { Pet } from '@/types/api';
 
 /** Greeting switches at these local hours. */
@@ -46,20 +42,73 @@ const NIGHT_HOUR = 21;
 const GREETING_AVATAR = 42;
 const PET_SIZE = 72;
 const PET_GAP = 16;
-const PET_STRIDE = PET_SIZE + PET_GAP;
-/** Visible sliver of the next pet when it would otherwise be cut in half. */
-const PET_PEEK = 4;
-const PAGE_END_PX = 480;
+const CATEGORY_WIDTH = 126;
+const CATEGORY_GAP = 8;
+const CATEGORY_INSET = 20;
 
-function petClipWidth(viewport: number, itemCount: number): number {
-  if (viewport <= 0 || itemCount <= 1) return viewport;
-  let full = 0;
-  while ((full + 1) * PET_STRIDE - PET_GAP <= viewport) full += 1;
-  if (full >= itemCount) return viewport;
-  const nextStart = full * PET_STRIDE;
-  if (nextStart >= viewport) return viewport;
-  const peekEnd = nextStart + PET_PEEK;
-  return peekEnd <= viewport ? peekEnd : nextStart;
+type RowFit = { item: number; gap: number };
+
+/**
+ * Keeps the designed size and gap when the next item already peeks in.
+ * When a device width tiles the row flush, tightens the gap (then the item
+ * a little) so a sliver of the next item stays on the edge. Snapping to
+ * item+gap keeps that same sliver after every swipe.
+ */
+function peekRow(
+  viewport: number,
+  item: number,
+  gap: number,
+  count: number,
+  inset = 0,
+  minPeek = 24,
+): RowFit {
+  if (viewport <= 0 || count <= 1) return { item, gap };
+  const visibleOf = (index: number, size: number, spacing: number) =>
+    viewport - (inset + index * (size + spacing));
+  // A clip under ~10% still reads as a full item sitting on the edge.
+  const flushHidden = Math.max(8, item * 0.1);
+  let partial = 0;
+  for (; partial < count; partial += 1) {
+    if (visibleOf(partial, item, gap) < item - flushHidden) break;
+  }
+  if (partial >= count || partial === 0) return { item, gap };
+  const peek = visibleOf(partial, item, gap);
+  if (peek >= minPeek) return { item, gap };
+
+  const minGap = Math.min(8, gap);
+  const minItem = Math.round(item * 0.78);
+  const room = viewport - minPeek - inset;
+  if (room <= 0) return { item, gap };
+  const stride = room / partial;
+  const tighterGap = Math.floor(stride - item);
+  if (tighterGap >= minGap) return { item, gap: tighterGap };
+  const tighterItem = Math.floor(stride - minGap);
+  if (tighterItem >= minItem) return { item: tighterItem, gap: minGap };
+  return { item, gap };
+}
+
+/** Snap points that keep the peek, plus a final stop that shows the last item whole. */
+function peekSnapOffsets(
+  viewport: number,
+  item: number,
+  gap: number,
+  count: number,
+  inset = 0,
+  trailing = 0,
+): number[] | undefined {
+  if (viewport <= 0 || count <= 1) return undefined;
+  const stride = item + gap;
+  const content = inset + count * item + Math.max(0, count - 1) * gap + trailing;
+  const max = Math.max(0, Math.round(content - viewport));
+  if (max <= 1) return undefined;
+  const offsets = [0];
+  for (let index = 1; index < count; index += 1) {
+    const offset = index * stride;
+    if (offset >= max - 1) break;
+    offsets.push(offset);
+  }
+  if (offsets[offsets.length - 1] !== max) offsets.push(max);
+  return offsets;
 }
 
 type HomeCoords = { latitude: number; longitude: number };
@@ -131,109 +180,19 @@ export default function DiscoverHomeScreen() {
     return savedNearby?.coords ?? null;
   });
   const [places, setPlaces] = useState<BusinessPlace[]>(savedNearby?.places ?? []);
-  const [placesLoading, setPlacesLoading] = useState(false);
+  const [placesLoading, setPlacesLoading] = useState(!(savedNearby?.places.length));
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(savedNearby?.hasMore ?? false);
   const [placesEpoch, setPlacesEpoch] = useState(0);
   const [frameWidth, setFrameWidth] = useState(0);
-  const [homeListHeight, setHomeListHeight] = useState(0);
-  const [homeHeaderHeight, setHomeHeaderHeight] = useState(0);
+  const [frameHeight, setFrameHeight] = useState(0);
+  const [aboveHeight, setAboveHeight] = useState(0);
+  const [greetingHeight, setGreetingHeight] = useState(0);
   const [petsTrack, setPetsTrack] = useState(0);
-  const [curtainOn, setCurtainOn] = useState(false);
-  const [curtainFull, setCurtainFull] = useState(false);
+  const [categoryTrack, setCategoryTrack] = useState(0);
   const [locating, setLocating] = useState(false);
-  const screenRef = useRef<View>(null);
-  const nearAnchorRef = useRef<View>(null);
-  const curtainTop = useRef(new Animated.Value(0)).current;
-  const curtainTopRef = useRef(0);
-  const dragOriginRef = useRef(0);
-  const gestureDyRef = useRef(0);
-  const draggingRef = useRef(false);
-  const curtainOnRef = useRef(false);
-  const frameHeightRef = useRef(0);
-  const insetsTopRef = useRef(insets.top);
-  insetsTopRef.current = insets.top;
-  useEffect(() => {
-    const id = curtainTop.addListener(({ value }) => {
-      curtainTopRef.current = value;
-    });
-    return () => curtainTop.removeListener(id);
-  }, [curtainTop]);
-  const applyCurtain = useCallback((origin: number, dy: number) => {
-    const min = insetsTopRef.current;
-    const next = Math.min(Math.max(min, origin + dy), Math.max(min, frameHeightRef.current));
-    curtainTop.setValue(next);
-    curtainTopRef.current = next;
-  }, [curtainTop]);
-  const closeCurtain = useCallback(() => {
-    curtainOnRef.current = false;
-    setCurtainOn(false);
-    setCurtainFull(false);
-  }, []);
-  const nearPan = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gesture) => {
-        const vertical = Math.abs(gesture.dy) > Math.abs(gesture.dx) && Math.abs(gesture.dy) > 8;
-        if (!vertical) return false;
-        return curtainOnRef.current ? gesture.dy > 0 : gesture.dy < 0;
-      },
-      onPanResponderGrant: () => {
-        gestureDyRef.current = 0;
-        draggingRef.current = true;
-        curtainTop.stopAnimation();
-        setCurtainFull(false);
-        if (curtainOnRef.current) {
-          dragOriginRef.current = curtainTopRef.current;
-          return;
-        }
-        const anchor = nearAnchorRef.current;
-        const screen = screenRef.current;
-        if (!anchor || !screen) return;
-        screen.measureInWindow((_sx, screenY) => {
-          anchor.measureInWindow((_ax, anchorY) => {
-            if (!draggingRef.current && !curtainOnRef.current) return;
-            const start = Math.max(insetsTopRef.current, anchorY - screenY);
-            dragOriginRef.current = start;
-            if (!curtainOnRef.current) {
-              curtainOnRef.current = true;
-              setCurtainOn(true);
-            }
-            if (draggingRef.current) applyCurtain(start, gestureDyRef.current);
-          });
-        });
-      },
-      onPanResponderMove: (_, gesture) => {
-        gestureDyRef.current = gesture.dy;
-        if (!curtainOnRef.current) return;
-        applyCurtain(dragOriginRef.current, gesture.dy);
-      },
-      onPanResponderRelease: (_, gesture) => {
-        draggingRef.current = false;
-        if (!curtainOnRef.current) return;
-        const min = insetsTopRef.current;
-        const origin = dragOriginRef.current;
-        const current = Math.min(Math.max(min, origin + gesture.dy), Math.max(min, frameHeightRef.current));
-        const open = gesture.vy < -0.35 || current < (origin + min) / 2;
-        if (open) {
-          setCurtainFull(true);
-          Animated.spring(curtainTop, {
-            toValue: min,
-            useNativeDriver: false,
-            friction: 9,
-            tension: 70,
-          }).start();
-        } else {
-          Animated.timing(curtainTop, {
-            toValue: origin,
-            duration: 180,
-            useNativeDriver: false,
-          }).start(({ finished }) => {
-            if (finished) closeCurtain();
-          });
-        }
-      },
-    }),
-  ).current;
+  /** null while the permission check is still running. */
+  const [locationOn, setLocationOn] = useState<boolean | null>(savedNearby ? true : null);
   const locatingRef = useRef(false);
   const loadingMoreRef = useRef(false);
   const hasMoreRef = useRef(savedNearby?.hasMore ?? false);
@@ -244,6 +203,7 @@ export default function DiscoverHomeScreen() {
   coordsRef.current = coords;
 
   const publishCoords = useCallback((next: HomeCoords) => {
+    coordsRef.current = next;
     rememberNearbyCoords(next);
     setCoords((current) => (current && sameSpot(current, next) ? current : next));
     if (placesRef.current.length === 0) setPlacesLoading(true);
@@ -284,13 +244,21 @@ export default function DiscoverHomeScreen() {
   /** Load businesses only when location is already allowed. Never opens a dialog. */
   const refreshGrantedLocation = useCallback(async () => {
     const location = locationModule();
-    if (!location) return;
+    if (!location) {
+      setLocationOn(false);
+      setPlacesLoading(false);
+      return;
+    }
+    if (!placesRef.current.length) setPlacesLoading(true);
     const permission = await location.getForegroundPermissionsAsync();
     if (permission.status !== 'granted' || !(await location.hasServicesEnabledAsync())) {
+      setLocationOn(false);
       clearNearby();
       return;
     }
+    setLocationOn(true);
     await readPosition(location);
+    if (!coordsRef.current) setPlacesLoading(false);
   }, [clearNearby, readPosition]);
 
   useFocusEffect(
@@ -411,16 +379,21 @@ export default function DiscoverHomeScreen() {
         permission = await location.requestForegroundPermissionsAsync();
       }
       if (permission.status !== 'granted') {
+        setLocationOn(false);
         if (!permission.canAskAgain) {
           await Linking.openSettings();
         }
         return;
       }
       if (!(await location.hasServicesEnabledAsync())) {
+        setLocationOn(false);
         if (Platform.OS === 'ios') await Linking.openSettings();
         return;
       }
+      setLocationOn(true);
+      if (!placesRef.current.length) setPlacesLoading(true);
       await readPosition(location);
+      if (!coordsRef.current) setPlacesLoading(false);
     } catch {
       if (!placesRef.current.length) clearNearby();
     } finally {
@@ -459,7 +432,13 @@ export default function DiscoverHomeScreen() {
   }
 
   const greeting = (
-    <View style={[styles.greetingBar, { paddingTop: insets.top + 10, paddingBottom: 8 }]}>
+    <View
+      style={[styles.greetingBar, { paddingTop: insets.top + 10, paddingBottom: 8 }]}
+      onLayout={(event) => {
+        const next = Math.round(event.nativeEvent.layout.height);
+        setGreetingHeight((current) => (current === next ? current : next));
+      }}
+    >
       <View style={styles.welcomeRow}>
         <View style={styles.greeting}>
           <TouchableOpacity
@@ -500,12 +479,42 @@ export default function DiscoverHomeScreen() {
     </View>
   );
 
+  const petViewport = petsTrack || frameWidth;
+  const categoryViewport = categoryTrack || frameWidth;
+  const petFit = peekRow(petViewport, PET_SIZE, PET_GAP, 1 + pets.length, CATEGORY_INSET, 22);
+  const categoryFit = peekRow(
+    categoryViewport,
+    CATEGORY_WIDTH,
+    CATEGORY_GAP,
+    CATEGORIES.length,
+    CATEGORY_INSET,
+    36,
+  );
+  const petBox = { width: petFit.item, height: petFit.item };
+  const petSnaps = peekSnapOffsets(
+    petViewport,
+    petFit.item,
+    petFit.gap,
+    1 + pets.length,
+    CATEGORY_INSET,
+    CATEGORY_INSET,
+  );
+  const categorySnaps = peekSnapOffsets(
+    categoryViewport,
+    categoryFit.item,
+    categoryFit.gap,
+    CATEGORIES.length,
+    CATEGORY_INSET,
+    CATEGORY_INSET,
+  );
+
   const homeHeader = (
     <View style={styles.scrollStack}>
       <View style={styles.welcomeCard}>
         <View style={styles.petsBlock}>
-          <Text style={styles.sectionTitle}>{t('home.my_pets')}</Text>
+          <Text style={[styles.sectionTitle, styles.petTitle]}>{t('home.my_pets')}</Text>
           <View
+            style={styles.rowTrack}
             onLayout={(event) => {
               const next = Math.round(event.nativeEvent.layout.width);
               setPetsTrack((current) => (current === next ? current : next));
@@ -516,33 +525,32 @@ export default function DiscoverHomeScreen() {
             nestedScrollEnabled
             showsHorizontalScrollIndicator={false}
             decelerationRate="fast"
-            snapToInterval={PET_STRIDE}
-            snapToAlignment="start"
+            snapToOffsets={petSnaps}
             disableIntervalMomentum
-            style={[
-              styles.petScroll,
-              petsTrack > 0 ? { width: petClipWidth(petsTrack, 1 + pets.length) } : null,
-            ]}
-            contentContainerStyle={styles.petScrollContent}
+            style={styles.petScroll}
+            contentContainerStyle={[styles.petScrollContent, { gap: petFit.gap }]}
           >
-            <TouchableOpacity style={styles.petItem} onPress={() => void addPet()}>
-              <View style={styles.addPhoto}>
+            <TouchableOpacity
+              style={[styles.petItem, { width: petFit.item }]}
+              onPress={() => void addPet()}
+            >
+              <View style={[styles.addPhoto, petBox]}>
                 <Plus size={24} color={colors.primaryText} />
               </View>
-              <Text style={styles.petName}>{t('home.add')}</Text>
+              <Text style={[styles.petName, { width: petFit.item }]}>{t('home.add')}</Text>
             </TouchableOpacity>
             {pets.map((pet) => (
               <TouchableOpacity
                 key={pet.id}
-                style={styles.petItem}
+                style={[styles.petItem, { width: petFit.item }]}
                 onPress={() => void openPet(pet)}
               >
                 <Image
                   source={petPhotoSource(pet)}
-                  style={styles.petPhoto}
+                  style={[styles.petPhoto, petBox]}
                   contentFit="cover"
                 />
-                <Text style={styles.petName} numberOfLines={1}>
+                <Text style={[styles.petName, { width: petFit.item }]} numberOfLines={1}>
                   {pet.name}
                 </Text>
               </TouchableOpacity>
@@ -554,16 +562,27 @@ export default function DiscoverHomeScreen() {
 
       <View style={styles.categoriesCard}>
         <Text style={[styles.sectionTitle, styles.categoryTitle]}>{t('home.categories')}</Text>
+        <View
+          style={styles.rowTrack}
+          onLayout={(event) => {
+            const next = Math.round(event.nativeEvent.layout.width);
+            setCategoryTrack((current) => (current === next ? current : next));
+          }}
+        >
         <ScrollView
           horizontal
           nestedScrollEnabled
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryScroll}
+          decelerationRate="fast"
+          snapToOffsets={categorySnaps}
+          disableIntervalMomentum
+          style={styles.petScroll}
+          contentContainerStyle={[styles.categoryScroll, { gap: categoryFit.gap }]}
         >
           {CATEGORIES.map((category) => (
             <TouchableOpacity
               key={category.key}
-              style={styles.categoryCard}
+              style={[styles.categoryCard, { width: categoryFit.item }]}
               activeOpacity={0.85}
               onPress={() =>
                 router.push({
@@ -590,18 +609,18 @@ export default function DiscoverHomeScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+        </View>
       </View>
     </View>
   );
 
   return (
     <View
-      ref={screenRef}
       style={styles.screen}
       onLayout={(event) => {
         const { width, height } = event.nativeEvent.layout;
-        if (width && width !== frameWidth) setFrameWidth(width);
-        if (height) frameHeightRef.current = height;
+        if (width >= 280 && width !== frameWidth) setFrameWidth(width);
+        if (height && height !== frameHeight) setFrameHeight(height);
       }}
     >
       <View
@@ -610,82 +629,31 @@ export default function DiscoverHomeScreen() {
           frameWidth ? { width: frameWidth } : null,
         ]}
       >
-        {coords ? (
-          <FlatList
-            style={styles.placeList}
-            onLayout={(event) => {
-              const next = Math.round(event.nativeEvent.layout.height);
-              setHomeListHeight((current) => (current === next ? current : next));
-            }}
-            data={placesLoading ? [] : places}
-            keyExtractor={(place) => place.id}
-            showsVerticalScrollIndicator={false}
-            scrollEnabled={!curtainOn}
-            contentContainerStyle={[
-              styles.placeListContent,
-              { width: frameWidth || '100%', flexGrow: 1 },
-            ]}
-            scrollEventThrottle={16}
-            onScroll={(event) => {
-              const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-              const distance = contentSize.height - layoutMeasurement.height - contentOffset.y;
-              if (distance < PAGE_END_PX) void loadMore();
-            }}
-            onEndReached={() => void loadMore()}
-            onEndReachedThreshold={0.8}
-            ListHeaderComponent={
-              <View
-                onLayout={(event) => {
-                  const next = Math.round(event.nativeEvent.layout.height);
-                  setHomeHeaderHeight((current) => (current === next ? current : next));
-                }}
-              >
-                {greeting}
-                <View style={styles.scrollStack}>{homeHeader}</View>
-                <View ref={nearAnchorRef} collapsable={false} style={styles.nearSheet}>
-                  <View style={styles.nearHandleHit} {...nearPan.panHandlers}>
-                    <View style={styles.nearHandle} />
-                  </View>
-                  <View style={styles.nearHeader}>
-                    <Text style={[styles.sectionTitle, styles.nearTitle]} numberOfLines={1}>
-                      {t('home.near_you')}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            }
-            ListEmptyComponent={
-              placesLoading ? (
-                <View style={styles.skeletonStack}>
-                  <PlaceCardSkeletons />
-                </View>
-              ) : (
-                <View
-                  style={[
-                    styles.nearEmptyWrap,
-                    { height: Math.max(160, homeListHeight - homeHeaderHeight) },
-                  ]}
-                >
-                  <Text style={styles.nearEmpty}>{t('home.near_empty')}</Text>
-                </View>
-              )
-            }
-            ListFooterComponent={
-              placesLoading || places.length > 0 ? (
-                <View style={{ paddingBottom: insets.bottom + 22 }}>
-                  {loadingMore ? <PlaceCardSkeletons count={1} /> : null}
-                </View>
-              ) : null
-            }
-            ListFooterComponentStyle={
-              placesLoading || places.length > 0 ? styles.nearFooter : undefined
-            }
-            renderItem={({ item: place }) => (
-              <View style={styles.nearBody}>
-                <PlaceCard place={place} onPress={() => openPlace(place)} />
-              </View>
-            )}
-          />
+        {locationOn !== false ? (
+          <>
+            <View
+              style={{ width: frameWidth || '100%' }}
+              onLayout={(event) => {
+                const next = Math.round(event.nativeEvent.layout.height);
+                setAboveHeight((current) => (current === next ? current : next));
+              }}
+            >
+              {greeting}
+              <View style={styles.scrollStack}>{homeHeader}</View>
+            </View>
+            <NearYouSheet
+              anchorTop={aboveHeight > 0 ? aboveHeight + 4 : 0}
+              topClearance={greetingHeight}
+              frameWidth={frameWidth}
+              frameHeight={frameHeight}
+              places={places}
+              loading={placesLoading || coords == null}
+              loadingMore={loadingMore}
+              bottomInset={insets.bottom}
+              onLoadMore={() => void loadMore()}
+              onPressPlace={openPlace}
+            />
+          </>
         ) : (
           <ScrollView
             style={styles.placeList}
@@ -716,60 +684,6 @@ export default function DiscoverHomeScreen() {
           </ScrollView>
         )}
       </View>
-      {coords && curtainOn ? (
-        <Animated.View style={[styles.curtain, { top: curtainTop }]}>
-          <View style={styles.nearHandleHit} {...nearPan.panHandlers}>
-            <View style={styles.nearHandle} />
-          </View>
-          <View style={styles.nearHeader}>
-            <Text style={[styles.sectionTitle, styles.nearTitle]} numberOfLines={1}>
-              {t('home.near_you')}
-            </Text>
-          </View>
-          <FlatList
-            style={styles.curtainList}
-            data={placesLoading ? [] : places}
-            keyExtractor={(place) => place.id}
-            showsVerticalScrollIndicator={false}
-            scrollEnabled={curtainFull}
-            contentContainerStyle={[styles.placeListContent, { flexGrow: 1 }]}
-            scrollEventThrottle={16}
-            onScroll={(event) => {
-              const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-              const distance = contentSize.height - layoutMeasurement.height - contentOffset.y;
-              if (distance < PAGE_END_PX) void loadMore();
-            }}
-            onEndReached={() => void loadMore()}
-            onEndReachedThreshold={0.8}
-            ListEmptyComponent={
-              placesLoading ? (
-                <View style={styles.skeletonStack}>
-                  <PlaceCardSkeletons />
-                </View>
-              ) : (
-                <View style={styles.nearEmptyWrap}>
-                  <Text style={styles.nearEmpty}>{t('home.near_empty')}</Text>
-                </View>
-              )
-            }
-            ListFooterComponent={
-              placesLoading || places.length > 0 ? (
-                <View style={{ paddingBottom: insets.bottom + 22 }}>
-                  {loadingMore ? <PlaceCardSkeletons count={1} /> : null}
-                </View>
-              ) : null
-            }
-            ListFooterComponentStyle={
-              placesLoading || places.length > 0 ? styles.nearFooter : undefined
-            }
-            renderItem={({ item: place }) => (
-              <View style={styles.nearBody}>
-                <PlaceCard place={place} onPress={() => openPlace(place)} />
-              </View>
-            )}
-          />
-        </Animated.View>
-      ) : null}
     </View>
   );
 }
@@ -800,7 +714,6 @@ function makeStyles(colors: ThemeColors) {
       borderTopRightRadius: 0,
       borderBottomLeftRadius: 24,
       borderBottomRightRadius: 24,
-      paddingHorizontal: 20,
       paddingTop: 4,
       paddingBottom: 22,
       gap: 22,
@@ -878,12 +791,20 @@ function makeStyles(colors: ThemeColors) {
       lineHeight: 28,
       color: colors.primaryText,
     },
+    rowTrack: {
+      width: '100%',
+    },
     petScroll: {
-      alignSelf: 'flex-start',
-      maxWidth: '100%',
+      width: '100%',
       flexGrow: 0,
     },
+    petTitle: {
+      marginLeft: 20,
+      marginRight: 20,
+    },
     petScrollContent: {
+      paddingLeft: 20,
+      paddingRight: 20,
       gap: PET_GAP,
     },
     petItem: {

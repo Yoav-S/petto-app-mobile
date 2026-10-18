@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import { t } from '@/i18n';
 import { type ThemeColors } from '@/constants/theme';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import CalendarPickerCore from '@/components/pickers/CalendarPickerCore';
 import { isBeforeIsoDate, parseIsoDate, toIsoDate } from '@/utils/calendar';
 
@@ -76,15 +77,9 @@ export default function BirthDatePickerSheet({
             <Text style={styles.sheetTitle} numberOfLines={1}>
               {title ?? t('petOnboarding.birth_sheet_title')}
             </Text>
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              style={styles.closeButton}
-              accessibilityRole="button"
-              accessibilityLabel={t('petOnboarding.photo_close_a11y')}
-            >
+            <HeaderIconButton onPress={onClose} accessibilityLabel={t('petOnboarding.photo_close_a11y')}>
               <Ionicons name="close" size={24} color={colors.primaryText} />
-            </Pressable>
+            </HeaderIconButton>
           </View>
 
           <View style={styles.body}>
@@ -149,21 +144,6 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 24,
       color: c.primaryText,
       textAlign: 'center',
-    },
-    closeButton: {
-      width: 32,
-      height: 32,
-      padding: 4,
-      borderRadius: 10,
-      backgroundColor: c.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
-      shadowColor: '#2D2D2A',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 20,
-      boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.080)',
-      elevation: 3,
     },
     body: {
       width: '100%',

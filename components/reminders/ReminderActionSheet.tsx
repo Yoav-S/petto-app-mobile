@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import { t } from '@/i18n';
 import {
   reminderCategoryIcon,
@@ -82,14 +83,9 @@ export default function ReminderActionSheet({
               {t('reminders.action_sheet_title')}
             </Text>
             <View style={[styles.headerSide, styles.headerSideEnd]}>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={onClose}
-                accessibilityRole="button"
-                accessibilityLabel={t('common.cancel')}
-              >
+              <HeaderIconButton onPress={onClose} accessibilityLabel={t('common.cancel')}>
                 <Ionicons name="close" size={24} color={colors.primaryText} />
-              </TouchableOpacity>
+              </HeaderIconButton>
             </View>
           </View>
 
@@ -217,16 +213,6 @@ const makeStyles = (c: ThemeColors) =>
       fontSize: 20,
       lineHeight: 24,
       color: c.primaryText,
-    },
-    closeButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 10,
-      padding: 4,
-      backgroundColor: c.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...CARD_SHADOW,
     },
     card: {
       backgroundColor: c.surface,

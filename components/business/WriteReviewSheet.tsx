@@ -16,6 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
+import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import { dismissKeyboard, useKeyboardWindowResized } from '@/components/ui/keyboardUtils';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -131,14 +132,9 @@ export default function WriteReviewSheet({
         >
           <View style={styles.headerSide} />
           <Text style={styles.title}>{t('business.write_review')}</Text>
-          <TouchableOpacity
-            style={styles.close}
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel={t('petOnboarding.photo_close_a11y')}
-          >
-            <Ionicons name="close" size={20} color={colors.primaryText} />
-          </TouchableOpacity>
+          <HeaderIconButton onPress={onClose} accessibilityLabel={t('petOnboarding.photo_close_a11y')}>
+            <Ionicons name="close" size={24} color={colors.primaryText} />
+          </HeaderIconButton>
         </View>
 
         <ScrollView
@@ -215,7 +211,7 @@ export default function WriteReviewSheet({
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     sheet: {
-      backgroundColor: c.surface,
+      backgroundColor: c.panel,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
     },
@@ -237,12 +233,6 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 24,
       textAlign: 'center',
       color: c.primaryText,
-    },
-    close: {
-      width: 32,
-      height: 32,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     body: {
       paddingTop: 22,

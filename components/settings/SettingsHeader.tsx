@@ -15,13 +15,20 @@ interface SettingsHeaderProps {
   backgroundColor?: string;
   /** White title card with rounded bottom corners. */
   rounded?: boolean;
+  /** Bottom padding of the rounded card. Default keeps the shared header height. */
+  roundedBottom?: number;
 }
 
 /**
  * Settings-style header. Owns top inset like ScreenHeader so it matches
  * Add Health title height. Parent must NOT pad the top safe area.
  */
-export default function SettingsHeader({ title, backgroundColor, rounded = false }: SettingsHeaderProps) {
+export default function SettingsHeader({
+  title,
+  backgroundColor,
+  rounded = false,
+  roundedBottom = 22,
+}: SettingsHeaderProps) {
   const router = useRouter();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -32,7 +39,7 @@ export default function SettingsHeader({ title, backgroundColor, rounded = false
       style={[
         styles.wrap,
         { paddingTop, backgroundColor },
-        rounded ? styles.rounded : null,
+        rounded ? [styles.rounded, { paddingBottom: roundedBottom }] : null,
       ]}
     >
       <View style={styles.header}>

@@ -9,6 +9,7 @@ import BottomSheetModal, {
 import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import { t } from '@/i18n';
 import type { ReviewReportReason } from '@/services/places';
 
@@ -46,14 +47,9 @@ function ReportReasonPanel({
         <View style={styles.header}>
           <View style={styles.headerSpacer} />
           <Text style={styles.title}>{t('business.report_review')}</Text>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={onCancel}
-            accessibilityRole="button"
-            accessibilityLabel={t('common.close')}
-          >
-            <Ionicons name="close" size={20} color={colors.primaryText} />
-          </TouchableOpacity>
+          <HeaderIconButton onPress={onCancel} accessibilityLabel={t('common.close')}>
+            <Ionicons name="close" size={24} color={colors.primaryText} />
+          </HeaderIconButton>
         </View>
         <View style={styles.menuContainer}>
           {REPORT_REASONS.map((item, index) => (
@@ -132,14 +128,9 @@ export default function ReviewActionsSheet({
         <View style={styles.header}>
           <View style={styles.headerSpacer} />
           <Text style={styles.title}>{t('business.review_actions')}</Text>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={requestClose}
-            accessibilityRole="button"
-            accessibilityLabel={t('common.close')}
-          >
-            <Ionicons name="close" size={20} color={colors.primaryText} />
-          </TouchableOpacity>
+          <HeaderIconButton onPress={requestClose} accessibilityLabel={t('common.close')}>
+            <Ionicons name="close" size={24} color={colors.primaryText} />
+          </HeaderIconButton>
         </View>
 
         <View style={[styles.menuContainer, isMine ? styles.menuMine : styles.menuOther]}>
@@ -228,21 +219,6 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 24,
       color: c.primaryText,
       textAlign: 'center',
-    },
-    closeButton: {
-      width: 32,
-      height: 32,
-      padding: 4,
-      backgroundColor: c.surface,
-      borderRadius: 10,
-      alignItems: 'center',
-      justifyContent: 'center',
-      shadowColor: '#2D2D2A',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 20,
-      boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.080)',
-      elevation: 3,
     },
     menuContainer: {
       backgroundColor: c.surface,

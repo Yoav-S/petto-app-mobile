@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import { t } from '@/i18n';
 import type { MedicalRecord } from '@/types/api';
 
@@ -38,9 +39,9 @@ export default function HealthRecordPickerSheet({
           <View style={styles.header}>
             <View style={styles.headerSpacer} />
             <Text style={styles.title}>{t('topics.pick_record_title')}</Text>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose} hitSlop={8}>
-              <Ionicons name="close" size={22} color={colors.primaryText} />
-            </TouchableOpacity>
+            <HeaderIconButton onPress={onClose} accessibilityLabel={t('common.close')}>
+              <Ionicons name="close" size={24} color={colors.primaryText} />
+            </HeaderIconButton>
           </View>
 
           {records.length === 0 ? (
@@ -110,14 +111,6 @@ const makeStyles = (c: ThemeColors) =>
       fontFamily: 'Rubik-Medium',
       fontSize: 18,
       color: c.primaryText,
-    },
-    closeButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 10,
-      backgroundColor: c.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     list: {
       flexGrow: 0,

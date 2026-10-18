@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type ThemeColors } from '@/constants/theme';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import TimePickerSheet from '@/components/pickers/TimePickerSheet';
 import RepeatPickerSheet from '@/components/pickers/RepeatPickerSheet';
 import AlertPickerSheet from '@/components/pickers/AlertPickerSheet';
@@ -122,14 +123,9 @@ export default function ReminderPickerSheet({
             <Text style={styles.title} numberOfLines={1}>
               {t('topics.set_reminder')}
             </Text>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={onClose}
-              accessibilityRole="button"
-              accessibilityLabel={t('common.close')}
-            >
-              <Ionicons name="close" size={18} color={colors.primaryText} />
-            </TouchableOpacity>
+            <HeaderIconButton onPress={onClose} accessibilityLabel={t('common.close')}>
+              <Ionicons name="close" size={24} color={colors.primaryText} />
+            </HeaderIconButton>
           </View>
 
           <View style={[styles.schedule, CARD_SHADOW, { width: contentWidth }]}>
@@ -261,7 +257,7 @@ export default function ReminderPickerSheet({
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     sheet: {
-      backgroundColor: c.background,
+      backgroundColor: c.panel,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       paddingTop: 32,
@@ -287,14 +283,6 @@ const makeStyles = (c: ThemeColors) =>
       fontSize: 20,
       lineHeight: 24,
       color: c.primaryText,
-    },
-    closeButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 10,
-      backgroundColor: c.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     schedule: {
       borderRadius: 12,

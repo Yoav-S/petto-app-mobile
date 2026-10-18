@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import { t } from '@/i18n';
 import { ALERT_OPTIONS, type AlertOption } from '@/services/reminders';
 import { isAlertOptionPossible } from '@/components/reminders/reminderFormShared';
@@ -159,7 +160,7 @@ export default function AlertPickerSheet({
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     sheet: {
-      backgroundColor: c.surface,
+      backgroundColor: c.panel,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       paddingHorizontal: Spacing.lg,
@@ -177,14 +178,6 @@ const makeStyles = (c: ThemeColors) =>
       fontFamily: 'Rubik-Medium',
       fontSize: 20,
       color: c.primaryText,
-    },
-    closeButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: c.background,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     list: {
       backgroundColor: c.surface,

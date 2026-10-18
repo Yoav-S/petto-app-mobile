@@ -151,6 +151,8 @@ export function listPlaces(options: {
     params.set('longitude', String(options.longitude));
   }
   if (options.category) params.set('category', options.category);
+  // TEMP: list every country so the near-you sheet can be reviewed. Remove this.
+  params.set('anywhere', 'true');
   return apiGet<BusinessPlace[] | BusinessPlacePage>(
     `/businesses/nearby?${params.toString()}`,
   ).then((data) => {
