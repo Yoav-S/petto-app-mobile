@@ -97,6 +97,12 @@ const makeStyles = (c: ThemeColors) =>
       paddingTop: 20,
       paddingHorizontal: 20,
       gap: 12,
+      shadowColor: '#1E1E1E',
+      shadowOffset: { width: 0, height: -3 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      boxShadow: '0px -3px 8px rgba(30, 30, 30, 0.080)',
+      elevation: 12,
     },
     header: {
       flexDirection: 'row',

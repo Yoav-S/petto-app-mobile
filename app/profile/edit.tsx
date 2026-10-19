@@ -445,7 +445,8 @@ export default function EditProfileScreen() {
               <ProfileTextField
                 label={t('profile.breed')}
                 value={breed}
-                onChangeText={setBreed}
+                onChangeText={(text) => setBreed(text.slice(0, 32))}
+                maxLength={32}
                 onFocus={onInputFocus}
               />
 

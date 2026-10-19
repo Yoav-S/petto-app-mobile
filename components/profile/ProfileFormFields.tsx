@@ -72,6 +72,7 @@ export function ProfileTextField({
   keyboardType,
   autoCapitalize = 'sentences',
   minHeight = 78,
+  maxLength,
   onFocus,
 }: {
   label: string;
@@ -80,6 +81,7 @@ export function ProfileTextField({
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   minHeight?: number;
+  maxLength?: number;
   onFocus?: FocusHandler;
 }) {
   const styles = useThemedStyles(makeStyles);
@@ -94,6 +96,7 @@ export function ProfileTextField({
           onChangeText={onChangeText}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
+          maxLength={maxLength}
           textAlignVertical="center"
           onFocus={onFocus}
         />

@@ -60,39 +60,45 @@ export default function HeaderIconButton({
 }: HeaderIconButtonProps) {
   const styles = useThemedStyles(makeStyles);
   return (
-    <View style={[styles.shadow, style]} collapsable={false}>
-      <TouchableOpacity
-        onPress={onPress}
-        disabled={disabled || !onPress}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel}
-        activeOpacity={0.85}
-        style={styles.btn}
-      >
-        {children}
-      </TouchableOpacity>
+    <View style={[styles.outer, style]} collapsable={false}>
+      <View style={styles.fill} collapsable={false}>
+        <TouchableOpacity
+          onPress={onPress}
+          disabled={disabled || !onPress}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel}
+          activeOpacity={0.85}
+          style={styles.hit}
+        >
+          {children}
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    // Shadow sits on a plain view. iOS drops it when it is on the pressable.
-    shadow: {
+    // Shadow and fill both sit on plain views. iOS skips a background that
+    // lives only on the pressable.
+    outer: {
       width: HEADER_ICON_BTN.size,
       height: HEADER_ICON_BTN.size,
       borderRadius: HEADER_ICON_BTN.radius,
       backgroundColor: c.surface,
       ...HEADER_ICON_BTN_SHADOW,
     },
-    btn: {
-      width: HEADER_ICON_BTN.size,
-      height: HEADER_ICON_BTN.size,
+    fill: {
+      flex: 1,
       borderRadius: HEADER_ICON_BTN.radius,
-      padding: HEADER_ICON_BTN.padding,
       backgroundColor: c.surface,
+      overflow: 'hidden',
+    },
+    hit: {
+      flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
+      backgroundColor: 'transparent',
     },
   });

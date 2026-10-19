@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -304,9 +304,11 @@ export default function HomeScreen() {
                 accessibilityRole="button"
                 accessibilityState={{ selected: petTab === 'overview' }}
               >
-                <Text style={[styles.tabText, petTab === 'overview' && styles.tabTextOn]}>
-                  {t('profile.tab_overview')}
-                </Text>
+                <View style={styles.tabLabel}>
+                  <Text style={[styles.tabText, petTab === 'overview' && styles.tabTextOn]}>
+                    {t('profile.tab_overview')}
+                  </Text>
+                </View>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.tab, petTab === 'about' && styles.tabOn]}
@@ -314,9 +316,11 @@ export default function HomeScreen() {
                 accessibilityRole="button"
                 accessibilityState={{ selected: petTab === 'about' }}
               >
-                <Text style={[styles.tabText, petTab === 'about' && styles.tabTextOn]}>
-                  {t('profile.tab_about')}
-                </Text>
+                <View style={styles.tabLabel}>
+                  <Text style={[styles.tabText, petTab === 'about' && styles.tabTextOn]}>
+                    {t('profile.tab_about')}
+                  </Text>
+                </View>
               </TouchableOpacity>
             </View>
             {petTab === 'about' ? (
@@ -480,10 +484,7 @@ const makeStyles = (c: ThemeColors) =>
     tab: {
       height: 28,
       borderRadius: 10,
-      paddingTop: 4,
-      paddingRight: 8,
-      paddingBottom: 4,
-      paddingLeft: 8,
+      paddingHorizontal: 8,
       backgroundColor: '#F6F7F9',
       alignItems: 'center',
       justifyContent: 'center',
@@ -491,10 +492,18 @@ const makeStyles = (c: ThemeColors) =>
     tabOn: {
       backgroundColor: '#004741',
     },
+    tabLabel: {
+      height: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
     tabText: {
       fontFamily: 'Rubik-Medium',
       fontSize: 14,
-      lineHeight: 20,
+      lineHeight: Platform.OS === 'ios' ? 16 : 20,
+      includeFontPadding: false,
+      textAlign: 'center',
+      textAlignVertical: 'center',
       color: '#1F2937',
     },
     tabTextOn: {

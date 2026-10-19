@@ -6,6 +6,7 @@ import { Pencil } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Animated,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -21,10 +22,17 @@ import {
   type SystemBarContentStyle,
 } from '@/context/SystemBarsContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { requireOptionalNativeModule } from 'expo-modules-core';
+import type { BlurViewProps } from 'expo-blur';
 import { petPhotoRecyclingKey, petPhotoSource, prefetchPetPhoto } from '@/utils/petPhotoSource';
 import PetPhotoImage from '@/components/ui/PetPhotoImage';
 import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import { useHomePanelLayout } from '@/hooks/useHomePanelLayout';
+
+const blurModule = requireOptionalNativeModule('ExpoBlurView')
+  ? (require('expo-blur') as { BlurView?: React.ComponentType<BlurViewProps>; default?: React.ComponentType<BlurViewProps> })
+  : null;
+const BlurView = blurModule?.BlurView ?? blurModule?.default ?? null;
 
 import {
   DESIGN_COVER_HEIGHT,
@@ -100,16 +108,13 @@ export default function PetHeader({
     imageContrast.ready ? imageContrast.style : themeBarStyle,
   );
   const lightType = nameColor === '#FFFFFF';
+  const chipTextColor = foregroundForBarStyle(imageContrast.fromPhoto ? imageContrast.style : 'dark');
   // Halo keeps the type readable when a photo is mixed or the read is late.
   const typeHalo = {
     textShadowColor: lightType ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.9)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 8,
   };
-  const bubbleStyle = {
-    backgroundColor: lightType ? 'rgba(255, 255, 255, 0.28)' : 'rgba(31, 41, 55, 0.28)',
-  };
-
   useEffect(() => {
     if (loading) {
       Animated.loop(
@@ -126,6 +131,27 @@ export default function PetHeader({
 
   const canSwitch = Boolean(pet);
   const petAge = calculateAge(pet?.birth_date ?? undefined);
+  const metaChip = (label: string, shrink = false) => (
+    <View style={[styles.metaBubble, shrink && styles.metaBubbleShrink]} collapsable={false}>
+      {BlurView ? (
+        <BlurView
+          pointerEvents="none"
+          intensity={40}
+          tint="light"
+          blurReductionFactor={1}
+          experimentalBlurMethod="dimezisBlurView"
+          style={styles.metaBlur}
+        />
+      ) : null}
+      <View pointerEvents="none" style={styles.metaFill} />
+      <Text
+        style={[styles.metaText, shrink && styles.metaTextShrink, { color: chipTextColor }]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+    </View>
+  );
 
   return (
     <View style={styles.wrapper} pointerEvents="box-none">
@@ -175,20 +201,8 @@ export default function PetHeader({
               </TouchableOpacity>
               {pet && (pet.breed || petAge) ? (
                 <View style={styles.metaRow}>
-                  {pet.breed ? (
-                    <View style={[styles.metaBubble, bubbleStyle]}>
-                      <Text style={[styles.metaText, typeHalo, { color: nameColor }]} numberOfLines={1} ellipsizeMode="tail">
-                        {pet.breed}
-                      </Text>
-                    </View>
-                  ) : null}
-                  {petAge ? (
-                    <View style={[styles.metaBubble, bubbleStyle]}>
-                      <Text style={[styles.metaText, typeHalo, { color: nameColor }]} numberOfLines={1} ellipsizeMode="tail">
-                        {petAge}
-                      </Text>
-                    </View>
-                  ) : null}
+                  {pet.breed ? metaChip(pet.breed, true) : null}
+                  {petAge ? metaChip(petAge) : null}
                 </View>
               ) : null}
             </>
@@ -220,6 +234,7 @@ export default function PetHeader({
         style={[styles.panelBody, { paddingBottom: cardsBottomInset }]}
         pointerEvents="box-none"
       >
+        <View pointerEvents="none" style={styles.panelSurface} />
         <View style={styles.handleRow} pointerEvents="none">
           <View style={styles.handle} />
         </View>
@@ -282,11 +297,17 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     zIndex: 3,
   },
   panelBody: {
-    backgroundColor: c.surface,
     overflow: 'visible',
     flex: 1,
     paddingTop: 32,
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+  },
+  panelSurface: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: c.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
   },
   handleRow: {
     position: 'absolute',
@@ -318,34 +339,51 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignSelf: 'flex-start',
     maxWidth: '100%',
     flexDirection: 'row',
+    flexWrap: 'nowrap',
     alignItems: 'center',
     gap: 8,
   },
   metaBubble: {
-    height: 28,
     flexGrow: 0,
-    flexShrink: 1,
-    minWidth: 0,
-    maxWidth: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
+    flexShrink: 0,
+    height: 28,
+    boxSizing: 'border-box',
     borderRadius: 10,
     paddingTop: 4,
     paddingRight: 8,
     paddingBottom: 4,
     paddingLeft: 8,
+    gap: 4,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
-  metaText: {
+  metaBubbleShrink: {
     flexShrink: 1,
     minWidth: 0,
+  },
+  metaBlur: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  metaFill: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#FFFFFF33',
+  },
+  metaText: {
+    flexGrow: 0,
+    flexShrink: 0,
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
-    lineHeight: 20,
-    color: '#1F2937',
+    lineHeight: Platform.OS === 'ios' ? 16 : 20,
+    includeFontPadding: false,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    backgroundColor: 'transparent',
+  },
+  metaTextShrink: {
+    flexShrink: 1,
   },
   nameSkeleton: {
     width: 160,

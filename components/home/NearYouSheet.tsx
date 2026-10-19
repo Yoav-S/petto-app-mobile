@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, type FlatList } from 'react-native';
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  cancelAnimation,
   runOnJS,
   runOnUI,
   scrollTo,
@@ -12,6 +13,7 @@ import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
+  withDecay,
   withTiming,
 } from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
@@ -57,9 +59,10 @@ interface NearYouSheetProps {
 }
 
 /**
- * The handle and the list drag open and close the sheet, and it stays
- * where the finger lets go. Once the sheet is fully open the list scrolls
- * on its own. Pulling down at the top of that list lowers the sheet again.
+ * The handle and the list open and close the sheet. A drag follows the
+ * finger, then coasts like a scroll and can rest anywhere between the
+ * peek and the full open height. Once the sheet is fully open the list
+ * scrolls on its own. Pulling down at the top of that list lowers the sheet.
  */
 export default function NearYouSheet({
   anchorTop,
@@ -146,6 +149,18 @@ export default function NearYouSheet({
     else height.value = Math.max(minH, height.value - dy);
   };
 
+  /** Same deceleration as a normal scroll. Stops inside the peek and full-open limits. */
+  const coastSheet = (velocityY: number) => {
+    'worklet';
+    const minH = Math.max(0, restingHeight.value);
+    const maxH = Math.max(minH, maxHeight.value);
+    height.value = withDecay({
+      velocity: -velocityY,
+      deceleration: 0.998,
+      clamp: [minH, maxH],
+    });
+  };
+
   const tryLoad = (content: number, viewport: number, offset: number) => {
     'worklet';
     const remain = content - (offset + viewport);
@@ -158,14 +173,21 @@ export default function NearYouSheet({
   const headerPan = Gesture.Pan()
     .activeOffsetY([-SLOP, SLOP])
     .failOffsetX([-28, 28])
+    .onBegin(() => {
+      cancelAnimation(height);
+    })
     .onChange((event) => {
       moveSheet(event.changeY);
+    })
+    .onEnd((event) => {
+      coastSheet(event.velocityY);
     });
 
   const nativeScroll = Gesture.Native();
   const listPan = Gesture.Pan()
     .manualActivation(true)
     .onTouchesDown((event) => {
+      cancelAnimation(height);
       const touch = event.allTouches[0];
       if (!touch) return;
       startX.value = touch.x;
@@ -200,6 +222,9 @@ export default function NearYouSheet({
     })
     .onChange((event) => {
       moveSheet(event.changeY);
+    })
+    .onEnd((event) => {
+      coastSheet(event.velocityY);
     })
     .onFinalize(() => {
       listPanOn.value = false;

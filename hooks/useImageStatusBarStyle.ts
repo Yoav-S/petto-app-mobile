@@ -77,16 +77,17 @@ export function foregroundForBarStyle(style: SystemBarContentStyle): PhotoForegr
 export function useImageStatusBarStyle(
   source: ImageSource | { uri: string },
   fallback: SystemBarContentStyle,
-): { style: SystemBarContentStyle; ready: boolean } {
+): { style: SystemBarContentStyle; ready: boolean; fromPhoto: boolean } {
   const [style, setStyle] = useState<SystemBarContentStyle>(fallback);
   const [ready, setReady] = useState(false);
+  const [fromPhoto, setFromPhoto] = useState(false);
 
   useEffect(() => {
     let active = true;
     const uri = resolveImageUri(source);
-    setStyle(fallback);
     setReady(false);
     if (!uri) {
+      setFromPhoto(false);
       return () => {
         active = false;
       };
@@ -117,11 +118,13 @@ export function useImageStatusBarStyle(
                 fallback,
               ),
         );
+        setFromPhoto(true);
         setReady(true);
       })
       .catch(() => {
         if (!active) return;
         setStyle(fallback);
+        setFromPhoto(false);
         setReady(true);
       });
 
@@ -130,5 +133,5 @@ export function useImageStatusBarStyle(
     };
   }, [fallback, source]);
 
-  return { style, ready };
+  return { style, ready, fromPhoto };
 }

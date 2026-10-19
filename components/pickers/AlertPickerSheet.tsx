@@ -10,7 +10,7 @@ import {
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Spacing, type ThemeColors } from '@/constants/theme';
+import { type ThemeColors } from '@/constants/theme';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import HeaderIconButton from '@/components/ui/HeaderIconButton';
@@ -19,13 +19,13 @@ import { ALERT_OPTIONS, type AlertOption } from '@/services/reminders';
 import { isAlertOptionPossible } from '@/components/reminders/reminderFormShared';
 
 const SHEET_HEIGHT_RATIO = 0.75;
-const ROW_PAD_V = 16;
-const ROW_LINE = 20;
-const DIVIDER_H = 1;
-const HEADER_BLOCK = 44;
-const DONE_BLOCK = 52;
+const ROW_H = 24;
+const LIST_GAP = 16;
+const CARD_PAD = 16;
+const HEADER_BLOCK = 32;
+const DONE_BLOCK = 48;
 const SHEET_GAP = 12;
-const SHEET_PAD_TOP = Spacing.lg;
+const SHEET_PAD_TOP = 20;
 
 interface AlertPickerSheetProps {
   visible: boolean;
@@ -61,10 +61,13 @@ export default function AlertPickerSheet({
 
   const sheetMaxHeight = Math.round(windowHeight * SHEET_HEIGHT_RATIO);
   const bottomPad = Math.max(insets.bottom, 16);
+  const dividerCount = Math.max(0, ALERT_OPTIONS.length - 1);
+  // Row, 16px, zero-height rule, 16px, row. Eight rows land on the 416px list.
   const listHeightEstimate =
-    ALERT_OPTIONS.length * (ROW_PAD_V * 2 + ROW_LINE) +
-    Math.max(0, ALERT_OPTIONS.length - 1) * DIVIDER_H;
-  const chromeHeight = SHEET_PAD_TOP + HEADER_BLOCK + SHEET_GAP + DONE_BLOCK + bottomPad;
+    ALERT_OPTIONS.length * ROW_H +
+    (ALERT_OPTIONS.length + dividerCount - 1) * LIST_GAP +
+    CARD_PAD * 2;
+  const chromeHeight = SHEET_PAD_TOP + HEADER_BLOCK + SHEET_GAP * 2 + DONE_BLOCK + bottomPad;
   const needsScroll = chromeHeight + listHeightEstimate > sheetMaxHeight;
   const listMaxHeight = Math.max(120, sheetMaxHeight - chromeHeight);
 
@@ -75,7 +78,7 @@ export default function AlertPickerSheet({
           const enabled = isAlertOptionPossible(option, scheduledDate, scheduledTime);
           const isActive = option === draft && enabled;
           return (
-            <View key={option}>
+            <React.Fragment key={option}>
               <Pressable
                 style={styles.row}
                 disabled={!enabled}
@@ -86,22 +89,31 @@ export default function AlertPickerSheet({
                 <Text style={[styles.rowText, !enabled && styles.rowTextDisabled]}>
                   {alertLabel(option)}
                 </Text>
-                {isActive ? (
-                  <Ionicons name="checkmark" size={20} color={colors.primaryText} />
-                ) : null}
+                <View style={[styles.checkbox, isActive && styles.checkboxChecked]}>
+                  {isActive ? (
+                    <Ionicons name="checkmark" size={16} color={colors.button.primaryText} />
+                  ) : null}
+                </View>
               </Pressable>
-              {index < ALERT_OPTIONS.length - 1 ? <View style={styles.divider} /> : null}
-            </View>
+              {index < ALERT_OPTIONS.length - 1 ? (
+                <View style={styles.divider}>
+                  <View style={styles.dividerLine} />
+                </View>
+              ) : null}
+            </React.Fragment>
           );
         })}
       </View>
     ),
     [
-      colors.primaryText,
+      colors.button.primaryText,
       draft,
       scheduledDate,
       scheduledTime,
+      styles.checkbox,
+      styles.checkboxChecked,
       styles.divider,
+      styles.dividerLine,
       styles.list,
       styles.row,
       styles.rowText,
@@ -123,9 +135,9 @@ export default function AlertPickerSheet({
         <View style={styles.header}>
           <View style={styles.headerSpacer} />
           <Text style={styles.title}>{t('reminders.alert_title')}</Text>
-          <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
-            <Ionicons name="close" size={20} color={colors.primaryText} />
-          </Pressable>
+          <HeaderIconButton onPress={onClose} accessibilityLabel={t('common.close')}>
+            <Ionicons name="close" size={24} color={colors.primaryText} />
+          </HeaderIconButton>
         </View>
 
         {needsScroll ? (
@@ -163,9 +175,15 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.panel,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
-      paddingHorizontal: Spacing.lg,
+      paddingHorizontal: 20,
       paddingTop: SHEET_PAD_TOP,
       gap: SHEET_GAP,
+      shadowColor: '#1E1E1E',
+      shadowOffset: { width: 0, height: -3 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      boxShadow: '0px -3px 8px rgba(30, 30, 30, 0.080)',
+      elevation: 12,
     },
     header: {
       flexDirection: 'row',
@@ -181,26 +199,59 @@ const makeStyles = (c: ThemeColors) =>
     },
     list: {
       backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: CARD_PAD,
+      gap: LIST_GAP,
+      shadowColor: '#1F1F1F',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0x0f / 255,
+      shadowRadius: 8,
+      boxShadow: '0px 3px 8px rgba(31, 31, 31, 0.059)',
+      elevation: 3,
     },
     row: {
+      height: ROW_H,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingVertical: ROW_PAD_V,
     },
     rowText: {
+      flex: 1,
       fontFamily: 'Rubik-Regular',
       fontSize: 16,
-      lineHeight: ROW_LINE,
+      lineHeight: 20,
       color: c.primaryText,
     },
     rowTextDisabled: {
       color: c.secondaryText,
     },
+    checkbox: {
+      width: 20,
+      height: 20,
+      margin: 2,
+      borderRadius: 999,
+      borderWidth: 2,
+      borderColor: c.brand,
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+    },
+    checkboxChecked: {
+      backgroundColor: c.brand,
+      borderColor: c.brand,
+    },
     divider: {
-      height: DIVIDER_H,
-      width: '100%',
-      backgroundColor: c.border,
+      height: 0,
+      overflow: 'visible',
+    },
+    dividerLine: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 0,
+      height: 0,
+      borderTopWidth: 1,
+      borderTopColor: c.border,
     },
     doneButton: {
       ...PRIMARY_BUTTON,

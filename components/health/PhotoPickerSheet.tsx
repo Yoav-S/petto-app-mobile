@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import { Ionicons } from '@expo/vector-icons';
-import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
+import { Spacing, type ThemeColors } from '@/constants/theme';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
@@ -70,10 +70,16 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   sheet: {
     backgroundColor: c.panel,
-    borderTopLeftRadius: Radius.xl,
-    borderTopRightRadius: Radius.xl,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     paddingTop: Spacing.md,
     height: '85%',
+    shadowColor: '#1E1E1E',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    boxShadow: '0px -3px 8px rgba(30, 30, 30, 0.080)',
+    elevation: 12,
   },
   dragHandle: {
     width: 36,
