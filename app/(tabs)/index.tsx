@@ -618,8 +618,8 @@ export default function DiscoverHomeScreen() {
       style={styles.screen}
       onLayout={(event) => {
         const { width, height } = event.nativeEvent.layout;
-        if (width >= 280 && width !== frameWidth) setFrameWidth(width);
-        if (height && height !== frameHeight) setFrameHeight(height);
+        if (width >= 280 && Math.round(width) !== frameWidth) setFrameWidth(Math.round(width));
+        if (height && Math.round(height) !== frameHeight) setFrameHeight(Math.round(height));
       }}
     >
       <View
@@ -642,6 +642,7 @@ export default function DiscoverHomeScreen() {
             </View>
             <NearYouSheet
               anchorTop={aboveHeight > 0 ? aboveHeight + 4 : 0}
+              topInset={insets.top}
               frameWidth={frameWidth}
               onExpandedChange={setNearOpen}
               frameHeight={frameHeight}

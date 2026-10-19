@@ -6,6 +6,7 @@ import {
   Pressable,
   Platform,
   TurboModuleRegistry,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -40,7 +41,7 @@ type AndroidPicker = {
     value: Date;
     mode: 'time';
     is24Hour: boolean;
-    display: 'default';
+    display: 'default' | 'spinner' | 'clock';
     minuteInterval: 1;
     onChange: (event: DateTimePickerEvent, date?: Date) => void;
   }) => void;
@@ -54,13 +55,18 @@ type PickerModule = {
 
 let pickerModule: PickerModule | null | undefined;
 
+/**
+ * Android's package factory calls TurboModuleRegistry.getEnforcing as soon as
+ * it is required. Metro reports that as fatal even inside try/catch, so the
+ * modules must be probed with get() — which returns null — before require.
+ */
 function nativePickerInstalled(): boolean {
-  if (Platform.OS === 'android') {
-    return TurboModuleRegistry.get('RNCTimePicker') != null
-      && TurboModuleRegistry.get('RNCDatePicker') != null;
-  }
   if (Platform.OS === 'ios') return true;
-  return false;
+  if (Platform.OS !== 'android') return false;
+  return (
+    TurboModuleRegistry.get('RNCDatePicker') != null &&
+    TurboModuleRegistry.get('RNCTimePicker') != null
+  );
 }
 
 function loadPicker(): PickerModule | null {
@@ -125,60 +131,109 @@ export default function TimePickerSheet({
   const { scheme } = useTheme();
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const systemPicker = nativePickerInstalled();
+  const { width: windowWidth } = useWindowDimensions();
+  const pickerWidth = Math.max(0, windowWidth - 40);
   const onCloseRef = useRef(onClose);
   const onConfirmRef = useRef(onConfirm);
   const valueRef = useRef(value);
   const minTimeRef = useRef(minTime);
+  const openedRef = useRef(false);
   onCloseRef.current = onClose;
   onConfirmRef.current = onConfirm;
   valueRef.current = value;
   minTimeRef.current = minTime;
 
   const [draft, setDraft] = useState(() => dateFromTime(value));
+  /** Android fallback: mount the dialog component when imperative API is unavailable. */
+  const [androidInline, setAndroidInline] = useState(false);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible) {
+      setAndroidInline(false);
+      openedRef.current = false;
+      return;
+    }
     setDraft(dateFromTime(valueRef.current));
   }, [visible]);
 
   useEffect(() => {
-    if (!visible || Platform.OS !== 'android' || !systemPicker) return;
-    const android = loadPicker()?.DateTimePickerAndroid;
-    if (!android) {
-      onCloseRef.current();
-      return;
-    }
+    if (!visible || Platform.OS !== 'android') return;
 
+    const mod = loadPicker();
+    const android = mod?.DateTimePickerAndroid;
     let cancelled = false;
+
     void (async () => {
       await waitForBottomSheetsToSettle();
       if (cancelled) return;
-      const initial = dateFromTime(valueRef.current);
-      android.open({
-        value: initial,
-        mode: 'time',
-        is24Hour: true,
-        display: 'default',
-        minuteInterval: 1,
-        onChange: (event, date) => {
-          if (cancelled) return;
-          if (event.type === 'set' && date) {
-            onConfirmRef.current(clampTime(timeFromDate(date), minTimeRef.current));
-          }
-          onCloseRef.current();
-        },
-      });
+
+      if (android) {
+        openedRef.current = true;
+        android.open({
+          value: dateFromTime(valueRef.current),
+          mode: 'time',
+          is24Hour: true,
+          display: 'default',
+          minuteInterval: 1,
+          onChange: (event, date) => {
+            if (cancelled) return;
+            openedRef.current = false;
+            if (event.type === 'set' && date) {
+              onConfirmRef.current(clampTime(timeFromDate(date), minTimeRef.current));
+            }
+            onCloseRef.current();
+          },
+        });
+        return;
+      }
+
+      if (mod?.default) {
+        setAndroidInline(true);
+        return;
+      }
+
+      onCloseRef.current();
     })();
 
     return () => {
       cancelled = true;
-      android.dismiss('time');
+      if (openedRef.current && android) {
+        try {
+          android.dismiss('time');
+        } catch {
+          // ignore
+        }
+        openedRef.current = false;
+      }
     };
-  }, [visible, systemPicker]);
+  }, [visible]);
 
-  if (!visible || !systemPicker) return null;
-  if (Platform.OS !== 'ios') return null;
+  if (Platform.OS === 'android') {
+    if (!visible || !androidInline) return null;
+    const DateTimePicker = loadPicker()?.default;
+    if (!DateTimePicker) return null;
+
+    return (
+      <PickerBoundary onFail={onClose}>
+        <DateTimePicker
+          value={draft}
+          mode="time"
+          is24Hour
+          display="default"
+          minuteInterval={1}
+          onChange={(event, date) => {
+            if (event.type === 'set' && date) {
+              onConfirm(clampTime(timeFromDate(date), minTime));
+            }
+            setAndroidInline(false);
+            onClose();
+          }}
+        />
+      </PickerBoundary>
+    );
+  }
+
+  if (!visible) return null;
 
   const DateTimePicker = loadPicker()?.default;
   if (!DateTimePicker) return null;
@@ -199,18 +254,20 @@ export default function TimePickerSheet({
               <Ionicons name="close" size={24} color={colors.primaryText} />
             </HeaderIconButton>
           </View>
-          <DateTimePicker
-            value={draft}
-            mode="time"
-            display="spinner"
-            locale={PICKER_LOCALE[currentLocale] ?? 'en_GB'}
-            minuteInterval={1}
-            themeVariant={scheme}
-            onChange={(_event, date) => {
-              if (date) setDraft(date);
-            }}
-            style={styles.picker}
-          />
+          <View style={styles.pickerWrap} collapsable={false}>
+            <DateTimePicker
+              value={draft}
+              mode="time"
+              display="spinner"
+              locale={PICKER_LOCALE[currentLocale] ?? 'en_GB'}
+              minuteInterval={1}
+              themeVariant={scheme}
+              onChange={(_event, date) => {
+                if (date) setDraft(date);
+              }}
+              style={[styles.picker, { width: pickerWidth }]}
+            />
+          </View>
           <Pressable style={[styles.done, { backgroundColor: colors.brand }]} onPress={confirm}>
             <Text style={[styles.doneText, { color: colors.button.primaryText }]}>{t('pickers.done')}</Text>
           </Pressable>
@@ -245,9 +302,16 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 24,
   },
+  pickerWrap: {
+    width: '100%',
+    height: 216,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
   picker: {
     height: 216,
-    width: '100%',
+    alignSelf: 'center',
   },
   done: {
     height: 48,

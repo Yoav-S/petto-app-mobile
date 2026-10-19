@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, type FlatList } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -6,7 +6,6 @@ import Animated, {
   runOnJS,
   runOnUI,
   scrollTo,
-  useAnimatedReaction,
   useAnimatedRef,
   useAnimatedScrollHandler,
   useAnimatedStyle,
@@ -25,14 +24,20 @@ import type { BusinessPlace } from '@/services/places';
 /** Figma list column is 335 on a 375 frame, so 20px stays free on each side. */
 const CARD_SIDE = 20;
 const CARD_GAP = 16;
-const FULL_SCREEN = 0.95;
+/** Greeting row that holds the 42px profile photo: 10px under the status bar, 46px tall. */
+const GREETING_PAD_TOP = 10;
+const GREETING_ROW = 46;
 const LOAD_MORE_PX = 480;
 const SLOP = 8;
+/** Any slide past this commits. The sheet no longer waits for the halfway point. */
+const NUDGE = 4;
 const SNAP_MS = 280;
 
 interface NearYouSheetProps {
   /** Distance from the top of the screen to where the sheet rests, including the 4px gap. */
   anchorTop: number;
+  /** Safe-area top. The open sheet stops at the middle of the profile photo. */
+  topInset: number;
   /** Measured width of the home screen. Cards stay hidden until this is known. */
   frameWidth: number;
   frameHeight: number;
@@ -47,12 +52,15 @@ interface NearYouSheetProps {
 }
 
 /**
- * The sheet rests under the categories, or opens to 95% of the screen.
- * A drag that stops at or below halfway snaps back down. Past halfway it
- * opens fully. The shade matches the other modals. A tap outside closes it.
+ * The sheet rests under the categories, or opens until its top edge crosses
+ * the middle of the profile photo, so the top half of that photo stays visible.
+ * It only rests closed or open. A short upward slide opens it, and a short
+ * downward slide closes it. Tapping the handle toggles. The shade matches
+ * the other modals. A tap outside closes it.
  */
 export default function NearYouSheet({
   anchorTop,
+  topInset,
   frameWidth,
   frameHeight,
   places,
@@ -78,12 +86,32 @@ export default function NearYouSheet({
   const startX = useSharedValue(0);
   const startY = useSharedValue(0);
   const listPanOn = useSharedValue(false);
+  const opened = useSharedValue(false);
+  const grabOrigin = useSharedValue(0);
+  const grabDy = useSharedValue(0);
+  const grabPeak = useSharedValue(0);
   const [showClose, setShowClose] = useState(false);
   const [listScroll, setListScroll] = useState(false);
   const [blockBehind, setBlockBehind] = useState(false);
+  const [layoutHeight, setLayoutHeight] = useState(0);
   const frameWidthSV = useSharedValue(frameWidth);
   const cardWidth = frameWidth > CARD_SIDE * 2 ? frameWidth - CARD_SIDE * 2 : 0;
   const cardFrame = { width: cardWidth, alignSelf: 'center' as const };
+  const onLoadMoreRef = useRef(onLoadMore);
+  onLoadMoreRef.current = onLoadMore;
+  const onPressPlaceRef = useRef(onPressPlace);
+  onPressPlaceRef.current = onPressPlace;
+
+  const finishChrome = useCallback((open: boolean) => {
+    setShowClose(open);
+    setBlockBehind(open);
+    if (!open) setListScroll(false);
+    onExpandedChangeRef.current?.(open);
+  }, []);
+
+  const enableList = useCallback(() => {
+    setListScroll(true);
+  }, []);
 
   useEffect(() => {
     frameWidthSV.value = frameWidth;
@@ -91,77 +119,158 @@ export default function NearYouSheet({
 
   useEffect(() => {
     if (frameHeight <= 0 || anchorTop <= 0) return;
-    const nextRest = Math.max(0, frameHeight - anchorTop);
-    const nextMax = Math.max(nextRest, frameHeight * FULL_SCREEN);
+    const nextRest = Math.round(Math.max(0, frameHeight - anchorTop));
+    const avatarMid = topInset + GREETING_PAD_TOP + GREETING_ROW / 2;
+    const nextMax = Math.round(Math.max(nextRest, frameHeight - avatarMid));
     const atRest = height.value === 0 || Math.abs(height.value - restingHeight.value) < 2;
     restingHeight.value = nextRest;
     maxHeight.value = nextMax;
-    if (atRest) height.value = nextRest;
-  }, [anchorTop, frameHeight, height, maxHeight, restingHeight]);
+    setLayoutHeight((current) => (current === nextMax ? current : nextMax));
+    if (atRest) {
+      height.value = nextRest;
+      opened.value = false;
+    }
+  }, [anchorTop, frameHeight, height, maxHeight, opened, restingHeight, topInset]);
 
   useEffect(() => {
     if (!loadingMore) loadArmed.value = true;
   }, [loadingMore, loadArmed]);
 
-  useAnimatedReaction(
-    () => restingHeight.value > 0 && height.value > restingHeight.value + 16,
-    (open, previous) => {
-      if (open !== previous) runOnJS(setShowClose)(open);
-    },
-  );
+  const loadMorePlaces = useCallback(() => {
+    onLoadMoreRef.current();
+  }, []);
 
-  useAnimatedReaction(
-    () => maxHeight.value > 0 && height.value >= maxHeight.value - 1,
-    (open, previous) => {
-      if (open !== previous) runOnJS(setListScroll)(open);
-    },
-  );
+  const { titlePan, handleGesture, listGesture, collapseOnUI } = useMemo(() => {
+    const moveSheet = (dy: number) => {
+      'worklet';
+      if (dy === 0) return;
+      const minH = Math.max(0, restingHeight.value);
+      const maxH = Math.max(minH, maxHeight.value);
+      if (dy < 0) height.value = Math.min(maxH, height.value - dy);
+      else height.value = Math.max(minH, height.value - dy);
+    };
 
-  const reportExpanded = (open: boolean) => {
-    onExpandedChangeRef.current?.(open);
-  };
-
-  useAnimatedReaction(
-    () => restingHeight.value > 0 && height.value > restingHeight.value + 12,
-    (open, previous) => {
-      if (open !== previous) {
-        runOnJS(setBlockBehind)(open);
-        runOnJS(reportExpanded)(open);
+    const goTo = (open: boolean) => {
+      'worklet';
+      const minH = Math.max(0, restingHeight.value);
+      const maxH = Math.max(minH, maxHeight.value);
+      cancelAnimation(height);
+      opened.value = open;
+      if (!open) {
+        scrollY.value = 0;
+        scrollTo(listRef, 0, 0, false);
       }
-    },
-  );
+      // Shade and the buttons behind update when the sheet commits.
+      // The list stays locked until the open animation finishes, so iOS
+      // does not scroll it while the curtain is still moving.
+      runOnJS(finishChrome)(open);
+      height.value = withTiming(open ? maxH : minH, { duration: SNAP_MS }, (finished) => {
+        'worklet';
+        if (finished && open) runOnJS(enableList)();
+      });
+    };
 
-  const collapseOnUI = () => {
-    'worklet';
-    scrollY.value = 0;
-    scrollTo(listRef, 0, 0, false);
-    height.value = withTiming(restingHeight.value, { duration: 280 });
-  };
+    // Net movement decides. A short slide up opens; a short slide down closes.
+    const settleFrom = (translationY: number) => {
+      'worklet';
+      if (translationY <= -NUDGE) goTo(true);
+      else if (translationY >= NUDGE) goTo(false);
+      else goTo(opened.value);
+    };
+
+    const dragPan = () =>
+      Gesture.Pan()
+        .activeOffsetY([-SLOP, SLOP])
+        .failOffsetX([-28, 28])
+        .onBegin(() => {
+          cancelAnimation(height);
+        })
+        .onChange((event) => {
+          moveSheet(event.changeY);
+        })
+        .onEnd((event) => {
+          settleFrom(event.translationY);
+        });
+
+    const handleTap = Gesture.Tap()
+      .maxDistance(SLOP)
+      .onEnd(() => {
+        goTo(!opened.value);
+      });
+
+    const title = dragPan();
+    const handle = Gesture.Exclusive(dragPan(), handleTap);
+
+    const nativeScroll = Gesture.Native();
+    const list = Gesture.Pan()
+      .manualActivation(true)
+      .onTouchesDown((event) => {
+        const touch = event.allTouches[0];
+        if (!touch) return;
+        startX.value = touch.x;
+        startY.value = touch.y;
+        listPanOn.value = false;
+      })
+      .onTouchesMove((event, state) => {
+        if (listPanOn.value) return;
+        const touch = event.allTouches[0];
+        if (!touch) return;
+        const dx = touch.x - startX.value;
+        const dy = touch.y - startY.value;
+        if (Math.abs(dx) < SLOP && Math.abs(dy) < SLOP) return;
+        if (Math.abs(dx) > Math.abs(dy)) {
+          state.fail();
+          return;
+        }
+        const minH = Math.max(0, restingHeight.value);
+        const maxH = Math.max(minH, maxHeight.value);
+        const atMax = height.value >= maxH - 1;
+        const opening = dy < 0 && !atMax;
+        const closing = dy > 0 && height.value > minH + 1 && (!atMax || scrollY.value <= 0);
+        if (opening || closing) {
+          if (!listPanOn.value) {
+            cancelAnimation(height);
+            grabOrigin.value = height.value;
+            grabDy.value = dy;
+            grabPeak.value = 0;
+          }
+          listPanOn.value = true;
+          state.activate();
+          return;
+        }
+        state.fail();
+      })
+      .onTouchesUp((_, state) => {
+        if (!listPanOn.value) state.fail();
+      })
+      .onChange((event) => {
+        moveSheet(event.changeY);
+        grabPeak.value = Math.max(grabPeak.value, Math.abs(height.value - grabOrigin.value));
+      })
+      .onEnd((event) => {
+        if (!listPanOn.value) return;
+        const moved = height.value - grabOrigin.value;
+        if (Math.abs(moved) >= NUDGE) settleFrom(-moved);
+        else if (grabPeak.value >= SLOP + NUDGE) settleFrom(0);
+        else settleFrom(Math.abs(event.translationY) >= NUDGE ? event.translationY : grabDy.value);
+      })
+      .onFinalize(() => {
+        listPanOn.value = false;
+      });
+
+    return {
+      titlePan: title,
+      handleGesture: handle,
+      listGesture: Gesture.Exclusive(list, nativeScroll),
+      collapseOnUI: () => {
+        'worklet';
+        goTo(false);
+      },
+    };
+  }, [enableList, finishChrome, grabDy, grabOrigin, grabPeak, height, listPanOn, listRef, maxHeight, opened, restingHeight, scrollY, startX, startY]);
 
   const closeSheet = () => {
     runOnUI(collapseOnUI)();
-  };
-
-  const moveSheet = (dy: number) => {
-    'worklet';
-    if (dy === 0) return;
-    const minH = Math.max(0, restingHeight.value);
-    const maxH = Math.max(minH, maxHeight.value);
-    if (dy < 0) height.value = Math.min(maxH, height.value - dy);
-    else height.value = Math.max(minH, height.value - dy);
-  };
-
-  const settleSheet = () => {
-    'worklet';
-    const minH = Math.max(0, restingHeight.value);
-    const maxH = Math.max(minH, maxHeight.value);
-    const span = maxH - minH;
-    const pastHalf = span > 1 && height.value > minH + span * 0.5;
-    if (!pastHalf) {
-      scrollY.value = 0;
-      scrollTo(listRef, 0, 0, false);
-    }
-    height.value = withTiming(pastHalf ? maxH : minH, { duration: SNAP_MS });
   };
 
   const tryLoad = (content: number, viewport: number, offset: number) => {
@@ -169,71 +278,9 @@ export default function NearYouSheet({
     const remain = content - (offset + viewport);
     if (loadArmed.value && content > 0 && viewport > 0 && remain < LOAD_MORE_PX) {
       loadArmed.value = false;
-      runOnJS(onLoadMore)();
+      runOnJS(loadMorePlaces)();
     }
   };
-
-  const headerPan = Gesture.Pan()
-    .activeOffsetY([-SLOP, SLOP])
-    .failOffsetX([-28, 28])
-    .onBegin(() => {
-      cancelAnimation(height);
-    })
-    .onChange((event) => {
-      moveSheet(event.changeY);
-    })
-    .onEnd(() => {
-      settleSheet();
-    });
-
-  const nativeScroll = Gesture.Native();
-  const listPan = Gesture.Pan()
-    .manualActivation(true)
-    .onTouchesDown((event) => {
-      cancelAnimation(height);
-      const touch = event.allTouches[0];
-      if (!touch) return;
-      startX.value = touch.x;
-      startY.value = touch.y;
-      listPanOn.value = false;
-    })
-    .onTouchesMove((event, state) => {
-      if (listPanOn.value) return;
-      const touch = event.allTouches[0];
-      if (!touch) return;
-      const dx = touch.x - startX.value;
-      const dy = touch.y - startY.value;
-      if (Math.abs(dx) < SLOP && Math.abs(dy) < SLOP) return;
-      if (Math.abs(dx) > Math.abs(dy)) {
-        state.fail();
-        return;
-      }
-      const minH = Math.max(0, restingHeight.value);
-      const maxH = Math.max(minH, maxHeight.value);
-      const atMax = height.value >= maxH - 1;
-      const opening = dy < 0 && !atMax;
-      const closing = dy > 0 && height.value > minH + 1 && (!atMax || scrollY.value <= 0);
-      if (opening || closing) {
-        listPanOn.value = true;
-        state.activate();
-        return;
-      }
-      state.fail();
-    })
-    .onTouchesUp((_, state) => {
-      if (!listPanOn.value) state.fail();
-    })
-    .onChange((event) => {
-      moveSheet(event.changeY);
-    })
-    .onEnd(() => {
-      settleSheet();
-    })
-    .onFinalize(() => {
-      listPanOn.value = false;
-    });
-
-  const listGesture = Gesture.Exclusive(listPan, nativeScroll);
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -247,8 +294,12 @@ export default function NearYouSheet({
   });
 
   const sheetStyle = useAnimatedStyle(() => ({
-    height: height.value,
+    transform: [{ translateY: Math.max(0, maxHeight.value - height.value) }],
     opacity: height.value < 1 || frameWidthSV.value < 1 ? 0 : 1,
+  }));
+
+  const closeStyle = useAnimatedStyle(() => ({
+    opacity: restingHeight.value > 0 && height.value > restingHeight.value + 16 ? 1 : 0,
   }));
 
   const shadeStyle = useAnimatedStyle(() => {
@@ -258,24 +309,44 @@ export default function NearYouSheet({
   });
 
   const data = loading ? [] : places;
+  const pressPlace = useCallback((place: BusinessPlace) => {
+    onPressPlaceRef.current(place);
+  }, []);
+  const renderPlace = useCallback(
+    ({ item }: { item: BusinessPlace }) => (
+      <View style={[styles.card, { width: cardWidth, alignSelf: 'center' }]}>
+        <PlaceCard place={item} onPress={() => pressPlace(item)} />
+      </View>
+    ),
+    [cardWidth, pressPlace, styles.card],
+  );
 
   return (
-    <>
+    <View style={styles.clip} pointerEvents="box-none">
       <Animated.View style={[styles.shade, shadeStyle]} pointerEvents={blockBehind ? 'auto' : 'none'}>
         <Pressable style={StyleSheet.absoluteFill} onPress={closeSheet} />
       </Animated.View>
-      <Animated.View style={[styles.sheet, sheetStyle]}>
+      <Animated.View style={[styles.sheet, { height: layoutHeight }, sheetStyle]}>
         <View style={styles.sheetClip}>
-          <GestureDetector gesture={headerPan}>
-            <View>
-              <View style={styles.handleRow}>
+          <View collapsable={false}>
+            <GestureDetector gesture={handleGesture}>
+              <View
+                collapsable={false}
+                style={styles.handleRow}
+                accessibilityRole="button"
+                accessibilityLabel={showClose ? t('home.close_list') : t('home.near_you')}
+              >
                 <View style={styles.handle} />
               </View>
-              <Text style={[styles.title, showClose && styles.titleWithClose]} numberOfLines={1}>
-                {t('home.near_you')}
-              </Text>
-            </View>
-          </GestureDetector>
+            </GestureDetector>
+            <GestureDetector gesture={titlePan}>
+              <View collapsable={false}>
+                <Text style={[styles.title, showClose && styles.titleWithClose]} numberOfLines={1}>
+                  {t('home.near_you')}
+                </Text>
+              </View>
+            </GestureDetector>
+          </View>
           <GestureDetector gesture={listGesture}>
             <Animated.FlatList
               ref={listRef}
@@ -284,7 +355,9 @@ export default function NearYouSheet({
               keyExtractor={(place) => place.id}
               scrollEnabled={listScroll}
               showsVerticalScrollIndicator={false}
-              bounces={listScroll}
+              bounces={false}
+              alwaysBounceVertical={false}
+              contentInsetAdjustmentBehavior="never"
               overScrollMode="never"
               onScroll={onScroll}
               scrollEventThrottle={16}
@@ -294,7 +367,7 @@ export default function NearYouSheet({
                 const remain = contentHeight.value - (scrollY.value + viewport);
                 if (loadArmed.value && contentHeight.value > 0 && viewport > 0 && remain < LOAD_MORE_PX) {
                   loadArmed.value = false;
-                  onLoadMore();
+                  loadMorePlaces();
                 }
               }}
               onContentSizeChange={(_width, nextHeight) => {
@@ -302,7 +375,7 @@ export default function NearYouSheet({
                 const remain = nextHeight - (scrollY.value + listViewport.value);
                 if (loadArmed.value && nextHeight > 0 && listViewport.value > 0 && remain < LOAD_MORE_PX) {
                   loadArmed.value = false;
-                  onLoadMore();
+                  loadMorePlaces();
                 }
               }}
               contentContainerStyle={styles.listContent}
@@ -328,30 +401,30 @@ export default function NearYouSheet({
                   <View style={{ height: bottomInset + 22 }} />
                 )
               }
-              renderItem={({ item }) => (
-                <View style={[styles.card, cardFrame]}>
-                  <PlaceCard place={item} onPress={() => onPressPlace(item)} />
-                </View>
-              )}
+              renderItem={renderPlace}
             />
           </GestureDetector>
         </View>
-        {showClose ? (
+        <Animated.View style={[styles.closeHit, closeStyle]} pointerEvents={showClose ? 'auto' : 'none'}>
           <HeaderIconButton
-            style={styles.closeHit}
             onPress={closeSheet}
             accessibilityLabel={t('home.close_list')}
           >
             <X size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} strokeWidth={2} />
           </HeaderIconButton>
-        ) : null}
+        </Animated.View>
       </Animated.View>
-    </>
+    </View>
   );
 }
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
+    clip: {
+      ...StyleSheet.absoluteFillObject,
+      overflow: 'hidden',
+      zIndex: 8,
+    },
     shade: {
       ...StyleSheet.absoluteFillObject,
       zIndex: 7,
