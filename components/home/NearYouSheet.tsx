@@ -90,6 +90,8 @@ export default function NearYouSheet({
   const grabOrigin = useSharedValue(0);
   const grabDy = useSharedValue(0);
   const grabPeak = useSharedValue(0);
+  /** Blocks the card under the finger while the curtain moves. iOS treats that slide as a tap. */
+  const pressLocked = useSharedValue(false);
   const [showClose, setShowClose] = useState(false);
   const [listScroll, setListScroll] = useState(false);
   const [blockBehind, setBlockBehind] = useState(false);
@@ -109,9 +111,13 @@ export default function NearYouSheet({
     onExpandedChangeRef.current?.(open);
   }, []);
 
-  const enableList = useCallback(() => {
-    setListScroll(true);
-  }, []);
+  const releasePresses = useCallback((open: boolean) => {
+    setListScroll(open);
+    // iOS can deliver the card tap when scrollEnabled flips. Stay locked past that.
+    setTimeout(() => {
+      pressLocked.value = false;
+    }, 320);
+  }, [pressLocked]);
 
   useEffect(() => {
     frameWidthSV.value = frameWidth;
@@ -156,6 +162,7 @@ export default function NearYouSheet({
       const maxH = Math.max(minH, maxHeight.value);
       cancelAnimation(height);
       opened.value = open;
+      pressLocked.value = true;
       if (!open) {
         scrollY.value = 0;
         scrollTo(listRef, 0, 0, false);
@@ -166,7 +173,7 @@ export default function NearYouSheet({
       runOnJS(finishChrome)(open);
       height.value = withTiming(open ? maxH : minH, { duration: SNAP_MS }, (finished) => {
         'worklet';
-        if (finished && open) runOnJS(enableList)();
+        if (finished) runOnJS(releasePresses)(open);
       });
     };
 
@@ -233,6 +240,7 @@ export default function NearYouSheet({
             grabOrigin.value = height.value;
             grabDy.value = dy;
             grabPeak.value = 0;
+            pressLocked.value = true;
           }
           listPanOn.value = true;
           state.activate();
@@ -267,7 +275,7 @@ export default function NearYouSheet({
         goTo(false);
       },
     };
-  }, [enableList, finishChrome, grabDy, grabOrigin, grabPeak, height, listPanOn, listRef, maxHeight, opened, restingHeight, scrollY, startX, startY]);
+  }, [finishChrome, grabDy, grabOrigin, grabPeak, height, listPanOn, listRef, maxHeight, opened, pressLocked, releasePresses, restingHeight, scrollY, startX, startY]);
 
   const closeSheet = () => {
     runOnUI(collapseOnUI)();
@@ -310,8 +318,14 @@ export default function NearYouSheet({
 
   const data = loading ? [] : places;
   const pressPlace = useCallback((place: BusinessPlace) => {
+    if (pressLocked.value) return;
+    const minH = restingHeight.value;
+    const maxH = Math.max(minH, maxHeight.value);
+    const atRest = Math.abs(height.value - minH) < 2;
+    const atOpen = maxH > minH && Math.abs(height.value - maxH) < 2;
+    if (!atRest && !atOpen) return;
     onPressPlaceRef.current(place);
-  }, []);
+  }, [height, maxHeight, pressLocked, restingHeight]);
   const renderPlace = useCallback(
     ({ item }: { item: BusinessPlace }) => (
       <View style={[styles.card, { width: cardWidth, alignSelf: 'center' }]}>
