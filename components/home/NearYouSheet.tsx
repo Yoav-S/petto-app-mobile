@@ -1,52 +1,38 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, type FlatList } from 'react-native';
-import { requireOptionalNativeModule } from 'expo-modules-core';
+import React, { useEffect, useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, View, type FlatList } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
   runOnJS,
   runOnUI,
   scrollTo,
-  useAnimatedProps,
   useAnimatedReaction,
   useAnimatedRef,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
-  withDecay,
   withTiming,
 } from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
 import { type ThemeColors } from '@/constants/theme';
-import { useColors, useTheme, useThemedStyles } from '@/context/ThemeContext';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import PlaceCard from '@/components/business/PlaceCard';
 import { PlaceCardSkeletons } from '@/components/business/PlaceCardSkeleton';
 import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
-import type { BlurViewProps } from 'expo-blur';
 import type { BusinessPlace } from '@/services/places';
 
 /** Figma list column is 335 on a 375 frame, so 20px stays free on each side. */
 const CARD_SIDE = 20;
 const CARD_GAP = 16;
-const FULL_SCREEN = 0.9;
-/** Full-open frost. Halfway open is half of this. 100 is the strongest blur. */
-const GLASS_INTENSITY = 48;
+const FULL_SCREEN = 0.95;
 const LOAD_MORE_PX = 480;
 const SLOP = 8;
-
-const blurModule = requireOptionalNativeModule('ExpoBlurView')
-  ? (require('expo-blur') as { BlurView?: React.ComponentType<BlurViewProps>; default?: React.ComponentType<BlurViewProps> })
-  : null;
-const BlurView = blurModule?.BlurView ?? blurModule?.default ?? null;
-
-const AnimatedBlur = BlurView ? Animated.createAnimatedComponent(BlurView) : null;
+const SNAP_MS = 280;
 
 interface NearYouSheetProps {
   /** Distance from the top of the screen to where the sheet rests, including the 4px gap. */
   anchorTop: number;
-  /** Height of the greeting. The open sheet stops here so the profile photo stays clear. */
-  topClearance: number;
   /** Measured width of the home screen. Cards stay hidden until this is known. */
   frameWidth: number;
   frameHeight: number;
@@ -56,17 +42,17 @@ interface NearYouSheetProps {
   bottomInset: number;
   onLoadMore: () => void;
   onPressPlace: (place: BusinessPlace) => void;
+  /** True while the sheet is pulled up off its resting peek. */
+  onExpandedChange?: (expanded: boolean) => void;
 }
 
 /**
- * The handle and the list open and close the sheet. A drag follows the
- * finger, then coasts like a scroll and can rest anywhere between the
- * peek and the full open height. Once the sheet is fully open the list
- * scrolls on its own. Pulling down at the top of that list lowers the sheet.
+ * The sheet rests under the categories, or opens to 95% of the screen.
+ * A drag that stops at or below halfway snaps back down. Past halfway it
+ * opens fully. The shade matches the other modals. A tap outside closes it.
  */
 export default function NearYouSheet({
   anchorTop,
-  topClearance,
   frameWidth,
   frameHeight,
   places,
@@ -75,10 +61,12 @@ export default function NearYouSheet({
   bottomInset,
   onLoadMore,
   onPressPlace,
+  onExpandedChange,
 }: NearYouSheetProps) {
   const colors = useColors();
-  const { isDark } = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const onExpandedChangeRef = useRef(onExpandedChange);
+  onExpandedChangeRef.current = onExpandedChange;
   const listRef = useAnimatedRef<FlatList<BusinessPlace>>();
   const height = useSharedValue(0);
   const restingHeight = useSharedValue(0);
@@ -92,6 +80,7 @@ export default function NearYouSheet({
   const listPanOn = useSharedValue(false);
   const [showClose, setShowClose] = useState(false);
   const [listScroll, setListScroll] = useState(false);
+  const [blockBehind, setBlockBehind] = useState(false);
   const frameWidthSV = useSharedValue(frameWidth);
   const cardWidth = frameWidth > CARD_SIDE * 2 ? frameWidth - CARD_SIDE * 2 : 0;
   const cardFrame = { width: cardWidth, alignSelf: 'center' as const };
@@ -103,13 +92,12 @@ export default function NearYouSheet({
   useEffect(() => {
     if (frameHeight <= 0 || anchorTop <= 0) return;
     const nextRest = Math.max(0, frameHeight - anchorTop);
-    const underGreeting = topClearance > 0 ? frameHeight - topClearance : frameHeight * FULL_SCREEN;
-    const nextMax = Math.max(nextRest, Math.min(frameHeight * FULL_SCREEN, underGreeting));
+    const nextMax = Math.max(nextRest, frameHeight * FULL_SCREEN);
     const atRest = height.value === 0 || Math.abs(height.value - restingHeight.value) < 2;
     restingHeight.value = nextRest;
     maxHeight.value = nextMax;
     if (atRest) height.value = nextRest;
-  }, [anchorTop, frameHeight, height, maxHeight, restingHeight, topClearance]);
+  }, [anchorTop, frameHeight, height, maxHeight, restingHeight]);
 
   useEffect(() => {
     if (!loadingMore) loadArmed.value = true;
@@ -126,6 +114,20 @@ export default function NearYouSheet({
     () => maxHeight.value > 0 && height.value >= maxHeight.value - 1,
     (open, previous) => {
       if (open !== previous) runOnJS(setListScroll)(open);
+    },
+  );
+
+  const reportExpanded = (open: boolean) => {
+    onExpandedChangeRef.current?.(open);
+  };
+
+  useAnimatedReaction(
+    () => restingHeight.value > 0 && height.value > restingHeight.value + 12,
+    (open, previous) => {
+      if (open !== previous) {
+        runOnJS(setBlockBehind)(open);
+        runOnJS(reportExpanded)(open);
+      }
     },
   );
 
@@ -149,16 +151,17 @@ export default function NearYouSheet({
     else height.value = Math.max(minH, height.value - dy);
   };
 
-  /** Same deceleration as a normal scroll. Stops inside the peek and full-open limits. */
-  const coastSheet = (velocityY: number) => {
+  const settleSheet = () => {
     'worklet';
     const minH = Math.max(0, restingHeight.value);
     const maxH = Math.max(minH, maxHeight.value);
-    height.value = withDecay({
-      velocity: -velocityY,
-      deceleration: 0.998,
-      clamp: [minH, maxH],
-    });
+    const span = maxH - minH;
+    const pastHalf = span > 1 && height.value > minH + span * 0.5;
+    if (!pastHalf) {
+      scrollY.value = 0;
+      scrollTo(listRef, 0, 0, false);
+    }
+    height.value = withTiming(pastHalf ? maxH : minH, { duration: SNAP_MS });
   };
 
   const tryLoad = (content: number, viewport: number, offset: number) => {
@@ -179,8 +182,8 @@ export default function NearYouSheet({
     .onChange((event) => {
       moveSheet(event.changeY);
     })
-    .onEnd((event) => {
-      coastSheet(event.velocityY);
+    .onEnd(() => {
+      settleSheet();
     });
 
   const nativeScroll = Gesture.Native();
@@ -223,8 +226,8 @@ export default function NearYouSheet({
     .onChange((event) => {
       moveSheet(event.changeY);
     })
-    .onEnd((event) => {
-      coastSheet(event.velocityY);
+    .onEnd(() => {
+      settleSheet();
     })
     .onFinalize(() => {
       listPanOn.value = false;
@@ -248,36 +251,19 @@ export default function NearYouSheet({
     opacity: height.value < 1 || frameWidthSV.value < 1 ? 0 : 1,
   }));
 
-  const blurProps = useAnimatedProps(() => {
+  const shadeStyle = useAnimatedStyle(() => {
     const span = maxHeight.value - restingHeight.value;
     const progress = span > 1 ? (height.value - restingHeight.value) / span : 0;
-    const clamped = Math.min(1, Math.max(0, progress));
-    return { intensity: clamped * GLASS_INTENSITY };
-  });
-
-  const veilStyle = useAnimatedStyle(() => {
-    const span = maxHeight.value - restingHeight.value;
-    const progress = span > 1 ? (height.value - restingHeight.value) / span : 0;
-    const clamped = Math.min(1, Math.max(0, progress));
-    return { opacity: clamped * 0.2 };
+    return { opacity: Math.min(1, Math.max(0, progress)) };
   });
 
   const data = loading ? [] : places;
 
   return (
     <>
-      {AnimatedBlur ? (
-        <AnimatedBlur
-          pointerEvents="none"
-          animatedProps={blurProps}
-          tint={isDark ? 'systemThinMaterialDark' : 'systemThinMaterialLight'}
-          experimentalBlurMethod="dimezisBlurView"
-          blurReductionFactor={2}
-          style={styles.glass}
-        />
-      ) : (
-        <Animated.View pointerEvents="none" style={[styles.veil, veilStyle]} />
-      )}
+      <Animated.View style={[styles.shade, shadeStyle]} pointerEvents={blockBehind ? 'auto' : 'none'}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={closeSheet} />
+      </Animated.View>
       <Animated.View style={[styles.sheet, sheetStyle]}>
         <View style={styles.sheetClip}>
           <GestureDetector gesture={headerPan}>
@@ -366,14 +352,10 @@ export default function NearYouSheet({
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    glass: {
+    shade: {
       ...StyleSheet.absoluteFillObject,
       zIndex: 7,
-    },
-    veil: {
-      ...StyleSheet.absoluteFillObject,
-      zIndex: 7,
-      backgroundColor: '#FFFFFF',
+      backgroundColor: colors.overlay,
     },
     sheet: {
       position: 'absolute',

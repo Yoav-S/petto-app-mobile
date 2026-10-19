@@ -3,7 +3,7 @@ import { useColors, useThemedStyles, useTheme } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Pencil } from 'lucide-react-native';
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useId, useMemo, useRef } from 'react';
 import {
   Animated,
   Platform,
@@ -12,11 +12,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import {
-  foregroundForBarStyle,
-  useImageStatusBarStyle,
-} from '@/hooks/useImageStatusBarStyle';
+import { useImageStatusBarStyle } from '@/hooks/useImageStatusBarStyle';
 import {
   useStatusBarOverride,
   type SystemBarContentStyle,
@@ -33,6 +31,7 @@ const blurModule = requireOptionalNativeModule('ExpoBlurView')
   ? (require('expo-blur') as { BlurView?: React.ComponentType<BlurViewProps>; default?: React.ComponentType<BlurViewProps> })
   : null;
 const BlurView = blurModule?.BlurView ?? blurModule?.default ?? null;
+const COVER_FADE_HEIGHT = 112;
 
 import {
   DESIGN_COVER_HEIGHT,
@@ -104,17 +103,7 @@ export default function PetHeader({
   const imageContrast = useImageStatusBarStyle(coverSource, themeBarStyle);
   const barStyle: SystemBarContentStyle = loading ? themeBarStyle : pet ? imageContrast.style : 'dark';
   useStatusBarOverride(barStyle);
-  const nameColor = foregroundForBarStyle(
-    imageContrast.ready ? imageContrast.style : themeBarStyle,
-  );
-  const lightType = nameColor === '#FFFFFF';
-  const chipTextColor = foregroundForBarStyle(imageContrast.fromPhoto ? imageContrast.style : 'dark');
-  // Halo keeps the type readable when a photo is mixed or the read is late.
-  const typeHalo = {
-    textShadowColor: lightType ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.9)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
-  };
+  const fadeId = `cover-fade-${useId().replace(/:/g, '')}`;
   useEffect(() => {
     if (loading) {
       Animated.loop(
@@ -145,7 +134,7 @@ export default function PetHeader({
       ) : null}
       <View pointerEvents="none" style={styles.metaFill} />
       <Text
-        style={[styles.metaText, shrink && styles.metaTextShrink, { color: chipTextColor }]}
+        style={[styles.metaText, shrink && styles.metaTextShrink]}
         numberOfLines={1}
       >
         {label}
@@ -174,6 +163,18 @@ export default function PetHeader({
           )}
         </View>
 
+        <View pointerEvents="none" style={styles.coverFade}>
+          <Svg width="100%" height="100%" preserveAspectRatio="none">
+            <Defs>
+              <LinearGradient id={fadeId} x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor="#363636" stopOpacity={0} />
+                <Stop offset="1" stopColor="#000000" stopOpacity={0.3} />
+              </LinearGradient>
+            </Defs>
+            <Rect width="100%" height="100%" fill={`url(#${fadeId})`} />
+          </Svg>
+        </View>
+
         <View style={[styles.identity, { maxWidth: nameBlockWidth }]} pointerEvents="box-none">
           {loading ? (
             <View>
@@ -188,14 +189,14 @@ export default function PetHeader({
                 activeOpacity={canSwitch ? 0.7 : 1}
                 disabled={!canSwitch}
               >
-                <Text style={[styles.name, typeHalo, { color: nameColor }]} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
                   {pet?.name ?? t('home.noPet')}
                 </Text>
                 {canSwitch ? (
                   <Ionicons
                     name={switchOpen ? 'chevron-up' : 'chevron-down'}
                     size={24}
-                    color={nameColor}
+                    color="#FFFFFF"
                   />
                 ) : null}
               </TouchableOpacity>
@@ -264,6 +265,17 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   coverImage: {
     width: '100%',
     height: '100%',
+  },
+  coverFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: COVER_FADE_HEIGHT,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    overflow: 'hidden',
+    zIndex: 2,
   },
   coverPlaceholder: {
     flex: 1,
@@ -380,6 +392,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     includeFontPadding: false,
     textAlign: 'center',
     textAlignVertical: 'center',
+    color: '#FFFFFF',
     backgroundColor: 'transparent',
   },
   metaTextShrink: {

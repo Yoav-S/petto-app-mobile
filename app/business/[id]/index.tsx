@@ -289,7 +289,13 @@ export default function BusinessScreen() {
             {image ? (
               <Image source={{ uri: image }} style={styles.coverImage} contentFit="cover" />
             ) : (
-              <View style={styles.coverImage} />
+              <View style={styles.coverPlaceholder}>
+                <Image
+                  source={require('@/assets/images/business-photo-placeholder.png')}
+                  style={styles.coverPlaceholderIcon}
+                  contentFit="contain"
+                />
+              </View>
             )}
           </Pressable>
         </View>
@@ -633,6 +639,17 @@ const makeStyles = (c: ThemeColors) =>
     coverImage: {
       width: '100%',
       height: '100%',
+    },
+    coverPlaceholder: {
+      width: '100%',
+      height: '100%',
+      backgroundColor: '#F6F7F9',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    coverPlaceholderIcon: {
+      width: 42,
+      height: 42,
     },
     actionBar: {
       position: 'absolute',

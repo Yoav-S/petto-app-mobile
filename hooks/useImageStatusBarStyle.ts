@@ -46,28 +46,49 @@ function prominentColors(result: {
   );
 }
 
+function isInk(color: string | undefined, ink: '#ffffff' | '#000000'): boolean {
+  return (color ?? '').replace('#', '').toLowerCase() === ink.slice(1);
+}
+
 /**
- * Light photos need dark type. iOS reports the next accent when a photo is
- * nearly white, so one swatch is not enough — use the lightest prominent color.
+ * Dark type on a light photo, white type on a dark photo.
+ * iOS fills unused swatches with pure white or pure black, and those fillers
+ * were flipping the result. A clearly light or dark background wins. A replaced
+ * black or white field still shows up as another near-extreme swatch.
  */
 export function foregroundStyleForColors(
   colors: string[],
   fallback: SystemBarContentStyle,
+  background?: string,
 ): SystemBarContentStyle {
+  const backgroundLum = background ? hexLuminance(background) : null;
+  if (backgroundLum != null && backgroundLum >= 0.62) return 'dark';
+  if (backgroundLum != null && backgroundLum <= 0.28) return 'light';
+
   const luminances = colors
-    .map((color) => hexLuminance(color))
+    .map((color) => {
+      if (backgroundLum != null && backgroundLum < 0.5 && isInk(color, '#ffffff')) return null;
+      if (backgroundLum != null && backgroundLum > 0.5 && isInk(color, '#000000')) return null;
+      return hexLuminance(color);
+    })
     .filter((value): value is number => value != null);
-  if (luminances.length === 0) return fallback;
+  if (luminances.length === 0) {
+    if (backgroundLum == null) return fallback;
+    return backgroundLum >= 0.5 ? 'dark' : 'light';
+  }
   const lightest = Math.max(...luminances);
+  const darkest = Math.min(...luminances);
+  if (lightest >= 0.9 && darkest > 0.2) return 'dark';
+  if (darkest <= 0.1 && lightest < 0.8) return 'light';
   const average = luminances.reduce((sum, value) => sum + value, 0) / luminances.length;
-  return Math.max(average, lightest * 0.85) > 0.45 ? 'dark' : 'light';
+  return average >= 0.5 ? 'dark' : 'light';
 }
 
-export type PhotoForeground = '#FFFFFF' | '#1F2937';
+export type PhotoForeground = '#FFFFFF' | '#000000';
 
-/** Dark status-bar icons mean the photo is light, so the type is dark too. */
+/** Dark status-bar icons mean the photo is light, so the type is black. */
 export function foregroundForBarStyle(style: SystemBarContentStyle): PhotoForeground {
-  return style === 'dark' ? '#1F2937' : '#FFFFFF';
+  return style === 'dark' ? '#000000' : '#FFFFFF';
 }
 
 /**
@@ -106,17 +127,17 @@ export function useImageStatusBarStyle(
       .then((result) => {
         if (!active) return;
         const colors = prominentColors(result);
+        const background = result.platform === 'ios'
+          ? result.background
+          : result.platform === 'android'
+            ? result.average ?? result.dominant
+            : result.dominant;
         setStyle(
           colors.length > 0
-            ? foregroundStyleForColors(colors, fallback)
-            : statusBarStyleForHex(
-                result.platform === 'ios'
-                  ? result.background
-                  : result.platform === 'android'
-                    ? result.average
-                    : result.dominant,
-                fallback,
-              ),
+            ? foregroundStyleForColors(colors, fallback, background)
+            : background
+              ? statusBarStyleForHex(background, fallback)
+              : fallback,
         );
         setFromPhoto(true);
         setReady(true);

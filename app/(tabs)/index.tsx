@@ -187,7 +187,7 @@ export default function DiscoverHomeScreen() {
   const [frameWidth, setFrameWidth] = useState(0);
   const [frameHeight, setFrameHeight] = useState(0);
   const [aboveHeight, setAboveHeight] = useState(0);
-  const [greetingHeight, setGreetingHeight] = useState(0);
+  const [nearOpen, setNearOpen] = useState(false);
   const [petsTrack, setPetsTrack] = useState(0);
   const [categoryTrack, setCategoryTrack] = useState(0);
   const [locating, setLocating] = useState(false);
@@ -434,15 +434,13 @@ export default function DiscoverHomeScreen() {
   const greeting = (
     <View
       style={[styles.greetingBar, { paddingTop: insets.top + 10, paddingBottom: 8 }]}
-      onLayout={(event) => {
-        const next = Math.round(event.nativeEvent.layout.height);
-        setGreetingHeight((current) => (current === next ? current : next));
-      }}
+      pointerEvents={nearOpen ? 'none' : 'auto'}
     >
       <View style={styles.welcomeRow}>
         <View style={styles.greeting}>
           <TouchableOpacity
             style={styles.avatar}
+            disabled={nearOpen}
             onPress={() => router.push('/settings/account' as never)}
             accessibilityRole="button"
             accessibilityLabel={t('settings.my_profile')}
@@ -470,6 +468,7 @@ export default function DiscoverHomeScreen() {
         </View>
         <TouchableOpacity
           style={styles.settingsButton}
+          disabled={nearOpen}
           onPress={() => router.push('/settings' as never)}
           accessibilityLabel={t('home.settings')}
         >
@@ -643,8 +642,8 @@ export default function DiscoverHomeScreen() {
             </View>
             <NearYouSheet
               anchorTop={aboveHeight > 0 ? aboveHeight + 4 : 0}
-              topClearance={greetingHeight}
               frameWidth={frameWidth}
+              onExpandedChange={setNearOpen}
               frameHeight={frameHeight}
               places={places}
               loading={placesLoading || coords == null}

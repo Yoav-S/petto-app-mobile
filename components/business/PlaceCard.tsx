@@ -93,7 +93,13 @@ export default function PlaceCard({
         {place.image ? (
           <BusinessPhoto uri={place.image} />
         ) : (
-          <View style={styles.cardImagePlaceholder} />
+          <View style={styles.cardImagePlaceholder}>
+            <Image
+              source={require('@/assets/images/business-photo-placeholder.png')}
+              style={styles.cardImageIcon}
+              contentFit="contain"
+            />
+          </View>
         )}
         {place.distance_km != null ? (
           <View style={styles.distanceSlot} pointerEvents="none">
@@ -182,6 +188,13 @@ function makeStyles(colors: ThemeColors) {
       width: '100%',
       alignSelf: 'stretch',
       aspectRatio: 4 / 3,
+      backgroundColor: '#F6F7F9',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cardImageIcon: {
+      width: 42,
+      height: 42,
     },
     distanceSlot: {
       position: 'absolute',
