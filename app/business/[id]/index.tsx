@@ -61,7 +61,12 @@ const CATEGORY_KEY: Record<BusinessCategory, string> = {
 const OPEN_COLOR = '#1EC876';
 const CLOSED_COLOR = '#EF4444';
 
+function hoursListed(hours: OpeningHours | undefined): boolean {
+  return Boolean(hours) && hours?.provided !== false;
+}
+
 function dayHours(hours: OpeningHours | undefined, day: Weekday): string {
+  if (!hoursListed(hours)) return t('business.hours_unlisted');
   if (!hours) return t('home.closed');
   if (hours.always_open) return '00:00 – 24:00';
   const slots = hours[day] ?? [];
@@ -93,7 +98,7 @@ function minutesOf(value: string): number | null {
 
 /** Open or closed from a branch schedule, in the phone's local time. */
 function branchStatus(hours: OpeningHours | undefined): { open: boolean; detail: string | null } | null {
-  if (!hours) return null;
+  if (!hoursListed(hours)) return null;
   if (hours.always_open) return { open: true, detail: t('home.opens_24_7') };
   const now = new Date();
   const today = (now.getDay() + 6) % 7;
@@ -221,6 +226,9 @@ export default function BusinessScreen() {
   const category = place?.category ?? params.category;
   const rating = place?.rating ?? (params.rating ? Number(params.rating) : null);
   const distance = place?.distance_km ?? (params.distance ? Number(params.distance) : null);
+  const hoursKnown = place
+    ? typeof place.open_now === 'boolean'
+    : params.openNow === '1' || params.openNow === '0' || params.open247 === '1';
   const open = place ? Boolean(place.open_now || place.open_24_7) : params.openNow === '1' || params.open247 === '1';
   const description = place?.description?.trim() ?? '';
   const aboutOverflows = aboutLineCount > 3;
@@ -308,12 +316,14 @@ export default function BusinessScreen() {
                   <Text style={styles.categoryText}>{t(CATEGORY_KEY[category])}</Text>
                 </View>
               ) : null}
-              <View style={[styles.statusChip, { backgroundColor: `${statusColor}33` }]}>
-                <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-                <Text style={[styles.statusLabel, { color: statusColor }]}>
-                  {open ? t('home.open') : t('home.closed')}
-                </Text>
-              </View>
+              {hoursKnown ? (
+                <View style={[styles.statusChip, { backgroundColor: `${statusColor}33` }]}>
+                  <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+                  <Text style={[styles.statusLabel, { color: statusColor }]}>
+                    {open ? t('home.open') : t('home.closed')}
+                  </Text>
+                </View>
+              ) : null}
             </View>
             {typeof rating === 'number' && !Number.isNaN(rating) ? (
               <View style={styles.ratingChip}>
@@ -485,14 +495,18 @@ export default function BusinessScreen() {
               </View>
               {expanded ? (
                 <View style={styles.hoursList}>
-                  {WEEK.map((day) => (
-                    <View key={`${branch.id}-${day}`} style={styles.hoursRow}>
-                      <Text style={styles.dayLabel} numberOfLines={1}>
-                        {t(DAY_KEY[day])}
-                      </Text>
-                      <Text style={styles.hoursValue}>{dayHours(branch.opening_hours, day)}</Text>
-                    </View>
-                  ))}
+                  {hoursListed(branch.opening_hours) ? (
+                    WEEK.map((day) => (
+                      <View key={`${branch.id}-${day}`} style={styles.hoursRow}>
+                        <Text style={styles.dayLabel} numberOfLines={1}>
+                          {t(DAY_KEY[day])}
+                        </Text>
+                        <Text style={styles.hoursValue}>{dayHours(branch.opening_hours, day)}</Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.hoursValue}>{t('business.hours_unlisted')}</Text>
+                  )}
                 </View>
               ) : null}
               {phonesOnEachLocation ? (

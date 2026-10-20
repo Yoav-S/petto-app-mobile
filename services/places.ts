@@ -40,6 +40,7 @@ export interface TimeSlot {
 }
 
 export interface OpeningHours {
+  provided?: boolean;
   always_open?: boolean;
   mon: TimeSlot[];
   tue: TimeSlot[];
