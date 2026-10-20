@@ -3,6 +3,9 @@ import { Animated, StyleSheet, View } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 
+/** Same frame as a place photo: 335×278 on a 375-wide screen. */
+const BUSINESS_IMAGE_RATIO = 335 / 278;
+
 /** Placeholder with the same shape as a place card, shown while nearby places load. */
 export default function PlaceCardSkeleton() {
   const styles = useThemedStyles(makeStyles);
@@ -55,7 +58,7 @@ function makeStyles(colors: ThemeColors) {
       width: '100%',
       alignSelf: 'stretch',
       borderRadius: 24,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.iconChip,
       paddingBottom: 22,
       gap: 16,
       shadowColor: '#2D2D2A',
@@ -67,7 +70,7 @@ function makeStyles(colors: ThemeColors) {
     },
     image: {
       width: '100%',
-      aspectRatio: 4 / 3,
+      aspectRatio: BUSINESS_IMAGE_RATIO,
       borderRadius: 24,
       backgroundColor: colors.background,
     },

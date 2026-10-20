@@ -98,7 +98,7 @@ function minutesOf(value: string): number | null {
 
 /** Open or closed from a branch schedule, in the phone's local time. */
 function branchStatus(hours: OpeningHours | undefined): { open: boolean; detail: string | null } | null {
-  if (!hoursListed(hours)) return null;
+  if (!hours || hours.provided === false) return null;
   if (hours.always_open) return { open: true, detail: t('home.opens_24_7') };
   const now = new Date();
   const today = (now.getDay() + 6) % 7;

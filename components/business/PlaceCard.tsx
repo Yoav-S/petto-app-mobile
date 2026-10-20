@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { MapPin, Star } from 'lucide-react-native';
@@ -9,6 +9,8 @@ import type { BusinessPlace, Weekday } from '@/services/places';
 
 const OPEN_COLOR = '#1EC876';
 const CLOSED_COLOR = '#E5484D';
+/** Figma image is 335×278 on a 375-wide screen. The card width follows the device; the height keeps this ratio. */
+const BUSINESS_IMAGE_RATIO = 335 / 278;
 
 const DAY_LABEL: Record<Weekday, string> = {
   mon: 'home.day_mon',
@@ -55,27 +57,6 @@ function placeStatus(place: BusinessPlace): { open: boolean; detail: string | nu
   return { open: false, detail: null };
 }
 
-function BusinessPhoto({ uri }: { uri: string }) {
-  const [ratio, setRatio] = useState(4 / 3);
-  return (
-    <Image
-      source={{ uri }}
-      style={[stylesPhoto, { aspectRatio: ratio }]}
-      contentFit="contain"
-      contentPosition="center"
-      onLoad={(event) => {
-        const width = event.source?.width;
-        const height = event.source?.height;
-        if (width > 0 && height > 0) setRatio(width / height);
-      }}
-    />
-  );
-}
-
-const stylesPhoto = {
-  width: '100%' as const,
-};
-
 export default function PlaceCard({
   place,
   onPress,
@@ -88,10 +69,11 @@ export default function PlaceCard({
   const statusColor = status ? (status.open ? OPEN_COLOR : CLOSED_COLOR) : CLOSED_COLOR;
 
   return (
-    <TouchableOpacity style={styles.placeCard} activeOpacity={0.9} onPress={onPress}>
+    <View style={styles.placeCard} collapsable={false}>
+    <TouchableOpacity style={styles.placePress} activeOpacity={0.9} onPress={onPress}>
       <View style={styles.cardImageWrap}>
         {place.image ? (
-          <BusinessPhoto uri={place.image} />
+          <Image source={{ uri: place.image }} style={styles.cardImage} contentFit="cover" />
         ) : (
           <View style={styles.cardImagePlaceholder}>
             <Image
@@ -159,6 +141,7 @@ export default function PlaceCard({
         ) : null}
       </View>
     </TouchableOpacity>
+    </View>
   );
 }
 
@@ -168,9 +151,7 @@ function makeStyles(colors: ThemeColors) {
       width: '100%',
       alignSelf: 'stretch',
       borderRadius: 24,
-      backgroundColor: colors.surface,
-      paddingBottom: 22,
-      gap: 16,
+      backgroundColor: colors.iconChip,
       shadowColor: '#2D2D2A',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.08,
@@ -178,17 +159,29 @@ function makeStyles(colors: ThemeColors) {
       boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.080)',
       elevation: 4,
     },
+    placePress: {
+      width: '100%',
+      borderRadius: 24,
+      overflow: 'hidden',
+      backgroundColor: colors.iconChip,
+      paddingBottom: 22,
+      gap: 16,
+    },
     cardImageWrap: {
       width: '100%',
+      aspectRatio: BUSINESS_IMAGE_RATIO,
       borderRadius: 24,
       overflow: 'hidden',
       backgroundColor: colors.background,
     },
+    cardImage: {
+      width: '100%',
+      height: '100%',
+    },
     cardImagePlaceholder: {
       width: '100%',
-      alignSelf: 'stretch',
-      aspectRatio: 4 / 3,
-      backgroundColor: '#F6F7F9',
+      height: '100%',
+      backgroundColor: colors.background,
       alignItems: 'center',
       justifyContent: 'center',
     },
