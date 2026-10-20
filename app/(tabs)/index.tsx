@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { Plus, Settings, User } from 'lucide-react-native';
 import { type ThemeColors } from '@/constants/theme';
-import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { useColors, useTheme, useThemedStyles } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { t } from '@/i18n';
 import { usePetsQuery } from '@/hooks/useCachedQueries';
@@ -31,6 +31,7 @@ import {
 } from '@/services/places';
 import { petPhotoSource } from '@/utils/petPhotoSource';
 import NearYouSheet from '@/components/home/NearYouSheet';
+import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import type { Pet } from '@/types/api';
 
 /** Greeting switches at these local hours. */
@@ -165,6 +166,7 @@ function greetingKey(now = new Date()): string {
 
 export default function DiscoverHomeScreen() {
   const styles = useThemedStyles(makeStyles);
+  const { isDark } = useTheme();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -466,14 +468,14 @@ export default function DiscoverHomeScreen() {
             ) : null}
           </View>
         </View>
-        <TouchableOpacity
-          style={styles.settingsButton}
+        <HeaderIconButton
           disabled={nearOpen}
           onPress={() => router.push('/settings' as never)}
           accessibilityLabel={t('home.settings')}
+          style={styles.settingsButton}
         >
           <Settings size={24} color={colors.primaryText} />
-        </TouchableOpacity>
+        </HeaderIconButton>
       </View>
     </View>
   );
@@ -533,7 +535,13 @@ export default function DiscoverHomeScreen() {
               style={[styles.petItem, { width: petFit.item }]}
               onPress={() => void addPet()}
             >
-              <View style={[styles.addPhoto, petBox]}>
+              <View
+                style={[
+                  styles.addPhoto,
+                  petBox,
+                  isDark ? { backgroundColor: colors.iconChip } : null,
+                ]}
+              >
                 <Plus size={24} color={colors.primaryText} />
               </View>
               <Text style={[styles.petName, { width: petFit.item }]}>{t('home.add')}</Text>
@@ -581,7 +589,11 @@ export default function DiscoverHomeScreen() {
           {CATEGORIES.map((category) => (
             <TouchableOpacity
               key={category.key}
-              style={[styles.categoryCard, { width: categoryFit.item }]}
+              style={[
+                styles.categoryCard,
+                { width: categoryFit.item },
+                isDark ? { backgroundColor: colors.iconChip } : null,
+              ]}
               activeOpacity={0.85}
               onPress={() =>
                 router.push({
@@ -767,19 +779,7 @@ function makeStyles(colors: ThemeColors) {
       color: colors.primaryText,
     },
     settingsButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 10,
       flexShrink: 0,
-      backgroundColor: colors.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
-      shadowColor: '#2D2D2A',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 20 / 255,
-      shadowRadius: 20,
-      boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.078)',
-      elevation: 4,
     },
     petsBlock: {
       width: '100%',

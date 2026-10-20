@@ -512,11 +512,11 @@ const makeStyles = (colors: ThemeColors) =>
       marginBottom: CARD_GAP,
     },
     emptyWrap: {
-      flexGrow: 1,
       alignItems: 'center',
-      justifyContent: 'center',
+      justifyContent: 'flex-start',
       paddingHorizontal: 20,
-      paddingVertical: 28,
+      paddingTop: 24,
+      paddingBottom: 28,
       backgroundColor: colors.surface,
     },
     empty: {

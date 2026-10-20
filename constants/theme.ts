@@ -7,8 +7,9 @@ import { Platform } from 'react-native';
 
 /**
  * Palette (light / dark):
- *   Background              #F6F7F9 / #111315
- *   Surface                 #FFFFFF / #1A1D20
+ *   Background (outer)      #F6F7F9 / #111315
+ *   Surface (sections)      #FFFFFF / #1A1D20
+ *   Icon chip (buttons)     #FFFFFF / #24282D
  *   Primary Text            #1F2937 / #F5F6F7
  *   Secondary Text          #6B7280 / #C2C6CB
  *   Divider / Border        #E5E7EB / #373C42
@@ -24,9 +25,9 @@ import { Platform } from 'react-native';
  *   Brand Light             #F6F7F9 / #3FA89A
  */
 export const lightColors = {
-  /** App canvas */
+  /** Outer canvas. Shows in the gaps between sections. */
   background: '#F6F7F9',
-  /** Cards / sheets / elevated surfaces */
+  /** Inner sections and cards. */
   surface: '#FFFFFF',
   /** Secondary canvas areas (lists, panels) */
   panel: '#F6F7F9',
@@ -54,6 +55,8 @@ export const lightColors = {
   overlay: 'rgba(0, 0, 0, 0.4)',
   /** Translucent chip for controls sitting on top of a photo */
   photoChip: 'rgba(255, 255, 255, 0.9)',
+  /** 32×32 header icon chip. Lighter than the dark screen surface. */
+  iconChip: '#FFFFFF',
   button: {
     primaryBg: '#004741',
     primaryText: '#FFFFFF',
@@ -92,6 +95,7 @@ export const darkColors: ThemeColors = {
   inactiveControl: '#373C42',
   overlay: 'rgba(0, 0, 0, 0.6)',
   photoChip: 'rgba(26, 29, 32, 0.9)',
+  iconChip: '#24282D',
   button: {
     primaryBg: '#3FA89A',
     primaryText: '#FFFFFF',

@@ -22,20 +22,20 @@ export const HEADER_ICON_BTN = {
 export const HEADER_ICON_BTN_SHADOW = {
   shadowColor: '#2D2D2A',
   shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.08,
+  shadowOpacity: 0x14 / 255,
   shadowRadius: 20,
-  boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.080)',
+  boxShadow: '0px 4px 20px 0px #2D2D2A14',
   elevation: 3,
 } as const;
 
-/** Theme-aware style matching Figma: 32×32, r10, p4, surface + soft shadow. */
+/** Theme-aware style: 32×32, r10, p4, icon chip + soft shadow. */
 export function makeHeaderIconButtonStyle(c: ThemeColors) {
   return {
     width: HEADER_ICON_BTN.size,
     height: HEADER_ICON_BTN.size,
     borderRadius: HEADER_ICON_BTN.radius,
     padding: HEADER_ICON_BTN.padding,
-    backgroundColor: c.surface,
+    backgroundColor: c.iconChip,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     ...HEADER_ICON_BTN_SHADOW,
@@ -50,7 +50,7 @@ interface HeaderIconButtonProps {
   disabled?: boolean;
 }
 
-/** Shared 32×32 surface icon button used in headers across the app. */
+/** Shared 32×32 icon chip used in headers across the app. */
 export default function HeaderIconButton({
   onPress,
   accessibilityLabel,
@@ -59,9 +59,11 @@ export default function HeaderIconButton({
   disabled,
 }: HeaderIconButtonProps) {
   const styles = useThemedStyles(makeStyles);
+  const face = StyleSheet.flatten(style)?.backgroundColor;
+  const faceStyle = face ? { backgroundColor: face } : null;
   return (
     <View style={[styles.outer, style]} collapsable={false}>
-      <View style={styles.fill} collapsable={false}>
+      <View style={[styles.fill, faceStyle]} collapsable={false}>
         <TouchableOpacity
           onPress={onPress}
           disabled={disabled || !onPress}
@@ -86,13 +88,13 @@ const makeStyles = (c: ThemeColors) =>
       width: HEADER_ICON_BTN.size,
       height: HEADER_ICON_BTN.size,
       borderRadius: HEADER_ICON_BTN.radius,
-      backgroundColor: c.surface,
+      backgroundColor: c.iconChip,
       ...HEADER_ICON_BTN_SHADOW,
     },
     fill: {
       flex: 1,
       borderRadius: HEADER_ICON_BTN.radius,
-      backgroundColor: c.surface,
+      backgroundColor: c.iconChip,
       overflow: 'hidden',
     },
     hit: {

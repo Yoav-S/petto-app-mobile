@@ -579,9 +579,8 @@ export default function BusinessScreen() {
         <HeaderIconButton
           onPress={() => router.back()}
           accessibilityLabel={t('petOnboarding.back')}
-          style={styles.backButton}
         >
-          <MaterialIcons name="chevron-left" size={24} color="#1F2937" />
+          <MaterialIcons name="chevron-left" size={24} color={colors.primaryText} />
         </HeaderIconButton>
       </View>
 
@@ -593,9 +592,8 @@ export default function BusinessScreen() {
               <HeaderIconButton
                 onPress={() => setPhotoOpen(false)}
                 accessibilityLabel={t('petOnboarding.photo_close_a11y')}
-                style={styles.backButton}
               >
-                <Ionicons name="close" size={24} color="#1F2937" />
+                <Ionicons name="close" size={24} color={colors.primaryText} />
               </HeaderIconButton>
             </View>
           </View>
@@ -659,9 +657,6 @@ const makeStyles = (c: ThemeColors) =>
       justifyContent: 'center',
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       zIndex: 3,
-    },
-    backButton: {
-      backgroundColor: '#FFFFFF',
     },
     scroll: {
       flex: 1,

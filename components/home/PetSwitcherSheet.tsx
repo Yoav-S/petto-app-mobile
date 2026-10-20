@@ -111,14 +111,6 @@ const makeStyles = (c: ThemeColors) =>
     closeBtn: {
       position: 'absolute',
       right: 0,
-      // Light close: #FFFFFF + 0px 4px 20px #2D2D2A14 (surface + soft shadow).
-      backgroundColor: c.surface,
-      shadowColor: '#2D2D2A',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 20,
-      boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.080)',
-      elevation: 3,
     },
     listBlock: {
       gap: 16,
