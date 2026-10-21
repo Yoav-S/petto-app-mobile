@@ -23,6 +23,7 @@ import ReminderListItem, {
   REMINDER_LIST_ITEM_GAP,
 } from '@/components/reminders/ReminderListItem';
 import SwipeToDeleteRow from '@/components/ui/SwipeToDeleteRow';
+import { swipeListScrollHandlers } from '@/components/ui/swipeListScroll';
 import {
   isRecentOccurrence,
   needsStatusPrompt,
@@ -459,10 +460,12 @@ export default function RemindersScreen() {
                   data={items}
                   keyExtractor={(item) => item.id}
                   scrollEventThrottle={16}
+                  {...swipeListScrollHandlers}
                   onContentSizeChange={scrollMetricsProps.onContentSizeChange}
                   renderItem={({ item }) => {
                     return (
                       <SwipeToDeleteRow
+                        rowKey={item.id}
                         open={swipeOpenId === item.id}
                         onOpenChange={(open) => setSwipeOpenId(open ? item.id : null)}
                         onDelete={() => handleDeleteReminder(item.id)}

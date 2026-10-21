@@ -25,6 +25,7 @@ import HealthListItem, {
   healthRecordSubtitle,
 } from '@/components/health/HealthListItem';
 import SwipeToDeleteRow from '@/components/ui/SwipeToDeleteRow';
+import { swipeListScrollHandlers } from '@/components/ui/swipeListScroll';
 import ListLoadMoreFooter from '@/components/ui/ListLoadMoreFooter';
 import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
 import { t } from '@/i18n';
@@ -322,9 +323,11 @@ export default function HealthScreen() {
                   data={items}
                   keyExtractor={(item) => item.id}
                   scrollEventThrottle={16}
+                  {...swipeListScrollHandlers}
                   onContentSizeChange={scrollMetricsProps.onContentSizeChange}
                   renderItem={({ item }) => (
                     <SwipeToDeleteRow
+                      rowKey={item.id}
                       open={swipeOpenId === item.id}
                       onOpenChange={(open) => setSwipeOpenId(open ? item.id : null)}
                       onDelete={() => handleDeleteRecord(item.id)}

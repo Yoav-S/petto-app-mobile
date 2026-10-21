@@ -24,6 +24,7 @@ import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import EmptyState from '@/components/ui/EmptyState';
 import SwipeToDeleteRow from '@/components/ui/SwipeToDeleteRow';
+import { swipeListScrollHandlers } from '@/components/ui/swipeListScroll';
 import ListLoadMoreFooter from '@/components/ui/ListLoadMoreFooter';
 import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
 import { t } from '@/i18n';
@@ -214,6 +215,7 @@ export default function VaccinesScreen() {
         data={items}
         keyExtractor={(item) => item.id}
         scrollEventThrottle={16}
+        {...swipeListScrollHandlers}
         onLayout={(e) => {
           scrollMetricsProps.onLayout(e);
           scrollMetricsProps.markScrollable();
@@ -221,6 +223,7 @@ export default function VaccinesScreen() {
         onContentSizeChange={scrollMetricsProps.onContentSizeChange}
         renderItem={({ item }) => (
           <SwipeToDeleteRow
+            rowKey={item.id}
             open={swipeOpenId === item.id}
             onOpenChange={(open) => setSwipeOpenId(open ? item.id : null)}
             onDelete={() => handleDeleteVaccine(item.id)}

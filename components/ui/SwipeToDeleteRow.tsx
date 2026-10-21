@@ -14,6 +14,10 @@ import { Trash2 } from 'lucide-react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useTheme, useThemedStyles } from '@/context/ThemeContext';
 import { t, isRTL } from '@/i18n';
+import {
+  isSwipeListScrolling,
+  subscribeSwipeListScroll,
+} from '@/components/ui/swipeListScroll';
 
 /** Figma: 335 closed → 409 open, 32px gap before a 42pt trash column. */
 const REVEAL_GAP = 32;
@@ -42,6 +46,8 @@ interface SwipeToDeleteRowProps {
   children: React.ReactNode;
   onDelete: () => void;
   enabled?: boolean;
+  /** Item identity. A recycled row must not keep the previous item's wash. */
+  rowKey?: string;
   /** When false, force-close (e.g. another row opened / back). */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -65,6 +71,7 @@ export default function SwipeToDeleteRow({
   children,
   onDelete,
   enabled = true,
+  rowKey,
   open,
   onOpenChange,
   rowBottomGap = DEFAULT_ROW_BOTTOM_GAP,
@@ -79,13 +86,20 @@ export default function SwipeToDeleteRow({
   const wash = useRef(new Animated.Value(0)).current;
   const rtl = isRTL;
 
+  const washTarget = useRef(0);
+
   const fadeWash = useCallback(
     (to: number) => {
+      washTarget.current = to;
+      wash.stopAnimation();
       Animated.timing(wash, {
         toValue: to,
         duration: 160,
         useNativeDriver: true,
-      }).start();
+      }).start(({ finished }) => {
+        // A scroll can cancel this fade while the native driver is still running.
+        if (finished && washTarget.current !== to) wash.setValue(washTarget.current);
+      });
     },
     [wash],
   );
@@ -110,13 +124,20 @@ export default function SwipeToDeleteRow({
 
   const resetWash = useCallback(() => {
     clearPressTimer();
+    washTarget.current = 0;
     wash.stopAnimation();
     wash.setValue(0);
   }, [clearPressTimer, wash]);
 
   const onGestureBegan = useCallback(() => {
+    // A list that is already moving must not grey the row now under the finger.
+    if (isSwipeListScrolling() || revealedRef.current) return;
     clearPressTimer();
-    pressTimer.current = setTimeout(() => fadeWash(1), PRESS_IN_DELAY);
+    pressTimer.current = setTimeout(() => {
+      pressTimer.current = null;
+      if (isSwipeListScrolling() || revealedRef.current) return;
+      fadeWash(1);
+    }, PRESS_IN_DELAY);
   }, [clearPressTimer, fadeWash]);
 
   /**
@@ -129,6 +150,23 @@ export default function SwipeToDeleteRow({
   }, [clearPressTimer, fadeWash]);
 
   useEffect(() => clearPressTimer, [clearPressTimer]);
+
+  useEffect(() => {
+    return subscribeSwipeListScroll(() => {
+      if (revealedRef.current) return;
+      resetWash();
+    });
+  }, [resetWash]);
+
+  const seenRowKey = useRef(rowKey);
+  useEffect(() => {
+    if (seenRowKey.current === rowKey) return;
+    seenRowKey.current = rowKey;
+    const wasOpen = revealedRef.current;
+    revealedRef.current = false;
+    resetWash();
+    if (wasOpen) ref.current?.close();
+  }, [rowKey, resetWash]);
 
   useEffect(() => {
     if (open === false) {
@@ -204,6 +242,8 @@ export default function SwipeToDeleteRow({
         overshootRight={false}
         leftThreshold={rtl ? 40 : undefined}
         rightThreshold={rtl ? undefined : 40}
+        // A vertical move is a scroll, not a swipe. Fail it so the wash clears.
+        failOffsetY={[-16, 16]}
         onBegan={onGestureBegan}
         onEnded={onGestureSettled}
         onFailed={onGestureSettled}
