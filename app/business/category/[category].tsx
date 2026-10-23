@@ -11,6 +11,7 @@ import PlaceCard from '@/components/business/PlaceCard';
 import { PlaceCardSkeletons } from '@/components/business/PlaceCardSkeleton';
 import {
   listPlaces,
+  placeKey,
   readLastNearbyCoords,
   readNearby,
   rememberNearby,
@@ -176,8 +177,8 @@ export default function CategoryPlacesScreen() {
         offset: placesRef.current.length,
         category,
       });
-      const seen = new Set(placesRef.current.map((item) => item.id));
-      const extra = page.items.filter((item) => !seen.has(item.id));
+      const seen = new Set(placesRef.current.map(placeKey));
+      const extra = page.items.filter((item) => !seen.has(placeKey(item)));
       const next = extra.length ? [...placesRef.current, ...extra] : placesRef.current;
       const more = extra.length > 0 && page.has_more;
       placesRef.current = next;
@@ -199,6 +200,7 @@ export default function CategoryPlacesScreen() {
       pathname: '/business/[id]',
       params: {
         id: place.id,
+        locationId: place.location_id ?? '',
         name: place.name,
         image: place.image ?? '',
         category: place.category,
@@ -221,7 +223,7 @@ export default function CategoryPlacesScreen() {
       ) : (
         <FlatList
           data={places}
-          keyExtractor={(item) => item.id}
+          keyExtractor={placeKey}
           style={styles.list}
           contentContainerStyle={[styles.listContent, { paddingTop: headerHeight + 12 }]}
           renderItem={({ item }) => <PlaceCard place={item} onPress={() => openPlace(item)} />}

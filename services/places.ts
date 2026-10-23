@@ -15,6 +15,7 @@ export interface BusinessPlace {
   id: string;
   name: string;
   category: BusinessCategory;
+  categories?: BusinessCategory[];
   city: string;
   image: string | null;
   distance_km: number | null;
@@ -27,6 +28,7 @@ export interface BusinessPlace {
   opens_tomorrow?: boolean;
   address?: string;
   location_count?: number;
+  location_id?: string | null;
 }
 
 export interface BusinessPlacePage {
@@ -61,6 +63,13 @@ export interface PlaceReview {
   is_mine?: boolean;
 }
 
+export interface PlaceService {
+  id: string;
+  category: BusinessCategory;
+  opening_hours: OpeningHours;
+  phone: string[];
+}
+
 export interface PlaceLocation {
   id: string;
   address: string;
@@ -71,6 +80,9 @@ export interface PlaceLocation {
   shared_phone: boolean;
   location: { type: 'Point'; coordinates: [number, number] } | null;
   distance_km: number | null;
+  categories?: BusinessCategory[];
+  services?: PlaceService[];
+  photo?: string | null;
 }
 
 export interface BusinessPlaceDetail extends BusinessPlace {
@@ -88,6 +100,11 @@ export interface BusinessPlaceDetail extends BusinessPlace {
 const PAGE_SIZE = 15;
 
 export type NearbyCoords = { latitude: number; longitude: number };
+
+/** Two addresses of the same business are two cards. */
+export function placeKey(place: BusinessPlace): string {
+  return place.location_id ? `${place.id}:${place.location_id}` : place.id;
+}
 
 type NearbySnapshot = { items: BusinessPlace[]; hasMore: boolean };
 
@@ -114,7 +131,9 @@ export function readNearby(
   if (!category) return null;
   const mixed = nearbySnapshots.get(nearbyKey(coords, null));
   if (!mixed) return null;
-  const items = mixed.items.filter((item) => item.category === category);
+  const items = mixed.items.filter(
+    (item) => item.category === category || item.categories?.includes(category),
+  );
   return items.length ? { items, hasMore: false } : null;
 }
 

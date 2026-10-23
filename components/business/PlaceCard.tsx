@@ -67,6 +67,7 @@ export default function PlaceCard({
   const styles = useThemedStyles(makeStyles);
   const status = placeStatus(place);
   const statusColor = status ? (status.open ? OPEN_COLOR : CLOSED_COLOR) : CLOSED_COLOR;
+  const categories = place.categories?.length ? place.categories : [place.category];
 
   return (
     <View style={styles.placeCard} collapsable={false}>
@@ -106,8 +107,12 @@ export default function PlaceCard({
       <View style={styles.cardBody}>
         <View style={styles.cardTop}>
           <View style={styles.cardMeta}>
-            <View style={styles.categoryChip}>
-              <Text style={styles.categoryChipText}>{t(CATEGORY_LABEL[place.category])}</Text>
+            <View style={styles.chipRow}>
+              {categories.map((category) => (
+                <View key={category} style={styles.categoryChip}>
+                  <Text style={styles.categoryChipText}>{t(CATEGORY_LABEL[category])}</Text>
+                </View>
+              ))}
             </View>
             {typeof place.rating === 'number' ? (
               <View style={styles.ratingChip}>
@@ -246,11 +251,17 @@ function makeStyles(colors: ThemeColors) {
       gap: 4,
     },
     cardMeta: {
-      height: 20,
+      minHeight: 20,
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       justifyContent: 'space-between',
       gap: 10,
+    },
+    chipRow: {
+      flex: 1,
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
     },
     categoryChip: {
       borderRadius: 6,

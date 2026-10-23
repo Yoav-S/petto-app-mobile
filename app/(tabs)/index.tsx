@@ -25,6 +25,7 @@ import { guardAddPet, guardSelectPet } from '@/services/subscription';
 import {
   clearNearbyCache,
   listPlaces,
+  placeKey,
   rememberNearby,
   rememberNearbyCoords,
   type BusinessPlace,
@@ -128,8 +129,8 @@ function sameSpot(a: HomeCoords, b: HomeCoords): boolean {
 
 function mergeFirstPage(current: BusinessPlace[], fresh: BusinessPlace[]): BusinessPlace[] {
   if (current.length === 0) return fresh;
-  const freshIds = new Set(fresh.map((item) => item.id));
-  const rest = current.filter((item) => !freshIds.has(item.id));
+  const freshIds = new Set(fresh.map(placeKey));
+  const rest = current.filter((item) => !freshIds.has(placeKey(item)));
   return [...fresh, ...rest];
 }
 
@@ -334,8 +335,8 @@ export default function DiscoverHomeScreen() {
         longitude: here.longitude,
         offset: placesRef.current.length,
       });
-      const seen = new Set(placesRef.current.map((item) => item.id));
-      const extra = page.items.filter((item) => !seen.has(item.id));
+      const seen = new Set(placesRef.current.map(placeKey));
+      const extra = page.items.filter((item) => !seen.has(placeKey(item)));
       if (extra.length === 0) {
         hasMoreRef.current = false;
         setHasMore(false);
@@ -420,6 +421,7 @@ export default function DiscoverHomeScreen() {
       pathname: '/business/[id]',
       params: {
         id: place.id,
+        locationId: place.location_id ?? '',
         name: place.name,
         image: place.image ?? '',
         category: place.category,

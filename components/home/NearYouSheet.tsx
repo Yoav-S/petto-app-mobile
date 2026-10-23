@@ -19,7 +19,7 @@ import { t } from '@/i18n';
 import PlaceCard from '@/components/business/PlaceCard';
 import { PlaceCardSkeletons } from '@/components/business/PlaceCardSkeleton';
 import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
-import type { BusinessPlace } from '@/services/places';
+import { placeKey, type BusinessPlace } from '@/services/places';
 
 /** Figma list column is 335 on a 375 frame, so 20px stays free on each side. */
 const CARD_SIDE = 20;
@@ -366,7 +366,7 @@ export default function NearYouSheet({
               ref={listRef}
               style={styles.list}
               data={data}
-              keyExtractor={(place) => place.id}
+              keyExtractor={placeKey}
               scrollEnabled={listScroll}
               showsVerticalScrollIndicator={false}
               bounces={false}

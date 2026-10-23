@@ -38,6 +38,7 @@ import {
   type OpeningHours,
   type PlaceLocation,
   type PlaceReview,
+  type PlaceService,
   type Weekday,
 } from '@/services/places';
 
@@ -159,6 +160,7 @@ function openInstagram(value: string) {
 export default function BusinessScreen() {
   const params = useLocalSearchParams<{
     id: string;
+    locationId?: string;
     name?: string;
     image?: string;
     category?: BusinessCategory;
@@ -186,6 +188,7 @@ export default function BusinessScreen() {
   const [reloadToken, setReloadToken] = useState(0);
   const savedReviewRef = useRef<PlaceReview | null>(null);
   const [openLocationIds, setOpenLocationIds] = useState<string[]>([]);
+  const focusedBranchRef = useRef(false);
 
   const previewImage = params.image || null;
   const image = place?.image ?? previewImage;
@@ -222,8 +225,26 @@ export default function BusinessScreen() {
     }, [params.id, params.lat, params.lng, reloadToken, toast]),
   );
 
+  useEffect(() => {
+    focusedBranchRef.current = false;
+  }, [params.id, params.locationId]);
+
+  useEffect(() => {
+    const target = params.locationId;
+    if (!target || !place || focusedBranchRef.current) return;
+    if ((place.locations ?? []).some((branch) => branch.id === target)) {
+      focusedBranchRef.current = true;
+      setOpenLocationIds([target]);
+    }
+  }, [place, params.locationId]);
+
   const name = place?.name || params.name || '';
   const category = place?.category ?? params.category;
+  const categories = place?.categories?.length
+    ? place.categories
+    : category
+      ? [category]
+      : [];
   const rating = place?.rating ?? (params.rating ? Number(params.rating) : null);
   const distance = place?.distance_km ?? (params.distance ? Number(params.distance) : null);
   const hoursKnown = place
@@ -239,21 +260,30 @@ export default function BusinessScreen() {
   const reviews = place?.reviews ?? [];
   const phones = place?.phone ?? [];
   const branches = place?.locations ?? [];
-  const locationCards = branches.length
-    ? branches
-    : place
-      ? [{
-          id: place.id,
-          address: place.address,
-          city: place.city,
-          opening_hours: place.opening_hours,
-          phone: [] as string[],
-          call_phone: phones,
-          shared_phone: true,
-          location: place.location,
-          distance_km: typeof distance === 'number' && !Number.isNaN(distance) ? distance : null,
-        } satisfies PlaceLocation]
-      : [];
+  const fallbackBranch = place
+    ? [{
+        id: place.id,
+        address: place.address,
+        city: place.city,
+        opening_hours: place.opening_hours,
+        phone: [] as string[],
+        call_phone: phones,
+        shared_phone: true,
+        location: place.location,
+        distance_km: typeof distance === 'number' && !Number.isNaN(distance) ? distance : null,
+      } satisfies PlaceLocation]
+    : [];
+  const locationCards = (() => {
+    const rows = branches.length ? [...branches] : fallbackBranch;
+    const target = params.locationId;
+    if (!target) return rows;
+    const index = rows.findIndex((branch) => branch.id === target);
+    if (index <= 0) return rows;
+    const next = [...rows];
+    const [picked] = next.splice(index, 1);
+    next.unshift(picked);
+    return next;
+  })();
   const phoneKeys = locationCards.map((branch) => [...dialNumbers(branch)].sort().join('|'));
   const phonesOnEachLocation = locationCards.length > 1 && new Set(phoneKeys).size > 1;
   const contactPhones = phonesOnEachLocation
@@ -311,11 +341,11 @@ export default function BusinessScreen() {
         <View style={styles.card}>
           <View style={styles.metaRow}>
             <View style={styles.metaLead}>
-              {category ? (
-                <View style={styles.categoryChip}>
-                  <Text style={styles.categoryText}>{t(CATEGORY_KEY[category])}</Text>
+              {categories.map((item) => (
+                <View key={item} style={styles.categoryChip}>
+                  <Text style={styles.categoryText}>{t(CATEGORY_KEY[item])}</Text>
                 </View>
-              ) : null}
+              ))}
               {hoursKnown ? (
                 <View style={[styles.statusChip, { backgroundColor: `${statusColor}33` }]}>
                   <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
@@ -443,6 +473,12 @@ export default function BusinessScreen() {
           const status = branchStatus(branch.opening_hours);
           const statusTint = status ? (status.open ? OPEN_COLOR : CLOSED_COLOR) : colors.secondaryText;
           const branchPhones = dialNumbers(branch);
+          const branchCategories = branch.categories?.length
+            ? branch.categories
+            : (branch.services ?? []).map((service) => service.category);
+          const serviceHours: PlaceService[] = branch.services?.length
+            ? branch.services
+            : [];
           return (
             <View key={branch.id} style={styles.locationCard}>
               <View style={styles.locationBody}>
@@ -461,6 +497,15 @@ export default function BusinessScreen() {
                   <Text style={styles.locationAddress}>
                     {addressText(branch.address, branch.city)}
                   </Text>
+                  {branchCategories.length ? (
+                    <View style={styles.locationChips}>
+                      {branchCategories.map((item) => (
+                        <View key={`${branch.id}-${item}`} style={styles.categoryChip}>
+                          <Text style={styles.categoryText}>{t(CATEGORY_KEY[item])}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
                 </Pressable>
                 <View style={styles.locationStatusRow}>
                   {status ? (
@@ -494,6 +539,27 @@ export default function BusinessScreen() {
                 </View>
               </View>
               {expanded ? (
+                serviceHours.length > 1 ? (
+                  <View style={styles.hoursList}>
+                    {serviceHours.map((service) => (
+                      <View key={service.id} style={styles.serviceHours}>
+                        <Text style={styles.serviceHoursTitle}>{t(CATEGORY_KEY[service.category])}</Text>
+                        {hoursListed(service.opening_hours) ? (
+                          WEEK.map((day) => (
+                            <View key={`${service.id}-${day}`} style={styles.hoursRow}>
+                              <Text style={styles.dayLabel} numberOfLines={1}>
+                                {t(DAY_KEY[day])}
+                              </Text>
+                              <Text style={styles.hoursValue}>{dayHours(service.opening_hours, day)}</Text>
+                            </View>
+                          ))
+                        ) : (
+                          <Text style={styles.hoursValue}>{t('business.hours_unlisted')}</Text>
+                        )}
+                      </View>
+                    ))}
+                  </View>
+                ) : (
                 <View style={styles.hoursList}>
                   {hoursListed(branch.opening_hours) ? (
                     WEEK.map((day) => (
@@ -508,6 +574,7 @@ export default function BusinessScreen() {
                     <Text style={styles.hoursValue}>{t('business.hours_unlisted')}</Text>
                   )}
                 </View>
+                )
               ) : null}
               {phonesOnEachLocation ? (
                 <View style={styles.locationPhones}>
@@ -764,15 +831,34 @@ const makeStyles = (c: ThemeColors) =>
       gap: 12,
     },
     metaRow: {
-      height: 20,
+      minHeight: 20,
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       justifyContent: 'space-between',
+      gap: 10,
     },
     metaLead: {
+      flex: 1,
       flexDirection: 'row',
+      flexWrap: 'wrap',
       alignItems: 'center',
-      gap: 10,
+      gap: 6,
+    },
+    locationChips: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+      marginTop: 4,
+    },
+    serviceHours: {
+      gap: 4,
+    },
+    serviceHoursTitle: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 12,
+      lineHeight: 16,
+      color: c.primaryText,
+      marginTop: 4,
     },
     categoryChip: {
       height: 20,
