@@ -38,7 +38,6 @@ import {
   type OpeningHours,
   type PlaceLocation,
   type PlaceReview,
-  type PlaceService,
   type Weekday,
 } from '@/services/places';
 
@@ -157,6 +156,82 @@ function openInstagram(value: string) {
   if (handle) void Linking.openURL(`https://instagram.com/${handle}`);
 }
 
+function HoursSchedule({ hours, id }: { hours: OpeningHours | undefined; id: string }) {
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <View style={styles.hoursList}>
+      {hoursListed(hours) ? (
+        WEEK.map((day) => (
+          <View key={`${id}-${day}`} style={styles.hoursRow}>
+            <Text style={styles.dayLabel} numberOfLines={1}>
+              {t(DAY_KEY[day])}
+            </Text>
+            <Text style={styles.hoursValue}>{dayHours(hours, day)}</Text>
+          </View>
+        ))
+      ) : (
+        <Text style={styles.hoursValue}>{t('business.hours_unlisted')}</Text>
+      )}
+    </View>
+  );
+}
+
+function HoursToggle({
+  title,
+  hours,
+  hoursKey,
+  expanded,
+  onToggle,
+}: {
+  title?: string;
+  hours: OpeningHours | undefined;
+  hoursKey: string;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const status = branchStatus(hours);
+  const statusTint = status ? (status.open ? OPEN_COLOR : CLOSED_COLOR) : colors.secondaryText;
+  return (
+    <View>
+      <Pressable
+        style={styles.hoursToggle}
+        onPress={onToggle}
+        hitSlop={8}
+        accessibilityRole="button"
+      >
+        {title ? (
+          <Text style={styles.serviceHoursTitle} numberOfLines={1}>
+            {title}
+          </Text>
+        ) : null}
+        {status ? (
+          <View style={styles.locationStatus}>
+            <Text style={[styles.locationStatusText, { color: statusTint }]}>
+              {status.open ? t('home.open') : t('home.closed')}
+            </Text>
+            <View style={[styles.locationStatusDot, { backgroundColor: statusTint }]} />
+            {status.detail ? (
+              <Text style={styles.locationStatusDetail} numberOfLines={1}>
+                {status.detail}
+              </Text>
+            ) : null}
+          </View>
+        ) : (
+          <View style={styles.locationStatus} />
+        )}
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={24}
+          color={colors.primaryText}
+        />
+      </Pressable>
+      {expanded ? <HoursSchedule hours={hours} id={hoursKey} /> : null}
+    </View>
+  );
+}
+
 export default function BusinessScreen() {
   const params = useLocalSearchParams<{
     id: string;
@@ -187,8 +262,7 @@ export default function BusinessScreen() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
   const savedReviewRef = useRef<PlaceReview | null>(null);
-  const [openLocationIds, setOpenLocationIds] = useState<string[]>([]);
-  const focusedBranchRef = useRef(false);
+  const [openHoursKeys, setOpenHoursKeys] = useState<string[]>([]);
 
   const previewImage = params.image || null;
   const image = place?.image ?? previewImage;
@@ -226,17 +300,14 @@ export default function BusinessScreen() {
   );
 
   useEffect(() => {
-    focusedBranchRef.current = false;
+    setOpenHoursKeys([]);
   }, [params.id, params.locationId]);
 
-  useEffect(() => {
-    const target = params.locationId;
-    if (!target || !place || focusedBranchRef.current) return;
-    if ((place.locations ?? []).some((branch) => branch.id === target)) {
-      focusedBranchRef.current = true;
-      setOpenLocationIds([target]);
-    }
-  }, [place, params.locationId]);
+  const toggleHours = (key: string) => {
+    setOpenHoursKeys((current) =>
+      current.includes(key) ? current.filter((id) => id !== key) : [...current, key],
+    );
+  };
 
   const name = place?.name || params.name || '';
   const category = place?.category ?? params.category;
@@ -468,17 +539,21 @@ export default function BusinessScreen() {
 
         <View style={styles.card}>
         {locationCards.map((branch) => {
-          const expanded = openLocationIds.includes(branch.id);
           const branchDistance = branch.distance_km;
-          const status = branchStatus(branch.opening_hours);
-          const statusTint = status ? (status.open ? OPEN_COLOR : CLOSED_COLOR) : colors.secondaryText;
           const branchPhones = dialNumbers(branch);
-          const branchCategories = branch.categories?.length
-            ? branch.categories
-            : (branch.services ?? []).map((service) => service.category);
-          const serviceHours: PlaceService[] = branch.services?.length
-            ? branch.services
-            : [];
+          const hourBlocks = branch.services?.length
+            ? branch.services.map((service) => ({
+                key: service.id,
+                title: t(CATEGORY_KEY[service.category]),
+                hours: hoursListed(service.opening_hours)
+                  ? service.opening_hours
+                  : branch.opening_hours,
+              }))
+            : [{
+                key: branch.id,
+                title: undefined as string | undefined,
+                hours: branch.opening_hours,
+              }];
           return (
             <View key={branch.id} style={styles.locationCard}>
               <View style={styles.locationBody}>
@@ -497,85 +572,20 @@ export default function BusinessScreen() {
                   <Text style={styles.locationAddress}>
                     {addressText(branch.address, branch.city)}
                   </Text>
-                  {branchCategories.length ? (
-                    <View style={styles.locationChips}>
-                      {branchCategories.map((item) => (
-                        <View key={`${branch.id}-${item}`} style={styles.categoryChip}>
-                          <Text style={styles.categoryText}>{t(CATEGORY_KEY[item])}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  ) : null}
                 </Pressable>
-                <View style={styles.locationStatusRow}>
-                  {status ? (
-                    <View style={styles.locationStatus}>
-                      <Text style={[styles.locationStatusText, { color: statusTint }]}>
-                        {status.open ? t('home.open') : t('home.closed')}
-                      </Text>
-                      <View style={[styles.locationStatusDot, { backgroundColor: statusTint }]} />
-                      {status.detail ? (
-                        <Text style={styles.locationStatusDetail}>{status.detail}</Text>
-                      ) : null}
-                    </View>
-                  ) : <View />}
-                  <Pressable
-                    onPress={() =>
-                      setOpenLocationIds((current) =>
-                        current.includes(branch.id)
-                          ? current.filter((id) => id !== branch.id)
-                          : [...current, branch.id],
-                      )
-                    }
-                    hitSlop={8}
-                    accessibilityRole="button"
-                  >
-                    <Ionicons
-                      name={expanded ? 'chevron-up' : 'chevron-down'}
-                      size={24}
-                      color={colors.primaryText}
+                <View style={styles.hoursBlocks}>
+                  {hourBlocks.map((block) => (
+                    <HoursToggle
+                      key={block.key}
+                      title={block.title}
+                      hours={block.hours}
+                      hoursKey={block.key}
+                      expanded={openHoursKeys.includes(block.key)}
+                      onToggle={() => toggleHours(block.key)}
                     />
-                  </Pressable>
+                  ))}
                 </View>
               </View>
-              {expanded ? (
-                serviceHours.length > 1 ? (
-                  <View style={styles.hoursList}>
-                    {serviceHours.map((service) => (
-                      <View key={service.id} style={styles.serviceHours}>
-                        <Text style={styles.serviceHoursTitle}>{t(CATEGORY_KEY[service.category])}</Text>
-                        {hoursListed(service.opening_hours) ? (
-                          WEEK.map((day) => (
-                            <View key={`${service.id}-${day}`} style={styles.hoursRow}>
-                              <Text style={styles.dayLabel} numberOfLines={1}>
-                                {t(DAY_KEY[day])}
-                              </Text>
-                              <Text style={styles.hoursValue}>{dayHours(service.opening_hours, day)}</Text>
-                            </View>
-                          ))
-                        ) : (
-                          <Text style={styles.hoursValue}>{t('business.hours_unlisted')}</Text>
-                        )}
-                      </View>
-                    ))}
-                  </View>
-                ) : (
-                <View style={styles.hoursList}>
-                  {hoursListed(branch.opening_hours) ? (
-                    WEEK.map((day) => (
-                      <View key={`${branch.id}-${day}`} style={styles.hoursRow}>
-                        <Text style={styles.dayLabel} numberOfLines={1}>
-                          {t(DAY_KEY[day])}
-                        </Text>
-                        <Text style={styles.hoursValue}>{dayHours(branch.opening_hours, day)}</Text>
-                      </View>
-                    ))
-                  ) : (
-                    <Text style={styles.hoursValue}>{t('business.hours_unlisted')}</Text>
-                  )}
-                </View>
-                )
-              ) : null}
               {phonesOnEachLocation ? (
                 <View style={styles.locationPhones}>
                   {branchPhones.map((phone) => (
@@ -791,11 +801,14 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 24,
       color: c.primaryText,
     },
-    locationStatusRow: {
-      height: 24,
+    hoursToggle: {
+      minHeight: 24,
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
+      gap: 8,
+    },
+    hoursBlocks: {
+      gap: 8,
     },
     locationStatus: {
       flex: 1,
@@ -844,21 +857,12 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: 'center',
       gap: 6,
     },
-    locationChips: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 6,
-      marginTop: 4,
-    },
-    serviceHours: {
-      gap: 4,
-    },
     serviceHoursTitle: {
+      maxWidth: '38%',
       fontFamily: 'Rubik-Medium',
       fontSize: 12,
       lineHeight: 16,
       color: c.primaryText,
-      marginTop: 4,
     },
     categoryChip: {
       height: 20,
@@ -1105,7 +1109,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     hoursList: {
       gap: 6,
-      marginTop: 10,
+      marginTop: 6,
     },
     actions: {
       position: 'absolute',
