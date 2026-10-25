@@ -177,13 +177,11 @@ function HoursSchedule({ hours, id }: { hours: OpeningHours | undefined; id: str
 }
 
 function HoursToggle({
-  title,
   hours,
   hoursKey,
   expanded,
   onToggle,
 }: {
-  title?: string;
   hours: OpeningHours | undefined;
   hoursKey: string;
   expanded: boolean;
@@ -201,11 +199,6 @@ function HoursToggle({
         hitSlop={8}
         accessibilityRole="button"
       >
-        {title ? (
-          <Text style={styles.serviceHoursTitle} numberOfLines={1}>
-            {title}
-          </Text>
-        ) : null}
         {status ? (
           <View style={styles.locationStatus}>
             <Text style={[styles.locationStatusText, { color: statusTint }]}>
@@ -361,11 +354,20 @@ export default function BusinessScreen() {
   const contactPhones = phonesOnEachLocation
     ? []
     : (locationCards[0] ? dialNumbers(locationCards[0]) : phones);
+  const serviceCategories = (() => {
+    const seen: BusinessCategory[] = [];
+    for (const branch of locationCards) {
+      for (const service of branch.services ?? []) {
+        if (!seen.includes(service.category)) seen.push(service.category);
+      }
+    }
+    return seen.length ? seen : categories;
+  })();
   const photoPresented = useSettledModalVisible(photoOpen && Boolean(image));
 
   useEffect(() => {
     const fromParam = params.category && CATEGORY_KEY[params.category] ? params.category : null;
-    setSelectedCategory(fromParam ?? categories[0] ?? null);
+    setSelectedCategory(fromParam ?? serviceCategories[0] ?? null);
   }, [place?.id, params.category]);
 
   const headerStatus = (() => {
@@ -495,6 +497,94 @@ export default function BusinessScreen() {
         </View>
 
         <View style={styles.card}>
+        {serviceCategories.length ? (
+          <View style={styles.serviceTabs}>
+            {serviceCategories.map((item) => {
+              const on = selectedCategory === item;
+              return (
+                <Pressable
+                  key={item}
+                  style={[styles.serviceTab, on && styles.serviceTabOn]}
+                  onPress={() => setSelectedCategory(item)}
+                  accessibilityRole="button"
+                >
+                  <Text style={[styles.serviceTabText, on && styles.serviceTabTextOn]}>
+                    {t(CATEGORY_KEY[item])}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+        {locationCards.map((branch) => {
+          const branchDistance = branch.distance_km;
+          const branchPhones = dialNumbers(branch);
+          const services = branch.services ?? [];
+          const hourBlocks = services.length
+            ? services
+                .filter((service) => !selectedCategory || service.category === selectedCategory)
+                .map((service) => ({
+                  key: service.id,
+                  hours: hoursListed(service.opening_hours)
+                    ? service.opening_hours
+                    : branch.opening_hours,
+                }))
+            : [{
+                key: branch.id,
+                hours: branch.opening_hours,
+              }];
+          return (
+            <View key={branch.id} style={styles.locationCard}>
+              <View style={styles.locationBody}>
+                <Pressable
+                  style={styles.locationAddressBlock}
+                  onPress={() => showMaps(branch)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('business.directions')}
+                >
+                  {typeof branchDistance === 'number' ? (
+                    <View style={styles.locationDistanceRow}>
+                      <MapPin size={12} color={colors.primaryText} />
+                      <Text style={styles.locationDistance}>{`${branchDistance} km`}</Text>
+                    </View>
+                  ) : null}
+                  <Text style={styles.locationAddress}>
+                    {addressText(branch.address, branch.city)}
+                  </Text>
+                </Pressable>
+                <View style={styles.hoursBlocks}>
+                  {hourBlocks.map((block) => (
+                    <HoursToggle
+                      key={block.key}
+                      hours={block.hours}
+                      hoursKey={block.key}
+                      expanded={openHoursKeys.includes(block.key)}
+                      onToggle={() => toggleHours(block.key)}
+                    />
+                  ))}
+                </View>
+              </View>
+              {phonesOnEachLocation ? (
+                <View style={styles.locationPhones}>
+                  {branchPhones.map((phone) => (
+                    <Pressable
+                      key={phone}
+                      style={styles.locationPhone}
+                      onPress={() => showPhones([phone])}
+                      accessibilityRole="button"
+                    >
+                      <Phone size={24} color={colors.primaryText} />
+                      <Text style={styles.contactValue} numberOfLines={1}>{phone}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
+            </View>
+          );
+        })}
+        </View>
+
+        <View style={styles.card}>
           {reviews.length === 0 ? (
             <View style={styles.reviewsEmpty}>
               <View style={styles.reviewsEmptyCopy}>
@@ -561,97 +651,6 @@ export default function BusinessScreen() {
               </ScrollView>
             </View>
           )}
-        </View>
-
-        <View style={styles.card}>
-        {categories.length > 1 ? (
-          <View style={styles.serviceTabs}>
-            {categories.map((item) => {
-              const on = selectedCategory === item;
-              return (
-                <Pressable
-                  key={item}
-                  style={[styles.serviceTab, on && styles.serviceTabOn]}
-                  onPress={() => setSelectedCategory(item)}
-                  accessibilityRole="button"
-                >
-                  <Text style={[styles.serviceTabText, on && styles.serviceTabTextOn]}>
-                    {t(CATEGORY_KEY[item])}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : null}
-        {locationCards.map((branch) => {
-          const branchDistance = branch.distance_km;
-          const branchPhones = dialNumbers(branch);
-          const services = branch.services ?? [];
-          const hourBlocks = services.length
-            ? services
-                .filter((service) => !selectedCategory || service.category === selectedCategory)
-                .map((service) => ({
-                  key: service.id,
-                  title: categories.length > 1 ? undefined : t(CATEGORY_KEY[service.category]),
-                  hours: hoursListed(service.opening_hours)
-                    ? service.opening_hours
-                    : branch.opening_hours,
-                }))
-            : [{
-                key: branch.id,
-                title: undefined as string | undefined,
-                hours: branch.opening_hours,
-              }];
-          return (
-            <View key={branch.id} style={styles.locationCard}>
-              <View style={styles.locationBody}>
-                <Pressable
-                  style={styles.locationAddressBlock}
-                  onPress={() => showMaps(branch)}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('business.directions')}
-                >
-                  {typeof branchDistance === 'number' ? (
-                    <View style={styles.locationDistanceRow}>
-                      <MapPin size={12} color={colors.primaryText} />
-                      <Text style={styles.locationDistance}>{`${branchDistance} km`}</Text>
-                    </View>
-                  ) : null}
-                  <Text style={styles.locationAddress}>
-                    {addressText(branch.address, branch.city)}
-                  </Text>
-                </Pressable>
-                <View style={styles.hoursBlocks}>
-                  {hourBlocks.map((block) => (
-                    <HoursToggle
-                      key={block.key}
-                      title={block.title}
-                      hours={block.hours}
-                      hoursKey={block.key}
-                      expanded={openHoursKeys.includes(block.key)}
-                      onToggle={() => toggleHours(block.key)}
-                    />
-                  ))}
-                </View>
-              </View>
-              {phonesOnEachLocation ? (
-                <View style={styles.locationPhones}>
-                  {branchPhones.map((phone) => (
-                    <Pressable
-                      key={phone}
-                      style={styles.locationPhone}
-                      onPress={() => showPhones([phone])}
-                      accessibilityRole="button"
-                    >
-                      <Phone size={24} color={colors.primaryText} />
-                      <Text style={styles.contactValue} numberOfLines={1}>{phone}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              ) : null}
-            </View>
-          );
-        })}
         </View>
 
         {contactPhones.length || website || instagram ? (
@@ -955,13 +954,6 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: 'flex-start',
       justifyContent: 'space-between',
       gap: 10,
-    },
-    serviceHoursTitle: {
-      maxWidth: '38%',
-      fontFamily: 'Rubik-Medium',
-      fontSize: 12,
-      lineHeight: 16,
-      color: c.primaryText,
     },
     categoryChip: {
       height: 20,
