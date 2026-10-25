@@ -8,9 +8,18 @@ import { t } from '@/i18n';
 import type { BusinessPlace, Weekday } from '@/services/places';
 
 const OPEN_COLOR = '#1EC876';
+const MIXED_COLOR = '#F59E0B';
 const CLOSED_COLOR = '#EF4444';
 /** Figma image is 335×278 on a 375-wide screen. The card width follows the device; the height keeps this ratio. */
 const BUSINESS_IMAGE_RATIO = 335 / 278;
+
+const CATEGORY_LABEL: Record<BusinessPlace['category'], string> = {
+  veterinarian: 'home.category_veterinary',
+  groomer: 'home.category_grooming',
+  pet_store: 'home.category_shops',
+  pharmacy: 'home.category_pharmacies',
+  pet_friendly: 'home.category_friendly',
+};
 
 const DAY_LABEL: Record<Weekday, string> = {
   mon: 'home.day_mon',
@@ -22,39 +31,35 @@ const DAY_LABEL: Record<Weekday, string> = {
   sun: 'home.day_sun',
 };
 
-const CATEGORY_LABEL: Record<BusinessPlace['category'], string> = {
-  veterinarian: 'home.category_veterinary',
-  groomer: 'home.category_grooming',
-  pet_store: 'home.category_shops',
-  pharmacy: 'home.category_pharmacies',
-  pet_friendly: 'home.category_friendly',
-};
+function clockLabel(value: string): string {
+  const match = /^0?(\d+):(\d{2})$/.exec(value);
+  if (!match) return value;
+  return `${Number(match[1])}:${match[2]}`;
+}
 
-function placeStatus(place: BusinessPlace): { open: boolean; detail: string | null } | null {
-  if (typeof place.open_now !== 'boolean') return null;
-  if (place.open_24_7) return { open: true, detail: t('home.opens_24_7') };
-  if (place.open_now) {
-    return {
-      open: true,
-      detail: place.closes_at ? `${t('home.closes')} ${place.closes_at}` : null,
-    };
-  }
-  const when = place.opens_at;
-  if (place.opens_tomorrow) {
-    return {
-      open: false,
-      detail: when ? `${t('home.opens_tomorrow')} ${when}` : t('home.opens_tomorrow'),
-    };
-  }
+function opensDetail(place: BusinessPlace): string | null {
+  const when = place.opens_at ? clockLabel(place.opens_at) : null;
+  if (!when) return null;
   if (place.next_open_day) {
-    const day = t(DAY_LABEL[place.next_open_day]);
-    return {
-      open: false,
-      detail: when ? `${t('home.opens')} ${day} ${when}` : `${t('home.opens')} ${day}`,
-    };
+    return `${t('home.opens')} ${t(DAY_LABEL[place.next_open_day])} ${when}`;
   }
-  if (when) return { open: false, detail: `${t('home.opens')} ${when}` };
-  return { open: false, detail: null };
+  return `${t('home.opens')} ${when}`;
+}
+
+/** Open, some services closed, Closed + Opens 9:30, or Opens Sunday 9:30. */
+function placeStatus(place: BusinessPlace): { color: string; label: string; detail: string | null } | null {
+  if (typeof place.open_now !== 'boolean') return null;
+  if (place.some_services_closed) {
+    return { color: MIXED_COLOR, label: t('home.some_services_closed'), detail: null };
+  }
+  if (place.open_now) {
+    return { color: OPEN_COLOR, label: t('home.open'), detail: null };
+  }
+  return {
+    color: CLOSED_COLOR,
+    label: t('home.closed'),
+    detail: opensDetail(place),
+  };
 }
 
 export default function PlaceCard({
@@ -66,7 +71,6 @@ export default function PlaceCard({
 }) {
   const styles = useThemedStyles(makeStyles);
   const status = placeStatus(place);
-  const statusColor = status ? (status.open ? OPEN_COLOR : CLOSED_COLOR) : CLOSED_COLOR;
   const categories = place.categories?.length ? place.categories : [place.category];
 
   return (
@@ -104,16 +108,12 @@ export default function PlaceCard({
           </View>
         ) : null}
       </View>
-      <View style={styles.cardBody}>
-        <View style={styles.cardTop}>
-          <View style={styles.cardMeta}>
-            <View style={styles.chipRow}>
-              {categories.map((category) => (
-                <View key={category} style={styles.categoryChip}>
-                  <Text style={styles.categoryChipText}>{t(CATEGORY_LABEL[category])}</Text>
-                </View>
-              ))}
-            </View>
+      <View style={styles.item}>
+        <View style={styles.nameAndRate}>
+          <View style={styles.titleRow}>
+            <Text style={styles.placeName} numberOfLines={1}>
+              {place.name}
+            </Text>
             {typeof place.rating === 'number' ? (
               <View style={styles.ratingChip}>
                 <Star size={12} color="#F6F7F9" fill="#F6F7F9" />
@@ -121,29 +121,29 @@ export default function PlaceCard({
               </View>
             ) : null}
           </View>
-          <Text style={styles.placeName} numberOfLines={1}>
-            {place.name}
-          </Text>
-          {place.address ? (
-            <Text style={styles.metaLine} numberOfLines={1}>
-              {place.address}
-            </Text>
-          ) : null}
-          {(place.location_count ?? 1) > 1 ? (
-            <Text style={styles.metaLine}>
-              {`${place.location_count} ${t('business.locations')}`}
-            </Text>
-          ) : null}
+          <View style={styles.chipRow}>
+            {categories.map((category) => (
+              <View key={category} style={styles.categoryChip}>
+                <Text style={styles.categoryChipText}>{t(CATEGORY_LABEL[category])}</Text>
+              </View>
+            ))}
+          </View>
         </View>
         {status ? (
           <View style={styles.statusRow}>
-            <Text style={[styles.statusText, { color: statusColor }]}>
-              {status.open ? t('home.open') : t('home.closed')}
+            <Text style={[styles.statusText, { color: status.color }]} numberOfLines={1}>
+              {status.label}
             </Text>
-            <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-            {status.detail ? <Text style={styles.statusDetail}>{status.detail}</Text> : null}
+            <View style={[styles.statusDot, { backgroundColor: status.color }]} />
+            {status.detail ? (
+              <Text style={styles.statusDetail} numberOfLines={1}>
+                {status.detail}
+              </Text>
+            ) : null}
           </View>
-        ) : null}
+        ) : (
+          <View style={styles.statusRow} />
+        )}
       </View>
     </TouchableOpacity>
     </View>
@@ -243,40 +243,32 @@ function makeStyles(colors: ThemeColors) {
       color: '#1F2937',
       includeFontPadding: false,
     },
-    cardBody: {
+    item: {
+      width: '100%',
+      height: 76,
       paddingHorizontal: 12,
+      justifyContent: 'space-between',
+    },
+    nameAndRate: {
+      width: '100%',
+      height: 52,
       gap: 8,
     },
-    cardTop: {
-      gap: 4,
-    },
-    cardMeta: {
-      minHeight: 20,
+    titleRow: {
+      width: '100%',
+      height: 24,
       flexDirection: 'row',
-      alignItems: 'flex-start',
+      alignItems: 'center',
       justifyContent: 'space-between',
-      gap: 10,
+      gap: 8,
     },
-    chipRow: {
+    placeName: {
       flex: 1,
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 12,
-    },
-    categoryChip: {
-      borderRadius: 6,
-      backgroundColor: colors.background,
-      paddingTop: 2,
-      paddingRight: 6,
-      paddingBottom: 2,
-      paddingLeft: 6,
-    },
-    categoryChipText: {
       fontFamily: 'Rubik-Medium',
-      fontSize: 10,
-      lineHeight: 16,
-      textAlign: 'center',
-      color: colors.secondaryText,
+      fontSize: 20,
+      lineHeight: 24,
+      color: colors.primaryText,
+      includeFontPadding: false,
     },
     ratingChip: {
       height: 20,
@@ -285,31 +277,38 @@ function makeStyles(colors: ThemeColors) {
       gap: 4,
       borderRadius: 6,
       backgroundColor: '#004741',
-      paddingTop: 2,
-      paddingRight: 6,
-      paddingBottom: 2,
-      paddingLeft: 6,
+      paddingHorizontal: 6,
     },
     ratingText: {
       fontFamily: 'Rubik-Medium',
       fontSize: 10,
       lineHeight: 16,
-      textAlign: 'center',
       color: '#F6F7F9',
+      includeFontPadding: false,
     },
-    metaLine: {
+    chipRow: {
+      height: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      overflow: 'hidden',
+    },
+    categoryChip: {
+      height: 16,
+      justifyContent: 'center',
+      borderRadius: 6,
+      backgroundColor: colors.background,
+      paddingHorizontal: 6,
+    },
+    categoryChipText: {
       fontFamily: 'Rubik-Medium',
       fontSize: 10,
       lineHeight: 16,
       color: colors.secondaryText,
-    },
-    placeName: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 20,
-      lineHeight: 24,
-      color: colors.primaryText,
+      includeFontPadding: false,
     },
     statusRow: {
+      height: 16,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
@@ -318,7 +317,7 @@ function makeStyles(colors: ThemeColors) {
       fontFamily: 'Rubik-Medium',
       fontSize: 12,
       lineHeight: 16,
-      textAlign: 'center',
+      includeFontPadding: false,
     },
     statusDot: {
       width: 6,
@@ -326,10 +325,12 @@ function makeStyles(colors: ThemeColors) {
       borderRadius: 3,
     },
     statusDetail: {
+      flexShrink: 1,
       fontFamily: 'Rubik-Medium',
       fontSize: 12,
       lineHeight: 16,
       color: colors.secondaryText,
+      includeFontPadding: false,
     },
   });
 }

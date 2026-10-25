@@ -33,9 +33,14 @@ export default function PlaceCardSkeleton() {
   return (
     <Animated.View style={[styles.card, { opacity: pulse }]}>
       <View style={styles.image} />
-      <View style={styles.body}>
-        <View style={styles.chip} />
-        <View style={styles.title} />
+      <View style={styles.item}>
+        <View style={styles.nameAndRate}>
+          <View style={styles.titleRow}>
+            <View style={styles.title} />
+            <View style={styles.rate} />
+          </View>
+          <View style={styles.chip} />
+        </View>
         <View style={styles.line} />
       </View>
     </Animated.View>
@@ -74,15 +79,21 @@ function makeStyles(colors: ThemeColors) {
       borderRadius: 24,
       backgroundColor: colors.background,
     },
-    body: {
+    item: {
+      width: '100%',
+      height: 76,
       paddingHorizontal: 12,
+      justifyContent: 'space-between',
+    },
+    nameAndRate: {
+      height: 52,
       gap: 8,
     },
-    chip: {
-      width: 72,
-      height: 16,
-      borderRadius: 6,
-      backgroundColor: colors.background,
+    titleRow: {
+      height: 24,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
     },
     title: {
       width: '62%',
@@ -90,9 +101,21 @@ function makeStyles(colors: ThemeColors) {
       borderRadius: 6,
       backgroundColor: colors.background,
     },
+    rate: {
+      width: 36,
+      height: 16,
+      borderRadius: 6,
+      backgroundColor: colors.background,
+    },
+    chip: {
+      width: 122,
+      height: 16,
+      borderRadius: 6,
+      backgroundColor: colors.background,
+    },
     line: {
-      width: '44%',
-      height: 14,
+      width: 122,
+      height: 16,
       borderRadius: 6,
       backgroundColor: colors.background,
     },

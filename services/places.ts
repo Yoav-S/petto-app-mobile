@@ -22,6 +22,7 @@ export interface BusinessPlace {
   rating?: number | null;
   open_now?: boolean;
   open_24_7?: boolean;
+  some_services_closed?: boolean;
   closes_at?: string | null;
   opens_at?: string | null;
   next_open_day?: Weekday | null;
