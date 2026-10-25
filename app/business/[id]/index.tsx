@@ -263,6 +263,7 @@ export default function BusinessScreen() {
   const [reloadToken, setReloadToken] = useState(0);
   const savedReviewRef = useRef<PlaceReview | null>(null);
   const [openHoursKeys, setOpenHoursKeys] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<BusinessCategory | null>(null);
 
   const previewImage = params.image || null;
   const image = place?.image ?? previewImage;
@@ -362,6 +363,32 @@ export default function BusinessScreen() {
     : (locationCards[0] ? dialNumbers(locationCards[0]) : phones);
   const photoPresented = useSettledModalVisible(photoOpen && Boolean(image));
 
+  useEffect(() => {
+    const fromParam = params.category && CATEGORY_KEY[params.category] ? params.category : null;
+    setSelectedCategory(fromParam ?? categories[0] ?? null);
+  }, [place?.id, params.category]);
+
+  const headerStatus = (() => {
+    const statuses = locationCards.flatMap((branch) => {
+      const services = branch.services?.length
+        ? branch.services
+        : [{ opening_hours: branch.opening_hours }];
+      return services.map((service) => branchStatus(service.opening_hours));
+    }).filter((row): row is NonNullable<typeof row> => row != null);
+    if (!statuses.length) {
+      return hoursKnown ? { open, detail: null as string | null } : null;
+    }
+    const opened = statuses.filter((row) => row.open);
+    const closed = statuses.filter((row) => !row.open);
+    if (opened.length && closed.length) {
+      return { open: true, detail: t('home.some_services_closed') };
+    }
+    return opened[0] ?? closed[0] ?? null;
+  })();
+  const headerStatusColor = headerStatus
+    ? (headerStatus.open ? OPEN_COLOR : CLOSED_COLOR)
+    : CLOSED_COLOR;
+
   const showPhones = (numbers?: string[]) => {
     const list = numbers ?? phones;
     if (!list.length) return;
@@ -374,7 +401,6 @@ export default function BusinessScreen() {
 
   const website = place?.website?.trim() ?? '';
   const instagram = place?.instagram?.trim() ?? '';
-  const statusColor = open ? OPEN_COLOR : CLOSED_COLOR;
   const actionBottom = Math.max(insets.bottom, 16);
   const actionBarHeight = 12 + 48 + actionBottom;
 
@@ -409,23 +435,23 @@ export default function BusinessScreen() {
           </Pressable>
         </View>
         <View style={styles.scrollBody}>
-        <View style={styles.card}>
-          <View style={styles.metaRow}>
-            <View style={styles.metaLead}>
-              {categories.map((item) => (
-                <View key={item} style={styles.categoryChip}>
-                  <Text style={styles.categoryText}>{t(CATEGORY_KEY[item])}</Text>
-                </View>
-              ))}
-              {hoursKnown ? (
-                <View style={[styles.statusChip, { backgroundColor: `${statusColor}33` }]}>
-                  <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-                  <Text style={[styles.statusLabel, { color: statusColor }]}>
-                    {open ? t('home.open') : t('home.closed')}
+        <View style={styles.aboutCard}>
+          <View style={styles.aboutStatusRow}>
+            {headerStatus ? (
+              <View style={styles.aboutStatus}>
+                <Text style={[styles.aboutStatusText, { color: headerStatusColor }]}>
+                  {headerStatus.open ? t('home.open') : t('home.closed')}
+                </Text>
+                <View style={[styles.statusDot, { backgroundColor: headerStatusColor }]} />
+                {headerStatus.detail ? (
+                  <Text style={styles.aboutStatusDetail} numberOfLines={1}>
+                    {headerStatus.detail}
                   </Text>
-                </View>
-              ) : null}
-            </View>
+                ) : null}
+              </View>
+            ) : (
+              <View style={styles.aboutStatus} />
+            )}
             {typeof rating === 'number' && !Number.isNaN(rating) ? (
               <View style={styles.ratingChip}>
                 <Star size={12} color="#F6F7F9" fill="#F6F7F9" />
@@ -538,17 +564,39 @@ export default function BusinessScreen() {
         </View>
 
         <View style={styles.card}>
+        {categories.length > 1 ? (
+          <View style={styles.serviceTabs}>
+            {categories.map((item) => {
+              const on = selectedCategory === item;
+              return (
+                <Pressable
+                  key={item}
+                  style={[styles.serviceTab, on && styles.serviceTabOn]}
+                  onPress={() => setSelectedCategory(item)}
+                  accessibilityRole="button"
+                >
+                  <Text style={[styles.serviceTabText, on && styles.serviceTabTextOn]}>
+                    {t(CATEGORY_KEY[item])}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
         {locationCards.map((branch) => {
           const branchDistance = branch.distance_km;
           const branchPhones = dialNumbers(branch);
-          const hourBlocks = branch.services?.length
-            ? branch.services.map((service) => ({
-                key: service.id,
-                title: t(CATEGORY_KEY[service.category]),
-                hours: hoursListed(service.opening_hours)
-                  ? service.opening_hours
-                  : branch.opening_hours,
-              }))
+          const services = branch.services ?? [];
+          const hourBlocks = services.length
+            ? services
+                .filter((service) => !selectedCategory || service.category === selectedCategory)
+                .map((service) => ({
+                  key: service.id,
+                  title: categories.length > 1 ? undefined : t(CATEGORY_KEY[service.category]),
+                  hours: hoursListed(service.opening_hours)
+                    ? service.opening_hours
+                    : branch.opening_hours,
+                }))
             : [{
                 key: branch.id,
                 title: undefined as string | undefined,
@@ -767,6 +815,64 @@ const makeStyles = (c: ThemeColors) =>
       paddingHorizontal: 20,
       gap: 4,
     },
+    aboutCard: {
+      backgroundColor: c.surface,
+      borderRadius: 24,
+      paddingTop: 22,
+      paddingBottom: 22,
+      paddingHorizontal: 20,
+      gap: 8,
+    },
+    aboutStatusRow: {
+      minHeight: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 10,
+    },
+    aboutStatus: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    aboutStatusText: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 12,
+      lineHeight: 16,
+    },
+    aboutStatusDetail: {
+      flexShrink: 1,
+      fontFamily: 'Rubik-Medium',
+      fontSize: 12,
+      lineHeight: 16,
+      color: c.secondaryText,
+    },
+    serviceTabs: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 12,
+    },
+    serviceTab: {
+      borderRadius: 10,
+      backgroundColor: c.background,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+    serviceTabOn: {
+      backgroundColor: '#004741',
+    },
+    serviceTabText: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 14,
+      lineHeight: 20,
+      color: c.secondaryText,
+    },
+    serviceTabTextOn: {
+      color: '#F6F7F9',
+    },
     locationCard: {
       backgroundColor: c.background,
       borderRadius: 24,
@@ -850,13 +956,6 @@ const makeStyles = (c: ThemeColors) =>
       justifyContent: 'space-between',
       gap: 10,
     },
-    metaLead: {
-      flex: 1,
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      alignItems: 'center',
-      gap: 6,
-    },
     serviceHoursTitle: {
       maxWidth: '38%',
       fontFamily: 'Rubik-Medium',
@@ -881,6 +980,7 @@ const makeStyles = (c: ThemeColors) =>
       color: c.secondaryText,
     },
     statusChip: {
+      alignSelf: 'flex-start',
       height: 20,
       borderRadius: 6,
       flexDirection: 'row',
@@ -926,7 +1026,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     aboutBlock: {
       gap: 8,
-      marginTop: 6,
     },
     aboutTitle: {
       fontFamily: 'Rubik-Medium',

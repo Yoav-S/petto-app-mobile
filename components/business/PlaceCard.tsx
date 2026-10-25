@@ -8,7 +8,7 @@ import { t } from '@/i18n';
 import type { BusinessPlace, Weekday } from '@/services/places';
 
 const OPEN_COLOR = '#1EC876';
-const CLOSED_COLOR = '#E5484D';
+const CLOSED_COLOR = '#EF4444';
 /** Figma image is 335×278 on a 375-wide screen. The card width follows the device; the height keeps this ratio. */
 const BUSINESS_IMAGE_RATIO = 335 / 278;
 
@@ -261,7 +261,7 @@ function makeStyles(colors: ThemeColors) {
       flex: 1,
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: 6,
+      gap: 12,
     },
     categoryChip: {
       borderRadius: 6,
