@@ -19,6 +19,7 @@ import { type ThemeColors } from '@/constants/theme';
 import { useColors, useTheme, useThemedStyles } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { t } from '@/i18n';
+import { useLocale } from '@/context/LocaleContext';
 import { usePetsQuery } from '@/hooks/useCachedQueries';
 import { useActivePet } from '@/store/petStore';
 import { guardAddPet, guardSelectPet } from '@/services/subscription';
@@ -45,6 +46,7 @@ const GREETING_AVATAR = 42;
 const PET_SIZE = 72;
 const PET_GAP = 16;
 const CATEGORY_WIDTH = 126;
+const CATEGORY_PAD = 24;
 const CATEGORY_GAP = 8;
 const CATEGORY_INSET = 20;
 
@@ -63,6 +65,7 @@ function peekRow(
   count: number,
   inset = 0,
   minPeek = 24,
+  shrinkItem = true,
 ): RowFit {
   if (viewport <= 0 || count <= 1) return { item, gap };
   const visibleOf = (index: number, size: number, spacing: number) =>
@@ -78,12 +81,13 @@ function peekRow(
   if (peek >= minPeek) return { item, gap };
 
   const minGap = Math.min(8, gap);
-  const minItem = Math.round(item * 0.78);
+  const minItem = shrinkItem ? Math.round(item * 0.78) : item;
   const room = viewport - minPeek - inset;
   if (room <= 0) return { item, gap };
   const stride = room / partial;
   const tighterGap = Math.floor(stride - item);
   if (tighterGap >= minGap) return { item, gap: tighterGap };
+  if (!shrinkItem) return { item, gap };
   const tighterItem = Math.floor(stride - minGap);
   if (tighterItem >= minItem) return { item: tighterItem, gap: minGap };
   return { item, gap };
@@ -171,6 +175,7 @@ export default function DiscoverHomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { locale } = useLocale();
   const { accountName, accountPhotoUrl } = useAuth();
   const { setActivePetId } = useActivePet();
   const petsQuery = usePetsQuery();
@@ -193,6 +198,11 @@ export default function DiscoverHomeScreen() {
   const [nearOpen, setNearOpen] = useState(false);
   const [petsTrack, setPetsTrack] = useState(0);
   const [categoryTrack, setCategoryTrack] = useState(0);
+  const [categoryLabelWidth, setCategoryLabelWidth] = useState(0);
+
+  useEffect(() => {
+    setCategoryLabelWidth(0);
+  }, [locale]);
   const [locating, setLocating] = useState(false);
   /** null while the permission check is still running. */
   const [locationOn, setLocationOn] = useState<boolean | null>(savedNearby ? true : null);
@@ -487,11 +497,12 @@ export default function DiscoverHomeScreen() {
   const petFit = peekRow(petViewport, PET_SIZE, PET_GAP, 1 + pets.length, CATEGORY_INSET, 22);
   const categoryFit = peekRow(
     categoryViewport,
-    CATEGORY_WIDTH,
+    Math.max(CATEGORY_WIDTH, categoryLabelWidth + CATEGORY_PAD),
     CATEGORY_GAP,
     CATEGORIES.length,
     CATEGORY_INSET,
     36,
+    false,
   );
   const petBox = { width: petFit.item, height: petFit.item };
   const petSnaps = peekSnapOffsets(
@@ -571,6 +582,22 @@ export default function DiscoverHomeScreen() {
 
       <View style={styles.categoriesCard}>
         <Text style={[styles.sectionTitle, styles.categoryTitle]}>{t('home.categories')}</Text>
+        <View style={styles.categoryMeasure} pointerEvents="none">
+          {CATEGORIES.map((category) => (
+            <Text
+              key={category.key}
+              style={styles.categoryLabel}
+              onLayout={(event) => {
+                const next = Math.ceil(event.nativeEvent.layout.width);
+                if (next > 0) {
+                  setCategoryLabelWidth((current) => (current >= next ? current : next));
+                }
+              }}
+            >
+              {t(category.label)}
+            </Text>
+          ))}
+        </View>
         <View
           style={styles.rowTrack}
           onLayout={(event) => {
@@ -610,12 +637,7 @@ export default function DiscoverHomeScreen() {
                   style={styles.categoryArt}
                   contentFit="contain"
                 />
-                <Text
-                  style={styles.categoryLabel}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.75}
-                >
+                <Text style={styles.categoryLabel} numberOfLines={1}>
                   {t(category.label)}
                 </Text>
               </View>
@@ -853,9 +875,15 @@ function makeStyles(colors: ThemeColors) {
       paddingRight: 20,
       gap: 8,
     },
+    categoryMeasure: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      opacity: 0,
+    },
     categoryCard: {
       width: 126,
-      minHeight: 154,
+      height: 154,
       borderRadius: 12,
       backgroundColor: colors.background,
       padding: 12,
@@ -874,6 +902,7 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 16,
       lineHeight: 20,
       color: colors.primaryText,
+      flexShrink: 0,
     },
     nearSheet: {
       marginTop: 4,
