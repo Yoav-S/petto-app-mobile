@@ -29,6 +29,7 @@ import WriteReviewSheet from '@/components/business/WriteReviewSheet';
 import { openSystemDirections, openSystemPhones } from '@/services/systemApps';
 import { postedLabel } from '@/utils/reviewPosted';
 import { useToast } from '@/context/ToastContext';
+import { branchHoursStatus, placeHoursStatus } from '@/services/placeHours';
 import {
   getPlace,
   rememberPlaceReview,
@@ -58,9 +59,6 @@ const CATEGORY_KEY: Record<BusinessCategory, string> = {
   pet_friendly: 'home.category_friendly',
   pet_store: 'home.category_shops',
 };
-const OPEN_COLOR = '#1EC876';
-const CLOSED_COLOR = '#EF4444';
-
 function hoursListed(hours: OpeningHours | undefined): boolean {
   return Boolean(hours) && hours?.provided !== false;
 }
@@ -81,59 +79,6 @@ function addressText(address: string, city: string): string {
     return `${line}\n${town}`;
   }
   return line || town;
-}
-
-function clockLabel(total: number): string {
-  const hour = Math.floor(total / 60);
-  const minute = total % 60;
-  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-}
-
-function minutesOf(value: string): number | null {
-  if (value === '24:00') return 24 * 60;
-  const match = /^(\d{2}):(\d{2})$/.exec(value);
-  if (!match) return null;
-  return Number(match[1]) * 60 + Number(match[2]);
-}
-
-/** Open or closed from a branch schedule, in the phone's local time. */
-function branchStatus(hours: OpeningHours | undefined): { open: boolean; detail: string | null } | null {
-  if (!hours || hours.provided === false) return null;
-  if (hours.always_open) return { open: true, detail: t('home.opens_24_7') };
-  const now = new Date();
-  const today = (now.getDay() + 6) % 7;
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  const slotsFor = (index: number) => {
-    const day = WEEK[(index + 7) % 7];
-    const parsed: { start: number; end: number }[] = [];
-    for (const slot of hours[day] ?? []) {
-      const start = minutesOf(slot.open);
-      const end = minutesOf(slot.close);
-      if (start == null || end == null || end <= start) continue;
-      parsed.push({ start, end });
-    }
-    return parsed;
-  };
-  const fullDay = (index: number) =>
-    slotsFor(index).some((slot) => slot.start === 0 && slot.end >= 24 * 60 - 1);
-  if (WEEK.every((_, index) => fullDay(index))) {
-    return { open: true, detail: t('home.opens_24_7') };
-  }
-  const current = slotsFor(today).find((slot) => slot.start <= nowMin && nowMin < slot.end);
-  if (current) return { open: true, detail: `${t('home.closes')} ${clockLabel(current.end)}` };
-  const later = slotsFor(today).filter((slot) => slot.start > nowMin);
-  if (later.length) {
-    return { open: false, detail: `${t('home.opens')} ${clockLabel(Math.min(...later.map((slot) => slot.start)))}` };
-  }
-  for (let offset = 1; offset < 8; offset += 1) {
-    const index = (today + offset) % 7;
-    const upcoming = slotsFor(index);
-    if (!upcoming.length) continue;
-    const when = clockLabel(Math.min(...upcoming.map((slot) => slot.start)));
-    if (offset === 1) return { open: false, detail: `${t('home.opens_tomorrow')} ${when}` };
-    return { open: false, detail: `${t('home.opens')} ${t(`home.day_${WEEK[index]}` as 'home.day_mon')} ${when}` };
-  }
-  return { open: false, detail: null };
 }
 
 function dialNumbers(branch: PlaceLocation): string[] {
@@ -189,8 +134,8 @@ function HoursToggle({
 }) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const status = branchStatus(hours);
-  const statusTint = status ? (status.open ? OPEN_COLOR : CLOSED_COLOR) : colors.secondaryText;
+  const status = branchHoursStatus(hours);
+  const statusTint = status?.color ?? colors.secondaryText;
   return (
     <View>
       <Pressable
@@ -202,11 +147,11 @@ function HoursToggle({
         {status ? (
           <View style={styles.locationStatus}>
             <Text style={[styles.locationStatusText, { color: statusTint }]}>
-              {status.open ? t('home.open') : t('home.closed')}
+              {status.label}
             </Text>
             <View style={[styles.locationStatusDot, { backgroundColor: statusTint }]} />
             {status.detail ? (
-              <Text style={styles.locationStatusDetail} numberOfLines={1}>
+              <Text style={styles.locationStatusDetail} numberOfLines={2}>
                 {status.detail}
               </Text>
             ) : null}
@@ -371,25 +316,40 @@ export default function BusinessScreen() {
   }, [place?.id, params.category]);
 
   const headerStatus = (() => {
+    if (place) {
+      const fromApi = placeHoursStatus(place);
+      if (fromApi) return fromApi;
+    }
     const statuses = locationCards.flatMap((branch) => {
       const services = branch.services?.length
         ? branch.services
         : [{ opening_hours: branch.opening_hours }];
-      return services.map((service) => branchStatus(service.opening_hours));
+      return services.map((service) => branchHoursStatus(service.opening_hours));
     }).filter((row): row is NonNullable<typeof row> => row != null);
     if (!statuses.length) {
-      return hoursKnown ? { open, detail: null as string | null } : null;
+      return hoursKnown
+        ? {
+            open,
+            color: open ? '#1EC876' : '#EF4444',
+            label: open ? t('home.open') : t('home.closed'),
+            detail: null as string | null,
+          }
+        : null;
     }
     const opened = statuses.filter((row) => row.open);
     const closed = statuses.filter((row) => !row.open);
     if (opened.length && closed.length) {
-      return { open: true, detail: t('home.some_services_closed') };
+      return {
+        open: true,
+        mixed: true,
+        color: '#F59E0B',
+        label: t('home.some_services_closed'),
+        detail: null as string | null,
+      };
     }
     return opened[0] ?? closed[0] ?? null;
   })();
-  const headerStatusColor = headerStatus
-    ? (headerStatus.open ? OPEN_COLOR : CLOSED_COLOR)
-    : CLOSED_COLOR;
+  const headerStatusColor = headerStatus?.color ?? '#EF4444';
 
   const showPhones = (numbers?: string[]) => {
     const list = numbers ?? phones;
@@ -424,7 +384,14 @@ export default function BusinessScreen() {
             accessibilityRole="button"
           >
             {image ? (
-              <Image source={{ uri: image }} style={styles.coverImage} contentFit="cover" />
+              <Image
+                source={{ uri: image }}
+                style={styles.coverPhoto}
+                contentFit="cover"
+                contentPosition="center"
+                recyclingKey={image}
+                cachePolicy="memory-disk"
+              />
             ) : (
               <View style={styles.coverPlaceholder}>
                 <Image
@@ -442,11 +409,11 @@ export default function BusinessScreen() {
             {headerStatus ? (
               <View style={styles.aboutStatus}>
                 <Text style={[styles.aboutStatusText, { color: headerStatusColor }]}>
-                  {headerStatus.open ? t('home.open') : t('home.closed')}
+                  {headerStatus.label}
                 </Text>
                 <View style={[styles.statusDot, { backgroundColor: headerStatusColor }]} />
                 {headerStatus.detail ? (
-                  <Text style={styles.aboutStatusDetail} numberOfLines={1}>
+                  <Text style={styles.aboutStatusDetail} numberOfLines={2}>
                     {headerStatus.detail}
                   </Text>
                 ) : null}
@@ -776,6 +743,9 @@ const makeStyles = (c: ThemeColors) =>
       width: '100%',
       height: '100%',
     },
+    coverPhoto: {
+      ...StyleSheet.absoluteFillObject,
+    },
     coverPlaceholder: {
       width: '100%',
       height: '100%',
@@ -832,8 +802,11 @@ const makeStyles = (c: ThemeColors) =>
     aboutStatus: {
       flex: 1,
       flexDirection: 'row',
+      flexWrap: 'wrap',
       alignItems: 'center',
-      gap: 6,
+      columnGap: 6,
+      rowGap: 2,
+      minWidth: 0,
     },
     aboutStatusText: {
       fontFamily: 'Rubik-Medium',
@@ -841,7 +814,10 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 16,
     },
     aboutStatusDetail: {
+      flexGrow: 1,
       flexShrink: 1,
+      flexBasis: 120,
+      minWidth: 0,
       fontFamily: 'Rubik-Medium',
       fontSize: 12,
       lineHeight: 16,
@@ -917,11 +893,15 @@ const makeStyles = (c: ThemeColors) =>
     },
     locationStatus: {
       flex: 1,
+      minWidth: 0,
       flexDirection: 'row',
+      flexWrap: 'wrap',
       alignItems: 'center',
-      gap: 6,
+      columnGap: 6,
+      rowGap: 2,
     },
     locationStatusText: {
+      flexShrink: 0,
       fontFamily: 'Rubik-Medium',
       fontSize: 12,
       lineHeight: 16,
@@ -932,7 +912,10 @@ const makeStyles = (c: ThemeColors) =>
       borderRadius: 3,
     },
     locationStatusDetail: {
+      flexGrow: 1,
       flexShrink: 1,
+      flexBasis: 120,
+      minWidth: 0,
       fontFamily: 'Rubik-Medium',
       fontSize: 12,
       lineHeight: 16,

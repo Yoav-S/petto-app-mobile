@@ -42,6 +42,12 @@ export interface TimeSlot {
   close: string;
 }
 
+export interface SpecialDate {
+  date: string;
+  closed: boolean;
+  slots: TimeSlot[];
+}
+
 export interface OpeningHours {
   provided?: boolean;
   always_open?: boolean;
@@ -52,6 +58,7 @@ export interface OpeningHours {
   fri: TimeSlot[];
   sat: TimeSlot[];
   sun: TimeSlot[];
+  special_dates?: SpecialDate[];
 }
 
 export interface PlaceReview {

@@ -5,11 +5,9 @@ import { MapPin, Star } from 'lucide-react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
-import type { BusinessPlace, Weekday } from '@/services/places';
+import { placeHoursStatus } from '@/services/placeHours';
+import type { BusinessPlace } from '@/services/places';
 
-const OPEN_COLOR = '#1EC876';
-const MIXED_COLOR = '#F59E0B';
-const CLOSED_COLOR = '#EF4444';
 /** Figma image is 335×278 on a 375-wide screen. The card width follows the device; the height keeps this ratio. */
 const BUSINESS_IMAGE_RATIO = 335 / 278;
 
@@ -21,47 +19,6 @@ const CATEGORY_LABEL: Record<BusinessPlace['category'], string> = {
   pet_friendly: 'home.category_friendly',
 };
 
-const DAY_LABEL: Record<Weekday, string> = {
-  mon: 'home.day_mon',
-  tue: 'home.day_tue',
-  wed: 'home.day_wed',
-  thu: 'home.day_thu',
-  fri: 'home.day_fri',
-  sat: 'home.day_sat',
-  sun: 'home.day_sun',
-};
-
-function clockLabel(value: string): string {
-  const match = /^0?(\d+):(\d{2})$/.exec(value);
-  if (!match) return value;
-  return `${Number(match[1])}:${match[2]}`;
-}
-
-function opensDetail(place: BusinessPlace): string | null {
-  const when = place.opens_at ? clockLabel(place.opens_at) : null;
-  if (!when) return null;
-  if (place.next_open_day) {
-    return `${t('home.opens')} ${t(DAY_LABEL[place.next_open_day])} ${when}`;
-  }
-  return `${t('home.opens')} ${when}`;
-}
-
-/** Open, some services closed, Closed + Opens 9:30, or Opens Sunday 9:30. */
-function placeStatus(place: BusinessPlace): { color: string; label: string; detail: string | null } | null {
-  if (typeof place.open_now !== 'boolean') return null;
-  if (place.some_services_closed) {
-    return { color: MIXED_COLOR, label: t('home.some_services_closed'), detail: null };
-  }
-  if (place.open_now) {
-    return { color: OPEN_COLOR, label: t('home.open'), detail: null };
-  }
-  return {
-    color: CLOSED_COLOR,
-    label: t('home.closed'),
-    detail: opensDetail(place),
-  };
-}
-
 export default function PlaceCard({
   place,
   onPress,
@@ -70,7 +27,7 @@ export default function PlaceCard({
   onPress: () => void;
 }) {
   const styles = useThemedStyles(makeStyles);
-  const status = placeStatus(place);
+  const status = placeHoursStatus(place);
   const categories = place.categories?.length ? place.categories : [place.category];
 
   return (
@@ -78,7 +35,14 @@ export default function PlaceCard({
     <TouchableOpacity style={styles.placePress} activeOpacity={0.9} onPress={onPress}>
       <View style={styles.cardImageWrap}>
         {place.image ? (
-          <Image source={{ uri: place.image }} style={styles.cardImage} contentFit="cover" />
+          <Image
+            source={{ uri: place.image }}
+            style={styles.cardImage}
+            contentFit="cover"
+            contentPosition="center"
+            recyclingKey={place.image}
+            cachePolicy="memory-disk"
+          />
         ) : (
           <View style={styles.cardImagePlaceholder}>
             <Image
@@ -129,14 +93,14 @@ export default function PlaceCard({
             ))}
           </View>
         </View>
-        {status ? (
+            {status ? (
           <View style={styles.statusRow}>
             <Text style={[styles.statusText, { color: status.color }]} numberOfLines={1}>
               {status.label}
             </Text>
             <View style={[styles.statusDot, { backgroundColor: status.color }]} />
             {status.detail ? (
-              <Text style={styles.statusDetail} numberOfLines={1}>
+              <Text style={styles.statusDetail} numberOfLines={2}>
                 {status.detail}
               </Text>
             ) : null}
@@ -180,8 +144,7 @@ function makeStyles(colors: ThemeColors) {
       backgroundColor: colors.background,
     },
     cardImage: {
-      width: '100%',
-      height: '100%',
+      ...StyleSheet.absoluteFillObject,
     },
     cardImagePlaceholder: {
       width: '100%',
@@ -245,9 +208,9 @@ function makeStyles(colors: ThemeColors) {
     },
     item: {
       width: '100%',
-      height: 76,
+      minHeight: 76,
       paddingHorizontal: 12,
-      justifyContent: 'space-between',
+      gap: 8,
     },
     nameAndRate: {
       width: '100%',
@@ -308,12 +271,15 @@ function makeStyles(colors: ThemeColors) {
       includeFontPadding: false,
     },
     statusRow: {
-      height: 16,
+      minHeight: 16,
       flexDirection: 'row',
+      flexWrap: 'wrap',
       alignItems: 'center',
-      gap: 6,
+      columnGap: 6,
+      rowGap: 2,
     },
     statusText: {
+      flexShrink: 0,
       fontFamily: 'Rubik-Medium',
       fontSize: 12,
       lineHeight: 16,
@@ -325,7 +291,10 @@ function makeStyles(colors: ThemeColors) {
       borderRadius: 3,
     },
     statusDetail: {
+      flexGrow: 1,
       flexShrink: 1,
+      flexBasis: 120,
+      minWidth: 0,
       fontFamily: 'Rubik-Medium',
       fontSize: 12,
       lineHeight: 16,
