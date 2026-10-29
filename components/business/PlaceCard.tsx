@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { MapPin, Star } from 'lucide-react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
+import ListRowPressable from '@/components/ui/ListRowPressable';
 import { t } from '@/i18n';
 import { placeHoursStatus } from '@/services/placeHours';
 import type { BusinessPlace } from '@/services/places';
@@ -32,13 +33,13 @@ export default function PlaceCard({
 
   return (
     <View style={styles.placeCard} collapsable={false}>
-    <TouchableOpacity style={styles.placePress} activeOpacity={0.9} onPress={onPress}>
+    <ListRowPressable style={styles.placePress} onPress={onPress}>
       <View style={styles.cardImageWrap}>
         {place.image ? (
           <Image
             source={{ uri: place.image }}
             style={styles.cardImage}
-            contentFit="cover"
+            contentFit="contain"
             contentPosition="center"
             recyclingKey={place.image}
             cachePolicy="memory-disk"
@@ -109,7 +110,7 @@ export default function PlaceCard({
           <View style={styles.statusRow} />
         )}
       </View>
-    </TouchableOpacity>
+    </ListRowPressable>
     </View>
   );
 }
@@ -214,7 +215,6 @@ function makeStyles(colors: ThemeColors) {
     },
     nameAndRate: {
       width: '100%',
-      height: 52,
       gap: 8,
     },
     titleRow: {
@@ -250,11 +250,11 @@ function makeStyles(colors: ThemeColors) {
       includeFontPadding: false,
     },
     chipRow: {
-      height: 16,
+      minHeight: 16,
       flexDirection: 'row',
+      flexWrap: 'wrap',
       alignItems: 'center',
       gap: 6,
-      overflow: 'hidden',
     },
     categoryChip: {
       height: 16,

@@ -80,12 +80,13 @@ export type HoursStatus = { open: boolean; mixed?: boolean; color: string; label
 export function placeHoursStatus(place: BusinessPlace): HoursStatus | null {
   if (typeof place.open_now !== 'boolean') return null;
   if (place.some_services_closed) {
+    const isOpen = place.open_now !== false;
     return {
-      open: true,
+      open: isOpen,
       mixed: true,
-      color: MIXED_COLOR,
-      label: t('home.some_services_closed'),
-      detail: null,
+      color: isOpen ? OPEN_COLOR : CLOSED_COLOR,
+      label: isOpen ? t('home.open') : t('home.closed'),
+      detail: t('home.some_services_closed'),
     };
   }
   if (place.open_now) {

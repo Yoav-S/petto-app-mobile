@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
@@ -24,6 +23,7 @@ import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import EmptyState from '@/components/ui/EmptyState';
 import SwipeToDeleteRow from '@/components/ui/SwipeToDeleteRow';
+import ListRowPressable from '@/components/ui/ListRowPressable';
 import { swipeListScrollHandlers } from '@/components/ui/swipeListScroll';
 import ListLoadMoreFooter from '@/components/ui/ListLoadMoreFooter';
 import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
@@ -228,10 +228,8 @@ export default function VaccinesScreen() {
             onOpenChange={(open) => setSwipeOpenId(open ? item.id : null)}
             onDelete={() => handleDeleteVaccine(item.id)}
           >
-            <TouchableOpacity
+            <ListRowPressable
               style={styles.card}
-              // Press feedback comes from the swipe row's disabled wash.
-              activeOpacity={1}
               onPress={() => {
                 setSwipeOpenId(null);
                 router.push(`/vaccines/${item.id}` as never);
@@ -255,7 +253,7 @@ export default function VaccinesScreen() {
                   ) : null}
                 </View>
               </View>
-            </TouchableOpacity>
+            </ListRowPressable>
           </SwipeToDeleteRow>
         )}
         contentContainerStyle={{

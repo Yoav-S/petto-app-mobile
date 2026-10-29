@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import ListRowPressable from '@/components/ui/ListRowPressable';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,10 +28,9 @@ export default function SettingRow({
   const styles = useThemedStyles(makeStyles);
   return (
     <>
-      <TouchableOpacity 
-        style={styles.container} 
-        onPress={onPress} 
-        activeOpacity={0.7}
+      <ListRowPressable
+        style={styles.container}
+        onPress={onPress}
         disabled={!onPress}
       >
         <View style={styles.left}>
@@ -38,7 +38,7 @@ export default function SettingRow({
           <Text style={styles.label}>{label}</Text>
         </View>
         <Text style={styles.value}>{value}</Text>
-      </TouchableOpacity>
+      </ListRowPressable>
       
       {isExpanded && children && (
         <View style={styles.expandedContent}>

@@ -15,7 +15,6 @@ import { type ThemeColors } from '@/constants/theme';
 import { useColors, useTheme, useThemedStyles } from '@/context/ThemeContext';
 import { t, isRTL } from '@/i18n';
 import {
-  isSwipeListScrolling,
   subscribeSwipeListScroll,
 } from '@/components/ui/swipeListScroll';
 
@@ -40,7 +39,6 @@ const DISABLED_BG_LIGHT = '#E5E7EB';
 const DISABLED_BG_DARK = '#373C42';
 /** Keeps the card readable while still reading as disabled. */
 const DISABLED_BG_OPACITY = 0.6;
-const PRESS_IN_DELAY = 120;
 
 interface SwipeToDeleteRowProps {
   children: React.ReactNode;
@@ -109,47 +107,11 @@ export default function SwipeToDeleteRow({
     outputRange: [0, DISABLED_BG_OPACITY],
   });
 
-  /**
-   * Mirrors `TouchableOpacity`'s press-in delay: a finger that lands only to
-   * start scrolling should not grey the card.
-   */
-  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const clearPressTimer = useCallback(() => {
-    if (pressTimer.current) {
-      clearTimeout(pressTimer.current);
-      pressTimer.current = null;
-    }
-  }, []);
-
   const resetWash = useCallback(() => {
-    clearPressTimer();
     washTarget.current = 0;
     wash.stopAnimation();
     wash.setValue(0);
-  }, [clearPressTimer, wash]);
-
-  const onGestureBegan = useCallback(() => {
-    // A list that is already moving must not grey the row now under the finger.
-    if (isSwipeListScrolling() || revealedRef.current) return;
-    clearPressTimer();
-    pressTimer.current = setTimeout(() => {
-      pressTimer.current = null;
-      if (isSwipeListScrolling() || revealedRef.current) return;
-      fadeWash(1);
-    }, PRESS_IN_DELAY);
-  }, [clearPressTimer, fadeWash]);
-
-  /**
-   * Runs after Swipeable has already handled the release, so `revealedRef` is
-   * up to date and a row that is opening never flashes back to normal first.
-   */
-  const onGestureSettled = useCallback(() => {
-    clearPressTimer();
-    if (!revealedRef.current) fadeWash(0);
-  }, [clearPressTimer, fadeWash]);
-
-  useEffect(() => clearPressTimer, [clearPressTimer]);
+  }, [wash]);
 
   useEffect(() => {
     return subscribeSwipeListScroll(() => {
@@ -242,12 +204,7 @@ export default function SwipeToDeleteRow({
         overshootRight={false}
         leftThreshold={rtl ? 40 : undefined}
         rightThreshold={rtl ? undefined : 40}
-        // A vertical move is a scroll, not a swipe. Fail it so the wash clears.
         failOffsetY={[-16, 16]}
-        onBegan={onGestureBegan}
-        onEnded={onGestureSettled}
-        onFailed={onGestureSettled}
-        onCancelled={onGestureSettled}
         renderLeftActions={rtl ? renderActions : undefined}
         renderRightActions={rtl ? undefined : renderActions}
         onSwipeableWillOpen={() => {

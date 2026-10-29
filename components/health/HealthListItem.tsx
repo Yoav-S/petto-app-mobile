@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
@@ -87,13 +86,10 @@ export default function HealthListItem({
   });
 
   return (
-    <TouchableOpacity
+    <ListRowPressable
       style={styles.card}
       onPress={onPress}
       onLongPress={onLongPress}
-      // Press feedback comes from the swipe row's disabled wash instead, so the
-      // card keeps one appearance through press, drag and open.
-      activeOpacity={1}
       disabled={!onPress}
     >
       <View style={styles.body}>
@@ -133,7 +129,7 @@ export default function HealthListItem({
       </View>
 
       <CardBottomFadeOverlay intensity={fadeIntensity} />
-    </TouchableOpacity>
+    </ListRowPressable>
   );
 }
 

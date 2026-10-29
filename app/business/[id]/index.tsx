@@ -22,6 +22,7 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useImageStatusBarStyle } from '@/hooks/useImageStatusBarStyle';
 import { useStatusBarOverride } from '@/context/SystemBarsContext';
 import HeaderIconButton from '@/components/ui/HeaderIconButton';
+import ListRowPressable from '@/components/ui/ListRowPressable';
 import { useSettledModalVisible } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 import { getErrorMessage } from '@/services/errors';
@@ -43,6 +44,8 @@ import {
 } from '@/services/places';
 
 const WEEK: Weekday[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const LOCATION_PREVIEW = 4;
+const LOCATIONS_SCROLL_HEIGHT = 360;
 const DAY_KEY: Record<Weekday, string> = {
   mon: 'business.day_mon',
   tue: 'business.day_tue',
@@ -101,72 +104,56 @@ function openInstagram(value: string) {
   if (handle) void Linking.openURL(`https://instagram.com/${handle}`);
 }
 
-function HoursSchedule({ hours, id }: { hours: OpeningHours | undefined; id: string }) {
+function HoursSchedule({ hours, id }: { hours: OpeningHours; id: string }) {
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.hoursList}>
-      {hoursListed(hours) ? (
-        WEEK.map((day) => (
-          <View key={`${id}-${day}`} style={styles.hoursRow}>
-            <Text style={styles.dayLabel} numberOfLines={1}>
-              {t(DAY_KEY[day])}
-            </Text>
-            <Text style={styles.hoursValue}>{dayHours(hours, day)}</Text>
-          </View>
-        ))
-      ) : (
-        <Text style={styles.hoursValue}>{t('business.hours_unlisted')}</Text>
-      )}
+      {WEEK.map((day) => (
+        <View key={`${id}-${day}`} style={styles.hoursRow}>
+          <Text style={styles.dayLabel} numberOfLines={1}>
+            {t(DAY_KEY[day])}
+          </Text>
+          <Text style={styles.hoursValue}>{dayHours(hours, day)}</Text>
+        </View>
+      ))}
     </View>
   );
 }
 
-function HoursToggle({
-  hours,
-  hoursKey,
-  expanded,
-  onToggle,
-}: {
-  hours: OpeningHours | undefined;
-  hoursKey: string;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
+function LocationCopy({ branch }: { branch: PlaceLocation }) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const status = branchHoursStatus(hours);
-  const statusTint = status?.color ?? colors.secondaryText;
+  const copy = addressText(branch.address, branch.city);
   return (
-    <View>
-      <Pressable
-        style={styles.hoursToggle}
-        onPress={onToggle}
-        hitSlop={8}
-        accessibilityRole="button"
-      >
-        {status ? (
-          <View style={styles.locationStatus}>
-            <Text style={[styles.locationStatusText, { color: statusTint }]}>
-              {status.label}
-            </Text>
-            <View style={[styles.locationStatusDot, { backgroundColor: statusTint }]} />
-            {status.detail ? (
-              <Text style={styles.locationStatusDetail} numberOfLines={2}>
-                {status.detail}
-              </Text>
-            ) : null}
-          </View>
-        ) : (
-          <View style={styles.locationStatus} />
-        )}
-        <Ionicons
-          name={expanded ? 'chevron-up' : 'chevron-down'}
-          size={24}
-          color={colors.primaryText}
-        />
-      </Pressable>
-      {expanded ? <HoursSchedule hours={hours} id={hoursKey} /> : null}
-    </View>
+    <>
+      {typeof branch.distance_km === 'number' ? (
+        <View style={styles.locationDistanceRow}>
+          <MapPin size={12} color={colors.primaryText} />
+          <Text style={styles.locationDistance}>{`${branch.distance_km} km`}</Text>
+        </View>
+      ) : null}
+      {copy ? <Text style={styles.locationAddress}>{copy}</Text> : null}
+    </>
+  );
+}
+
+function OtherLocationRow({
+  branch,
+  onPress,
+}: {
+  branch: PlaceLocation;
+  onPress: () => void;
+}) {
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <ListRowPressable
+      style={styles.locationCard}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={addressText(branch.address, branch.city)}
+    >
+      <LocationCopy branch={branch} />
+    </ListRowPressable>
   );
 }
 
@@ -200,7 +187,7 @@ export default function BusinessScreen() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
   const savedReviewRef = useRef<PlaceReview | null>(null);
-  const [openHoursKeys, setOpenHoursKeys] = useState<string[]>([]);
+  const [locationsExpanded, setLocationsExpanded] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<BusinessCategory | null>(null);
 
   const previewImage = params.image || null;
@@ -239,14 +226,8 @@ export default function BusinessScreen() {
   );
 
   useEffect(() => {
-    setOpenHoursKeys([]);
-  }, [params.id, params.locationId]);
-
-  const toggleHours = (key: string) => {
-    setOpenHoursKeys((current) =>
-      current.includes(key) ? current.filter((id) => id !== key) : [...current, key],
-    );
-  };
+    setLocationsExpanded(false);
+  }, [params.id]);
 
   const name = place?.name || params.name || '';
   const category = place?.category ?? params.category;
@@ -270,18 +251,18 @@ export default function BusinessScreen() {
   const reviews = place?.reviews ?? [];
   const phones = place?.phone ?? [];
   const branches = place?.locations ?? [];
-  const fallbackBranch = place
+  const fallbackBranch: PlaceLocation[] = place
     ? [{
         id: place.id,
         address: place.address,
         city: place.city,
         opening_hours: place.opening_hours,
-        phone: [] as string[],
+        phone: [],
         call_phone: phones,
         shared_phone: true,
         location: place.location,
         distance_km: typeof distance === 'number' && !Number.isNaN(distance) ? distance : null,
-      } satisfies PlaceLocation]
+      }]
     : [];
   const locationCards = (() => {
     const rows = branches.length ? [...branches] : fallbackBranch;
@@ -294,11 +275,13 @@ export default function BusinessScreen() {
     next.unshift(picked);
     return next;
   })();
+  const currentBranch = locationCards[0] ?? null;
+  const otherBranches = locationCards.slice(1);
   const phoneKeys = locationCards.map((branch) => [...dialNumbers(branch)].sort().join('|'));
   const phonesOnEachLocation = locationCards.length > 1 && new Set(phoneKeys).size > 1;
-  const contactPhones = phonesOnEachLocation
-    ? []
-    : (locationCards[0] ? dialNumbers(locationCards[0]) : phones);
+  const callPhones = currentBranch ? dialNumbers(currentBranch) : phones;
+  const branchPhones = phonesOnEachLocation ? callPhones : [];
+  const contactPhones = phonesOnEachLocation ? [] : callPhones;
   const serviceCategories = (() => {
     const seen: BusinessCategory[] = [];
     for (const branch of locationCards) {
@@ -308,12 +291,43 @@ export default function BusinessScreen() {
     }
     return seen.length ? seen : categories;
   })();
+  const currentHours = (() => {
+    if (!currentBranch) return undefined;
+    const services = currentBranch.services ?? [];
+    if (!services.length) return currentBranch.opening_hours;
+    const match = selectedCategory
+      ? services.find((service) => service.category === selectedCategory)
+      : services[0];
+    return match?.opening_hours;
+  })();
+  const showHours = hoursListed(currentHours);
+  const branchStatus = showHours ? branchHoursStatus(currentHours) : null;
+  const currentAddress = currentBranch
+    ? addressText(currentBranch.address, currentBranch.city)
+    : '';
+  const showHoursCard = Boolean(
+    serviceCategories.length
+      || currentAddress
+      || (currentBranch && typeof currentBranch.distance_km === 'number')
+      || showHours
+      || branchPhones.length,
+  );
+  const shownOthers = locationsExpanded
+    ? otherBranches
+    : otherBranches.slice(0, LOCATION_PREVIEW);
+  const locationsNeedPager = otherBranches.length > LOCATION_PREVIEW;
+  const serviceKey = serviceCategories.join('|');
   const photoPresented = useSettledModalVisible(photoOpen && Boolean(image));
 
   useEffect(() => {
+    const available = serviceKey.split('|').filter(Boolean) as BusinessCategory[];
     const fromParam = params.category && CATEGORY_KEY[params.category] ? params.category : null;
-    setSelectedCategory(fromParam ?? serviceCategories[0] ?? null);
-  }, [place?.id, params.category]);
+    setSelectedCategory((current) => {
+      if (current && available.includes(current)) return current;
+      if (fromParam && available.includes(fromParam)) return fromParam;
+      return available[0] ?? null;
+    });
+  }, [place?.id, params.category, serviceKey]);
 
   const headerStatus = (() => {
     if (place) {
@@ -342,9 +356,9 @@ export default function BusinessScreen() {
       return {
         open: true,
         mixed: true,
-        color: '#F59E0B',
-        label: t('home.some_services_closed'),
-        detail: null as string | null,
+        color: '#1EC876',
+        label: t('home.open'),
+        detail: t('home.some_services_closed'),
       };
     }
     return opened[0] ?? closed[0] ?? null;
@@ -370,6 +384,7 @@ export default function BusinessScreen() {
     <View style={styles.screen}>
       <ScrollView
         style={styles.scroll}
+        nestedScrollEnabled
         contentContainerStyle={[styles.scrollContent, { paddingBottom: actionBarHeight + 4 }]}
         showsVerticalScrollIndicator={false}
       >
@@ -387,7 +402,7 @@ export default function BusinessScreen() {
               <Image
                 source={{ uri: image }}
                 style={styles.coverPhoto}
-                contentFit="cover"
+                contentFit="contain"
                 contentPosition="center"
                 recyclingKey={image}
                 cachePolicy="memory-disk"
@@ -463,93 +478,123 @@ export default function BusinessScreen() {
           ) : null}
         </View>
 
-        <View style={styles.card}>
-        {serviceCategories.length ? (
-          <View style={styles.serviceTabs}>
-            {serviceCategories.map((item) => {
-              const on = selectedCategory === item;
-              return (
-                <Pressable
-                  key={item}
-                  style={[styles.serviceTab, on && styles.serviceTabOn]}
-                  onPress={() => setSelectedCategory(item)}
-                  accessibilityRole="button"
-                >
-                  <Text style={[styles.serviceTabText, on && styles.serviceTabTextOn]}>
-                    {t(CATEGORY_KEY[item])}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : null}
-        {locationCards.map((branch) => {
-          const branchDistance = branch.distance_km;
-          const branchPhones = dialNumbers(branch);
-          const services = branch.services ?? [];
-          const hourBlocks = services.length
-            ? services
-                .filter((service) => !selectedCategory || service.category === selectedCategory)
-                .map((service) => ({
-                  key: service.id,
-                  hours: hoursListed(service.opening_hours)
-                    ? service.opening_hours
-                    : branch.opening_hours,
-                }))
-            : [{
-                key: branch.id,
-                hours: branch.opening_hours,
-              }];
-          return (
-            <View key={branch.id} style={styles.locationCard}>
-              <View style={styles.locationBody}>
-                <Pressable
-                  style={styles.locationAddressBlock}
-                  onPress={() => showMaps(branch)}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('business.directions')}
-                >
-                  {typeof branchDistance === 'number' ? (
-                    <View style={styles.locationDistanceRow}>
-                      <MapPin size={12} color={colors.primaryText} />
-                      <Text style={styles.locationDistance}>{`${branchDistance} km`}</Text>
+        {showHoursCard ? (
+          <View style={styles.hoursCard}>
+            {serviceCategories.length ? (
+              <View style={styles.serviceTabs}>
+                {serviceCategories.map((item) => {
+                  const on = selectedCategory === item;
+                  return (
+                    <Pressable
+                      key={item}
+                      style={styles.serviceTab}
+                      onPress={() => setSelectedCategory(item)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: on }}
+                    >
+                      <Text style={[styles.serviceTabText, on && styles.serviceTabTextOn]}>
+                        {t(CATEGORY_KEY[item])}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : null}
+            {currentBranch && (
+              currentAddress
+              || typeof currentBranch.distance_km === 'number'
+              || showHours
+              || branchPhones.length
+            ) ? (
+              <View style={styles.locationCard}>
+                <View style={styles.locationBody}>
+                  <LocationCopy branch={currentBranch} />
+                  {branchStatus ? (
+                    <View style={styles.locationStatus}>
+                      <Text style={[styles.locationStatusText, { color: branchStatus.color }]}>
+                        {branchStatus.label}
+                      </Text>
+                      <View
+                        style={[styles.locationStatusDot, { backgroundColor: branchStatus.color }]}
+                      />
+                      {branchStatus.detail ? (
+                        <Text style={styles.locationStatusDetail} numberOfLines={2}>
+                          {branchStatus.detail}
+                        </Text>
+                      ) : null}
                     </View>
                   ) : null}
-                  <Text style={styles.locationAddress}>
-                    {addressText(branch.address, branch.city)}
-                  </Text>
-                </Pressable>
-                <View style={styles.hoursBlocks}>
-                  {hourBlocks.map((block) => (
-                    <HoursToggle
-                      key={block.key}
-                      hours={block.hours}
-                      hoursKey={block.key}
-                      expanded={openHoursKeys.includes(block.key)}
-                      onToggle={() => toggleHours(block.key)}
-                    />
-                  ))}
+                  {showHours && currentHours ? (
+                    <HoursSchedule hours={currentHours} id={currentBranch.id} />
+                  ) : null}
                 </View>
+                {branchPhones.length ? (
+                  <View style={styles.branchPhoneBlock}>
+                    <Text style={styles.branchPhoneLabel}>{t('business.phone')}</Text>
+                    {branchPhones.map((phone) => (
+                      <Pressable
+                        key={phone}
+                        onPress={() => showPhones([phone])}
+                        accessibilityRole="button"
+                        accessibilityLabel={phone}
+                      >
+                        <Text style={styles.branchPhoneValue} numberOfLines={1}>
+                          {phone}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                ) : null}
               </View>
-              {phonesOnEachLocation ? (
-                <View style={styles.locationPhones}>
-                  {branchPhones.map((phone) => (
-                    <Pressable
-                      key={phone}
-                      style={styles.locationPhone}
-                      onPress={() => showPhones([phone])}
-                      accessibilityRole="button"
-                    >
-                      <Phone size={24} color={colors.primaryText} />
-                      <Text style={styles.contactValue} numberOfLines={1}>{phone}</Text>
-                    </Pressable>
-                  ))}
-                </View>
+            ) : null}
+          </View>
+        ) : null}
+
+        {otherBranches.length ? (
+          <View style={styles.locationsCard}>
+            <View style={styles.sectionHead}>
+              <Text style={styles.sectionTitle}>{t('business.locations_title')}</Text>
+              {locationsNeedPager ? (
+                <TouchableOpacity
+                  style={styles.seeAll}
+                  onPress={() => setLocationsExpanded((value) => !value)}
+                  hitSlop={8}
+                >
+                  <Text style={styles.seeAllText}>
+                    {locationsExpanded ? t('home.see_less') : t('home.see_all')}
+                  </Text>
+                  <ChevronRight size={16} color={colors.primaryText} />
+                </TouchableOpacity>
               ) : null}
             </View>
-          );
-        })}
-        </View>
+            {locationsNeedPager ? (
+              <ScrollView
+                nestedScrollEnabled
+                style={{ maxHeight: LOCATIONS_SCROLL_HEIGHT }}
+                contentContainerStyle={styles.locationsList}
+                showsVerticalScrollIndicator
+              >
+                {shownOthers.map((branch) => (
+                  <OtherLocationRow
+                    key={branch.id}
+                    branch={branch}
+                    onPress={() => router.setParams({ locationId: branch.id })}
+                  />
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.locationsList}>
+                {shownOthers.map((branch) => (
+                  <OtherLocationRow
+                    key={branch.id}
+                    branch={branch}
+                    onPress={() => router.setParams({ locationId: branch.id })}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+        ) : null}
 
         <View style={styles.card}>
           {reviews.length === 0 ? (
@@ -663,17 +708,25 @@ export default function BusinessScreen() {
 
       <View style={[styles.actions, { paddingBottom: actionBottom }]}>
           <TouchableOpacity
-            style={[styles.callButton, contactPhones.length === 0 && styles.buttonDisabled]}
-            disabled={contactPhones.length === 0}
-            onPress={() => showPhones(contactPhones)}
+            style={[styles.callButton, callPhones.length === 0 && styles.buttonDisabled]}
+            disabled={callPhones.length === 0}
+            onPress={() => showPhones(callPhones)}
           >
             <Phone size={20} color="#F6F7F9" />
             <Text style={styles.callLabel}>{t('business.call')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.directionsButton}
-            disabled={!place || (!place.address && !place.city && !place.location)}
-            onPress={() => showMaps()}
+            style={[
+              styles.directionsButton,
+              (!currentBranch
+                || (!currentBranch.address && !currentBranch.city && !currentBranch.location))
+                && styles.buttonDisabled,
+            ]}
+            disabled={
+              !currentBranch
+              || (!currentBranch.address && !currentBranch.city && !currentBranch.location)
+            }
+            onPress={() => showMaps(currentBranch ?? undefined)}
           >
             <Send size={20} color={colors.primaryText} />
             <Text style={styles.directionsLabel}>{t('business.directions')}</Text>
@@ -734,7 +787,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     cover: {
       width: '100%',
-      backgroundColor: c.border,
+      backgroundColor: c.background,
       overflow: 'hidden',
       borderBottomLeftRadius: 24,
       borderBottomRightRadius: 24,
@@ -784,6 +837,25 @@ const makeStyles = (c: ThemeColors) =>
       paddingHorizontal: 20,
       gap: 4,
     },
+    hoursCard: {
+      backgroundColor: c.surface,
+      borderRadius: 24,
+      paddingTop: 22,
+      paddingBottom: 22,
+      paddingHorizontal: 20,
+      gap: 16,
+    },
+    locationsCard: {
+      backgroundColor: c.surface,
+      borderRadius: 24,
+      paddingTop: 22,
+      paddingBottom: 22,
+      paddingHorizontal: 20,
+      gap: 16,
+    },
+    locationsList: {
+      gap: 8,
+    },
     aboutCard: {
       backgroundColor: c.surface,
       borderRadius: 24,
@@ -827,17 +899,15 @@ const makeStyles = (c: ThemeColors) =>
       flexDirection: 'row',
       flexWrap: 'wrap',
       alignItems: 'center',
-      gap: 8,
-      marginBottom: 12,
+      gap: 4,
     },
     serviceTab: {
+      minHeight: 28,
       borderRadius: 10,
       backgroundColor: c.background,
       paddingHorizontal: 8,
       paddingVertical: 4,
-    },
-    serviceTabOn: {
-      backgroundColor: '#004741',
+      justifyContent: 'center',
     },
     serviceTabText: {
       fontFamily: 'Rubik-Medium',
@@ -846,7 +916,7 @@ const makeStyles = (c: ThemeColors) =>
       color: c.secondaryText,
     },
     serviceTabTextOn: {
-      color: '#F6F7F9',
+      color: c.primaryText,
     },
     locationCard: {
       backgroundColor: c.background,
@@ -855,10 +925,10 @@ const makeStyles = (c: ThemeColors) =>
       paddingBottom: 12,
       paddingLeft: 16,
       paddingRight: 16,
-      gap: 6,
+      gap: 12,
     },
     locationBody: {
-      gap: 4,
+      gap: 8,
     },
     locationAddressBlock: {
       gap: 2,
@@ -882,15 +952,6 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 24,
       color: c.primaryText,
     },
-    hoursToggle: {
-      minHeight: 24,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    hoursBlocks: {
-      gap: 8,
-    },
     locationStatus: {
       flex: 1,
       minWidth: 0,
@@ -902,9 +963,9 @@ const makeStyles = (c: ThemeColors) =>
     },
     locationStatusText: {
       flexShrink: 0,
-      fontFamily: 'Rubik-Medium',
-      fontSize: 12,
-      lineHeight: 16,
+      fontFamily: 'Rubik-Regular',
+      fontSize: 14,
+      lineHeight: 20,
     },
     locationStatusDot: {
       width: 6,
@@ -916,20 +977,26 @@ const makeStyles = (c: ThemeColors) =>
       flexShrink: 1,
       flexBasis: 120,
       minWidth: 0,
-      fontFamily: 'Rubik-Medium',
-      fontSize: 12,
-      lineHeight: 16,
+      fontFamily: 'Rubik-Regular',
+      fontSize: 14,
+      lineHeight: 20,
       color: c.secondaryText,
     },
-    locationPhones: {
-      gap: 6,
-      marginTop: 10,
+    branchPhoneBlock: {
+      gap: 2,
+      marginTop: 6,
     },
-    locationPhone: {
-      height: 24,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
+    branchPhoneLabel: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 14,
+      lineHeight: 20,
+      color: c.primaryText,
+    },
+    branchPhoneValue: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 16,
+      lineHeight: 24,
+      color: c.primaryText,
     },
     metaRow: {
       minHeight: 20,
@@ -1183,7 +1250,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     hoursList: {
       gap: 6,
-      marginTop: 6,
     },
     actions: {
       position: 'absolute',

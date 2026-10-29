@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import ListRowPressable from '@/components/ui/ListRowPressable';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -26,7 +27,7 @@ export function PetSwitcherRow({ pet, selected, onPress }: PetSwitcherRowProps) 
   const locked = Boolean(pet.locked);
 
   return (
-    <Pressable
+    <ListRowPressable
       style={[styles.row, locked && styles.rowLocked]}
       onPress={onPress}
       accessibilityRole="radio"
@@ -57,7 +58,7 @@ export function PetSwitcherRow({ pet, selected, onPress }: PetSwitcherRowProps) 
           ) : null}
         </View>
       )}
-    </Pressable>
+    </ListRowPressable>
   );
 }
 
@@ -69,7 +70,7 @@ export function AddPetRow({ onPress }: AddPetRowProps) {
   const styles = useThemedStyles(makeStyles);
 
   return (
-    <Pressable
+    <ListRowPressable
       style={styles.addRow}
       onPress={onPress}
       accessibilityRole="button"
@@ -82,7 +83,7 @@ export function AddPetRow({ onPress }: AddPetRowProps) {
         </View>
       </View>
       <Text style={styles.addLabel}>{t('home.add_pet')}</Text>
-    </Pressable>
+    </ListRowPressable>
   );
 }
 

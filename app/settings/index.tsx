@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import { HeaderScrollScreen } from '@/components/ui/HeaderScrollLayout';
 import { SignOutModal } from '@/components/ui/ConfirmModal';
+import ListRowPressable from '@/components/ui/ListRowPressable';
 
 interface SettingsRow {
   key: string;
@@ -42,11 +43,10 @@ export default function SettingsScreen() {
     >
       <View style={styles.card}>
         {ROWS.map((row) => (
-          <TouchableOpacity
+          <ListRowPressable
             key={row.key}
             style={styles.row}
             onPress={() => router.push(row.route as never)}
-            activeOpacity={0.7}
             accessibilityRole="button"
           >
             <Text style={styles.rowLabel} numberOfLines={1}>
@@ -58,19 +58,18 @@ export default function SettingsScreen() {
               ) : null}
               <Ionicons name="chevron-forward" size={24} color={colors.primaryText} />
             </View>
-          </TouchableOpacity>
+          </ListRowPressable>
         ))}
       </View>
 
-      <TouchableOpacity
+      <ListRowPressable
         style={styles.signOut}
         onPress={() => setSignOutVisible(true)}
-        activeOpacity={0.7}
         accessibilityRole="button"
       >
         <Feather name="log-out" size={24} color={colors.error} />
         <Text style={styles.signOutText}>{t('common.sign_out')}</Text>
-      </TouchableOpacity>
+      </ListRowPressable>
     </HeaderScrollScreen>
     <SignOutModal
       visible={signOutVisible}

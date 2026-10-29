@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import ListRowPressable from '@/components/ui/ListRowPressable';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import CardBottomFadeOverlay from '@/components/ui/CardBottomFadeOverlay';
@@ -58,15 +59,12 @@ export default function ReminderListItem({
   const hasDescription = Boolean(description?.trim());
 
   return (
-    <TouchableOpacity
+    <ListRowPressable
       style={[
         styles.card,
         !dayLabel && !hasDescription ? styles.cardCompact : null,
       ]}
       onPress={onPress}
-      // Press feedback comes from the swipe row's disabled wash instead, so the
-      // card keeps one appearance through press, drag and open.
-      activeOpacity={1}
       disabled={!onPress}
     >
       {showCompletedBar ? <View style={styles.completedBar} /> : null}
@@ -124,7 +122,7 @@ export default function ReminderListItem({
       </View>
 
       <CardBottomFadeOverlay intensity={fadeIntensity} />
-    </TouchableOpacity>
+    </ListRowPressable>
   );
 }
 
