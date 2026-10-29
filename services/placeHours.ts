@@ -74,9 +74,24 @@ export function formatOpensAt(place: Pick<BusinessPlace, 'opens_at' | 'next_open
   return `${t('home.opens')} ${when}`;
 }
 
+export function formatClosesAt(place: Pick<BusinessPlace, 'closes_at' | 'open_24_7'>): string | null {
+  if (place.open_24_7) return t('home.opens_24_7');
+  const when = place.closes_at ? clockFromApi(place.closes_at) : null;
+  if (!when) return null;
+  return `${t('home.closes')} ${when}`;
+}
+
 export type HoursStatus = { open: boolean; mixed?: boolean; color: string; label: string; detail: string | null };
 
-/** Open, mixed services, Closed + Opens 9:30, Opens tomorrow, or Opens Sunday 9:30. */
+function openDetail(place: BusinessPlace): string | null {
+  return formatClosesAt(place);
+}
+
+function closedDetail(place: BusinessPlace): string | null {
+  return formatOpensAt(place);
+}
+
+/** Open + Closes 19:00, Closed + Opens 9:30 / tomorrow / Sunday 9:30. */
 export function placeHoursStatus(place: BusinessPlace): HoursStatus | null {
   if (typeof place.open_now !== 'boolean') return null;
   if (place.some_services_closed) {
@@ -86,7 +101,7 @@ export function placeHoursStatus(place: BusinessPlace): HoursStatus | null {
       mixed: true,
       color: isOpen ? OPEN_COLOR : CLOSED_COLOR,
       label: isOpen ? t('home.open') : t('home.closed'),
-      detail: t('home.some_services_closed'),
+      detail: (isOpen ? openDetail(place) : closedDetail(place)) ?? t('home.some_services_closed'),
     };
   }
   if (place.open_now) {
@@ -94,14 +109,14 @@ export function placeHoursStatus(place: BusinessPlace): HoursStatus | null {
       open: true,
       color: OPEN_COLOR,
       label: t('home.open'),
-      detail: null,
+      detail: openDetail(place),
     };
   }
   return {
     open: false,
     color: CLOSED_COLOR,
     label: t('home.closed'),
-    detail: formatOpensAt(place),
+    detail: closedDetail(place),
   };
 }
 

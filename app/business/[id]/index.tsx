@@ -30,7 +30,7 @@ import WriteReviewSheet from '@/components/business/WriteReviewSheet';
 import { openSystemDirections, openSystemPhones } from '@/services/systemApps';
 import { postedLabel } from '@/utils/reviewPosted';
 import { useToast } from '@/context/ToastContext';
-import { branchHoursStatus, placeHoursStatus } from '@/services/placeHours';
+import { branchHoursStatus, formatClosesAt, formatOpensAt, placeHoursStatus } from '@/services/placeHours';
 import {
   getPlace,
   rememberPlaceReview,
@@ -330,6 +330,10 @@ export default function BusinessScreen() {
   }, [place?.id, params.category, serviceKey]);
 
   const headerStatus = (() => {
+    if (showHours && currentHours) {
+      const fromBranch = branchHoursStatus(currentHours);
+      if (fromBranch) return fromBranch;
+    }
     if (place) {
       const fromApi = placeHoursStatus(place);
       if (fromApi) return fromApi;
@@ -346,7 +350,9 @@ export default function BusinessScreen() {
             open,
             color: open ? '#1EC876' : '#EF4444',
             label: open ? t('home.open') : t('home.closed'),
-            detail: null as string | null,
+            detail: place
+              ? (open ? formatClosesAt(place) : formatOpensAt(place))
+              : null,
           }
         : null;
     }
@@ -358,7 +364,7 @@ export default function BusinessScreen() {
         mixed: true,
         color: '#1EC876',
         label: t('home.open'),
-        detail: t('home.some_services_closed'),
+        detail: opened[0].detail ?? t('home.some_services_closed'),
       };
     }
     return opened[0] ?? closed[0] ?? null;
