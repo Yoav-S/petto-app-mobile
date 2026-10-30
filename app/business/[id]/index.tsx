@@ -227,7 +227,7 @@ export default function BusinessScreen() {
   );
 
   useEffect(() => {
-    setLocationsExpanded(false);
+    setLocationsOpen(false);
   }, [params.id]);
 
   const name = place?.name || params.name || '';

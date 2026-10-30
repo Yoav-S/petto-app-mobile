@@ -103,12 +103,14 @@ export function useImageStatusBarStyle(
   const [ready, setReady] = useState(false);
   const [fromPhoto, setFromPhoto] = useState(false);
 
+  const uri = resolveImageUri(source);
+
   useEffect(() => {
     let active = true;
-    const uri = resolveImageUri(source);
     setReady(false);
     if (!uri) {
       setFromPhoto(false);
+      setStyle(fallback);
       return () => {
         active = false;
       };
@@ -120,8 +122,7 @@ export function useImageStatusBarStyle(
           fallback: fallback === 'light' ? '#111315' : '#F6F7F9',
           cache: true,
           key: uri,
-          quality: 'high',
-          pixelSpacing: 5,
+          quality: 'low',
         }),
       )
       .then((result) => {
@@ -152,7 +153,7 @@ export function useImageStatusBarStyle(
     return () => {
       active = false;
     };
-  }, [fallback, source]);
+  }, [fallback, uri]);
 
   return { style, ready, fromPhoto };
 }

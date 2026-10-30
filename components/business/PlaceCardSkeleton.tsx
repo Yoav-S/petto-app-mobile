@@ -34,12 +34,10 @@ export default function PlaceCardSkeleton() {
     <Animated.View style={[styles.card, { opacity: pulse }]}>
       <View style={styles.image} />
       <View style={styles.item}>
-        <View style={styles.nameAndRate}>
-          <View style={styles.titleRow}>
-            <View style={styles.title} />
-            <View style={styles.rate} />
-          </View>
-          <View style={styles.chip} />
+        <View style={styles.chip} />
+        <View style={styles.titleRow}>
+          <View style={styles.title} />
+          <View style={styles.rate} />
         </View>
         <View style={styles.line} />
       </View>
@@ -81,12 +79,8 @@ function makeStyles(colors: ThemeColors) {
     },
     item: {
       width: '100%',
-      height: 76,
+      minHeight: 76,
       paddingHorizontal: 12,
-      justifyContent: 'space-between',
-    },
-    nameAndRate: {
-      height: 52,
       gap: 8,
     },
     titleRow: {

@@ -73,27 +73,25 @@ export default function PlaceCard({
         ) : null}
       </View>
       <View style={styles.item}>
-        <View style={styles.nameAndRate}>
-          <View style={styles.titleRow}>
-            <Text style={styles.placeName} numberOfLines={1}>
-              {place.name}
-            </Text>
-            {typeof place.rating === 'number' ? (
-              <View style={styles.ratingChip}>
-                <Star size={12} color="#F6F7F9" fill="#F6F7F9" />
-                <Text style={styles.ratingText}>{place.rating.toFixed(1)}</Text>
-              </View>
-            ) : null}
-          </View>
-          <View style={styles.chipRow}>
-            {categories.map((category) => (
-              <View key={category} style={styles.categoryChip}>
-                <Text style={styles.categoryChipText}>{t(CATEGORY_LABEL[category])}</Text>
-              </View>
-            ))}
-          </View>
+        <View style={styles.chipRow}>
+          {categories.map((category) => (
+            <View key={category} style={styles.categoryChip}>
+              <Text style={styles.categoryChipText}>{t(CATEGORY_LABEL[category])}</Text>
+            </View>
+          ))}
         </View>
-            {status ? (
+        <View style={styles.titleRow}>
+          <Text style={styles.placeName} numberOfLines={1}>
+            {place.name}
+          </Text>
+          {typeof place.rating === 'number' ? (
+            <View style={styles.ratingChip}>
+              <Star size={12} color="#F6F7F9" fill="#F6F7F9" />
+              <Text style={styles.ratingText}>{place.rating.toFixed(1)}</Text>
+            </View>
+          ) : null}
+        </View>
+        {status ? (
           <View style={styles.statusRow}>
             <Text style={[styles.statusText, { color: status.color }]} numberOfLines={1}>
               {status.label}
@@ -210,10 +208,6 @@ function makeStyles(colors: ThemeColors) {
       width: '100%',
       minHeight: 76,
       paddingHorizontal: 12,
-      gap: 8,
-    },
-    nameAndRate: {
-      width: '100%',
       gap: 8,
     },
     titleRow: {
