@@ -35,24 +35,26 @@ export default function SettingsHeader({
   const paddingTop = useHeaderTopPadding();
 
   return (
-    <View
-      style={[
-        styles.wrap,
-        { paddingTop, backgroundColor },
-        rounded ? [styles.rounded, { paddingBottom: roundedBottom }] : null,
-      ]}
-    >
-      <View style={styles.header}>
-        <HeaderIconButton
-          onPress={() => router.back()}
-          accessibilityLabel={t('petOnboarding.back')}
-        >
-          <Ionicons name="chevron-back" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
-        </HeaderIconButton>
+    <View style={styles.wrap}>
+      <View
+        style={[
+          { paddingTop },
+          backgroundColor ? { backgroundColor } : null,
+          rounded ? [styles.rounded, { paddingBottom: roundedBottom }] : null,
+        ]}
+      >
+        <View style={styles.header}>
+          <HeaderIconButton
+            onPress={() => router.back()}
+            accessibilityLabel={t('petOnboarding.back')}
+          >
+            <Ionicons name="chevron-back" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
+          </HeaderIconButton>
 
-        <Text style={styles.title}>{title}</Text>
+          <Text style={styles.title}>{title}</Text>
 
-        <View style={styles.rightSpacer} />
+          <View style={styles.rightSpacer} />
+        </View>
       </View>
     </View>
   );
@@ -62,7 +64,7 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     wrap: {
       width: '100%',
-      backgroundColor: c.background,
+      backgroundColor: 'transparent',
     },
     header: {
       height: 44,

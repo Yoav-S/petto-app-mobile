@@ -789,8 +789,6 @@ export default function BusinessScreen() {
       <WriteReviewSheet
         visible={reviewOpen}
         businessId={params.id}
-        initialRating={reviews.find((review) => review.is_mine)?.rating}
-        initialComment={reviews.find((review) => review.is_mine)?.comment}
         onClose={() => setReviewOpen(false)}
         onSaved={(review) => {
           savedReviewRef.current = review;

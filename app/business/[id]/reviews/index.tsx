@@ -25,6 +25,7 @@ import { queryKeys } from '@/services/queryKeys';
 import {
   deletePlaceReview,
   listPlaceReviews,
+  rememberOpenedReview,
   rememberPlaceReview,
   reportPlaceReview,
   upsertOwnReview,
@@ -77,8 +78,6 @@ export default function BusinessReviewsScreen() {
     }, [refresh]),
   );
 
-  const mine = reviews.find((review) => review.is_mine);
-
   return (
     <View style={styles.screen}>
       <SettingsHeader title={t('business.review')} rounded />
@@ -89,18 +88,28 @@ export default function BusinessReviewsScreen() {
           data={reviews}
           keyExtractor={(review) => review.id}
           style={styles.scroll}
-          contentContainerStyle={{
-            paddingTop: 4,
-            paddingBottom: footerHeight + 4,
-          }}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: footerHeight + 4 },
+          ]}
           showsVerticalScrollIndicator={false}
           onEndReached={() => {
             void loadMore();
           }}
           onEndReachedThreshold={0.35}
           renderItem={({ item }) => (
-            <ReviewListCard review={item} onMenuPress={() => setMenuReview(item)} />
+            <ReviewListCard
+              review={item}
+              onPress={() => {
+                if (!id) return;
+                rememberOpenedReview(id, item);
+                router.push({
+                  pathname: '/business/[id]/reviews/view',
+                  params: { id, reviewId: item.id },
+                } as never);
+              }}
+              onMenuPress={() => setMenuReview(item)}
+            />
           )}
           ListFooterComponent={
             loadingMore ? <ActivityIndicator color={colors.brand} style={styles.loader} /> : null
@@ -184,8 +193,6 @@ export default function BusinessReviewsScreen() {
       <WriteReviewSheet
         visible={reviewOpen}
         businessId={id}
-        initialRating={mine?.rating}
-        initialComment={mine?.comment}
         onClose={() => setReviewOpen(false)}
         onSaved={(review) => {
           if (!id) return;
@@ -205,10 +212,13 @@ const makeStyles = (c: ThemeColors) =>
     },
     scroll: {
       flex: 1,
-      backgroundColor: c.background,
+      backgroundColor: 'transparent',
     },
-    separator: {
-      height: 4,
+    scrollContent: {
+      flexGrow: 1,
+      paddingTop: 4,
+      gap: 4,
+      backgroundColor: 'transparent',
     },
     loader: {
       marginTop: 24,

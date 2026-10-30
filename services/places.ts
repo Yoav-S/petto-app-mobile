@@ -222,6 +222,50 @@ export function rememberPlaceReview(businessId: string, review: PlaceReview): vo
   const key = queryKeys.businesses.reviews(businessId);
   const cached = queryClient.getQueryData<PlaceReview[]>(key) ?? [];
   queryClient.setQueryData(key, upsertOwnReview(cached, review));
+  if (
+    openedReview
+    && openedReview.businessId === businessId
+    && (openedReview.review.id === review.id || openedReview.review.is_mine)
+  ) {
+    openedReview = { businessId, review: { ...review, is_mine: true } };
+  }
+}
+
+let openedReview: { businessId: string; review: PlaceReview } | null = null;
+
+/** Hold the tapped review so the full-screen view keeps the photo and menu. */
+export function rememberOpenedReview(businessId: string, review: PlaceReview): void {
+  openedReview = { businessId, review };
+}
+
+export function readOpenedReview(businessId: string, reviewId: string): PlaceReview | null {
+  if (
+    openedReview
+    && openedReview.businessId === businessId
+    && openedReview.review.id === reviewId
+  ) {
+    return openedReview.review;
+  }
+  const cached = queryClient.getQueryData<PlaceReview[]>(queryKeys.businesses.reviews(businessId));
+  return cached?.find((item) => item.id === reviewId) ?? null;
+}
+
+export function forgetOpenedReview(businessId: string, reviewId: string): void {
+  if (
+    openedReview
+    && openedReview.businessId === businessId
+    && openedReview.review.id === reviewId
+  ) {
+    openedReview = null;
+  }
+  const key = queryKeys.businesses.reviews(businessId);
+  const cached = queryClient.getQueryData<PlaceReview[]>(key);
+  if (cached) {
+    queryClient.setQueryData(
+      key,
+      cached.filter((item) => item.id !== reviewId),
+    );
+  }
 }
 
 export function savePlaceReview(

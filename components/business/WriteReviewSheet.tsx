@@ -60,8 +60,6 @@ const SCORES = [1, 2, 3, 4, 5] as const;
 interface WriteReviewSheetProps {
   visible: boolean;
   businessId: string;
-  initialRating?: number | null;
-  initialComment?: string | null;
   onClose: () => void;
   onSaved: (review: PlaceReview) => void;
 }
@@ -69,8 +67,6 @@ interface WriteReviewSheetProps {
 export default function WriteReviewSheet({
   visible,
   businessId,
-  initialRating,
-  initialComment,
   onClose,
   onSaved,
 }: WriteReviewSheetProps) {
@@ -83,8 +79,8 @@ export default function WriteReviewSheet({
   const keyboardLift = windowResized || keyboardOverlap <= 0 ? 0 : keyboardOverlap;
   const toast = useToast();
   const scrollRef = useRef<ScrollView>(null);
-  const [rating, setRating] = useState<number | null>(initialRating ?? null);
-  const [comment, setComment] = useState(initialComment ?? '');
+  const [rating, setRating] = useState<number | null>(null);
+  const [comment, setComment] = useState('');
   const [saving, setSaving] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(64);
   const [footerHeight, setFooterHeight] = useState(88);
@@ -95,9 +91,9 @@ export default function WriteReviewSheet({
 
   useEffect(() => {
     if (!visible) return;
-    setRating(initialRating ?? null);
-    setComment(initialComment ?? '');
-  }, [visible, initialRating, initialComment]);
+    setRating(null);
+    setComment('');
+  }, [visible]);
 
   useEffect(() => {
     if (keyboardLift <= 0) return;

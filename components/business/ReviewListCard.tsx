@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { Star } from 'lucide-react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,8 @@ import type { PlaceReview } from '@/services/places';
 import { postedLabel } from '@/utils/reviewPosted';
 
 export { postedLabel };
+
+const PREVIEW_LINES = 5;
 
 interface ReviewListCardProps {
   review: PlaceReview;
@@ -28,10 +30,6 @@ export default function ReviewListCard({
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const body = review.comment?.trim() ?? '';
-  const [lineCount, setLineCount] = useState(0);
-  const [open, setOpen] = useState(false);
-  const showAll = expanded || open;
-  const overflows = !expanded && lineCount > 3;
 
   return (
     <Pressable
@@ -56,41 +54,27 @@ export default function ReviewListCard({
               <Text style={styles.ratingText}>{review.rating.toFixed(1)}</Text>
             </View>
           </View>
-          <Pressable
-            style={styles.menuButton}
-            onPress={onMenuPress}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={t('business.review_actions')}
-          >
-            <Ionicons name="ellipsis-horizontal" size={24} color={colors.primaryText} />
-          </Pressable>
+          {onMenuPress ? (
+            <Pressable
+              style={styles.menuButton}
+              onPress={onMenuPress}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t('business.review_actions')}
+            >
+              <Ionicons name="ellipsis-horizontal" size={24} color={colors.primaryText} />
+            </Pressable>
+          ) : null}
         </View>
       </View>
       {body ? (
-        <View>
-          <Text
-            pointerEvents="none"
-            accessible={false}
-            style={[styles.body, styles.measure]}
-            onTextLayout={(event) => {
-              const count = event.nativeEvent.lines.length;
-              setLineCount((current) => (current === count ? current : count));
-            }}
-          >
-            {body}
-          </Text>
-          <Text style={styles.body} numberOfLines={showAll ? undefined : 3} ellipsizeMode="tail">
-            {body}
-          </Text>
-        </View>
-      ) : null}
-      {overflows ? (
-        <TouchableOpacity onPress={() => setOpen((value) => !value)} hitSlop={8}>
-          <Text style={styles.readMore}>
-            {open ? t('business.read_less') : t('business.read_more')}
-          </Text>
-        </TouchableOpacity>
+        <Text
+          style={styles.body}
+          numberOfLines={expanded ? undefined : PREVIEW_LINES}
+          ellipsizeMode="tail"
+        >
+          {body}
+        </Text>
       ) : null}
       <Text style={styles.date}>{postedLabel(review.created_at)}</Text>
     </Pressable>
@@ -105,7 +89,7 @@ const makeStyles = (c: ThemeColors) =>
       paddingTop: 22,
       paddingBottom: 22,
       paddingHorizontal: 20,
-      gap: 6,
+      gap: 10,
     },
     top: {
       flexDirection: 'row',
@@ -160,19 +144,6 @@ const makeStyles = (c: ThemeColors) =>
       fontSize: 14,
       lineHeight: 20,
       color: c.primaryText,
-    },
-    measure: {
-      position: 'absolute',
-      opacity: 0,
-      left: 0,
-      right: 0,
-    },
-    readMore: {
-      marginLeft: 58,
-      fontFamily: 'Rubik-Medium',
-      fontSize: 14,
-      lineHeight: 18,
-      color: c.brand,
     },
     date: {
       marginLeft: 58,
