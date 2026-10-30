@@ -39,8 +39,7 @@ export default function PlaceCard({
           <Image
             source={{ uri: place.image }}
             style={styles.cardImage}
-            contentFit="contain"
-            contentPosition="center"
+            contentFit="cover"
             recyclingKey={place.image}
             cachePolicy="memory-disk"
           />

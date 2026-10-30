@@ -21,7 +21,7 @@ import { useColors, useThemedStyles, useTheme } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useImageStatusBarStyle } from '@/hooks/useImageStatusBarStyle';
 import { useStatusBarOverride } from '@/context/SystemBarsContext';
-import HeaderIconButton from '@/components/ui/HeaderIconButton';
+import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
 import ListRowPressable from '@/components/ui/ListRowPressable';
 import { useSettledModalVisible } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
@@ -45,7 +45,6 @@ import {
 
 const WEEK: Weekday[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const LOCATION_PREVIEW = 4;
-const LOCATIONS_SCROLL_HEIGHT = 360;
 const DAY_KEY: Record<Weekday, string> = {
   mon: 'business.day_mon',
   tue: 'business.day_tue',
@@ -140,14 +139,16 @@ function LocationCopy({ branch }: { branch: PlaceLocation }) {
 function OtherLocationRow({
   branch,
   onPress,
+  raised = false,
 }: {
   branch: PlaceLocation;
   onPress: () => void;
+  raised?: boolean;
 }) {
   const styles = useThemedStyles(makeStyles);
   return (
     <ListRowPressable
-      style={styles.locationCard}
+      style={[styles.locationCard, raised ? styles.locationCardRaised : null]}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={addressText(branch.address, branch.city)}
@@ -187,7 +188,7 @@ export default function BusinessScreen() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
   const savedReviewRef = useRef<PlaceReview | null>(null);
-  const [locationsExpanded, setLocationsExpanded] = useState(false);
+  const [locationsOpen, setLocationsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<BusinessCategory | null>(null);
 
   const previewImage = params.image || null;
@@ -276,7 +277,6 @@ export default function BusinessScreen() {
     return next;
   })();
   const currentBranch = locationCards[0] ?? null;
-  const otherBranches = locationCards.slice(1);
   const phoneKeys = locationCards.map((branch) => [...dialNumbers(branch)].sort().join('|'));
   const phonesOnEachLocation = locationCards.length > 1 && new Set(phoneKeys).size > 1;
   const callPhones = currentBranch ? dialNumbers(currentBranch) : phones;
@@ -312,12 +312,11 @@ export default function BusinessScreen() {
       || showHours
       || branchPhones.length,
   );
-  const shownOthers = locationsExpanded
-    ? otherBranches
-    : otherBranches.slice(0, LOCATION_PREVIEW);
-  const locationsNeedPager = otherBranches.length > LOCATION_PREVIEW;
+  const previewLocations = locationCards.slice(0, LOCATION_PREVIEW);
+  const locationsNeedPager = locationCards.length > LOCATION_PREVIEW;
   const serviceKey = serviceCategories.join('|');
   const photoPresented = useSettledModalVisible(photoOpen && Boolean(image));
+  const locationsPresented = useSettledModalVisible(locationsOpen);
 
   useEffect(() => {
     const available = serviceKey.split('|').filter(Boolean) as BusinessCategory[];
@@ -408,8 +407,7 @@ export default function BusinessScreen() {
               <Image
                 source={{ uri: image }}
                 style={styles.coverPhoto}
-                contentFit="contain"
-                contentPosition="center"
+                contentFit="cover"
                 recyclingKey={image}
                 cachePolicy="memory-disk"
               />
@@ -556,49 +554,30 @@ export default function BusinessScreen() {
           </View>
         ) : null}
 
-        {otherBranches.length ? (
+        {locationCards.length > 1 ? (
           <View style={styles.locationsCard}>
             <View style={styles.sectionHead}>
               <Text style={styles.sectionTitle}>{t('business.locations_title')}</Text>
               {locationsNeedPager ? (
                 <TouchableOpacity
                   style={styles.seeAll}
-                  onPress={() => setLocationsExpanded((value) => !value)}
+                  onPress={() => setLocationsOpen(true)}
                   hitSlop={8}
                 >
-                  <Text style={styles.seeAllText}>
-                    {locationsExpanded ? t('home.see_less') : t('home.see_all')}
-                  </Text>
+                  <Text style={styles.seeAllText}>{t('home.see_all')}</Text>
                   <ChevronRight size={16} color={colors.primaryText} />
                 </TouchableOpacity>
               ) : null}
             </View>
-            {locationsNeedPager ? (
-              <ScrollView
-                nestedScrollEnabled
-                style={{ maxHeight: LOCATIONS_SCROLL_HEIGHT }}
-                contentContainerStyle={styles.locationsList}
-                showsVerticalScrollIndicator
-              >
-                {shownOthers.map((branch) => (
-                  <OtherLocationRow
-                    key={branch.id}
-                    branch={branch}
-                    onPress={() => router.setParams({ locationId: branch.id })}
-                  />
-                ))}
-              </ScrollView>
-            ) : (
-              <View style={styles.locationsList}>
-                {shownOthers.map((branch) => (
-                  <OtherLocationRow
-                    key={branch.id}
-                    branch={branch}
-                    onPress={() => router.setParams({ locationId: branch.id })}
-                  />
-                ))}
-              </View>
-            )}
+            <View style={styles.locationsList}>
+              {previewLocations.map((branch) => (
+                <OtherLocationRow
+                  key={branch.id}
+                  branch={branch}
+                  onPress={() => router.setParams({ locationId: branch.id })}
+                />
+              ))}
+            </View>
           </View>
         ) : null}
 
@@ -748,6 +727,49 @@ export default function BusinessScreen() {
         </HeaderIconButton>
       </View>
 
+      {locationsPresented ? (
+        <Modal
+          visible
+          animationType="slide"
+          onRequestClose={() => setLocationsOpen(false)}
+        >
+          <View style={[styles.locationsScreen, { paddingTop: insets.top }]}>
+            <View style={styles.locationsScreenHead}>
+              <HeaderIconButton
+                onPress={() => setLocationsOpen(false)}
+                accessibilityLabel={t('petOnboarding.back')}
+              >
+                <MaterialIcons name="chevron-left" size={24} color={colors.primaryText} />
+              </HeaderIconButton>
+              <Text style={styles.locationsScreenTitle} numberOfLines={1}>
+                {t('business.locations_title')}
+              </Text>
+              <View style={styles.locationsScreenHeadSpacer} />
+            </View>
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={[
+                styles.locationsScreenList,
+                { paddingBottom: Math.max(insets.bottom, 16) },
+              ]}
+              showsVerticalScrollIndicator={false}
+            >
+              {locationCards.map((branch) => (
+                <OtherLocationRow
+                  key={branch.id}
+                  branch={branch}
+                  raised
+                  onPress={() => {
+                    setLocationsOpen(false);
+                    router.setParams({ locationId: branch.id });
+                  }}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        </Modal>
+      ) : null}
+
       {photoPresented && image ? (
         <Modal visible transparent animationType="fade" onRequestClose={() => setPhotoOpen(false)}>
           <View style={styles.photoModal}>
@@ -862,6 +884,35 @@ const makeStyles = (c: ThemeColors) =>
     locationsList: {
       gap: 8,
     },
+    locationsScreen: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    locationsScreenHead: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+      paddingBottom: 8,
+      minHeight: 44,
+      gap: 8,
+    },
+    locationsScreenTitle: {
+      flex: 1,
+      fontFamily: 'Rubik-Medium',
+      fontSize: 16,
+      lineHeight: 24,
+      textAlign: 'center',
+      color: c.primaryText,
+    },
+    locationsScreenHeadSpacer: {
+      width: HEADER_ICON_BTN.size,
+      height: HEADER_ICON_BTN.size,
+    },
+    locationsScreenList: {
+      paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+      gap: 8,
+      paddingTop: 8,
+    },
     aboutCard: {
       backgroundColor: c.surface,
       borderRadius: 24,
@@ -932,6 +983,9 @@ const makeStyles = (c: ThemeColors) =>
       paddingLeft: 16,
       paddingRight: 16,
       gap: 12,
+    },
+    locationCardRaised: {
+      backgroundColor: c.surface,
     },
     locationBody: {
       gap: 8,
