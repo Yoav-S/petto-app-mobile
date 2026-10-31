@@ -24,8 +24,9 @@ function clockFromApi(value: string): string {
 }
 
 function clockFromMinutes(total: number): string {
-  const hour = Math.floor(total / 60);
-  const minute = total % 60;
+  const shown = total > 24 * 60 ? total % (24 * 60) : total;
+  const hour = Math.floor(shown / 60);
+  const minute = shown % 60;
   return `${hour}:${String(minute).padStart(2, '0')}`;
 }
 
@@ -51,19 +52,34 @@ function parseSlots(slots: { open: string; close: string }[] | undefined): { sta
   for (const slot of slots ?? []) {
     const start = minutesOf(slot.open);
     const end = minutesOf(slot.close);
-    if (start == null || end == null || end <= start) continue;
-    parsed.push({ start, end });
+    if (start == null || end == null || end === start) continue;
+    parsed.push({ start, end: end > start ? end : end + 24 * 60 });
   }
   return parsed;
 }
 
-function slotsFor(hours: OpeningHours, now: Date, offset: number): { start: number; end: number }[] {
+function overnightTails(slots: { open: string; close: string }[] | undefined): { start: number; end: number }[] {
+  const tails: { start: number; end: number }[] = [];
+  for (const slot of slots ?? []) {
+    const start = minutesOf(slot.open);
+    const end = minutesOf(slot.close);
+    if (start == null || end == null) continue;
+    if (end < start && end > 0) tails.push({ start: 0, end });
+  }
+  return tails;
+}
+
+function rawSlots(hours: OpeningHours, now: Date, offset: number): { open: string; close: string }[] {
   const iso = localIsoDate(now, offset);
   const override = hours.special_dates?.find((item) => item.date === iso);
-  if (override) return override.closed ? [] : parseSlots(override.slots);
+  if (override) return override.closed ? [] : override.slots ?? [];
   const today = (now.getDay() + 6) % 7;
   const day = WEEK[(today + offset + 70) % 7];
-  return parseSlots(hours[day]);
+  return hours[day] ?? [];
+}
+
+function slotsFor(hours: OpeningHours, now: Date, offset: number): { start: number; end: number }[] {
+  return [...overnightTails(rawSlots(hours, now, offset - 1)), ...parseSlots(rawSlots(hours, now, offset))];
 }
 
 export function formatOpensAt(place: Pick<BusinessPlace, 'opens_at' | 'next_open_day' | 'opens_tomorrow'>): string | null {
