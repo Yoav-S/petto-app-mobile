@@ -46,6 +46,14 @@ export const LIST_TABS_CONTENT_GAP = 16;
 /** Gap from the tab pills to the first list row. Rows scroll out on this same line. */
 export const LIST_TABS_LIST_GAP = 8;
 
+/** Last list card: a lighter drop so the canvas under it does not read as another color. */
+export const LIST_CARD_LAST_SHADOW = {
+  shadowOpacity: 0.016,
+  shadowRadius: 8,
+  elevation: 1,
+  boxShadow: '0px 2px 8px rgba(45, 45, 42, 0.016)',
+} as const;
+
 /** Rows scroll out of view this far below the tab pills, not flush against them. */
 export const LIST_TABS_SCROLL_CLEARANCE = 12;
 

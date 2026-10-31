@@ -462,7 +462,7 @@ export default function RemindersScreen() {
                   scrollEventThrottle={16}
                   {...swipeListScrollHandlers}
                   onContentSizeChange={scrollMetricsProps.onContentSizeChange}
-                  renderItem={({ item }) => {
+                  renderItem={({ item, index }) => {
                     return (
                       <SwipeToDeleteRow
                         rowKey={item.id}
@@ -471,6 +471,7 @@ export default function RemindersScreen() {
                         onDelete={() => handleDeleteReminder(item.id)}
                       >
                         <ReminderListItem
+                          last={index === items.length - 1}
                           title={previewText(item.title)}
                           description={previewText(item.note) || undefined}
                           time={formatSheetClockTime(item.time)}

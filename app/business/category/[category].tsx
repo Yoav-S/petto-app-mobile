@@ -227,7 +227,13 @@ export default function CategoryPlacesScreen() {
           style={styles.list}
           contentContainerStyle={[styles.listContent, { paddingTop: headerHeight + 12 }]}
           endFillColor={colors.background}
-          renderItem={({ item }) => <PlaceCard place={item} onPress={() => openPlace(item)} />}
+          renderItem={({ item, index }) => (
+            <PlaceCard
+              place={item}
+              last={index === places.length - 1 && !loadingMore}
+              onPress={() => openPlace(item)}
+            />
+          )}
           onEndReached={() => {
             if (hasMore) void loadMore();
           }}

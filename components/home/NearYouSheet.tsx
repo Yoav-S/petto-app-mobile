@@ -327,12 +327,16 @@ export default function NearYouSheet({
     onPressPlaceRef.current(place);
   }, [height, maxHeight, pressLocked, restingHeight]);
   const renderPlace = useCallback(
-    ({ item }: { item: BusinessPlace }) => (
+    ({ item, index }: { item: BusinessPlace; index: number }) => (
       <View style={[styles.card, { width: cardWidth, alignSelf: 'center' }]}>
-        <PlaceCard place={item} onPress={() => pressPlace(item)} />
+        <PlaceCard
+          place={item}
+          last={index === data.length - 1}
+          onPress={() => pressPlace(item)}
+        />
       </View>
     ),
-    [cardWidth, pressPlace, styles.card],
+    [cardWidth, data.length, pressPlace, styles.card],
   );
 
   return (

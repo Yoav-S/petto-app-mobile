@@ -156,29 +156,19 @@ function OtherLocationRow({
   branch,
   onPress,
   raised = false,
-  selected = false,
 }: {
   branch: PlaceLocation;
   onPress: () => void;
   raised?: boolean;
-  selected?: boolean;
 }) {
   const styles = useThemedStyles(makeStyles);
   return (
     <ListRowPressable
-      style={[
-        styles.locationCard,
-        raised ? styles.locationCardRaised : null,
-        selected ? styles.locationCardSelected : null,
-      ]}
+      style={[styles.locationCard, raised ? styles.locationCardRaised : null]}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityState={{ selected }}
       accessibilityLabel={addressText(branch.address, branch.city)}
     >
-      {selected ? (
-        <Text style={styles.thisLocationLabel}>{t('business.this_location')}</Text>
-      ) : null}
       <LocationCopy branch={branch} />
     </ListRowPressable>
   );
@@ -217,7 +207,6 @@ export default function BusinessScreen() {
   const [locationsOpen, setLocationsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<BusinessCategory | null>(null);
   const pageScrollRef = useRef<ScrollView>(null);
-  const hoursY = useRef(0);
 
   const previewImage = params.image || null;
   const image = place?.image ?? previewImage;
@@ -415,21 +404,28 @@ export default function BusinessScreen() {
 
   const selectBranch = useCallback(
     (branchId: string, fromModal = false) => {
+      const branch =
+        locationCards.find((row) => row.id === branchId) ??
+        branches.find((row) => row.id === branchId);
+      const changed = branchId !== params.locationId;
       if (fromModal) setLocationsOpen(false);
-      if (branchId !== params.locationId) {
+      if (changed) {
         router.setParams({ locationId: branchId });
+        const copy = branch ? addressText(branch.address, branch.city) : '';
+        if (copy) {
+          toast.show({ message: `${t('business.viewing_location')} · ${copy}` });
+        }
       }
       const go = () => {
-        const y = hoursY.current > 0 ? Math.max(0, hoursY.current - 12) : coverHeight;
-        pageScrollRef.current?.scrollTo({ y, animated: true });
+        pageScrollRef.current?.scrollTo({ y: 0, animated: true });
       };
       if (fromModal) {
-        setTimeout(go, 320);
+        setTimeout(go, 280);
       } else {
         requestAnimationFrame(go);
       }
     },
-    [coverHeight, params.locationId, router],
+    [branches, locationCards, params.locationId, router, toast],
   );
 
   return (
@@ -471,7 +467,7 @@ export default function BusinessScreen() {
             )}
           </Pressable>
         </View>
-        <View style={styles.scrollBody}>
+        <View style={styles.scrollBody} key={currentBranch?.id ?? place?.id ?? 'place'}>
         <View style={styles.aboutCard}>
           <View style={styles.aboutStatusRow}>
             {headerStatus ? (
@@ -532,12 +528,7 @@ export default function BusinessScreen() {
         </View>
 
         {showHoursCard ? (
-          <View
-            style={styles.hoursCard}
-            onLayout={(e) => {
-              hoursY.current = coverHeight + 4 + e.nativeEvent.layout.y;
-            }}
-          >
+          <View style={styles.hoursCard}>
             {serviceCategories.length ? (
               <View style={styles.serviceTabs}>
                 {serviceCategories.map((item) => {
@@ -566,9 +557,6 @@ export default function BusinessScreen() {
             ) ? (
               <View style={styles.locationCard}>
                 <View style={styles.locationBody}>
-                  {locationCards.length > 1 ? (
-                    <Text style={styles.thisLocationLabel}>{t('business.this_location')}</Text>
-                  ) : null}
                   <LocationCopy
                     branch={currentBranch}
                     onPress={() => showMaps(currentBranch)}
@@ -634,7 +622,6 @@ export default function BusinessScreen() {
                 <OtherLocationRow
                   key={branch.id}
                   branch={branch}
-                  selected={branch.id === currentBranch?.id}
                   onPress={() => selectBranch(branch.id)}
                 />
               ))}
@@ -821,7 +808,6 @@ export default function BusinessScreen() {
                   key={branch.id}
                   branch={branch}
                   raised
-                  selected={branch.id === currentBranch?.id}
                   onPress={() => selectBranch(branch.id, true)}
                 />
               ))}
@@ -1043,20 +1029,9 @@ const makeStyles = (c: ThemeColors) =>
       paddingLeft: 16,
       paddingRight: 16,
       gap: 12,
-      borderWidth: 1.5,
-      borderColor: 'transparent',
     },
     locationCardRaised: {
       backgroundColor: c.surface,
-    },
-    locationCardSelected: {
-      borderColor: c.brand,
-    },
-    thisLocationLabel: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 12,
-      lineHeight: 16,
-      color: c.brand,
     },
     locationBody: {
       gap: 8,

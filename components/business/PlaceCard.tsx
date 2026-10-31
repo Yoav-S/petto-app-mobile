@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { MapPin, Star } from 'lucide-react-native';
+import { LIST_CARD_LAST_SHADOW } from '@/constants/layout';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import ListRowPressable from '@/components/ui/ListRowPressable';
@@ -23,16 +24,18 @@ const CATEGORY_LABEL: Record<BusinessPlace['category'], string> = {
 export default function PlaceCard({
   place,
   onPress,
+  last = false,
 }: {
   place: BusinessPlace;
   onPress: () => void;
+  last?: boolean;
 }) {
   const styles = useThemedStyles(makeStyles);
   const status = placeHoursStatus(place);
   const categories = place.categories?.length ? place.categories : [place.category];
 
   return (
-    <View style={styles.placeCard} collapsable={false}>
+    <View style={[styles.placeCard, last ? styles.placeCardLast : null]} collapsable={false}>
     <ListRowPressable style={styles.placePress} onPress={onPress}>
       <View style={styles.cardImageWrap}>
         {place.image ? (
@@ -125,6 +128,9 @@ function makeStyles(colors: ThemeColors) {
       shadowRadius: 20,
       boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.080)',
       elevation: 4,
+    },
+    placeCardLast: {
+      ...LIST_CARD_LAST_SHADOW,
     },
     placePress: {
       width: '100%',

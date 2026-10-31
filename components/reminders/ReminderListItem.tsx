@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import ListRowPressable from '@/components/ui/ListRowPressable';
+import { LIST_CARD_LAST_SHADOW } from '@/constants/layout';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import CardBottomFadeOverlay from '@/components/ui/CardBottomFadeOverlay';
@@ -44,6 +45,7 @@ interface ReminderListItemProps {
   showCompletedBar?: boolean;
   /** 0 (visible) → 1 (faded out) as the row passes the list bottom edge. */
   fadeIntensity?: number;
+  last?: boolean;
 }
 
 export default function ReminderListItem({
@@ -54,6 +56,7 @@ export default function ReminderListItem({
   onPress,
   showCompletedBar = false,
   fadeIntensity = 0,
+  last = false,
 }: ReminderListItemProps) {
   const styles = useThemedStyles(makeStyles);
   const hasDescription = Boolean(description?.trim());
@@ -63,6 +66,7 @@ export default function ReminderListItem({
       style={[
         styles.card,
         !dayLabel && !hasDescription ? styles.cardCompact : null,
+        last ? styles.cardLast : null,
       ]}
       onPress={onPress}
       disabled={!onPress}
@@ -147,6 +151,9 @@ const makeStyles = (c: ThemeColors) =>
     },
     cardCompact: {
       minHeight: REMINDER_LIST_CARD_COMPACT_HEIGHT,
+    },
+    cardLast: {
+      ...LIST_CARD_LAST_SHADOW,
     },
     completedBar: {
       width: 4,

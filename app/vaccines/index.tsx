@@ -12,7 +12,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { type ThemeColors } from '@/constants/theme';
-import { FOOTER_FADE_BAND } from '@/constants/layout';
+import { FOOTER_FADE_BAND, LIST_CARD_LAST_SHADOW } from '@/constants/layout';
 import ScrollFadeBand from '@/components/ui/ScrollFadeBand';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
@@ -221,7 +221,7 @@ export default function VaccinesScreen() {
           scrollMetricsProps.markScrollable();
         }}
         onContentSizeChange={scrollMetricsProps.onContentSizeChange}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <SwipeToDeleteRow
             rowKey={item.id}
             open={swipeOpenId === item.id}
@@ -229,7 +229,7 @@ export default function VaccinesScreen() {
             onDelete={() => handleDeleteVaccine(item.id)}
           >
             <ListRowPressable
-              style={styles.card}
+              style={[styles.card, index === items.length - 1 ? styles.cardLast : null]}
               onPress={() => {
                 setSwipeOpenId(null);
                 router.push(`/vaccines/${item.id}` as never);
@@ -369,6 +369,9 @@ const makeStyles = (c: ThemeColors) =>
       shadowRadius: 20,
       boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.040)',
       elevation: 3,
+    },
+    cardLast: {
+      ...LIST_CARD_LAST_SHADOW,
     },
     thumb: {
       width: 48,

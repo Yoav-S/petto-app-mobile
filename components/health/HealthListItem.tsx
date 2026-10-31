@@ -5,6 +5,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LIST_CARD_LAST_SHADOW } from '@/constants/layout';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import CardBottomFadeOverlay from '@/components/ui/CardBottomFadeOverlay';
@@ -54,6 +55,7 @@ interface HealthListItemProps {
   metaKind?: 'created' | 'resolved';
   hasReminder?: boolean;
   fadeIntensity?: number;
+  last?: boolean;
   onPress?: () => void;
   onLongPress?: () => void;
   onReminderPress?: () => void;
@@ -66,6 +68,7 @@ export default function HealthListItem({
   metaKind = 'created',
   hasReminder = false,
   fadeIntensity = 0,
+  last = false,
   onPress,
   onLongPress,
   onReminderPress,
@@ -87,7 +90,7 @@ export default function HealthListItem({
 
   return (
     <ListRowPressable
-      style={styles.card}
+      style={[styles.card, last ? styles.cardLast : null]}
       onPress={onPress}
       onLongPress={onLongPress}
       disabled={!onPress}
@@ -157,6 +160,9 @@ const makeStyles = (c: ThemeColors) =>
       shadowRadius: 20,
       boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.040)',
       elevation: 3,
+    },
+    cardLast: {
+      ...LIST_CARD_LAST_SHADOW,
     },
     body: {
       width: '100%',

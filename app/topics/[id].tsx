@@ -27,7 +27,7 @@ import ListFetchBlocker from '@/components/ui/ListFetchBlocker';
 import TopicActionsSheet from '@/components/topics/TopicActionsSheet';
 import { LIST_PAGE_SIZE } from '@/constants/pagination';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
-import { LIST_TABS_SCROLL_CLEARANCE, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { LIST_CARD_LAST_SHADOW, LIST_TABS_SCROLL_CLEARANCE, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { t } from '@/i18n';
 import { useActivePet } from '@/store/petStore';
 import {
@@ -456,7 +456,13 @@ export default function HealthDetailsScreen() {
       const canEdit = record?.status === 'active';
       const followedByNote = noteListItems[index + 1]?.type === 'note';
       return (
-        <View style={[styles.noteCard, followedByNote ? styles.noteCardSameDay : null]}>
+        <View
+          style={[
+            styles.noteCard,
+            followedByNote ? styles.noteCardSameDay : null,
+            index === noteListItems.length - 1 ? styles.noteCardLast : null,
+          ]}
+        >
           <ListRowPressable style={styles.noteBody} onPress={() => openNote(note.id)}>
             {note.photo_url && !failedPhotoIds[note.id] ? (
               <View style={styles.noteImageWrap}>
@@ -795,6 +801,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   noteCardSameDay: {
     marginBottom: 4,
+  },
+  noteCardLast: {
+    ...LIST_CARD_LAST_SHADOW,
   },
   noteImageWrap: {
     width: '100%',

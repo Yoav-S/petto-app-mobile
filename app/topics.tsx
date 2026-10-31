@@ -325,7 +325,7 @@ export default function HealthScreen() {
                   scrollEventThrottle={16}
                   {...swipeListScrollHandlers}
                   onContentSizeChange={scrollMetricsProps.onContentSizeChange}
-                  renderItem={({ item }) => (
+                  renderItem={({ item, index }) => (
                     <SwipeToDeleteRow
                       rowKey={item.id}
                       open={swipeOpenId === item.id}
@@ -333,6 +333,7 @@ export default function HealthScreen() {
                       onDelete={() => handleDeleteRecord(item.id)}
                     >
                       <HealthListItem
+                        last={index === items.length - 1}
                         title={item.title}
                         subtitle={healthRecordSubtitle(item.description)}
                         metaAt={
