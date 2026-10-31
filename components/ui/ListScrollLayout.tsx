@@ -357,6 +357,7 @@ const makeStyles = (c: ThemeColors) =>
     body: {
       flex: 1,
       position: 'relative',
+      backgroundColor: c.background,
     },
     scrollSlot: {
       flex: 1,

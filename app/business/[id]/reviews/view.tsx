@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
-import { useThemedStyles } from '@/context/ThemeContext';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import ReviewListCard from '@/components/business/ReviewListCard';
@@ -28,6 +28,7 @@ function paramText(value: string | string[] | undefined): string {
 export default function BusinessReviewViewScreen() {
   const params = useLocalSearchParams<{ id: string; reviewId: string }>();
   const router = useRouter();
+  const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const businessId = paramText(params.id);
@@ -59,6 +60,7 @@ export default function BusinessReviewViewScreen() {
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
+        endFillColor={colors.background}
         showsVerticalScrollIndicator={false}
       >
         <ReviewListCard
@@ -133,11 +135,12 @@ const makeStyles = (c: ThemeColors) =>
     },
     scroll: {
       flex: 1,
-      backgroundColor: 'transparent',
+      backgroundColor: c.background,
     },
     scrollContent: {
       flexGrow: 1,
       paddingTop: 4,
       paddingBottom: 24,
+      backgroundColor: c.background,
     },
   });

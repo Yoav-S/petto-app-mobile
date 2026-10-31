@@ -369,6 +369,7 @@ export default function HealthScreen() {
                     paddingBottom,
                     backgroundColor: colors.background,
                   }}
+                  endFillColor={colors.background}
                   contentInsetAdjustmentBehavior="never"
                   automaticallyAdjustContentInsets={false}
                   automaticallyAdjustsScrollIndicatorInsets={false}
@@ -428,6 +429,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   listWrap: {
     flex: 1,
+    backgroundColor: c.background,
   },
   list: {
     flex: 1,

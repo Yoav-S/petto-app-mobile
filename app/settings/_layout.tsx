@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { useTheme } from '@/context/ThemeContext';
 import { useThemedStatusBar } from '@/context/SystemBarsContext';
 
 /**
@@ -8,9 +9,15 @@ import { useThemedStatusBar } from '@/context/SystemBarsContext';
  */
 export default function SettingsLayout() {
   useThemedStatusBar();
+  const { colors } = useTheme();
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
+      }}
+    >
       <Stack.Screen name="index" />
       <Stack.Screen name="account" />
       <Stack.Screen name="notifications" />

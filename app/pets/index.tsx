@@ -72,6 +72,7 @@ export default function PetsListScreen() {
               styles.content,
               { paddingTop, paddingBottom: paddingBottom + 40 },
             ]}
+            endFillColor={colors.background}
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.list}>

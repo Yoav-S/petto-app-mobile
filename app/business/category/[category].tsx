@@ -226,6 +226,7 @@ export default function CategoryPlacesScreen() {
           keyExtractor={placeKey}
           style={styles.list}
           contentContainerStyle={[styles.listContent, { paddingTop: headerHeight + 12 }]}
+          endFillColor={colors.background}
           renderItem={({ item }) => <PlaceCard place={item} onPress={() => openPlace(item)} />}
           onEndReached={() => {
             if (hasMore) void loadMore();
@@ -268,15 +269,20 @@ function makeStyles(colors: ThemeColors) {
     },
     list: {
       flex: 1,
+      backgroundColor: colors.background,
     },
     listContent: {
+      flexGrow: 1,
       gap: 10,
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       paddingBottom: 24,
+      backgroundColor: colors.background,
     },
     skeletons: {
+      flex: 1,
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       gap: 10,
+      backgroundColor: colors.background,
     },
     empty: {
       paddingHorizontal: 20,

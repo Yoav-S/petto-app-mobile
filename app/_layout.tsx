@@ -48,6 +48,7 @@ function BootSpinner() {
 }
 
 function RootLayoutNav() {
+  const { colors } = useTheme();
   const { user, isLoading, isSyncing, hasPets, hasAccountName, onboardingResume } = useAuth();
   const { resetDraft } = usePetOnboardingDraft();
   const segments = useSegments();
@@ -185,8 +186,13 @@ function RootLayoutNav() {
     (!petsKnown || !nameKnown || isSyncing || !onAuthedAppSurface);
 
   return (
-    <View style={styles.root}>
-      <Stack screenOptions={{ headerShown: false }}>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.background },
+        }}
+      >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />

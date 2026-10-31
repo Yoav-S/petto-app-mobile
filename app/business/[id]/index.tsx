@@ -119,11 +119,17 @@ function HoursSchedule({ hours, id }: { hours: OpeningHours; id: string }) {
   );
 }
 
-function LocationCopy({ branch }: { branch: PlaceLocation }) {
+function LocationCopy({
+  branch,
+  onPress,
+}: {
+  branch: PlaceLocation;
+  onPress?: () => void;
+}) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const copy = addressText(branch.address, branch.city);
-  return (
+  const body = (
     <>
       {typeof branch.distance_km === 'number' ? (
         <View style={styles.locationDistanceRow}>
@@ -134,25 +140,45 @@ function LocationCopy({ branch }: { branch: PlaceLocation }) {
       {copy ? <Text style={styles.locationAddress}>{copy}</Text> : null}
     </>
   );
+  if (!onPress) return body;
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={t('business.directions')}
+    >
+      {body}
+    </Pressable>
+  );
 }
 
 function OtherLocationRow({
   branch,
   onPress,
   raised = false,
+  selected = false,
 }: {
   branch: PlaceLocation;
   onPress: () => void;
   raised?: boolean;
+  selected?: boolean;
 }) {
   const styles = useThemedStyles(makeStyles);
   return (
     <ListRowPressable
-      style={[styles.locationCard, raised ? styles.locationCardRaised : null]}
+      style={[
+        styles.locationCard,
+        raised ? styles.locationCardRaised : null,
+        selected ? styles.locationCardSelected : null,
+      ]}
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityState={{ selected }}
       accessibilityLabel={addressText(branch.address, branch.city)}
     >
+      {selected ? (
+        <Text style={styles.thisLocationLabel}>{t('business.this_location')}</Text>
+      ) : null}
       <LocationCopy branch={branch} />
     </ListRowPressable>
   );
@@ -190,6 +216,8 @@ export default function BusinessScreen() {
   const savedReviewRef = useRef<PlaceReview | null>(null);
   const [locationsOpen, setLocationsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<BusinessCategory | null>(null);
+  const pageScrollRef = useRef<ScrollView>(null);
+  const hoursY = useRef(0);
 
   const previewImage = params.image || null;
   const image = place?.image ?? previewImage;
@@ -385,12 +413,33 @@ export default function BusinessScreen() {
   const actionBottom = Math.max(insets.bottom, 16);
   const actionBarHeight = 12 + 48 + actionBottom;
 
+  const selectBranch = useCallback(
+    (branchId: string, fromModal = false) => {
+      if (fromModal) setLocationsOpen(false);
+      if (branchId !== params.locationId) {
+        router.setParams({ locationId: branchId });
+      }
+      const go = () => {
+        const y = hoursY.current > 0 ? Math.max(0, hoursY.current - 12) : coverHeight;
+        pageScrollRef.current?.scrollTo({ y, animated: true });
+      };
+      if (fromModal) {
+        setTimeout(go, 320);
+      } else {
+        requestAnimationFrame(go);
+      }
+    },
+    [coverHeight, params.locationId, router],
+  );
+
   return (
     <View style={styles.screen}>
       <ScrollView
+        ref={pageScrollRef}
         style={styles.scroll}
         nestedScrollEnabled
         contentContainerStyle={[styles.scrollContent, { paddingBottom: actionBarHeight + 4 }]}
+        endFillColor={colors.background}
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.cover, { height: coverHeight }]}>
@@ -483,7 +532,12 @@ export default function BusinessScreen() {
         </View>
 
         {showHoursCard ? (
-          <View style={styles.hoursCard}>
+          <View
+            style={styles.hoursCard}
+            onLayout={(e) => {
+              hoursY.current = coverHeight + 4 + e.nativeEvent.layout.y;
+            }}
+          >
             {serviceCategories.length ? (
               <View style={styles.serviceTabs}>
                 {serviceCategories.map((item) => {
@@ -512,7 +566,13 @@ export default function BusinessScreen() {
             ) ? (
               <View style={styles.locationCard}>
                 <View style={styles.locationBody}>
-                  <LocationCopy branch={currentBranch} />
+                  {locationCards.length > 1 ? (
+                    <Text style={styles.thisLocationLabel}>{t('business.this_location')}</Text>
+                  ) : null}
+                  <LocationCopy
+                    branch={currentBranch}
+                    onPress={() => showMaps(currentBranch)}
+                  />
                   {branchStatus ? (
                     <View style={styles.locationStatus}>
                       <Text style={[styles.locationStatusText, { color: branchStatus.color }]}>
@@ -574,7 +634,8 @@ export default function BusinessScreen() {
                 <OtherLocationRow
                   key={branch.id}
                   branch={branch}
-                  onPress={() => router.setParams({ locationId: branch.id })}
+                  selected={branch.id === currentBranch?.id}
+                  onPress={() => selectBranch(branch.id)}
                 />
               ))}
             </View>
@@ -752,6 +813,7 @@ export default function BusinessScreen() {
                 styles.locationsScreenList,
                 { paddingBottom: Math.max(insets.bottom, 16) },
               ]}
+              endFillColor={colors.background}
               showsVerticalScrollIndicator={false}
             >
               {locationCards.map((branch) => (
@@ -759,10 +821,8 @@ export default function BusinessScreen() {
                   key={branch.id}
                   branch={branch}
                   raised
-                  onPress={() => {
-                    setLocationsOpen(false);
-                    router.setParams({ locationId: branch.id });
-                  }}
+                  selected={branch.id === currentBranch?.id}
+                  onPress={() => selectBranch(branch.id, true)}
                 />
               ))}
             </ScrollView>
@@ -847,9 +907,11 @@ const makeStyles = (c: ThemeColors) =>
     },
     scroll: {
       flex: 1,
+      backgroundColor: c.background,
     },
     scrollContent: {
       paddingBottom: 0,
+      backgroundColor: c.background,
     },
     scrollBody: {
       gap: 4,
@@ -981,9 +1043,20 @@ const makeStyles = (c: ThemeColors) =>
       paddingLeft: 16,
       paddingRight: 16,
       gap: 12,
+      borderWidth: 1.5,
+      borderColor: 'transparent',
     },
     locationCardRaised: {
       backgroundColor: c.surface,
+    },
+    locationCardSelected: {
+      borderColor: c.brand,
+    },
+    thisLocationLabel: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 12,
+      lineHeight: 16,
+      color: c.brand,
     },
     locationBody: {
       gap: 8,

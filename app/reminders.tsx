@@ -493,6 +493,7 @@ export default function RemindersScreen() {
                     paddingBottom,
                     backgroundColor: colors.background,
                   }}
+                  endFillColor={colors.background}
                   contentInsetAdjustmentBehavior="never"
                   automaticallyAdjustContentInsets={false}
                   automaticallyAdjustsScrollIndicatorInsets={false}
@@ -547,6 +548,10 @@ const makeStyles = (c: ThemeColors) =>
       flex: 1,
       backgroundColor: c.background,
     },
+    listWrap: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
     tabs: {
       paddingHorizontal: PAGE_HORIZONTAL_PADDING,
       marginTop: LIST_HEADER_TABS_GAP,
@@ -556,8 +561,5 @@ const makeStyles = (c: ThemeColors) =>
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    listWrap: {
-      flex: 1,
     },
   });

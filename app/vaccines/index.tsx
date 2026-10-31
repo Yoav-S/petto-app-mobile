@@ -261,6 +261,7 @@ export default function VaccinesScreen() {
           paddingBottom,
           backgroundColor: colors.background,
         }}
+        endFillColor={colors.background}
         contentInsetAdjustmentBehavior="never"
         automaticallyAdjustContentInsets={false}
         automaticallyAdjustsScrollIndicatorInsets={false}
@@ -327,6 +328,7 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     screen: {
       flex: 1,
+      backgroundColor: c.background,
     },
     list: {
       flex: 1,

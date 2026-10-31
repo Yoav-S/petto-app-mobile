@@ -578,6 +578,7 @@ export default function HealthDetailsScreen() {
               { paddingBottom: 16 },
             ]}
             showsVerticalScrollIndicator={false}
+            endFillColor={colors.background}
             contentInsetAdjustmentBehavior="never"
             automaticallyAdjustContentInsets={false}
             automaticallyAdjustsScrollIndicatorInsets={false}

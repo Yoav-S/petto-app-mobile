@@ -92,6 +92,7 @@ export default function BusinessReviewsScreen() {
             styles.scrollContent,
             { paddingBottom: footerHeight + 4 },
           ]}
+          endFillColor={colors.background}
           showsVerticalScrollIndicator={false}
           onEndReached={() => {
             void loadMore();
@@ -212,13 +213,13 @@ const makeStyles = (c: ThemeColors) =>
     },
     scroll: {
       flex: 1,
-      backgroundColor: 'transparent',
+      backgroundColor: c.background,
     },
     scrollContent: {
       flexGrow: 1,
       paddingTop: 4,
       gap: 4,
-      backgroundColor: 'transparent',
+      backgroundColor: c.background,
     },
     loader: {
       marginTop: 24,

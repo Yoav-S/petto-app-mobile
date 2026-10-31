@@ -26,7 +26,7 @@ import {
   topFadeSolidAt,
 } from '@/constants/layout';
 import { type ThemeColors } from '@/constants/theme';
-import { useThemedStyles } from '@/context/ThemeContext';
+import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useKeyboardOpen } from '@/components/ui/keyboardUtils';
 import ScrollEdgeFades from '@/components/ui/ScrollEdgeFades';
 import {
@@ -209,6 +209,7 @@ export function HeaderScrollScreen({
   contentGap,
   chromePaddingBottom,
 }: HeaderScrollScreenProps) {
+  const colors = useColors();
   return (
     <HeaderScrollLayout
       header={header}
@@ -222,14 +223,16 @@ export function HeaderScrollScreen({
     >
       {({ paddingTop, paddingBottom, fadeBottomInset, scrollMetricsProps }) => (
         <ScrollView
-          style={stylesScroll.scroll}
+          style={[stylesScroll.scroll, { backgroundColor: colors.background }]}
           contentContainerStyle={[
             {
               paddingTop,
               paddingBottom: paddingBottom + 16 + fadeBottomInset,
+              backgroundColor: colors.background,
             },
             contentContainerStyle,
           ]}
+          endFillColor={colors.background}
           showsVerticalScrollIndicator={false}
           onLayout={scrollMetricsProps.onLayout}
           onContentSizeChange={scrollMetricsProps.onContentSizeChange}
@@ -256,6 +259,7 @@ const makeStyles = (c: ThemeColors) =>
     body: {
       flex: 1,
       position: 'relative',
+      backgroundColor: c.background,
     },
     scrollSlot: {
       flex: 1,
