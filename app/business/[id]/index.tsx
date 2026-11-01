@@ -83,6 +83,14 @@ function addressText(address: string, city: string): string {
   return line || town;
 }
 
+function branchPoint(branch?: PlaceLocation | null) {
+  const pair = branch?.location?.coordinates;
+  if (!pair || pair.length < 2) return null;
+  const [lng, lat] = pair;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+}
+
 function dialNumbers(branch: PlaceLocation): string[] {
   const own = branch.phone.map((phone) => phone.trim()).filter(Boolean);
   if (own.length) return own;
@@ -205,6 +213,7 @@ export default function BusinessScreen() {
   const [reloadToken, setReloadToken] = useState(0);
   const savedReviewRef = useRef<PlaceReview | null>(null);
   const [locationsOpen, setLocationsOpen] = useState(false);
+  const [locationsCloseInstant, setLocationsCloseInstant] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<BusinessCategory | null>(null);
   const pageScrollRef = useRef<ScrollView>(null);
 
@@ -403,29 +412,44 @@ export default function BusinessScreen() {
   const actionBarHeight = 12 + 48 + actionBottom;
 
   const selectBranch = useCallback(
-    (branchId: string, fromModal = false) => {
+    (branchId: string) => {
+      const currentId = params.locationId || locationCards[0]?.id;
+      const leaveModal = locationsOpen;
+      if (leaveModal) {
+        setLocationsCloseInstant(true);
+        setLocationsOpen(false);
+      }
+      if (branchId === currentId) {
+        pageScrollRef.current?.scrollTo({ y: 0, animated: true });
+        return;
+      }
       const branch =
         locationCards.find((row) => row.id === branchId) ??
         branches.find((row) => row.id === branchId);
-      const changed = branchId !== params.locationId;
-      if (fromModal) setLocationsOpen(false);
-      if (changed) {
-        router.setParams({ locationId: branchId });
-        const copy = branch ? addressText(branch.address, branch.city) : '';
-        if (copy) {
-          toast.show({ message: `${t('business.viewing_location')} · ${copy}` });
-        }
-      }
+      const point = branchPoint(branch);
       const go = () => {
-        pageScrollRef.current?.scrollTo({ y: 0, animated: true });
+        router.push({
+          pathname: '/business/[id]',
+          params: {
+            id: params.id,
+            locationId: branchId,
+            name: params.name || place?.name || '',
+            image: params.image || place?.image || '',
+            category: params.category || place?.category || '',
+            distance: branch?.distance_km != null ? String(branch.distance_km) : '',
+            rating:
+              params.rating || (place?.rating != null ? String(place.rating) : ''),
+            openNow: params.openNow || '',
+            open247: params.open247 || '',
+            lat: point ? String(point.lat) : params.lat || '',
+            lng: point ? String(point.lng) : params.lng || '',
+          },
+        } as never);
       };
-      if (fromModal) {
-        setTimeout(go, 280);
-      } else {
-        requestAnimationFrame(go);
-      }
+      if (leaveModal) requestAnimationFrame(go);
+      else go();
     },
-    [branches, locationCards, params.locationId, router, toast],
+    [branches, locationCards, locationsOpen, params, place, router],
   );
 
   return (
@@ -609,7 +633,10 @@ export default function BusinessScreen() {
               {locationsNeedPager ? (
                 <TouchableOpacity
                   style={styles.seeAll}
-                  onPress={() => setLocationsOpen(true)}
+                  onPress={() => {
+                    setLocationsCloseInstant(false);
+                    setLocationsOpen(true);
+                  }}
                   hitSlop={8}
                 >
                   <Text style={styles.seeAllText}>{t('home.see_all')}</Text>
@@ -778,7 +805,7 @@ export default function BusinessScreen() {
       {locationsPresented ? (
         <Modal
           visible
-          animationType="slide"
+          animationType={locationsCloseInstant ? 'none' : 'slide'}
           onRequestClose={() => setLocationsOpen(false)}
         >
           <View style={[styles.locationsScreen, { paddingTop: insets.top }]}>
@@ -808,7 +835,7 @@ export default function BusinessScreen() {
                   key={branch.id}
                   branch={branch}
                   raised
-                  onPress={() => selectBranch(branch.id, true)}
+                  onPress={() => selectBranch(branch.id)}
                 />
               ))}
             </ScrollView>
