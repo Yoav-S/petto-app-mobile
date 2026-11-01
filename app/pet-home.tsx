@@ -11,6 +11,7 @@ import { useThemedStyles } from '@/context/ThemeContext';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
+import { playPetSound } from '@/services/petSound';
 import { firstIncludedPet, guardAddPet, guardAddReminder, guardSelectPet } from '@/services/subscription';
 import type { MedicalRecord, Reminder } from '@/types/api';
 import { isIsoDateToday, normalizeToDatePart, todayIsoDate } from '@/utils/calendar';
@@ -267,6 +268,7 @@ export default function HomeScreen() {
       return;
     }
     setSwitchVisible(false);
+    playPetSound(nextPet?.type);
     if (petId !== activePetId) {
       void prefetchPetPhoto(nextPet?.photo_url);
       await setActivePetId(petId);

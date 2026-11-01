@@ -18,6 +18,7 @@ import { OnboardingCalendar } from '@/components/brand/onboarding';
 import { usePetOnboardingDraft } from '@/store/petOnboardingDraft';
 import { useActivePet } from '@/store/petStore';
 import { createPet } from '@/services/pets';
+import { playPetSound } from '@/services/petSound';
 import { uploadPetPhoto } from '@/services/storage';
 import { setOnboardingComplete } from '@/services/onboarding';
 import { buildOnboardingProgress, saveOnboardingProgress } from '@/services/onboardingProgress';
@@ -117,6 +118,7 @@ export default function PetBirthOnboardingScreen() {
       });
       await setOnboardingComplete();
       markHasPets();
+      playPetSound(draft.type);
       setActivePetId(pet.id);
       router.replace('/(tabs)' as never);
     } catch (err: unknown) {

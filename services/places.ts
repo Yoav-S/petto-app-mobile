@@ -149,6 +149,16 @@ export function rememberNearbyCoords(coords: NearbyCoords): void {
   lastNearbyCoords = coords;
 }
 
+let nearYouOpen = false;
+
+export function rememberNearYouOpen(open: boolean): void {
+  nearYouOpen = open;
+}
+
+export function readNearYouOpen(): boolean {
+  return nearYouOpen;
+}
+
 export function rememberNearby(
   coords: NearbyCoords | null,
   category: BusinessCategory | null,

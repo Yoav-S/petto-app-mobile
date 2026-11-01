@@ -27,6 +27,7 @@ import { HealthFormScreen } from '@/components/health/HealthKeyboardFooter';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { t } from '@/i18n';
 import { createPet } from '@/services/pets';
+import { playPetSound } from '@/services/petSound';
 import { uploadPetPhoto } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import { guardAddPet, presentPremiumLimitFromError } from '@/services/subscription';
@@ -184,6 +185,7 @@ export default function AddPetScreen() {
         photo_url: photoUrl,
         sex,
       });
+      playPetSound(petType);
       await setActivePetId(pet.id);
       skipPrompt(() => router.back());
     } catch (err) {
@@ -295,7 +297,10 @@ export default function AddPetScreen() {
                 return (
                   <Pressable
                     key={type}
-                    onPress={() => setPetType(type)}
+                    onPress={() => {
+                      setPetType(type);
+                      playPetSound(type);
+                    }}
                     style={[
                       styles.typeOption,
                       {

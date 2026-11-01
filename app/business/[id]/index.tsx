@@ -8,6 +8,7 @@ import {
   Pressable,
   Linking,
   Modal,
+  BackHandler,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -33,6 +34,7 @@ import { useToast } from '@/context/ToastContext';
 import { branchHoursStatus, formatClosesAt, formatOpensAt, placeHoursStatus } from '@/services/placeHours';
 import {
   getPlace,
+  readLastNearbyCoords,
   rememberPlaceReview,
   upsertOwnReview,
   type BusinessCategory,
@@ -83,12 +85,18 @@ function addressText(address: string, city: string): string {
   return line || town;
 }
 
-function branchPoint(branch?: PlaceLocation | null) {
-  const pair = branch?.location?.coordinates;
-  if (!pair || pair.length < 2) return null;
-  const [lng, lat] = pair;
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  return { lat, lng };
+function userCoords(
+  latParam?: string,
+  lngParam?: string,
+): { latitude: number; longitude: number } | undefined {
+  const here = readLastNearbyCoords();
+  if (here) return here;
+  const lat = Number(latParam);
+  const lng = Number(lngParam);
+  if (Number.isFinite(lat) && Number.isFinite(lng) && latParam && lngParam) {
+    return { latitude: lat, longitude: lng };
+  }
+  return undefined;
 }
 
 function dialNumbers(branch: PlaceLocation): string[] {
@@ -195,6 +203,7 @@ export default function BusinessScreen() {
     open247?: string;
     lat?: string;
     lng?: string;
+    origin?: string;
   }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -227,11 +236,7 @@ export default function BusinessScreen() {
     useCallback(() => {
       const id = params.id;
       if (!id) return;
-      const lat = Number(params.lat);
-      const lng = Number(params.lng);
-      const coords = Number.isFinite(lat) && Number.isFinite(lng) && params.lat && params.lng
-        ? { latitude: lat, longitude: lng }
-        : undefined;
+      const coords = userCoords(params.lat, params.lng);
       let active = true;
       getPlace(id, coords)
         .then((detail) => {
@@ -249,12 +254,23 @@ export default function BusinessScreen() {
       return () => {
         active = false;
       };
-    }, [params.id, params.lat, params.lng, reloadToken, toast]),
+    }, [params.id, reloadToken, toast]),
   );
 
   useEffect(() => {
     setLocationsOpen(false);
   }, [params.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (params.origin !== 'near') return;
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        router.dismissTo('/' as never);
+        return true;
+      });
+      return () => sub.remove();
+    }, [params.origin, router]),
+  );
 
   const name = place?.name || params.name || '';
   const category = place?.category ?? params.category;
@@ -291,18 +307,11 @@ export default function BusinessScreen() {
         distance_km: typeof distance === 'number' && !Number.isNaN(distance) ? distance : null,
       }]
     : [];
-  const locationCards = (() => {
-    const rows = branches.length ? [...branches] : fallbackBranch;
-    const target = params.locationId;
-    if (!target) return rows;
-    const index = rows.findIndex((branch) => branch.id === target);
-    if (index <= 0) return rows;
-    const next = [...rows];
-    const [picked] = next.splice(index, 1);
-    next.unshift(picked);
-    return next;
-  })();
-  const currentBranch = locationCards[0] ?? null;
+  const locationCards = branches.length ? branches : fallbackBranch;
+  const currentBranch =
+    locationCards.find((row) => row.id === (params.locationId || '')) ??
+    locationCards[0] ??
+    null;
   const phoneKeys = locationCards.map((branch) => [...dialNumbers(branch)].sort().join('|'));
   const phonesOnEachLocation = locationCards.length > 1 && new Set(phoneKeys).size > 1;
   const callPhones = currentBranch ? dialNumbers(currentBranch) : phones;
@@ -426,9 +435,9 @@ export default function BusinessScreen() {
       const branch =
         locationCards.find((row) => row.id === branchId) ??
         branches.find((row) => row.id === branchId);
-      const point = branchPoint(branch);
+      const here = userCoords(params.lat, params.lng);
       const go = () => {
-        router.push({
+        router.replace({
           pathname: '/business/[id]',
           params: {
             id: params.id,
@@ -441,8 +450,9 @@ export default function BusinessScreen() {
               params.rating || (place?.rating != null ? String(place.rating) : ''),
             openNow: params.openNow || '',
             open247: params.open247 || '',
-            lat: point ? String(point.lat) : params.lat || '',
-            lng: point ? String(point.lng) : params.lng || '',
+            lat: here ? String(here.latitude) : params.lat || '',
+            lng: here ? String(here.longitude) : params.lng || '',
+            origin: params.origin || '',
           },
         } as never);
       };
@@ -795,7 +805,13 @@ export default function BusinessScreen() {
 
       <View style={[styles.actionBar, { top: insets.top }]} pointerEvents="box-none">
         <HeaderIconButton
-          onPress={() => router.back()}
+          onPress={() => {
+            if (params.origin === 'near') {
+              router.dismissTo('/' as never);
+              return;
+            }
+            router.back();
+          }}
           accessibilityLabel={t('petOnboarding.back')}
         >
           <MaterialIcons name="chevron-left" size={24} color={colors.primaryText} />

@@ -13,6 +13,7 @@ export default function BusinessLayout() {
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },
         animation: I18nManager.isRTL ? 'slide_from_left' : 'slide_from_right',
+        animationTypeForReplace: 'push',
         gestureEnabled: true,
       }}
     >

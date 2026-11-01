@@ -29,8 +29,11 @@ import {
   placeKey,
   rememberNearby,
   rememberNearbyCoords,
+  rememberNearYouOpen,
+  readNearYouOpen,
   type BusinessPlace,
 } from '@/services/places';
+import { playPetSound } from '@/services/petSound';
 import { petPhotoSource } from '@/utils/petPhotoSource';
 import NearYouSheet from '@/components/home/NearYouSheet';
 import HeaderIconButton from '@/components/ui/HeaderIconButton';
@@ -196,6 +199,7 @@ export default function DiscoverHomeScreen() {
   const [frameHeight, setFrameHeight] = useState(0);
   const [aboveHeight, setAboveHeight] = useState(0);
   const [nearOpen, setNearOpen] = useState(false);
+  const [restoreNearOpen, setRestoreNearOpen] = useState(false);
   const [petsTrack, setPetsTrack] = useState(0);
   const [categoryTrack, setCategoryTrack] = useState(0);
   const [categoryLabelWidth, setCategoryLabelWidth] = useState(0);
@@ -276,6 +280,7 @@ export default function DiscoverHomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      setRestoreNearOpen(readNearYouOpen());
       void petsQuery.refetch();
       if (locatingRef.current) return;
       const before = coordsRef.current;
@@ -417,6 +422,7 @@ export default function DiscoverHomeScreen() {
 
   async function openPet(pet: Pet) {
     if (!(await guardSelectPet(router, pet))) return;
+    playPetSound(pet.type);
     await setActivePetId(pet.id);
     router.push('/pet-home' as never);
   }
@@ -441,6 +447,7 @@ export default function DiscoverHomeScreen() {
         open247: place.open_24_7 ? '1' : '0',
         lat: coordsRef.current ? String(coordsRef.current.latitude) : '',
         lng: coordsRef.current ? String(coordsRef.current.longitude) : '',
+        origin: 'near',
       },
     } as never);
   }
@@ -680,7 +687,11 @@ export default function DiscoverHomeScreen() {
               anchorTop={aboveHeight > 0 ? aboveHeight + 4 : 0}
               topInset={insets.top}
               frameWidth={frameWidth}
-              onExpandedChange={setNearOpen}
+              restoreOpen={restoreNearOpen}
+              onExpandedChange={(open) => {
+                setNearOpen(open);
+                rememberNearYouOpen(open);
+              }}
               frameHeight={frameHeight}
               places={places}
               loading={placesLoading || coords == null}

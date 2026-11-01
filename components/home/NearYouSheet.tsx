@@ -49,6 +49,8 @@ interface NearYouSheetProps {
   onPressPlace: (place: BusinessPlace) => void;
   /** True while the sheet is pulled up off its resting peek. */
   onExpandedChange?: (expanded: boolean) => void;
+  /** Re-open to the full list after returning from a business page. */
+  restoreOpen?: boolean;
 }
 
 /**
@@ -70,6 +72,7 @@ export default function NearYouSheet({
   onLoadMore,
   onPressPlace,
   onExpandedChange,
+  restoreOpen = false,
 }: NearYouSheetProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -146,7 +149,7 @@ export default function NearYouSheet({
     onLoadMoreRef.current();
   }, []);
 
-  const { titlePan, handleGesture, listGesture, collapseOnUI } = useMemo(() => {
+  const { titlePan, handleGesture, listGesture, collapseOnUI, expandOnUI } = useMemo(() => {
     const moveSheet = (dy: number) => {
       'worklet';
       if (dy === 0) return;
@@ -274,12 +277,21 @@ export default function NearYouSheet({
         'worklet';
         goTo(false);
       },
+      expandOnUI: () => {
+        'worklet';
+        goTo(true);
+      },
     };
   }, [finishChrome, grabDy, grabOrigin, grabPeak, height, listPanOn, listRef, maxHeight, opened, pressLocked, releasePresses, restingHeight, scrollY, startX, startY]);
 
   const closeSheet = () => {
     runOnUI(collapseOnUI)();
   };
+
+  useEffect(() => {
+    if (!restoreOpen || frameHeight <= 0 || maxHeight.value < 1) return;
+    runOnUI(expandOnUI)();
+  }, [expandOnUI, frameHeight, maxHeight, restoreOpen]);
 
   const tryLoad = (content: number, viewport: number, offset: number) => {
     'worklet';
@@ -397,6 +409,7 @@ export default function NearYouSheet({
                 }
               }}
               contentContainerStyle={styles.listContent}
+              endFillColor={colors.background}
               ListEmptyComponent={
                 loading ? (
                   <View style={[styles.skeletons, cardFrame]}>
@@ -459,7 +472,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     sheetClip: {
       flex: 1,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.background,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       overflow: 'hidden',
@@ -483,7 +496,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     title: {
       paddingHorizontal: 20,
-      marginBottom: 10,
+      marginBottom: 16,
       fontFamily: 'Rubik-Regular',
       fontSize: 24,
       lineHeight: 28,
@@ -496,22 +509,21 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       width: '100%',
       alignSelf: 'stretch',
-      backgroundColor: colors.surface,
+      backgroundColor: colors.background,
     },
     listContent: {
       flexGrow: 1,
       width: '100%',
       alignItems: 'center',
-      backgroundColor: colors.surface,
+      backgroundColor: colors.background,
     },
     card: {
       alignSelf: 'center',
       marginBottom: CARD_GAP,
-      backgroundColor: colors.surface,
     },
     skeletons: {
       alignSelf: 'center',
-      backgroundColor: colors.surface,
+      backgroundColor: colors.background,
       gap: CARD_GAP,
       marginBottom: CARD_GAP,
     },
@@ -521,7 +533,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingHorizontal: 20,
       paddingTop: 24,
       paddingBottom: 28,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.background,
     },
     empty: {
       textAlign: 'center',

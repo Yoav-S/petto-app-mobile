@@ -24,6 +24,7 @@ import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_ONBOARDING_HERO, PET_TYPE_STEP } from '@/constants/petOnboarding';
 import { getPetOnboardingScale } from '@/utils/petOnboardingScale';
+import { playPetSound } from '@/services/petSound';
 
 export default function PetTypeOnboardingScreen() {
   const colors = useColors();
@@ -57,6 +58,7 @@ export default function PetTypeOnboardingScreen() {
 
   const handleSelect = (type: PetType) => {
     setSelected(type);
+    playPetSound(type);
   };
 
   const handleContinue = async () => {
