@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -27,7 +27,7 @@ import { HealthFormScreen } from '@/components/health/HealthKeyboardFooter';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { t } from '@/i18n';
 import { createPet } from '@/services/pets';
-import { playPetSound } from '@/services/petSound';
+import { playPetSound, warmupPetSounds } from '@/services/petSound';
 import { uploadPetPhoto } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import { guardAddPet, presentPremiumLimitFromError } from '@/services/subscription';
@@ -115,6 +115,10 @@ export default function AddPetScreen() {
   const [birthSheetVisible, setBirthSheetVisible] = useState(false);
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    warmupPetSounds();
+  }, []);
 
   const layout = useMemo(
     () => ({

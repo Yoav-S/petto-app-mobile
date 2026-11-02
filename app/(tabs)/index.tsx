@@ -33,7 +33,7 @@ import {
   readNearYouOpen,
   type BusinessPlace,
 } from '@/services/places';
-import { playPetSound } from '@/services/petSound';
+import { playPetSound, warmupPetSounds } from '@/services/petSound';
 import { petPhotoSource } from '@/utils/petPhotoSource';
 import NearYouSheet from '@/components/home/NearYouSheet';
 import HeaderIconButton from '@/components/ui/HeaderIconButton';
@@ -203,6 +203,10 @@ export default function DiscoverHomeScreen() {
   const [petsTrack, setPetsTrack] = useState(0);
   const [categoryTrack, setCategoryTrack] = useState(0);
   const [categoryLabelWidth, setCategoryLabelWidth] = useState(0);
+
+  useEffect(() => {
+    warmupPetSounds();
+  }, []);
 
   useEffect(() => {
     setCategoryLabelWidth(0);

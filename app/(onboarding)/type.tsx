@@ -24,7 +24,7 @@ import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_ONBOARDING_HERO, PET_TYPE_STEP } from '@/constants/petOnboarding';
 import { getPetOnboardingScale } from '@/utils/petOnboardingScale';
-import { playPetSound } from '@/services/petSound';
+import { playPetSound, warmupPetSounds } from '@/services/petSound';
 
 export default function PetTypeOnboardingScreen() {
   const colors = useColors();
@@ -45,6 +45,10 @@ export default function PetTypeOnboardingScreen() {
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const seededType = useRef(draft.type !== null);
+
+  useEffect(() => {
+    warmupPetSounds();
+  }, []);
 
   useEffect(() => {
     if (seededType.current || !draft.type) return;

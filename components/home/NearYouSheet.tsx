@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View, type FlatList } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
+  interpolateColor,
   runOnJS,
   runOnUI,
   scrollTo,
@@ -328,6 +329,15 @@ export default function NearYouSheet({
     return { opacity: Math.min(1, Math.max(0, progress)) };
   });
 
+  const canvasStyle = useAnimatedStyle(() => {
+    const span = maxHeight.value - restingHeight.value;
+    const progress = span > 1 ? (height.value - restingHeight.value) / span : 0;
+    const open = Math.min(1, Math.max(0, progress));
+    return {
+      backgroundColor: interpolateColor(open, [0, 1], [colors.surface, colors.background]),
+    };
+  });
+
   const data = loading ? [] : places;
   const pressPlace = useCallback((place: BusinessPlace) => {
     if (pressLocked.value) return;
@@ -357,7 +367,7 @@ export default function NearYouSheet({
         <Pressable style={StyleSheet.absoluteFill} onPress={closeSheet} />
       </Animated.View>
       <Animated.View style={[styles.sheet, { height: layoutHeight }, sheetStyle]}>
-        <View style={styles.sheetClip}>
+        <Animated.View style={[styles.sheetClip, canvasStyle]}>
           <View collapsable={false}>
             <GestureDetector gesture={handleGesture}>
               <View
@@ -435,7 +445,7 @@ export default function NearYouSheet({
               renderItem={renderPlace}
             />
           </GestureDetector>
-        </View>
+        </Animated.View>
         <Animated.View style={[styles.closeHit, closeStyle]} pointerEvents={showClose ? 'auto' : 'none'}>
           <HeaderIconButton
             onPress={closeSheet}
@@ -472,7 +482,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     sheetClip: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: colors.surface,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       overflow: 'hidden',
@@ -509,13 +519,13 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       width: '100%',
       alignSelf: 'stretch',
-      backgroundColor: colors.background,
+      backgroundColor: 'transparent',
     },
     listContent: {
       flexGrow: 1,
       width: '100%',
       alignItems: 'center',
-      backgroundColor: colors.background,
+      backgroundColor: 'transparent',
     },
     card: {
       alignSelf: 'center',
@@ -523,7 +533,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     skeletons: {
       alignSelf: 'center',
-      backgroundColor: colors.background,
+      backgroundColor: 'transparent',
       gap: CARD_GAP,
       marginBottom: CARD_GAP,
     },
@@ -533,7 +543,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingHorizontal: 20,
       paddingTop: 24,
       paddingBottom: 28,
-      backgroundColor: colors.background,
+      backgroundColor: 'transparent',
     },
     empty: {
       textAlign: 'center',
