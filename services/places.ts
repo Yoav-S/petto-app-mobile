@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPost } from './api';
+import { apiDelete, apiGet, apiPost, apiPostOptionalAuth } from './api';
 import { queryClient } from './queryClient';
 import { queryKeys } from './queryKeys';
 
@@ -300,4 +300,25 @@ export function reportPlaceReview(
   reason: ReviewReportReason,
 ): Promise<void> {
   return apiPost<void>(`/businesses/${businessId}/reviews/${reviewId}/report`, { reason });
+}
+
+const lastPlaceEventAt = new Map<string, number>();
+
+export type PlaceAnalyticsAction = 'view' | 'call' | 'directions';
+
+/** Fire-and-forget listing analytics. Staff of the listing are ignored on the server. */
+export function trackPlaceEvent(
+  businessId: string,
+  locationId: string,
+  action: PlaceAnalyticsAction,
+): void {
+  if (!businessId || !locationId) return;
+  const key = `${businessId}:${locationId}:${action}`;
+  const now = Date.now();
+  if (now - (lastPlaceEventAt.get(key) ?? 0) < 60_000) return;
+  lastPlaceEventAt.set(key, now);
+  void apiPostOptionalAuth(`/businesses/${businessId}/analytics/events`, {
+    location_id: locationId,
+    action,
+  });
 }

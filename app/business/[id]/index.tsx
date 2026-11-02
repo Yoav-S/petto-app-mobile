@@ -36,6 +36,7 @@ import {
   getPlace,
   readLastNearbyCoords,
   rememberPlaceReview,
+  trackPlaceEvent,
   upsertOwnReview,
   type BusinessCategory,
   type BusinessPlaceDetail,
@@ -312,6 +313,13 @@ export default function BusinessScreen() {
     locationCards.find((row) => row.id === (params.locationId || '')) ??
     locationCards[0] ??
     null;
+  const trackedLocationId = branches.length
+    ? (params.locationId || branches[0]?.id || '')
+    : '';
+  useEffect(() => {
+    if (!place?.id || !trackedLocationId) return;
+    trackPlaceEvent(place.id, trackedLocationId, 'view');
+  }, [place?.id, trackedLocationId]);
   const phoneKeys = locationCards.map((branch) => [...dialNumbers(branch)].sort().join('|'));
   const phonesOnEachLocation = locationCards.length > 1 && new Set(phoneKeys).size > 1;
   const callPhones = currentBranch ? dialNumbers(currentBranch) : phones;
@@ -408,10 +416,16 @@ export default function BusinessScreen() {
   const showPhones = (numbers?: string[]) => {
     const list = numbers ?? phones;
     if (!list.length) return;
+    if (place?.id && trackedLocationId) {
+      trackPlaceEvent(place.id, trackedLocationId, 'call');
+    }
     void openSystemPhones(list);
   };
 
   const showMaps = (target?: PlaceLocation) => {
+    if (place?.id && trackedLocationId) {
+      trackPlaceEvent(place.id, trackedLocationId, 'directions');
+    }
     void openSystemDirections(target ?? place);
   };
 

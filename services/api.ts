@@ -219,3 +219,28 @@ export async function apiPostPublic<T>(path: string, body: unknown): Promise<T> 
   }
   return handleResponse<T>(res, 'POST', path);
 }
+
+/** POST with a token when the user is signed in, otherwise anonymous. */
+export async function apiPostOptionalAuth<T>(path: string, body: unknown): Promise<T> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const user = auth.currentUser;
+  if (user) {
+    try {
+      headers.Authorization = `Bearer ${await user.getIdToken()}`;
+    } catch {
+      // Count the tap as anonymous rather than dropping it.
+    }
+  }
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(buildUrl(path), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return undefined as T;
+  }
+  if (!res.ok || res.status === 204) return undefined as T;
+  return handleResponse<T>(res, 'POST', path);
+}
