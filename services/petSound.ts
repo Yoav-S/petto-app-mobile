@@ -1,7 +1,11 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const SOURCES = {
   dog: require('@/assets/sounds/dog.wav'),
   cat: require('@/assets/sounds/cat.wav'),
 } as const;
+
+const PREF_KEY = 'ragly.petSounds.enabled';
 
 type PetSoundType = keyof typeof SOURCES;
 type ExpoAudio = typeof import('expo-audio');
@@ -9,7 +13,46 @@ type Player = ReturnType<ExpoAudio['createAudioPlayer']>;
 
 let modeReady = false;
 let warming = false;
+let enabled = true;
+let prefReady = false;
 const cache: Partial<Record<PetSoundType, Player>> = {};
+
+export function petSoundsEnabled(): boolean {
+  return enabled;
+}
+
+export async function hydratePetSoundsPref(): Promise<boolean> {
+  try {
+    const raw = await AsyncStorage.getItem(PREF_KEY);
+    if (raw === '0') enabled = false;
+    if (raw === '1') enabled = true;
+  } catch {
+    // Keep the last in-memory value.
+  }
+  prefReady = true;
+  return enabled;
+}
+
+export async function setPetSoundsEnabled(next: boolean): Promise<void> {
+  enabled = next;
+  if (!next) {
+    for (const player of Object.values(cache)) {
+      if (!player) continue;
+      try {
+        player.loop = false;
+        player.pause();
+        player.seekTo(0);
+      } catch {
+        // Ignore a missing native player.
+      }
+    }
+  }
+  try {
+    await AsyncStorage.setItem(PREF_KEY, next ? '1' : '0');
+  } catch {
+    // Preference still applies for this session.
+  }
+}
 
 function soundType(type?: string | null): PetSoundType | null {
   if (type === 'cat' || type === 'dog') return type;
@@ -54,6 +97,7 @@ function playOnce(player: Player) {
 
 /** Decode both clips so the first tap is not waiting on the file. */
 export function warmupPetSounds() {
+  if (!prefReady) void hydratePetSoundsPref();
   if (warming) return;
   const audio = loadAudio();
   if (!audio) return;
@@ -78,6 +122,8 @@ export function playPetSound(type?: string | null) {
   warmupPetSounds();
   void (async () => {
     try {
+      if (!prefReady) await hydratePetSoundsPref();
+      if (!enabled) return;
       await ensureMode(audio);
       const other = kind === 'dog' ? cache.cat : cache.dog;
       if (other) {

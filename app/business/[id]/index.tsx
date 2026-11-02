@@ -139,13 +139,29 @@ function HoursSchedule({ hours, id }: { hours: OpeningHours; id: string }) {
 function LocationCopy({
   branch,
   onPress,
+  onPressAddress,
 }: {
   branch: PlaceLocation;
   onPress?: () => void;
+  onPressAddress?: () => void;
 }) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const copy = addressText(branch.address, branch.city);
+  const address = copy ? (
+    onPressAddress ? (
+      <Pressable
+        onPress={onPressAddress}
+        accessibilityRole="button"
+        accessibilityLabel={t('business.directions')}
+        hitSlop={6}
+      >
+        <Text style={styles.locationAddress}>{copy}</Text>
+      </Pressable>
+    ) : (
+      <Text style={styles.locationAddress}>{copy}</Text>
+    )
+  ) : null;
   const body = (
     <>
       {typeof branch.distance_km === 'number' ? (
@@ -154,7 +170,7 @@ function LocationCopy({
           <Text style={styles.locationDistance}>{`${branch.distance_km} km`}</Text>
         </View>
       ) : null}
-      {copy ? <Text style={styles.locationAddress}>{copy}</Text> : null}
+      {address}
     </>
   );
   if (!onPress) return body;
@@ -172,21 +188,43 @@ function LocationCopy({
 function OtherLocationRow({
   branch,
   onPress,
+  onPressAddress,
   raised = false,
 }: {
   branch: PlaceLocation;
   onPress: () => void;
+  onPressAddress?: () => void;
   raised?: boolean;
 }) {
   const styles = useThemedStyles(makeStyles);
+  const skipRow = useRef(false);
   return (
     <ListRowPressable
       style={[styles.locationCard, raised ? styles.locationCardRaised : null]}
-      onPress={onPress}
+      onPress={() => {
+        if (skipRow.current) {
+          skipRow.current = false;
+          return;
+        }
+        onPress();
+      }}
       accessibilityRole="button"
       accessibilityLabel={addressText(branch.address, branch.city)}
     >
-      <LocationCopy branch={branch} />
+      <LocationCopy
+        branch={branch}
+        onPressAddress={
+          onPressAddress
+            ? () => {
+                skipRow.current = true;
+                onPressAddress();
+                setTimeout(() => {
+                  skipRow.current = false;
+                }, 0);
+              }
+            : undefined
+        }
+      />
     </ListRowPressable>
   );
 }
@@ -674,6 +712,7 @@ export default function BusinessScreen() {
                   key={branch.id}
                   branch={branch}
                   onPress={() => selectBranch(branch.id)}
+                  onPressAddress={() => showMaps(branch)}
                 />
               ))}
             </View>
@@ -866,6 +905,7 @@ export default function BusinessScreen() {
                   branch={branch}
                   raised
                   onPress={() => selectBranch(branch.id)}
+                  onPressAddress={() => showMaps(branch)}
                 />
               ))}
             </ScrollView>

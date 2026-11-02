@@ -25,6 +25,13 @@ import { placeKey, type BusinessPlace } from '@/services/places';
 /** Figma list column is 335 on a 375 frame, so 20px stays free on each side. */
 const CARD_SIDE = 20;
 const CARD_GAP = 16;
+/** Handle row + “Near You” title. Cards sit 16px below the title and tuck 12px under it. */
+const HEADER_HANDLE = 28;
+const HEADER_TITLE = 28;
+const LIST_GAP = 16;
+const LIST_UNDERLAP = 12;
+const LIST_PAD_TOP = HEADER_HANDLE + HEADER_TITLE + LIST_GAP;
+const HEADER_DOCK = HEADER_HANDLE + HEADER_TITLE + LIST_UNDERLAP;
 /** Greeting row that holds the 42px profile photo: 10px under the status bar, 46px tall. */
 const GREETING_PAD_TOP = 10;
 const GREETING_ROW = 46;
@@ -368,25 +375,6 @@ export default function NearYouSheet({
       </Animated.View>
       <Animated.View style={[styles.sheet, { height: layoutHeight }, sheetStyle]}>
         <Animated.View style={[styles.sheetClip, canvasStyle]}>
-          <View collapsable={false}>
-            <GestureDetector gesture={handleGesture}>
-              <View
-                collapsable={false}
-                style={styles.handleRow}
-                accessibilityRole="button"
-                accessibilityLabel={showClose ? t('home.close_list') : t('home.near_you')}
-              >
-                <View style={styles.handle} />
-              </View>
-            </GestureDetector>
-            <GestureDetector gesture={titlePan}>
-              <View collapsable={false}>
-                <Text style={[styles.title, showClose && styles.titleWithClose]} numberOfLines={1}>
-                  {t('home.near_you')}
-                </Text>
-              </View>
-            </GestureDetector>
-          </View>
           <GestureDetector gesture={listGesture}>
             <Animated.FlatList
               ref={listRef}
@@ -445,6 +433,26 @@ export default function NearYouSheet({
               renderItem={renderPlace}
             />
           </GestureDetector>
+          <View style={styles.headerDock} pointerEvents="box-none">
+            <Animated.View style={[styles.headerFill, canvasStyle]} pointerEvents="none" />
+            <GestureDetector gesture={handleGesture}>
+              <View
+                collapsable={false}
+                style={styles.handleRow}
+                accessibilityRole="button"
+                accessibilityLabel={showClose ? t('home.close_list') : t('home.near_you')}
+              >
+                <View style={styles.handle} />
+              </View>
+            </GestureDetector>
+            <GestureDetector gesture={titlePan}>
+              <View collapsable={false}>
+                <Text style={[styles.title, showClose && styles.titleWithClose]} numberOfLines={1}>
+                  {t('home.near_you')}
+                </Text>
+              </View>
+            </GestureDetector>
+          </View>
         </Animated.View>
         <Animated.View style={[styles.closeHit, closeStyle]} pointerEvents={showClose ? 'auto' : 'none'}>
           <HeaderIconButton
@@ -487,11 +495,22 @@ const makeStyles = (colors: ThemeColors) =>
       borderTopRightRadius: 24,
       overflow: 'hidden',
     },
+    headerDock: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: HEADER_DOCK,
+      zIndex: 2,
+    },
+    headerFill: {
+      ...StyleSheet.absoluteFillObject,
+    },
     handleRow: {
       alignItems: 'center',
       justifyContent: 'center',
       paddingTop: 8,
-      minHeight: 28,
+      minHeight: HEADER_HANDLE,
     },
     handle: {
       width: 36,
@@ -503,10 +522,11 @@ const makeStyles = (colors: ThemeColors) =>
       position: 'absolute',
       right: 20,
       top: 26,
+      zIndex: 3,
     },
     title: {
+      height: HEADER_TITLE,
       paddingHorizontal: 20,
-      marginBottom: 16,
       fontFamily: 'Rubik-Regular',
       fontSize: 24,
       lineHeight: 28,
@@ -525,6 +545,7 @@ const makeStyles = (colors: ThemeColors) =>
       flexGrow: 1,
       width: '100%',
       alignItems: 'center',
+      paddingTop: LIST_PAD_TOP,
       backgroundColor: 'transparent',
     },
     card: {
@@ -541,7 +562,6 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: 'center',
       justifyContent: 'flex-start',
       paddingHorizontal: 20,
-      paddingTop: 24,
       paddingBottom: 28,
       backgroundColor: 'transparent',
     },
