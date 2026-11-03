@@ -80,7 +80,7 @@ export default function BusinessReviewsScreen() {
 
   return (
     <View style={styles.screen}>
-      <SettingsHeader title={t('business.review')} rounded />
+      <SettingsHeader title={t('business.reviews')} rounded />
       {loading && reviews.length === 0 ? (
         <ActivityIndicator color={colors.brand} style={styles.loader} />
       ) : (

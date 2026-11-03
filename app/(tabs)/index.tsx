@@ -41,6 +41,7 @@ import type { Pet } from '@/types/api';
 
 /** Greeting switches at these local hours. */
 const MORNING_HOUR = 5;
+const AFTERNOON_HOUR = 12;
 const EVENING_HOUR = 17;
 const NIGHT_HOUR = 21;
 
@@ -169,6 +170,7 @@ function greetingKey(now = new Date()): string {
   const hour = now.getHours();
   if (hour >= NIGHT_HOUR || hour < MORNING_HOUR) return 'home.greeting_night';
   if (hour >= EVENING_HOUR) return 'home.greeting_evening';
+  if (hour >= AFTERNOON_HOUR) return 'home.greeting_afternoon';
   return 'home.greeting_morning';
 }
 

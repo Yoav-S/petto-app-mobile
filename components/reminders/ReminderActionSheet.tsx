@@ -72,15 +72,13 @@ export default function ReminderActionSheet({
     <BottomSheetModal visible={visible} onClose={onClose}>
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.header}>
-            <View style={styles.headerSide}>
-              {showPagination ? (
-                <Text style={styles.paginationText}>
-                  {currentIndex}/{totalCount}
-                </Text>
-              ) : null}
-            </View>
+            <View style={styles.headerSide} />
             <Text style={styles.headerTitle} numberOfLines={1}>
-              {t('reminders.action_sheet_title')}
+              {showPagination
+                ? t('reminders.prompt_index')
+                    .replace('{current}', String(currentIndex))
+                    .replace('{total}', String(totalCount))
+                : t('reminders.action_sheet_title')}
             </Text>
             <View style={[styles.headerSide, styles.headerSideEnd]}>
               <HeaderIconButton onPress={onClose} accessibilityLabel={t('common.cancel')}>
@@ -199,12 +197,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     headerSideEnd: {
       alignItems: 'flex-end',
-    },
-    paginationText: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 16,
-      lineHeight: 20,
-      color: c.secondaryText,
     },
     headerTitle: {
       flex: 1,

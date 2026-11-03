@@ -8,6 +8,7 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import type { PlaceReview } from '@/services/places';
 import { postedLabel } from '@/utils/reviewPosted';
+import { formatRating } from '@/utils/localeFormat';
 
 export { postedLabel };
 
@@ -51,7 +52,7 @@ export default function ReviewListCard({
             </Text>
             <View style={styles.rating}>
               <Star size={12} color={colors.primaryText} fill={colors.primaryText} />
-              <Text style={styles.ratingText}>{review.rating.toFixed(1)}</Text>
+              <Text style={styles.ratingText}>{formatRating(review.rating)}</Text>
             </View>
           </View>
           {onMenuPress ? (

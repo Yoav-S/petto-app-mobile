@@ -195,7 +195,7 @@ export default function WriteReviewSheet({
             {saving ? (
               <ActivityIndicator color="#F6F7F9" />
             ) : (
-              <Text style={styles.saveLabel}>{t('common.save')}</Text>
+              <Text style={styles.saveLabel}>{t('business.submit')}</Text>
             )}
           </TouchableOpacity>
         </View>

@@ -55,7 +55,7 @@ export default function BusinessReviewScreen() {
       <HealthFormScreen
         contentContainerStyle={styles.form}
         footer={{
-          label: t('common.save'),
+          label: t('business.save_changes'),
           disabled: !rating || saving,
           loading: saving,
           onPress: () => void save(),

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
+import { formatWeightKg } from '@/utils/localeFormat';
 import type { Pet } from '@/types/api';
 
 const EMPTY_VALUE = '\u2014';
@@ -27,7 +28,7 @@ function formatSex(sex?: string | null): string {
 
 function formatWeight(weight?: number | null): string {
   if (weight == null) return EMPTY_VALUE;
-  return `${weight} ${t('profile.weight_unit')}`;
+  return formatWeightKg(weight);
 }
 
 function formatNeutered(value?: boolean | null): string {

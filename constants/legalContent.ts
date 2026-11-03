@@ -4,8 +4,12 @@ import type { LegalBlock } from '@/components/settings/LegalScreen';
 /** Keep in sync with website docs and store listing “Last updated”. */
 export const LEGAL_LAST_UPDATED_ISO = '2026-08-20';
 
+function filledBlocks(blocks: LegalBlock[]): LegalBlock[] {
+  return blocks.filter((block) => block.text.trim() !== '');
+}
+
 export function privacyPolicyBlocks(): LegalBlock[] {
-  return [
+  return filledBlocks([
     { type: 'intro', text: t('legal.privacy_intro'), gap: 3 },
     { type: 'heading', text: t('legal.privacy_s1_title') },
     { type: 'body', text: t('legal.privacy_s1_body'), gap: 2 },
@@ -29,11 +33,11 @@ export function privacyPolicyBlocks(): LegalBlock[] {
     { type: 'body', text: t('legal.privacy_s10_body'), gap: 2 },
     { type: 'heading', text: t('legal.privacy_s11_title') },
     { type: 'body', text: t('legal.privacy_s11_body'), gap: 2 },
-  ];
+  ]);
 }
 
 export function termsOfServiceBlocks(): LegalBlock[] {
-  return [
+  return filledBlocks([
     { type: 'intro', text: t('legal.terms_intro'), gap: 3 },
     { type: 'heading', text: t('legal.terms_s1_title') },
     { type: 'body', text: t('legal.terms_s1_body'), gap: 2 },
@@ -53,5 +57,9 @@ export function termsOfServiceBlocks(): LegalBlock[] {
     { type: 'body', text: t('legal.terms_s8_body'), gap: 2 },
     { type: 'heading', text: t('legal.terms_s9_title') },
     { type: 'body', text: t('legal.terms_s9_body'), gap: 2 },
-  ];
+    { type: 'heading', text: t('legal.terms_s10_title') },
+    { type: 'body', text: t('legal.terms_s10_body'), gap: 2 },
+    { type: 'heading', text: t('legal.terms_s11_title') },
+    { type: 'body', text: t('legal.terms_s11_body'), gap: 2 },
+  ]);
 }

@@ -6,7 +6,8 @@ import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
 import { homeCategoryIconBg, HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
-import { t, currentLocale } from '@/i18n';
+import { t } from '@/i18n';
+import { formatLocaleClock, formatUpcomingCount } from '@/utils/localeFormat';
 
 interface RemindersCardProps {
   nextReminder: {
@@ -57,8 +58,7 @@ export default function RemindersCard({
   }, [loading, fadeAnim]);
 
   const formatTime = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleTimeString(currentLocale, { hour: 'numeric', minute: '2-digit' });
+    return formatLocaleClock(new Date(isoString));
   };
 
   return (
@@ -114,7 +114,7 @@ export default function RemindersCard({
           {upcomingCount > 0 ? (
             <View style={styles.footer}>
               <Text style={styles.upcoming} numberOfLines={1}>
-                {upcomingCount} {t('home.remindersCard.upcoming')}
+                {formatUpcomingCount(upcomingCount)}
               </Text>
               <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
             </View>

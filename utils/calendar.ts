@@ -1,3 +1,22 @@
+import { t } from '@/i18n';
+
+export const MONTH_KEYS = [
+  'jan',
+  'feb',
+  'mar',
+  'apr',
+  'may',
+  'jun',
+  'jul',
+  'aug',
+  'sep',
+  'oct',
+  'nov',
+  'dec',
+] as const;
+
+export const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
+
 export interface CalendarCell {
   date: Date;
   day: number;
@@ -8,7 +27,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function getCalendarCells(year: number, month: number): CalendarCell[] {
   const firstOfMonth = new Date(year, month, 1);
-  const startWeekday = firstOfMonth.getDay();
+  // Figma calendars start on Monday (Mo … Su). getDay() is Sunday=0.
+  const startWeekday = (firstOfMonth.getDay() + 6) % 7;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrevMonth = new Date(year, month, 0).getDate();
 
@@ -274,26 +294,33 @@ export function getYearOptions(options?: { pastYears?: number; futureYears?: num
   return years;
 }
 
-/** Format an ISO date (YYYY-MM-DD) or Date as DD/MM/YY for display. */
+function toLocalDate(value: string | Date): Date | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+  return parseIsoDate(value) ?? (Number.isNaN(new Date(value).getTime()) ? null : new Date(value));
+}
+
+/** Format an ISO date (YYYY-MM-DD) or Date as DD.MM.YY for display. */
 export function formatDisplayDate(value: string | Date | null | undefined): string {
   if (!value) return '';
-  const date = typeof value === 'string' ? new Date(value) : value;
-  if (Number.isNaN(date.getTime())) return '';
+  const date = toLocalDate(value);
+  if (!date) return '';
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = String(date.getFullYear()).slice(-2);
-  return `${day}/${month}/${year}`;
+  return `${day}.${month}.${year}`;
 }
 
-/** Format an ISO date (YYYY-MM-DD) or Date as DD/MM/YYYY for display. */
+/** Format an ISO date (YYYY-MM-DD) or Date as DD.MM.YYYY for display. */
 export function formatDisplayDateLong(value: string | Date | null | undefined): string {
   if (!value) return '';
-  const date = typeof value === 'string' ? new Date(value) : value;
-  if (Number.isNaN(date.getTime())) return '';
+  const date = toLocalDate(value);
+  if (!date) return '';
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = String(date.getFullYear());
-  return `${day}/${month}/${year}`;
+  return `${day}.${month}.${year}`;
 }
 
 /** True if an ISO date (YYYY-MM-DD) is the same calendar day as today. */
@@ -389,10 +416,25 @@ function parseApiDateTime(value: string | null | undefined): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-/** Health list footer: Created/Resolved + Today 17:15, Yesterday 20:11, or DD/MM/YY. */
+/** "24 apr. 2026" — resolved topic cards in the PDF. */
+export function formatDisplayDateShortMonth(value: string | Date | null | undefined): string {
+  if (!value) return '';
+  const date = toLocalDate(value);
+  if (!date) return '';
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = t(`petOnboarding.month_${MONTH_KEYS[date.getMonth()]}_short`);
+  return `${day} ${month} ${date.getFullYear()}`;
+}
+
+/** Health list footer: Created/Resolved + Today 17:15, Yesterday 20:11, or the date. */
 export function formatHealthDateMeta(
   isoDateTime: string | null | undefined,
-  labels: { today: string; yesterday: string; prefix: string },
+  labels: {
+    today: string;
+    yesterday: string;
+    prefix: string;
+    monthStyle?: 'numeric' | 'short';
+  },
 ): string {
   if (!isoDateTime) return '';
   const created = parseApiDateTime(isoDateTime);
@@ -411,7 +453,11 @@ export function formatHealthDateMeta(
   if (diffDays === 1) {
     return `${labels.prefix} ${labels.yesterday} ${time}`;
   }
-  return `${labels.prefix} ${formatDisplayDate(created)}`;
+  const dateLabel =
+    labels.monthStyle === 'short'
+      ? formatDisplayDateShortMonth(created)
+      : formatDisplayDateLong(created);
+  return `${labels.prefix} ${dateLabel}`;
 }
 
 /** @deprecated Use formatHealthDateMeta */
@@ -451,20 +497,3 @@ export function formatNoteSectionDateLabel(
   if (diffDays === 1) return labels.yesterday;
   return formatDisplayDateLong(created);
 }
-
-export const MONTH_KEYS = [
-  'jan',
-  'feb',
-  'mar',
-  'apr',
-  'may',
-  'jun',
-  'jul',
-  'aug',
-  'sep',
-  'oct',
-  'nov',
-  'dec',
-] as const;
-
-export const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;

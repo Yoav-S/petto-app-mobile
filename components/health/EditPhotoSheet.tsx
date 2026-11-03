@@ -43,7 +43,7 @@ export default function EditPhotoSheet({
           <View style={styles.header}>
             <View style={styles.headerSpacer} />
             <Text style={styles.title}>
-              {hasPhoto ? t('profile.edit.change_photo') : t('petOnboarding.photo_sheet_title')}
+              {hasPhoto ? t('petOnboarding.photo_edit') : t('petOnboarding.photo_sheet_title')}
             </Text>
             <HeaderIconButton onPress={onClose} accessibilityLabel={t('petOnboarding.photo_close_a11y')}>
               <Ionicons name="close" size={24} color={colors.primaryText} />

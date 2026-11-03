@@ -86,6 +86,7 @@ export default function HealthListItem({
     today: t('common.today'),
     yesterday: t('topics.created_yesterday'),
     prefix: metaPrefix,
+    monthStyle: metaKind === 'resolved' ? 'short' : 'numeric',
   });
 
   return (

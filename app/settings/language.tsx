@@ -8,11 +8,7 @@ import { useLocale } from '@/context/LocaleContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import { HeaderScrollScreen } from '@/components/ui/HeaderScrollLayout';
 
-const OPTIONS: { code: AppLocale; label: string }[] = [
-  { code: 'en', label: 'English' },
-  { code: 'ro', label: 'Română' },
-  { code: 'ru', label: 'Русский' },
-];
+const OPTIONS: AppLocale[] = ['en', 'ro', 'ru'];
 
 export default function LanguageSettingsScreen() {
   const { locale, setLocale } = useLocale();
@@ -27,17 +23,17 @@ export default function LanguageSettingsScreen() {
       contentContainerStyle={styles.content}
     >
       <View style={styles.card}>
-        {OPTIONS.map((option) => {
-          const selected = locale === option.code;
+        {OPTIONS.map((code) => {
+          const selected = locale === code;
           return (
             <Pressable
-              key={option.code}
+              key={code}
               style={styles.row}
-              onPress={() => setLocale(option.code)}
+              onPress={() => setLocale(code)}
               accessibilityRole="radio"
               accessibilityState={{ selected }}
             >
-              <Text style={styles.rowLabel}>{option.label}</Text>
+              <Text style={styles.rowLabel}>{t(`settings.language_${code}`)}</Text>
               <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
                 {selected && (
                   <Ionicons name="checkmark" size={16} color={colors.button.primaryText} />

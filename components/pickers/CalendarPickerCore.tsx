@@ -250,7 +250,7 @@ export default function CalendarPickerCore({
                 disabled && styles.optionTextDisabled,
               ]}
             >
-              {t(`petOnboarding.month_${key}`)}
+              {t(`petOnboarding.month_${key}_short`)}
             </Text>
           </Pressable>
         );

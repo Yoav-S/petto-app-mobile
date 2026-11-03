@@ -7,6 +7,7 @@ import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import ListRowPressable from '@/components/ui/ListRowPressable';
 import { t } from '@/i18n';
+import { formatKm, formatRating } from '@/utils/localeFormat';
 import { placeHoursStatus } from '@/services/placeHours';
 import type { BusinessPlace } from '@/services/places';
 
@@ -16,7 +17,7 @@ const BUSINESS_IMAGE_RATIO = 335 / 278;
 const CATEGORY_LABEL: Record<BusinessPlace['category'], string> = {
   veterinarian: 'home.category_veterinary',
   groomer: 'home.category_grooming',
-  pet_store: 'home.category_shops',
+  pet_store: 'home.tag_pet_store',
   pharmacy: 'home.category_pharmacies',
   pet_friendly: 'home.category_friendly',
 };
@@ -69,7 +70,7 @@ export default function PlaceCard({
               <View style={styles.distanceTint} />
               <MapPin size={24} color="#1F2937" />
               <Text style={styles.distanceText} numberOfLines={1}>
-                {`${place.distance_km} km`}
+                {formatKm(place.distance_km)}
               </Text>
             </View>
           </View>
@@ -90,7 +91,7 @@ export default function PlaceCard({
           {typeof place.rating === 'number' ? (
             <View style={styles.ratingChip}>
               <Star size={12} color="#F6F7F9" fill="#F6F7F9" />
-              <Text style={styles.ratingText}>{place.rating.toFixed(1)}</Text>
+              <Text style={styles.ratingText}>{formatRating(place.rating)}</Text>
             </View>
           ) : null}
         </View>

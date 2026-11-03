@@ -31,12 +31,10 @@ import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PET_BIRTH_STEP, PET_ONBOARDING_HERO } from '@/constants/petOnboarding';
 import { getPetOnboardingScale } from '@/utils/petOnboardingScale';
-import { parseIsoDate } from '@/utils/calendar';
+import { formatDisplayDateLong, parseIsoDate } from '@/utils/calendar';
 
 function formatDisplayDate(iso: string): string {
-  const date = parseIsoDate(iso);
-  if (!date) return iso;
-  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  return formatDisplayDateLong(iso) || iso;
 }
 
 export default function PetBirthOnboardingScreen() {
@@ -286,6 +284,7 @@ export default function PetBirthOnboardingScreen() {
       <BirthDatePickerSheet
         visible={sheetVisible}
         initialDate={parseIsoDate(birthDate)}
+        confirmLabel={t('petOnboarding.birth_confirm')}
         onClose={() => setSheetVisible(false)}
         onConfirm={handleConfirmDate}
       />

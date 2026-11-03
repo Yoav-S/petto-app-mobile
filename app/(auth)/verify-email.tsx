@@ -152,9 +152,9 @@ export default function VerifyEmailScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.card}>
-            <Text style={styles.title}>Verify your email</Text>
+            <Text style={styles.title}>{t('auth.verify_title')}</Text>
             <Text style={styles.subtitle}>
-              We sent a 6-digit code to{'\n'}
+              {t('auth.verify_sent')}{'\n'}
               <Text style={styles.email}>{email}</Text>
             </Text>
 
@@ -162,7 +162,7 @@ export default function VerifyEmailScreen() {
               style={styles.otpPressable}
               onPress={focusOtpInput}
               accessibilityRole="button"
-              accessibilityLabel="Enter verification code"
+              accessibilityLabel={t('auth.otp_a11y')}
             >
               <View style={styles.otpRow} pointerEvents="none">
                 {Array.from({ length: OTP_LENGTH }).map((_, i) => {
@@ -209,10 +209,8 @@ export default function VerifyEmailScreen() {
               />
             </Pressable>
 
-            <Text style={styles.tapHint}>Tap the code boxes to edit</Text>
-            <Text style={styles.tapHint}>
-              Check your inbox and spam folder. After resend, only the newest code works.
-            </Text>
+            <Text style={styles.tapHint}>{t('auth.otp_edit_hint')}</Text>
+            <Text style={styles.tapHint}>{t('auth.otp_spam_hint')}</Text>
 
             {info ? <Text style={styles.infoText}>{info}</Text> : null}
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -230,7 +228,7 @@ export default function VerifyEmailScreen() {
               {isVerifying ? (
                 <ActivityIndicator color={colors.surface} />
               ) : (
-                <Text style={styles.buttonText}>Verify</Text>
+                <Text style={styles.buttonText}>{t('auth.verify')}</Text>
               )}
             </TouchableOpacity>
 
@@ -241,10 +239,10 @@ export default function VerifyEmailScreen() {
             >
               <Text style={[styles.resendText, cooldown > 0 && styles.resendMuted]}>
                 {cooldown > 0
-                  ? `Resend code 00:${String(cooldown).padStart(2, '0')}`
+                  ? `${t('auth.didnt_receive')} ${t('auth.resend')} - 00:${String(cooldown).padStart(2, '0')}`
                   : isSending
-                    ? 'Sendingâ€¦'
-                    : 'Resend code'}
+                    ? t('auth.sending')
+                    : `${t('auth.didnt_receive')} ${t('auth.resend')}`}
               </Text>
             </TouchableOpacity>
           </View>
@@ -256,7 +254,7 @@ export default function VerifyEmailScreen() {
               router.back();
             }}
           >
-            <Text style={styles.backText}>Change email</Text>
+            <Text style={styles.backText}>{t('auth.change_email')}</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>

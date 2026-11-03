@@ -87,14 +87,14 @@ export function formatOpensAt(place: Pick<BusinessPlace, 'opens_at' | 'next_open
   if (!when) return null;
   if (place.opens_tomorrow) return `${t('home.opens_tomorrow')} ${when}`;
   if (place.next_open_day) return `${t('home.opens')} ${t(DAY_LABEL[place.next_open_day])} ${when}`;
-  return `${t('home.opens')} ${when}`;
+  return `${t('home.opens_at')} ${when}`;
 }
 
 export function formatClosesAt(place: Pick<BusinessPlace, 'closes_at' | 'open_24_7'>): string | null {
   if (place.open_24_7) return t('home.opens_24_7');
   const when = place.closes_at ? clockFromApi(place.closes_at) : null;
   if (!when) return null;
-  return `${t('home.closes')} ${when}`;
+  return `${t('home.closes_at')} ${when}`;
 }
 
 export type HoursStatus = { open: boolean; mixed?: boolean; color: string; label: string; detail: string | null };

@@ -358,6 +358,7 @@ export default function HealthDetailsScreen() {
       setRecord(detail);
       applyNotesPage(detail.notes ?? [], false);
       setResolveVisible(false);
+      toast.show({ message: t('topics.resolved_toast') });
     } catch (err) {
       toast.showError(getErrorMessage(err));
     } finally {
@@ -680,7 +681,7 @@ export default function HealthDetailsScreen() {
         visible={resolveVisible}
         title={t('topics.resolve_confirm_title')}
         message={t('topics.resolve_confirm_body')}
-        confirmText={t('topics.tab_resolved')}
+        confirmText={t('topics.resolve_confirm_button')}
         cancelText={t('common.cancel')}
         variant="primary"
         onCancel={() => {

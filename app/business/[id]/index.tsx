@@ -30,6 +30,7 @@ import { getErrorMessage } from '@/services/errors';
 import WriteReviewSheet from '@/components/business/WriteReviewSheet';
 import { openSystemDirections, openSystemPhones } from '@/services/systemApps';
 import { postedLabel } from '@/utils/reviewPosted';
+import { formatKm, formatRating } from '@/utils/localeFormat';
 import { useToast } from '@/context/ToastContext';
 import { branchHoursStatus, formatClosesAt, formatOpensAt, placeHoursStatus } from '@/services/placeHours';
 import {
@@ -62,7 +63,7 @@ const CATEGORY_KEY: Record<BusinessCategory, string> = {
   groomer: 'home.category_grooming',
   pharmacy: 'home.category_pharmacies',
   pet_friendly: 'home.category_friendly',
-  pet_store: 'home.category_shops',
+  pet_store: 'home.tag_pet_store',
 };
 function hoursListed(hours: OpeningHours | undefined): boolean {
   return Boolean(hours) && hours?.provided !== false;
@@ -167,7 +168,7 @@ function LocationCopy({
       {typeof branch.distance_km === 'number' ? (
         <View style={styles.locationDistanceRow}>
           <MapPin size={12} color={colors.primaryText} />
-          <Text style={styles.locationDistance}>{`${branch.distance_km} km`}</Text>
+          <Text style={styles.locationDistance}>{formatKm(branch.distance_km)}</Text>
         </View>
       ) : null}
       {address}
@@ -574,7 +575,7 @@ export default function BusinessScreen() {
             {typeof rating === 'number' && !Number.isNaN(rating) ? (
               <View style={styles.ratingChip}>
                 <Star size={12} color="#F6F7F9" fill="#F6F7F9" />
-                <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
+                <Text style={styles.ratingText}>{formatRating(rating)}</Text>
               </View>
             ) : null}
           </View>
@@ -773,7 +774,7 @@ export default function BusinessScreen() {
                       </View>
                       <View style={styles.ratingChip}>
                         <Star size={12} color="#F6F7F9" fill="#F6F7F9" />
-                        <Text style={styles.ratingText}>{review.rating.toFixed(1)}</Text>
+                        <Text style={styles.ratingText}>{formatRating(review.rating)}</Text>
                       </View>
                     </View>
                     {review.comment ? (

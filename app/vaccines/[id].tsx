@@ -260,7 +260,7 @@ export default function VaccineDetailsScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
-        <ScreenHeader title={t('vaccines.list_title')} />
+        <ScreenHeader title={t('vaccines.details_title')} />
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primaryText} />
         </View>
@@ -271,7 +271,7 @@ export default function VaccineDetailsScreen() {
   if (notFound || !vaccine) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
-        <ScreenHeader title={t('vaccines.list_title')} />
+        <ScreenHeader title={t('vaccines.details_title')} />
         <View style={styles.centered}>
           <EmptyState
             title={t('vaccines.not_found_title')}
@@ -409,7 +409,7 @@ export default function VaccineDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
-      <ScreenHeader title={t('vaccines.list_title')} />
+      <ScreenHeader title={t('vaccines.details_title')} />
 
       <View
         style={styles.flex}

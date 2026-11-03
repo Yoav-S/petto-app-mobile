@@ -1,6 +1,7 @@
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles, useTheme } from '@/context/ThemeContext';
 import { t } from '@/i18n';
+import { formatPetAge } from '@/utils/localeFormat';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Pencil } from 'lucide-react-native';
 import React, { useEffect, useId, useMemo, useRef } from 'react';
@@ -64,12 +65,11 @@ function calculateAge(birthDateString?: string): string {
   if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
     years--;
   }
-  if (years > 0) return `${years} years`;
   const months =
     (today.getFullYear() - birthDate.getFullYear()) * 12 +
     today.getMonth() -
     birthDate.getMonth();
-  return `${Math.max(months, 0)} months`;
+  return formatPetAge(years, months);
 }
 
 export default function PetHeader({

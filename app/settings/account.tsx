@@ -369,7 +369,7 @@ export default function AccountSettingsScreen() {
               onPress={() => setPhotoSheetVisible(true)}
               style={styles.photo}
               accessibilityRole="button"
-              accessibilityLabel={t('pets.add_photo')}
+              accessibilityLabel={shownPhoto ? t('settings.change_photo') : t('pets.add_photo')}
             >
               {shownPhoto ? (
                 <Image source={{ uri: shownPhoto }} style={styles.photoImage} contentFit="cover" />
