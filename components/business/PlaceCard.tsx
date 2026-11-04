@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { MapPin, Star } from 'lucide-react-native';
-import { LIST_CARD_LAST_SHADOW } from '@/constants/layout';
+import { PLACE_CARD_SHADOW } from '@/constants/layout';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import ListRowPressable from '@/components/ui/ListRowPressable';
@@ -25,7 +25,6 @@ const CATEGORY_LABEL: Record<BusinessPlace['category'], string> = {
 export default function PlaceCard({
   place,
   onPress,
-  last = false,
 }: {
   place: BusinessPlace;
   onPress: () => void;
@@ -36,7 +35,7 @@ export default function PlaceCard({
   const categories = place.categories?.length ? place.categories : [place.category];
 
   return (
-    <View style={[styles.placeCard, last ? styles.placeCardLast : null]} collapsable={false}>
+    <View style={styles.placeCard} collapsable={false}>
     <ListRowPressable style={styles.placePress} onPress={onPress}>
       <View style={styles.cardImageWrap}>
         {place.image ? (
@@ -80,12 +79,24 @@ export default function PlaceCard({
         <View style={styles.chipRow}>
           {categories.map((category) => (
             <View key={category} style={styles.categoryChip}>
-              <Text style={styles.categoryChipText}>{t(CATEGORY_LABEL[category])}</Text>
+              <Text
+                style={styles.categoryChipText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {t(CATEGORY_LABEL[category])}
+              </Text>
             </View>
           ))}
         </View>
         <View style={styles.titleRow}>
-          <Text style={styles.placeName} numberOfLines={1}>
+          <Text
+            style={styles.placeName}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
             {place.name}
           </Text>
           {typeof place.rating === 'number' ? (
@@ -102,7 +113,12 @@ export default function PlaceCard({
             </Text>
             <View style={[styles.statusDot, { backgroundColor: status.color }]} />
             {status.detail ? (
-              <Text style={styles.statusDetail} numberOfLines={2}>
+              <Text
+                style={styles.statusDetail}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
                 {status.detail}
               </Text>
             ) : null}
@@ -122,22 +138,14 @@ function makeStyles(colors: ThemeColors) {
       width: '100%',
       alignSelf: 'stretch',
       borderRadius: 24,
-      backgroundColor: colors.iconChip,
-      shadowColor: '#2D2D2A',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 20,
-      boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.080)',
-      elevation: 4,
-    },
-    placeCardLast: {
-      ...LIST_CARD_LAST_SHADOW,
+      backgroundColor: colors.surface,
+      ...PLACE_CARD_SHADOW,
     },
     placePress: {
       width: '100%',
       borderRadius: 24,
       overflow: 'hidden',
-      backgroundColor: colors.iconChip,
+      backgroundColor: colors.surface,
       paddingBottom: 22,
       gap: 16,
     },
@@ -252,12 +260,13 @@ function makeStyles(colors: ThemeColors) {
     chipRow: {
       minHeight: 16,
       flexDirection: 'row',
-      flexWrap: 'wrap',
+      flexWrap: 'nowrap',
       alignItems: 'center',
       gap: 6,
     },
     categoryChip: {
       height: 16,
+      flexShrink: 1,
       justifyContent: 'center',
       borderRadius: 6,
       backgroundColor: colors.background,
@@ -273,10 +282,9 @@ function makeStyles(colors: ThemeColors) {
     statusRow: {
       minHeight: 16,
       flexDirection: 'row',
-      flexWrap: 'wrap',
+      flexWrap: 'nowrap',
       alignItems: 'center',
       columnGap: 6,
-      rowGap: 2,
     },
     statusText: {
       flexShrink: 0,

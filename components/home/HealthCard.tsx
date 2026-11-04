@@ -84,7 +84,12 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
           <CategoryIcon />
           <View style={styles.column}>
             <View style={styles.headerRow}>
-              <Text style={[homeCardTypography.title, styles.headerTitle]} numberOfLines={1}>
+              <Text
+                style={[homeCardTypography.title, styles.headerTitle]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
                 {t('home.topicsCard.title')}
               </Text>
               {latestRecord?.reminder_date || latestRecord?.reminder_time ? (

@@ -98,7 +98,12 @@ export default function HealthListItem({
     >
       <View style={styles.body}>
         <View style={styles.titleRow}>
-          <Text style={[styles.title, styles.rowMain]} numberOfLines={1} ellipsizeMode="tail">
+          <Text
+            style={[styles.title, styles.rowMain]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
             {displayTitle}
           </Text>
           {hasReminder ? (

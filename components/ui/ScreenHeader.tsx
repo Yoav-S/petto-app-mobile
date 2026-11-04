@@ -48,7 +48,12 @@ export default function ScreenHeader({ title, icon = 'back', onBack, right }: Sc
           />
         </HeaderIconButton>
 
-        <Text style={styles.title} numberOfLines={1}>
+        <Text
+          style={styles.title}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.65}
+        >
           {title}
         </Text>
 

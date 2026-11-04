@@ -13,7 +13,7 @@ type Player = ReturnType<ExpoAudio['createAudioPlayer']>;
 
 let modeReady = false;
 let warming = false;
-let enabled = true;
+let enabled = false;
 let prefReady = false;
 const cache: Partial<Record<PetSoundType, Player>> = {};
 
@@ -97,8 +97,13 @@ function playOnce(player: Player) {
 
 /** Decode both clips so the first tap is not waiting on the file. */
 export function warmupPetSounds() {
-  if (!prefReady) void hydratePetSoundsPref();
-  if (warming) return;
+  if (!prefReady) {
+    void hydratePetSoundsPref().then((on) => {
+      if (on) warmupPetSounds();
+    });
+    return;
+  }
+  if (!enabled || warming) return;
   const audio = loadAudio();
   if (!audio) return;
   warming = true;

@@ -452,7 +452,12 @@ export default function NearYouSheet({
             </GestureDetector>
             <GestureDetector gesture={titlePan}>
               <View collapsable={false}>
-                <Text style={[styles.title, showClose && styles.titleWithClose]} numberOfLines={1}>
+                <Text
+                  style={[styles.title, showClose && styles.titleWithClose]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.75}
+                >
                   {t('home.near_you')}
                 </Text>
               </View>

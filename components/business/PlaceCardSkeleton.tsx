@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
+import { PLACE_CARD_SHADOW } from '@/constants/layout';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 
@@ -61,15 +62,10 @@ function makeStyles(colors: ThemeColors) {
       width: '100%',
       alignSelf: 'stretch',
       borderRadius: 24,
-      backgroundColor: colors.iconChip,
+      backgroundColor: colors.surface,
       paddingBottom: 22,
       gap: 16,
-      shadowColor: '#2D2D2A',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 20,
-      boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.080)',
-      elevation: 4,
+      ...PLACE_CARD_SHADOW,
     },
     image: {
       width: '100%',

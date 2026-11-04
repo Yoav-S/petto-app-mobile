@@ -46,6 +46,16 @@ export const LIST_TABS_CONTENT_GAP = 16;
 /** Gap from the tab pills to the first list row. Rows scroll out on this same line. */
 export const LIST_TABS_LIST_GAP = 8;
 
+/** Near You / place cards: Figma `0px 4px 20px 0px #2D2D2A14`. */
+export const PLACE_CARD_SHADOW = {
+  shadowColor: '#2D2D2A',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0x14 / 255,
+  shadowRadius: 20,
+  boxShadow: '0px 4px 20px 0px #2D2D2A14',
+  elevation: 4,
+} as const;
+
 /** Last list card: a lighter drop so the canvas under it does not read as another color. */
 export const LIST_CARD_LAST_SHADOW = {
   shadowOpacity: 0.016,

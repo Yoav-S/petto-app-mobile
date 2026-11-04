@@ -78,7 +78,12 @@ export default function RemindersCard({
         <View style={styles.contentContainer}>
           <View style={styles.iconTitleBlock}>
             <CategoryIcon />
-            <Text style={homeCardTypography.title} numberOfLines={1}>
+            <Text
+              style={homeCardTypography.title}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
               {t('home.remindersCard.title')}
             </Text>
           </View>

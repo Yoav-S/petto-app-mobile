@@ -136,6 +136,8 @@ export default function PetHeader({
       <Text
         style={[styles.metaText, shrink && styles.metaTextShrink]}
         numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
       >
         {label}
       </Text>
@@ -189,7 +191,12 @@ export default function PetHeader({
                 activeOpacity={canSwitch ? 0.7 : 1}
                 disabled={!canSwitch}
               >
-                <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+                <Text
+                  style={styles.name}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
                   {pet?.name ?? t('home.noPet')}
                 </Text>
                 {canSwitch ? (

@@ -72,7 +72,12 @@ export default function VaccinesCard({ latestVaccine, loading, onPress }: Vaccin
         <View style={styles.contentContainer}>
           <View style={styles.iconTitleBlock}>
             <CategoryIcon />
-            <Text style={homeCardTypography.title} numberOfLines={1}>
+            <Text
+              style={homeCardTypography.title}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
               {t('home.vaccinesCard.title')}
             </Text>
           </View>
