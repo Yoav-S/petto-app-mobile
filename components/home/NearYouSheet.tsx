@@ -15,6 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
 import { type ThemeColors } from '@/constants/theme';
+import { LIST_CONTENT_TOP_NUDGE, LIST_TABS_SCROLL_CLEARANCE } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
 import PlaceCard from '@/components/business/PlaceCard';
@@ -25,12 +26,16 @@ import { placeKey, type BusinessPlace } from '@/services/places';
 /** Figma list column is 335 on a 375 frame, so 20px stays free on each side. */
 const CARD_SIDE = 20;
 const CARD_GAP = 16;
-/** Handle row + “Near You” title. Cards sit 16px below the title and tuck 12px under it. */
+/**
+ * Handle + title, then the same list insets as reminders/topics:
+ * 12pt solid dock below the title (rows tuck under here), then 16pt before
+ * the first card so that gap is visible instead of sitting under the header.
+ */
 const HEADER_HANDLE = 28;
 const HEADER_TITLE = 28;
-const LIST_GAP = 16;
-const LIST_UNDERLAP = 12;
-const LIST_PAD_TOP = HEADER_HANDLE + HEADER_TITLE + LIST_GAP;
+const LIST_GAP = LIST_CONTENT_TOP_NUDGE;
+const LIST_UNDERLAP = LIST_TABS_SCROLL_CLEARANCE;
+const LIST_PAD_TOP = HEADER_HANDLE + HEADER_TITLE + LIST_UNDERLAP + LIST_GAP;
 const HEADER_DOCK = HEADER_HANDLE + HEADER_TITLE + LIST_UNDERLAP;
 /** Greeting row that holds the 42px profile photo: 10px under the status bar, 46px tall. */
 const GREETING_PAD_TOP = 10;

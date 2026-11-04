@@ -150,18 +150,18 @@ function LocationCopy({
   const styles = useThemedStyles(makeStyles);
   const copy = addressText(branch.address, branch.city);
   const address = copy ? (
-    onPressAddress ? (
-      <Pressable
-        onPress={onPressAddress}
-        accessibilityRole="button"
-        accessibilityLabel={t('business.directions')}
-        hitSlop={6}
-      >
-        <Text style={styles.locationAddress}>{copy}</Text>
-      </Pressable>
-    ) : (
-      <Text style={styles.locationAddress}>{copy}</Text>
-    )
+    <Text
+      style={styles.locationAddress}
+      {...(onPressAddress
+        ? {
+            onPress: onPressAddress,
+            accessibilityRole: 'link' as const,
+            accessibilityLabel: t('business.directions'),
+          }
+        : {})}
+    >
+      {copy}
+    </Text>
   ) : null;
   const body = (
     <>
@@ -219,9 +219,9 @@ function OtherLocationRow({
             ? () => {
                 skipRow.current = true;
                 onPressAddress();
-                setTimeout(() => {
+                requestAnimationFrame(() => {
                   skipRow.current = false;
-                }, 0);
+                });
               }
             : undefined
         }
@@ -1151,6 +1151,7 @@ const makeStyles = (c: ThemeColors) =>
       color: c.primaryText,
     },
     locationAddress: {
+      alignSelf: 'flex-start',
       fontFamily: 'Rubik-Regular',
       fontSize: 16,
       lineHeight: 24,
