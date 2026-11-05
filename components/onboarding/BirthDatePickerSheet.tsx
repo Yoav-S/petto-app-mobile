@@ -25,7 +25,7 @@ interface BirthDatePickerSheetProps {
   allowFuture?: boolean;
   /** Optional sheet title override. */
   title?: string;
-  /** Confirm button label. Defaults to onboarding Continue. */
+  /** Confirm button label. Defaults to date-picker Apply. */
   confirmLabel?: string;
   /** Earliest selectable date (YYYY-MM-DD). */
   minDate?: string;
@@ -98,7 +98,7 @@ export default function BirthDatePickerSheet({
             style={[styles.confirmBtn, !canConfirm && styles.confirmBtnDisabled]}
           >
             <Text style={styles.confirmText}>
-              {confirmLabel ?? t('onboarding.continue')}
+              {confirmLabel ?? t('petOnboarding.birth_confirm')}
             </Text>
           </Pressable>
         </View>

@@ -27,6 +27,7 @@ import GlobalKeyboardDoneButton from '@/components/ui/GlobalKeyboardDoneButton';
 import AppSplash from '@/components/ui/AppSplash';
 import { SPLASH_BACKGROUND } from '@/constants/splash';
 import { SystemBarsProvider } from '@/context/SystemBarsContext';
+import { useCompactPortraitLock } from '@/hooks/useCompactPortraitLock';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -206,6 +207,7 @@ function RootLayoutNav() {
 function ThemedApp() {
   const { isDark, colors } = useTheme();
   const { locale } = useLocale();
+  useCompactPortraitLock();
   const [fontsLoaded, fontError] = useFonts({
     'Rubik-Regular': Rubik_400Regular,
     'Rubik-Medium': Rubik_500Medium,

@@ -205,13 +205,14 @@ export function formatHealthReminderValue(
   const timeStr = formatReminderClockTime(time);
   if (!datePart) return timeStr;
 
-  const dateStr = formatDisplayDate(datePart);
-  const dateTime = timeStr ? `${dateStr}, ${timeStr}` : dateStr;
+  const withTime = (label: string) => (timeStr ? `${label}, ${timeStr}` : label);
 
   if (datePart < todayIsoDate()) {
-    return `${labels.sentSuccessfully}, ${dateTime}`;
+    return `${labels.sentSuccessfully}, ${withTime(formatDisplayDate(datePart))}`;
   }
-  return dateTime;
+  if (isIsoDateToday(datePart)) return withTime(labels.today);
+  if (isIsoDateTomorrow(datePart)) return withTime(labels.tomorrow);
+  return withTime(formatDisplayDate(datePart));
 }
 
 export function parseIsoDate(value: string | null | undefined): Date | null {
@@ -370,7 +371,7 @@ export function formatListDateOrTime(
 
   if (datePart && isIsoDateToday(datePart)) {
     const displayTime = timePart ? formatDisplayTime(timePart) : '';
-    if (todayLabel && displayTime) return `${todayLabel} ${displayTime}`;
+    if (todayLabel && displayTime) return `${todayLabel}, ${displayTime}`;
     if (todayLabel) return todayLabel;
     if (displayTime) return displayTime;
     return extractTimeFromIso(date ?? '');

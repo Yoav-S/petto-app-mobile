@@ -123,11 +123,11 @@ const RU_RELATIVE: Record<RelativeUnit, { one: string; few: string; many: string
   month: { one: 'месяц назад', few: 'месяца назад', many: 'месяцев назад' },
 };
 
-/** Relative time: EN "3 hours ago", RO "Acum 3 ore", RU "3 часа назад". */
+/** Relative time: EN "3 hours ago", RO "acum 3 ore", RU "3 часа назад". */
 export function formatRelativeAgo(count: number, unit: RelativeUnit): string {
   if (currentLocale === 'ro') {
     const words = RO_RELATIVE[unit];
-    return `Acum ${formatRoUnit(count, words.one, words.few)}`;
+    return `acum ${formatRoUnit(count, words.one, words.few)}`;
   }
   if (currentLocale === 'ru') {
     const words = RU_RELATIVE[unit];

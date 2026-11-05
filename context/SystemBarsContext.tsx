@@ -2,13 +2,11 @@ import React, {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import * as NavigationBar from 'expo-navigation-bar';
 import { StatusBar } from 'expo-status-bar';
 import {
   statusBarStyleForHex,
@@ -83,10 +81,6 @@ export function SystemBarsProvider({
     },
     [publish],
   );
-
-  useEffect(() => {
-    void NavigationBar.setButtonStyleAsync(themeStyle).catch(() => {});
-  }, [themeStyle]);
 
   const value = useMemo(
     () => ({ themeStyle, upsertClaim, removeClaim }),

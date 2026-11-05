@@ -472,7 +472,7 @@ export default function VaccineDetailsScreen() {
           save(patch);
         }}
         title={t('vaccines.vaccinated_on')}
-        confirmLabel={t('pickers.done')}
+        confirmLabel={t('petOnboarding.birth_confirm')}
       />
       <BirthDatePickerSheet
         visible={picker === 'next'}
@@ -485,7 +485,7 @@ export default function VaccineDetailsScreen() {
           if (iso !== vaccine.next_date) save({ next_date: iso });
         }}
         title={t('vaccines.valid_until')}
-        confirmLabel={t('pickers.done')}
+        confirmLabel={t('petOnboarding.birth_confirm')}
       />
 
       <ConfirmModal

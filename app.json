@@ -33,11 +33,6 @@
         "com.google.android.gms.permission.AD_ID"
       ]
     },
-    "androidNavigationBar": {
-      "backgroundColor": "#00000000",
-      "barStyle": "dark-content",
-      "enforceContrast": false
-    },
     "web": {
       "output": "single",
       "favicon": "./assets/images/favicon.png"
@@ -103,9 +98,15 @@
               "RNFBApp",
               "RNFBAnalytics"
             ]
+          },
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-dontwarn com.google.crypto.tink.**\n-dontwarn org.joda.time.**\n-dontwarn coil.**\n-dontwarn coil3.**\n-dontwarn com.google.android.play.core.splitcompat.**\n-dontwarn com.google.android.play.core.splitinstall.**\n-dontwarn com.google.android.play.core.tasks.**\n-dontwarn javax.annotation.**\n-dontwarn javax.annotation.concurrent.**\n-dontwarn org.bouncycastle.**\n-dontwarn org.conscrypt.**\n-dontwarn org.openjsse.**"
           }
         }
       ],
+      "./plugins/withAndroidAdaptiveOrientation.js",
       "@react-native-community/datetimepicker"
     ],
     "experiments": {
