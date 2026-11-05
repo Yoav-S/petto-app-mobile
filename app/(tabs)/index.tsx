@@ -19,7 +19,6 @@ import { type ThemeColors } from '@/constants/theme';
 import { useColors, useTheme, useThemedStyles } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { t } from '@/i18n';
-import { useLocale } from '@/context/LocaleContext';
 import { usePetsQuery } from '@/hooks/useCachedQueries';
 import { useActivePet } from '@/store/petStore';
 import { guardAddPet, guardSelectPet } from '@/services/subscription';
@@ -35,8 +34,8 @@ import {
 } from '@/services/places';
 import { playPetSound, warmupPetSounds } from '@/services/petSound';
 import { petPhotoSource } from '@/utils/petPhotoSource';
-import { fitScrollLabels } from '@/utils/fitScrollLabels';
 import NearYouSheet from '@/components/home/NearYouSheet';
+import FitLabel from '@/components/ui/FitLabel';
 import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import type { Pet } from '@/types/api';
 
@@ -50,17 +49,12 @@ const NIGHT_HOUR = 21;
 const GREETING_AVATAR = 42;
 const PET_SIZE = 72;
 const PET_GAP = 16;
-const PET_LABEL_FONT = 14;
-const PET_LABEL_LINE = 20;
-const PET_LABEL_MIN = 10;
 const CATEGORY_WIDTH = 126;
 const CATEGORY_HEIGHT = 154;
 const CATEGORY_PAD = 24;
 const CATEGORY_GAP = 8;
 const CATEGORY_INSET = 20;
-const CATEGORY_LABEL_FONT = 16;
-const CATEGORY_LABEL_LINE = 20;
-const CATEGORY_LABEL_MIN = 11;
+const CATEGORY_LABEL_WIDTH = CATEGORY_WIDTH - CATEGORY_PAD;
 
 type RowFit = { item: number; gap: number };
 
@@ -188,7 +182,6 @@ export default function DiscoverHomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { locale } = useLocale();
   const { accountName, accountPhotoUrl } = useAuth();
   const { setActivePetId } = useActivePet();
   const petsQuery = usePetsQuery();
@@ -212,18 +205,10 @@ export default function DiscoverHomeScreen() {
   const [restoreNearOpen, setRestoreNearOpen] = useState(false);
   const [petsTrack, setPetsTrack] = useState(0);
   const [categoryTrack, setCategoryTrack] = useState(0);
-  const [categoryLabelWidth, setCategoryLabelWidth] = useState(0);
-  const [petLabelWidth, setPetLabelWidth] = useState(0);
-  const petNamesKey = pets.map((pet) => pet.name).join('\0');
 
   useEffect(() => {
     warmupPetSounds();
   }, []);
-
-  useEffect(() => {
-    setCategoryLabelWidth(0);
-    setPetLabelWidth(0);
-  }, [locale, petNamesKey]);
   const [locating, setLocating] = useState(false);
   /** null while the permission check is still running. */
   const [locationOn, setLocationOn] = useState<boolean | null>(savedNearby ? true : null);
@@ -496,16 +481,9 @@ export default function DiscoverHomeScreen() {
             )}
           </TouchableOpacity>
           <View style={styles.greetingCopy}>
-            <Text
-              style={styles.greetingLine}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.75}
-            >
-              {t(greetingKey())}
-            </Text>
+            <Text style={styles.greetingLine}>{t(greetingKey())}</Text>
             {accountName ? (
-              <Text style={styles.nameLine} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+              <Text style={styles.nameLine} numberOfLines={1}>
                 {`${accountName} !`}
               </Text>
             ) : null}
@@ -525,24 +503,6 @@ export default function DiscoverHomeScreen() {
 
   const petViewport = petsTrack || frameWidth;
   const categoryViewport = categoryTrack || frameWidth;
-  const petLabels = fitScrollLabels({
-    naturalMaxWidth: petLabelWidth,
-    sourceItemWidth: PET_SIZE,
-    horizontalPad: 0,
-    baseFont: PET_LABEL_FONT,
-    baseLine: PET_LABEL_LINE,
-    minFont: PET_LABEL_MIN,
-    stretch: false,
-  });
-  const categoryLabels = fitScrollLabels({
-    naturalMaxWidth: categoryLabelWidth,
-    sourceItemWidth: CATEGORY_WIDTH,
-    horizontalPad: CATEGORY_PAD,
-    baseFont: CATEGORY_LABEL_FONT,
-    baseLine: CATEGORY_LABEL_LINE,
-    minFont: CATEGORY_LABEL_MIN,
-    stretch: true,
-  });
   const petFit = peekRow(
     petViewport,
     PET_SIZE,
@@ -554,22 +514,13 @@ export default function DiscoverHomeScreen() {
   );
   const categoryFit = peekRow(
     categoryViewport,
-    categoryLabels.itemWidth,
+    CATEGORY_WIDTH,
     CATEGORY_GAP,
     CATEGORIES.length,
     CATEGORY_INSET,
     36,
     false,
   );
-  const petNameStyle = {
-    width: PET_SIZE,
-    fontSize: petLabels.fontSize,
-    lineHeight: petLabels.lineHeight,
-  };
-  const categoryNameStyle = {
-    fontSize: categoryLabels.fontSize,
-    lineHeight: categoryLabels.lineHeight,
-  };
   const petSnaps = peekSnapOffsets(
     petViewport,
     petFit.item,
@@ -621,13 +572,9 @@ export default function DiscoverHomeScreen() {
               >
                 <Plus size={24} color={colors.primaryText} />
               </View>
-              <Text
-                style={[styles.petName, petNameStyle]}
-                numberOfLines={1}
-                allowFontScaling={false}
-              >
+              <FitLabel maxWidth={PET_SIZE} style={styles.petName}>
                 {t('home.add')}
-              </Text>
+              </FitLabel>
             </TouchableOpacity>
             {pets.map((pet) => (
               <TouchableOpacity
@@ -640,13 +587,9 @@ export default function DiscoverHomeScreen() {
                   style={styles.petPhoto}
                   contentFit="cover"
                 />
-                <Text
-                  style={[styles.petName, petNameStyle]}
-                  numberOfLines={1}
-                  allowFontScaling={false}
-                >
+                <FitLabel maxWidth={PET_SIZE} style={styles.petName}>
                   {pet.name}
-                </Text>
+                </FitLabel>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -656,47 +599,6 @@ export default function DiscoverHomeScreen() {
 
       <View style={styles.categoriesCard}>
         <Text style={[styles.sectionTitle, styles.categoryTitle]}>{t('home.categories')}</Text>
-        <View key={`${locale}:${petNamesKey}`} style={styles.labelMeasure} pointerEvents="none">
-          {CATEGORIES.map((category) => (
-            <Text
-              key={category.key}
-              style={styles.categoryMeasureLabel}
-              onLayout={(event) => {
-                const next = Math.ceil(event.nativeEvent.layout.width);
-                if (next > 0) {
-                  setCategoryLabelWidth((current) => (current >= next ? current : next));
-                }
-              }}
-            >
-              {t(category.label)}
-            </Text>
-          ))}
-          <Text
-            style={styles.petMeasureLabel}
-            onLayout={(event) => {
-              const next = Math.ceil(event.nativeEvent.layout.width);
-              if (next > 0) {
-                setPetLabelWidth((current) => (current >= next ? current : next));
-              }
-            }}
-          >
-            {t('home.add')}
-          </Text>
-          {pets.map((pet) => (
-            <Text
-              key={pet.id}
-              style={styles.petMeasureLabel}
-              onLayout={(event) => {
-                const next = Math.ceil(event.nativeEvent.layout.width);
-                if (next > 0) {
-                  setPetLabelWidth((current) => (current >= next ? current : next));
-                }
-              }}
-            >
-              {pet.name}
-            </Text>
-          ))}
-        </View>
         <View
           style={styles.rowTrack}
           onLayout={(event) => {
@@ -719,7 +621,6 @@ export default function DiscoverHomeScreen() {
               key={category.key}
               style={[
                 styles.categoryCard,
-                { width: categoryFit.item },
                 isDark ? { backgroundColor: colors.iconChip } : null,
               ]}
               activeOpacity={0.85}
@@ -736,13 +637,9 @@ export default function DiscoverHomeScreen() {
                   style={styles.categoryArt}
                   contentFit="contain"
                 />
-                <Text
-                  style={[styles.categoryLabel, categoryNameStyle]}
-                  numberOfLines={1}
-                  allowFontScaling={false}
-                >
+                <FitLabel maxWidth={CATEGORY_LABEL_WIDTH} style={styles.categoryLabel}>
                   {t(category.label)}
-                </Text>
+                </FitLabel>
               </View>
             </TouchableOpacity>
           ))}
@@ -812,14 +709,7 @@ export default function DiscoverHomeScreen() {
               <View style={styles.locationHandle} />
               <View style={styles.locationBody}>
                 <View style={styles.locationCopy}>
-                  <Text
-                    style={styles.locationTitle}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.75}
-                  >
-                    {t('home.near_title')}
-                  </Text>
+                  <Text style={styles.locationTitle}>{t('home.near_title')}</Text>
                   <Text style={styles.locationSubtitle}>{t('home.near_subtitle')}</Text>
                 </View>
                 <TouchableOpacity
@@ -827,14 +717,7 @@ export default function DiscoverHomeScreen() {
                   onPress={() => void enableLocation()}
                   disabled={locating}
                 >
-                  <Text
-                    style={styles.locationButtonText}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.75}
-                  >
-                    {t('home.enable_location')}
-                  </Text>
+                  <Text style={styles.locationButtonText}>{t('home.enable_location')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -973,22 +856,9 @@ function makeStyles(colors: ThemeColors) {
       justifyContent: 'center',
     },
     petName: {
-      width: PET_SIZE,
-      height: PET_LABEL_LINE,
-      overflow: 'hidden',
-      fontFamily: 'Rubik-Medium',
-      fontSize: PET_LABEL_FONT,
-      lineHeight: PET_LABEL_LINE,
+      height: 20,
       textAlign: 'center',
       color: colors.primaryText,
-      includeFontPadding: false,
-    },
-    petMeasureLabel: {
-      alignSelf: 'flex-start',
-      fontFamily: 'Rubik-Medium',
-      fontSize: PET_LABEL_FONT,
-      lineHeight: PET_LABEL_LINE,
-      includeFontPadding: false,
     },
     categoriesCard: {
       width: '100%',
@@ -1007,19 +877,6 @@ function makeStyles(colors: ThemeColors) {
       paddingRight: 20,
       gap: 8,
     },
-    labelMeasure: {
-      position: 'absolute',
-      left: 0,
-      top: 0,
-      opacity: 0,
-    },
-    categoryMeasureLabel: {
-      alignSelf: 'flex-start',
-      fontFamily: 'Rubik-Medium',
-      fontSize: CATEGORY_LABEL_FONT,
-      lineHeight: CATEGORY_LABEL_LINE,
-      includeFontPadding: false,
-    },
     categoryCard: {
       width: CATEGORY_WIDTH,
       height: CATEGORY_HEIGHT,
@@ -1036,13 +893,8 @@ function makeStyles(colors: ThemeColors) {
       height: 61,
     },
     categoryLabel: {
-      width: '100%',
-      overflow: 'hidden',
-      fontFamily: 'Rubik-Medium',
-      fontSize: CATEGORY_LABEL_FONT,
-      lineHeight: CATEGORY_LABEL_LINE,
       color: colors.primaryText,
-      includeFontPadding: false,
+      textAlignVertical: 'center',
     },
     nearSheet: {
       marginTop: 4,

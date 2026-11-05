@@ -79,24 +79,14 @@ export default function PlaceCard({
         <View style={styles.chipRow}>
           {categories.map((category) => (
             <View key={category} style={styles.categoryChip}>
-              <Text
-                style={styles.categoryChipText}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.7}
-              >
+              <Text style={styles.categoryChipText} numberOfLines={1}>
                 {t(CATEGORY_LABEL[category])}
               </Text>
             </View>
           ))}
         </View>
         <View style={styles.titleRow}>
-          <Text
-            style={styles.placeName}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
-          >
+          <Text style={styles.placeName} numberOfLines={1}>
             {place.name}
           </Text>
           {typeof place.rating === 'number' ? (
@@ -113,12 +103,7 @@ export default function PlaceCard({
             </Text>
             <View style={[styles.statusDot, { backgroundColor: status.color }]} />
             {status.detail ? (
-              <Text
-                style={styles.statusDetail}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.75}
-              >
+              <Text style={styles.statusDetail} numberOfLines={2}>
                 {status.detail}
               </Text>
             ) : null}

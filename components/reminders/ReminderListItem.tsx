@@ -77,12 +77,7 @@ export default function ReminderListItem({
           /* Upcoming / Recent: row1 title|time, row2 description|day */
           <View style={styles.stack}>
             <View style={styles.row}>
-              <Text
-                style={[styles.title, styles.rowMain]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.7}
-              >
+              <Text style={[styles.title, styles.rowMain]} numberOfLines={1}>
                 {title}
               </Text>
               <Text style={styles.time} numberOfLines={1}>
@@ -105,12 +100,7 @@ export default function ReminderListItem({
         ) : hasDescription ? (
           /* Today + note: title, then description|time */
           <View style={styles.stack}>
-            <Text
-              style={styles.title}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.7}
-            >
+            <Text style={styles.title} numberOfLines={1}>
               {title}
             </Text>
             <View style={[styles.row, styles.rowTop]}>
@@ -125,12 +115,7 @@ export default function ReminderListItem({
         ) : (
           /* Today, no note: title|time */
           <View style={styles.row}>
-            <Text
-              style={[styles.title, styles.rowMain]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.7}
-            >
+            <Text style={[styles.title, styles.rowMain]} numberOfLines={1}>
               {title}
             </Text>
             <Text style={styles.time} numberOfLines={1}>

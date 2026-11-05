@@ -7,6 +7,9 @@ const SOURCES = {
 
 const PREF_KEY = 'ragly.petSounds.enabled';
 
+/** Voices stay off until this is flipped. Playback is skipped even if the setting was on. */
+const VOICES_OFF = true;
+
 type PetSoundType = keyof typeof SOURCES;
 type ExpoAudio = typeof import('expo-audio');
 type Player = ReturnType<ExpoAudio['createAudioPlayer']>;
@@ -18,10 +21,20 @@ let prefReady = false;
 const cache: Partial<Record<PetSoundType, Player>> = {};
 
 export function petSoundsEnabled(): boolean {
-  return enabled;
+  return !VOICES_OFF && enabled;
 }
 
 export async function hydratePetSoundsPref(): Promise<boolean> {
+  if (VOICES_OFF) {
+    enabled = false;
+    prefReady = true;
+    try {
+      await AsyncStorage.setItem(PREF_KEY, '0');
+    } catch {
+      // Stay muted even if storage is unavailable.
+    }
+    return false;
+  }
   try {
     const raw = await AsyncStorage.getItem(PREF_KEY);
     if (raw === '0') enabled = false;
@@ -34,8 +47,8 @@ export async function hydratePetSoundsPref(): Promise<boolean> {
 }
 
 export async function setPetSoundsEnabled(next: boolean): Promise<void> {
-  enabled = next;
-  if (!next) {
+  enabled = VOICES_OFF ? false : next;
+  if (!enabled) {
     for (const player of Object.values(cache)) {
       if (!player) continue;
       try {
@@ -48,7 +61,7 @@ export async function setPetSoundsEnabled(next: boolean): Promise<void> {
     }
   }
   try {
-    await AsyncStorage.setItem(PREF_KEY, next ? '1' : '0');
+    await AsyncStorage.setItem(PREF_KEY, enabled ? '1' : '0');
   } catch {
     // Preference still applies for this session.
   }
@@ -97,6 +110,10 @@ function playOnce(player: Player) {
 
 /** Decode both clips so the first tap is not waiting on the file. */
 export function warmupPetSounds() {
+  if (VOICES_OFF) {
+    if (!prefReady) void hydratePetSoundsPref();
+    return;
+  }
   if (!prefReady) {
     void hydratePetSoundsPref().then((on) => {
       if (on) warmupPetSounds();
@@ -120,6 +137,7 @@ export function warmupPetSounds() {
 
 /** One bark or one meow. Safe if expo-audio is not in this native build yet. */
 export function playPetSound(type?: string | null) {
+  if (VOICES_OFF) return;
   const kind = soundType(type);
   if (!kind) return;
   const audio = loadAudio();

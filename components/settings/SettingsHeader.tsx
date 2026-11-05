@@ -51,14 +51,7 @@ export default function SettingsHeader({
             <Ionicons name="chevron-back" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
           </HeaderIconButton>
 
-          <Text
-            style={styles.title}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.65}
-          >
-            {title}
-          </Text>
+          <Text style={styles.title}>{title}</Text>
 
           <View style={styles.rightSpacer} />
         </View>
@@ -82,8 +75,6 @@ const makeStyles = (c: ThemeColors) =>
       paddingVertical: 6,
     },
     title: {
-      flex: 1,
-      minWidth: 0,
       fontFamily: 'Rubik-Regular',
       fontSize: 24,
       lineHeight: 28,

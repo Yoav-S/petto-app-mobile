@@ -48,12 +48,7 @@ export default function SegmentedControl({
             onPress={() => onTabChange(tab)}
             activeOpacity={0.85}
           >
-            <Text
-              style={[styles.label, isActive && styles.labelActive]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.7}
-            >
+            <Text style={[styles.label, isActive && styles.labelActive]} numberOfLines={1}>
               {getLabel ? getLabel(tab) : tab}
             </Text>
           </TouchableOpacity>
