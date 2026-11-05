@@ -51,10 +51,10 @@ const PET_SIZE = 72;
 const PET_GAP = 16;
 const CATEGORY_WIDTH = 126;
 const CATEGORY_HEIGHT = 154;
-const CATEGORY_PAD = 24;
 const CATEGORY_GAP = 8;
 const CATEGORY_INSET = 20;
-const CATEGORY_LABEL_WIDTH = CATEGORY_WIDTH - CATEGORY_PAD;
+/** Figma label box inside the 126 card (padding 12, text 93×20). */
+const CATEGORY_LABEL_WIDTH = 93;
 
 type RowFit = { item: number; gap: number };
 
@@ -882,11 +882,15 @@ function makeStyles(colors: ThemeColors) {
       height: CATEGORY_HEIGHT,
       borderRadius: 12,
       backgroundColor: colors.background,
-      padding: 12,
+      paddingTop: 12,
+      paddingBottom: 12,
+      paddingLeft: 12,
+      overflow: 'visible',
     },
     categoryInner: {
       flex: 1,
       justifyContent: 'space-between',
+      gap: 10,
     },
     categoryArt: {
       width: 46,

@@ -7,8 +7,14 @@ export const LABEL_SOURCE_SIZE = 16;
 export const LABEL_COMPACT_SIZE = 14;
 export const LABEL_LINE_HEIGHT = 20;
 
+const COMPACT_SCALE = LABEL_COMPACT_SIZE / LABEL_SOURCE_SIZE;
+
+function ellipsisTrim(value: string): string {
+  return value.replace(/[.\u2026]+$/u, '');
+}
+
 /**
- * Source size is 16/20. If this one string is wider than the tile,
+ * Source size is 16/20. If this one string is wider than the Figma text box,
  * this label only drops to 14/20. The tile width never changes.
  */
 export default function FitLabel({
@@ -20,47 +26,40 @@ export default function FitLabel({
   maxWidth: number;
   style?: StyleProp<TextStyle>;
 }) {
-  const [compact, setCompact] = useState(false);
+  const [fontSize, setFontSize] = useState(LABEL_SOURCE_SIZE);
 
   useEffect(() => {
-    setCompact(false);
+    setFontSize(LABEL_SOURCE_SIZE);
   }, [children, maxWidth]);
 
   return (
-    <>
-      <Text
-        pointerEvents="none"
-        onLayout={(event) => {
-          setCompact(Math.ceil(event.nativeEvent.layout.width) > maxWidth);
-        }}
-        style={{
-          position: 'absolute',
-          left: -9999,
-          opacity: 0,
+    <Text
+      numberOfLines={1}
+      allowFontScaling={false}
+      adjustsFontSizeToFit
+      minimumFontScale={COMPACT_SCALE}
+      onTextLayout={(event) => {
+        if (fontSize <= LABEL_COMPACT_SIZE) return;
+        const line = event.nativeEvent.lines[0];
+        if (!line) return;
+        const shown = ellipsisTrim(line.text);
+        const truncated = shown.length < children.length;
+        const overflowed = Math.ceil(line.width) > maxWidth;
+        if (truncated || overflowed) setFontSize(LABEL_COMPACT_SIZE);
+      }}
+      style={[
+        style,
+        {
+          width: maxWidth,
+          height: LABEL_LINE_HEIGHT,
           fontFamily: 'Rubik-Medium',
-          fontSize: LABEL_SOURCE_SIZE,
+          fontSize,
           lineHeight: LABEL_LINE_HEIGHT,
           includeFontPadding: false,
-        }}
-      >
-        {children}
-      </Text>
-      <Text
-        numberOfLines={1}
-        style={[
-          style,
-          {
-            width: maxWidth,
-            overflow: 'hidden',
-            fontFamily: 'Rubik-Medium',
-            fontSize: compact ? LABEL_COMPACT_SIZE : LABEL_SOURCE_SIZE,
-            lineHeight: LABEL_LINE_HEIGHT,
-            includeFontPadding: false,
-          },
-        ]}
-      >
-        {children}
-      </Text>
-    </>
+        },
+      ]}
+    >
+      {children}
+    </Text>
   );
 }
