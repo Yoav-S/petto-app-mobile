@@ -88,6 +88,10 @@ export const HEADER_LAYOUT = {
   height: 44,
   paddingHorizontal: 20,
   paddingVertical: 6,
+  /** Gap between the 32px back/close chip and the title. */
+  iconTitleGap: 16,
+  /** Wrap the title if it would sit closer than this to the title-box edge. */
+  titleEdgeInset: 12,
 } as const;
 
 /** Home cover + bottom panel (375×812 reference). */

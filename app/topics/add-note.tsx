@@ -161,7 +161,7 @@ export default function AddNoteScreen() {
               paddingHorizontal: PAGE_HORIZONTAL_PADDING,
             }}
             footer={{
-              label: t('common.save'),
+              label: t('pickers.done'),
               disabled: !canSave,
               loading: submitting,
               onPress: handleSave,

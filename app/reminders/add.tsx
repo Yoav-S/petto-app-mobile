@@ -239,7 +239,7 @@ export default function AddReminderScreen() {
         onAlertConfirm={setAlert}
         autoFocus
         saveFooter={{
-          label: t('common.save'),
+          label: t('common.add'),
           disabled: !canSave,
           loading: submitting,
           onPress: handleSave,

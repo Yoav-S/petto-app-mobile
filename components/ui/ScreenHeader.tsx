@@ -1,13 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
+import { HEADER_LAYOUT } from '@/constants/layout';
 import { useHeaderLayout } from '@/utils/headerLayout';
 import HeaderIconButton, {
   HEADER_ICON_BTN,
 } from '@/components/ui/HeaderIconButton';
+import HeaderTitle from '@/components/ui/HeaderTitle';
 
 interface ScreenHeaderProps {
   title: string;
@@ -34,9 +36,10 @@ export default function ScreenHeader({ title, icon = 'back', onBack, right }: Sc
         style={[
           styles.container,
           {
-            height: layout.height,
+            minHeight: layout.height,
             paddingHorizontal: layout.paddingHorizontal,
             paddingVertical: layout.paddingVertical,
+            gap: HEADER_LAYOUT.iconTitleGap,
           },
         ]}
       >
@@ -48,9 +51,7 @@ export default function ScreenHeader({ title, icon = 'back', onBack, right }: Sc
           />
         </HeaderIconButton>
 
-        <Text style={styles.title} numberOfLines={1}>
-          {title}
-        </Text>
+        <HeaderTitle>{title}</HeaderTitle>
 
         {right ?? <View style={styles.spacer} />}
       </View>
@@ -81,13 +82,5 @@ const makeStyles = (c: ThemeColors) =>
     spacer: {
       width: HEADER_ICON_BTN.size,
       height: HEADER_ICON_BTN.size,
-    },
-    title: {
-      flex: 1,
-      fontFamily: 'Rubik-Regular',
-      fontSize: 24,
-      lineHeight: 28,
-      color: c.primaryText,
-      textAlign: 'center',
     },
   });

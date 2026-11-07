@@ -11,6 +11,7 @@ import {
 import { Image } from 'expo-image';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
+import HeaderTitle from '@/components/ui/HeaderTitle';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,7 +37,7 @@ import { useActivePet } from '@/store/petStore';
 import { formatDisplayDate, parseIsoDate } from '@/utils/calendar';
 import type { PetType } from '@/store/petOnboardingDraft';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { HEADER_LAYOUT, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { DiscardChangesModal } from '@/components/ui/ConfirmModal';
 
@@ -59,9 +60,7 @@ function AddPetHeader() {
         >
           <Ionicons name="close" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
         </HeaderIconButton>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {t('pets.add_title')}
-        </Text>
+        <HeaderTitle>{t('pets.add_title')}</HeaderTitle>
         <View style={styles.headerTitleSpacer} />
       </View>
     </View>
@@ -413,18 +412,11 @@ const makeStyles = (c: ThemeColors) =>
       elevation: 4,
     },
     headerRow: {
-      height: HEADER_ROW,
+      minHeight: HEADER_ROW,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-    },
-    headerTitle: {
-      flex: 1,
-      textAlign: 'center',
-      fontFamily: 'Rubik-Regular',
-      fontSize: 24,
-      lineHeight: 28,
-      color: c.primaryText,
+      gap: HEADER_LAYOUT.iconTitleGap,
     },
     headerTitleSpacer: {
       width: HEADER_ICON_BTN.size,

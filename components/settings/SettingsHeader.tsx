@@ -1,14 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { t } from '@/i18n';
+import { HEADER_LAYOUT } from '@/constants/layout';
 import { useHeaderTopPadding } from '@/utils/headerLayout';
 import HeaderIconButton, {
   HEADER_ICON_BTN,
 } from '@/components/ui/HeaderIconButton';
+import HeaderTitle from '@/components/ui/HeaderTitle';
 
 interface SettingsHeaderProps {
   title: string;
@@ -51,7 +53,7 @@ export default function SettingsHeader({
             <Ionicons name="chevron-back" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
           </HeaderIconButton>
 
-          <Text style={styles.title}>{title}</Text>
+          <HeaderTitle>{title}</HeaderTitle>
 
           <View style={styles.rightSpacer} />
         </View>
@@ -67,19 +69,13 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.background,
     },
     header: {
-      height: 44,
+      minHeight: HEADER_LAYOUT.height,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: 20,
-      paddingVertical: 6,
-    },
-    title: {
-      fontFamily: 'Rubik-Regular',
-      fontSize: 24,
-      lineHeight: 28,
-      color: c.primaryText,
-      textAlign: 'center',
+      paddingHorizontal: HEADER_LAYOUT.paddingHorizontal,
+      paddingVertical: HEADER_LAYOUT.paddingVertical,
+      gap: HEADER_LAYOUT.iconTitleGap,
     },
     rightSpacer: {
       width: HEADER_ICON_BTN.size,
