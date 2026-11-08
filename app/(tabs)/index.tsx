@@ -53,8 +53,6 @@ const CATEGORY_WIDTH = 126;
 const CATEGORY_HEIGHT = 154;
 const CATEGORY_GAP = 8;
 const CATEGORY_INSET = 20;
-/** Figma label box inside the 126 card (padding 12, text 93×20). */
-const CATEGORY_LABEL_WIDTH = 93;
 
 type RowFit = { item: number; gap: number };
 
@@ -637,9 +635,13 @@ export default function DiscoverHomeScreen() {
                   style={styles.categoryArt}
                   contentFit="contain"
                 />
-                <FitLabel maxWidth={CATEGORY_LABEL_WIDTH} style={styles.categoryLabel}>
+                <Text
+                  style={styles.categoryLabel}
+                  numberOfLines={2}
+                  allowFontScaling={false}
+                >
                   {t(category.label)}
-                </FitLabel>
+                </Text>
               </View>
             </TouchableOpacity>
           ))}
@@ -884,7 +886,7 @@ function makeStyles(colors: ThemeColors) {
       backgroundColor: colors.background,
       paddingTop: 12,
       paddingBottom: 12,
-      paddingLeft: 12,
+      paddingHorizontal: 12,
       overflow: 'visible',
     },
     categoryInner: {
@@ -897,8 +899,14 @@ function makeStyles(colors: ThemeColors) {
       height: 61,
     },
     categoryLabel: {
+      width: '100%',
+      height: 40,
+      fontFamily: 'Rubik-Medium',
+      fontSize: 16,
+      lineHeight: 20,
       color: colors.primaryText,
-      textAlignVertical: 'center',
+      includeFontPadding: false,
+      textAlignVertical: 'top',
     },
     nearSheet: {
       marginTop: 4,

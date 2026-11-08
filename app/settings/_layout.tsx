@@ -21,7 +21,6 @@ export default function SettingsLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="account" />
       <Stack.Screen name="notifications" />
-      <Stack.Screen name="sound" />
       <Stack.Screen name="theme" />
       <Stack.Screen name="language" />
       <Stack.Screen name="subscription" />
