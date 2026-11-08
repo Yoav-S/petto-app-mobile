@@ -1,5 +1,8 @@
 import type { ImageSourcePropType } from 'react-native';
-import { t } from '@/i18n';
+import en from '../locales/en.json';
+import he from '../locales/he.json';
+import ro from '../locales/ro.json';
+import ru from '../locales/ru.json';
 
 export type ReminderCategory =
   | 'general'
@@ -23,6 +26,8 @@ export const CATEGORY_ICONS: Record<ReminderCategory, ImageSourcePropType> = {
   appointment: require('@/assets/images/reminders/appointment.png'),
   observation: require('@/assets/images/reminders/observation.png'),
 };
+
+const CATALOGS = [en, ro, ru, he] as const;
 
 /** Longer / more specific phrases first so "eye drops" beats bare "eye". */
 const CATEGORY_KEYWORDS: Record<Exclude<ReminderCategory, 'general'>, string[]> = {
@@ -55,6 +60,41 @@ const CATEGORY_KEYWORDS: Record<Exclude<ReminderCategory, 'general'>, string[]> 
     'lyme',
     'shots',
     'shot',
+    'vax',
+    // RU
+    'ежегодная прививка',
+    'ревакцинация',
+    'вакцинация',
+    'вакцинации',
+    'прививки',
+    'прививка',
+    'прививок',
+    'вакцина',
+    'вакцин',
+    'привив',
+    'иммунизация',
+    'иммуниз',
+    'бустер',
+    'бешенство',
+    'бешенств',
+    'лептоспироз',
+    'бордетелла',
+    'парвовирус',
+    'чумка',
+    'парво',
+    // RO
+    'revaccinare',
+    'vaccinare',
+    'vaccinari',
+    'vaccinuri',
+    'vaccin',
+    'imunizare',
+    'rapel',
+    'antirabic',
+    'rabie',
+    // HE
+    'חיסון',
+    'חיסונים',
   ],
   medication: [
     'give medication',
@@ -98,7 +138,88 @@ const CATEGORY_KEYWORDS: Record<Exclude<ReminderCategory, 'general'>, string[]> 
     'drops',
     'dose',
     'pill',
+    'meds',
     'gel',
+    // RU
+    'глазные капли',
+    'ушные капли',
+    'дать лекарство',
+    'лекарства',
+    'лекарство',
+    'лекарств',
+    'препарат',
+    'таблетки',
+    'таблетка',
+    'таблет',
+    'капсулы',
+    'капсула',
+    'капсул',
+    'капли',
+    'капл',
+    'мазь',
+    'маз',
+    'крем',
+    'спрей',
+    'сироп',
+    'инсулин',
+    'антибиотик',
+    'пробиотик',
+    'витамины',
+    'витамин',
+    'дозировка',
+    'лечение',
+    'лечен',
+    'пилюли',
+    'пилюля',
+    'укол',
+    'инъекция',
+    'инъекц',
+    'суспензия',
+    'порошок',
+    'противовоспалительн',
+    'обезболива',
+    // RO
+    'picaturi de ochi',
+    'picaturi de urechi',
+    'picături de ochi',
+    'picături de urechi',
+    'medicamente',
+    'medicament',
+    'medicație',
+    'medicatie',
+    'pastile',
+    'pastila',
+    'pastilă',
+    'pastil',
+    'comprimate',
+    'comprimat',
+    'capsule',
+    'capsula',
+    'picaturi',
+    'picături',
+    'picatura',
+    'unguent',
+    'pomada',
+    'crema',
+    'sirop',
+    'insulina',
+    'insulină',
+    'antibiotic',
+    'probiotic',
+    'vitamine',
+    'vitamina',
+    'tratament',
+    'administrare',
+    'doza',
+    'doze',
+    'pilula',
+    'pilulă',
+    // HE
+    'תרופה',
+    'תרופות',
+    'כדור',
+    'כדורים',
+    'טיפות',
   ],
   appointment: [
     'scheduled visit',
@@ -133,10 +254,62 @@ const CATEGORY_KEYWORDS: Record<Exclude<ReminderCategory, 'general'>, string[]> 
     'exam',
     'bath',
     'vet',
-    'תור',
+    // RU
+    'запись к врачу',
+    'ветклиника',
+    'ветклиник',
+    'ветеринару',
+    'ветеринар',
+    'повторный приём',
+    'повторный прием',
+    'консультация',
+    'консультац',
+    'дрессировка',
+    'дрессиров',
+    'приёмы',
     'приём',
+    'приемы',
     'прием',
+    'запись',
+    'запис',
+    'клиника',
+    'клиник',
+    'осмотр',
+    'груминг',
+    'грумер',
+    'стрижка',
+    'стрижк',
+    'визит',
+    'больница',
+    'больниц',
+    'доктор',
+    'хирург',
+    // RO
+    'programari',
+    'programări',
     'programare',
+    'veterinar',
+    'consultatie',
+    'consultație',
+    'consultatii',
+    'clinica',
+    'clinică',
+    'examinare',
+    'toaletaj',
+    'grooming',
+    'vizita',
+    'vizită',
+    'spital',
+    'doctor',
+    'control',
+    'rezervare',
+    'intalnire',
+    'întâlnire',
+    'consult',
+    // HE
+    'תור',
+    'וטרינר',
+    'מרפאה',
   ],
   observation: [
     'water intake',
@@ -202,6 +375,86 @@ const CATEGORY_KEYWORDS: Record<Exclude<ReminderCategory, 'general'>, string[]> 
     'eye',
     'paw',
     'cut',
+    // RU
+    'наблюдение',
+    'наблюден',
+    'мониторинг',
+    'монитор',
+    'симптомы',
+    'симптом',
+    'рвота',
+    'рвот',
+    'понос',
+    'диарея',
+    'зуд',
+    'чешется',
+    'аллергия',
+    'аллерги',
+    'температура',
+    'температ',
+    'лихорадка',
+    'лихорадк',
+    'аппетит',
+    'хромота',
+    'хромает',
+    'кашель',
+    'кашл',
+    'рана',
+    'взвешивание',
+    'взвесить',
+    'вес',
+    'моча',
+    'моч',
+    'стул',
+    'поведение',
+    'поведен',
+    'царапина',
+    'царапин',
+    'отёк',
+    'отек',
+    'опухоль',
+    'опух',
+    'краснота',
+    'краснот',
+    'дыхание',
+    'дыхан',
+    'заживление',
+    // RO
+    'monitorizare',
+    'monitoriz',
+    'observatie',
+    'observație',
+    'observare',
+    'simptome',
+    'simptom',
+    'varsaturi',
+    'vărsături',
+    'diaree',
+    'mancarime',
+    'mâncărime',
+    'alergie',
+    'temperatura',
+    'temperatură',
+    'apetit',
+    'schiopatare',
+    'șchiopătare',
+    'tuse',
+    'rana',
+    'rană',
+    'greutate',
+    'urina',
+    'urină',
+    'scaun',
+    'comportament',
+    'febra',
+    'febră',
+    'umflatura',
+    'umflătură',
+    'zgarietura',
+    'zgârietură',
+    // HE
+    'מעקב',
+    'תצפית',
   ],
 };
 
@@ -212,37 +465,63 @@ const MATCH_ORDER: Exclude<ReminderCategory, 'general'>[] = [
   'observation',
 ];
 
-function normalizeTitle(title: string): string {
-  return title.toLowerCase().replace(/\s+/g, ' ').trim();
+const SHORT_EXACT = 3;
+
+function fold(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/[șş]/g, 's')
+    .replace(/[țţ]/g, 't')
+    .replace(/[ăâ]/g, 'a')
+    .replace(/î/g, 'i')
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
-/** Word-boundary-ish match so "ear" does not hit "hear" / "year". */
-function titleHasKeyword(normalizedTitle: string, keyword: string): boolean {
-  const normalizedKeyword = keyword.toLowerCase().trim();
-  if (!normalizedKeyword) return false;
-  // Non-Latin labels (HE/RU/RO): substring match is enough.
-  if (/[^a-z0-9\s\-']/i.test(normalizedKeyword)) {
-    return normalizedTitle.includes(normalizedKeyword);
+function titleTokens(foldedTitle: string): string[] {
+  return foldedTitle.split(/[^a-z0-9\u0400-\u04ff\u0590-\u05ff]+/).filter(Boolean);
+}
+
+function titleHasKeyword(foldedTitle: string, keyword: string): boolean {
+  const foldedKeyword = fold(keyword);
+  if (!foldedKeyword) return false;
+
+  if (foldedKeyword.includes(' ')) {
+    const escaped = foldedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(?:^|[^a-z0-9\\u0400-\\u04ff\\u0590-\\u05ff])${escaped}(?:[^a-z0-9\\u0400-\\u04ff\\u0590-\\u05ff]|$)`).test(
+      foldedTitle,
+    );
   }
-  const escaped = normalizedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const pattern = new RegExp(`(?:^|[^a-z0-9])${escaped}(?:[^a-z0-9]|$)`, 'i');
-  return pattern.test(normalizedTitle);
+
+  const words = titleTokens(foldedTitle);
+  if (foldedKeyword.length <= SHORT_EXACT) {
+    return words.includes(foldedKeyword);
+  }
+  return words.some((word) => {
+    if (word === foldedKeyword) return true;
+    if (word.startsWith(foldedKeyword)) return true;
+    return foldedKeyword.startsWith(word) && word.length >= 4;
+  });
+}
+
+function categoryLabels(category: ReminderCategory): string[] {
+  const key = `category_${category}` as const;
+  return CATALOGS.map((catalog) => catalog.reminders[key]).filter(Boolean);
 }
 
 export function resolveReminderCategory(title: string | null | undefined): ReminderCategory {
-  const normalized = normalizeTitle(title ?? '');
-  if (!normalized) return 'general';
-
-  // Exact match against the localized category label (fixes HE/RU/RO appointment titles).
-  for (const category of REMINDER_CATEGORIES) {
-    if (normalized === normalizeTitle(t(`reminders.category_${category}`))) {
-      return category;
-    }
-  }
+  const folded = fold(title ?? '');
+  if (!folded) return 'general';
 
   for (const category of MATCH_ORDER) {
+    for (const label of categoryLabels(category)) {
+      if (titleHasKeyword(folded, label)) return category;
+    }
     for (const keyword of CATEGORY_KEYWORDS[category]) {
-      if (titleHasKeyword(normalized, keyword)) return category;
+      if (titleHasKeyword(folded, keyword)) return category;
     }
   }
   return 'general';

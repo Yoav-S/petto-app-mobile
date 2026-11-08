@@ -48,10 +48,10 @@ function DetailCard({
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.card, { flex }]}>
-      <Text style={styles.label} numberOfLines={1}>
+      <Text style={styles.label} numberOfLines={1} allowFontScaling={false}>
         {label}
       </Text>
-      <Text style={styles.value} numberOfLines={2}>
+      <Text style={styles.value} numberOfLines={2} allowFontScaling={false}>
         {value}
       </Text>
     </View>
