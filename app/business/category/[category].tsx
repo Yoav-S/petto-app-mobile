@@ -11,11 +11,13 @@ import PlaceCard from '@/components/business/PlaceCard';
 import { PlaceCardSkeletons } from '@/components/business/PlaceCardSkeleton';
 import {
   listPlaces,
+  PLACE_IMPRESSION_VIEWABILITY,
   placeKey,
   readLastNearbyCoords,
   readNearby,
   rememberNearby,
   rememberNearbyCoords,
+  trackVisiblePlaceCards,
   type BusinessCategory,
   type BusinessPlace,
   type NearbyCoords,
@@ -76,6 +78,11 @@ export default function CategoryPlacesScreen() {
   const loadingMoreRef = useRef(false);
   const refreshingRef = useRef(false);
   const coordsRef = useRef(coords);
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: { item: BusinessPlace }[] }) => {
+      trackVisiblePlaceCards(viewableItems);
+    },
+  ).current;
   placesRef.current = places;
   hasMoreRef.current = hasMore;
   coordsRef.current = coords;
@@ -240,6 +247,8 @@ export default function CategoryPlacesScreen() {
           onEndReachedThreshold={0.4}
           ListFooterComponent={loadingMore ? <PlaceCardSkeletons count={1} /> : null}
           ListEmptyComponent={<Text style={styles.empty}>{t('home.near_empty')}</Text>}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={PLACE_IMPRESSION_VIEWABILITY}
         />
       )}
       <View

@@ -807,7 +807,12 @@ export default function BusinessScreen() {
               {website ? (
                 <Pressable
                   style={styles.contactRow}
-                  onPress={() => openUrl(website)}
+                  onPress={() => {
+                    if (place?.id && trackedLocationId) {
+                      trackPlaceEvent(place.id, trackedLocationId, 'website');
+                    }
+                    openUrl(website);
+                  }}
                   accessibilityRole="button"
                 >
                   <Globe size={24} color={colors.primaryText} />
@@ -817,7 +822,12 @@ export default function BusinessScreen() {
               {instagram ? (
                 <Pressable
                   style={styles.contactRow}
-                  onPress={() => openInstagram(instagram)}
+                  onPress={() => {
+                    if (place?.id && trackedLocationId) {
+                      trackPlaceEvent(place.id, trackedLocationId, 'instagram');
+                    }
+                    openInstagram(instagram);
+                  }}
                   accessibilityRole="button"
                 >
                   <Ionicons name="logo-instagram" size={24} color={colors.primaryText} />

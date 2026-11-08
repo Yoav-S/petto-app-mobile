@@ -304,7 +304,18 @@ export function reportPlaceReview(
 
 const lastPlaceEventAt = new Map<string, number>();
 
-export type PlaceAnalyticsAction = 'view' | 'call' | 'directions';
+export type PlaceAnalyticsAction =
+  | 'impression'
+  | 'view'
+  | 'call'
+  | 'directions'
+  | 'website'
+  | 'instagram';
+
+export const PLACE_IMPRESSION_VIEWABILITY = {
+  itemVisiblePercentThreshold: 50,
+  minimumViewTime: 400,
+};
 
 /** Fire-and-forget listing analytics. Staff of the listing are ignored on the server. */
 export function trackPlaceEvent(
@@ -321,4 +332,12 @@ export function trackPlaceEvent(
     location_id: locationId,
     action,
   });
+}
+
+export function trackVisiblePlaceCards(viewableItems: ReadonlyArray<{ item?: unknown }>): void {
+  for (const token of viewableItems) {
+    const place = token.item as BusinessPlace | undefined;
+    if (!place?.id || !place.location_id) continue;
+    trackPlaceEvent(place.id, place.location_id, 'impression');
+  }
 }

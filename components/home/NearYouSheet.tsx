@@ -21,7 +21,12 @@ import { t } from '@/i18n';
 import PlaceCard from '@/components/business/PlaceCard';
 import { PlaceCardSkeletons } from '@/components/business/PlaceCardSkeleton';
 import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
-import { placeKey, type BusinessPlace } from '@/services/places';
+import {
+  PLACE_IMPRESSION_VIEWABILITY,
+  placeKey,
+  trackVisiblePlaceCards,
+  type BusinessPlace,
+} from '@/services/places';
 
 /** Figma list column is 335 on a 375 frame, so 20px stays free on each side. */
 const CARD_SIDE = 20;
@@ -92,6 +97,11 @@ export default function NearYouSheet({
   const onExpandedChangeRef = useRef(onExpandedChange);
   onExpandedChangeRef.current = onExpandedChange;
   const listRef = useAnimatedRef<FlatList<BusinessPlace>>();
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: { item: BusinessPlace }[] }) => {
+      trackVisiblePlaceCards(viewableItems);
+    },
+  ).current;
   const height = useSharedValue(0);
   const restingHeight = useSharedValue(0);
   const scrollY = useSharedValue(0);
@@ -436,6 +446,8 @@ export default function NearYouSheet({
                 )
               }
               renderItem={renderPlace}
+              onViewableItemsChanged={onViewableItemsChanged}
+              viewabilityConfig={PLACE_IMPRESSION_VIEWABILITY}
             />
           </GestureDetector>
           <View style={styles.headerDock} pointerEvents="box-none">
