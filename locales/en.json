@@ -88,6 +88,8 @@
     "address": "Address",
     "locations": "locations",
     "locations_title": "Our Locations",
+    "map": "Map",
+    "open_map": "Open map",
     "this_location": "This location",
     "viewing_location": "Now viewing",
     "phone": "Phone",
