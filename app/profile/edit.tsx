@@ -44,9 +44,10 @@ import {
 import HeaderIconButton, {
   HEADER_ICON_BTN,
 } from '@/components/ui/HeaderIconButton';
+import HeaderTitle from '@/components/ui/HeaderTitle';
 import { defaultPetPhotoSource } from '@/utils/petPhotoSource';
 import PetPhotoImage from '@/components/ui/PetPhotoImage';
-import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { HEADER_LAYOUT, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 
@@ -353,7 +354,7 @@ export default function EditProfileScreen() {
           >
             <Ionicons name="chevron-back" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
           </HeaderIconButton>
-          <Text style={styles.headerTitle}>{t('profile.edit.title')}</Text>
+          <HeaderTitle>{t('profile.edit.title')}</HeaderTitle>
           <View style={styles.headerSpacer} />
         </View>
       </View>
@@ -572,18 +573,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     paddingVertical: 6,
+    gap: HEADER_LAYOUT.iconTitleGap,
   },
   headerSpacer: {
     width: HEADER_ICON_BTN.size,
     height: HEADER_ICON_BTN.size,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontFamily: 'Rubik-Regular',
-    fontSize: 24,
-    lineHeight: 28,
-    color: c.primaryText,
   },
   centered: {
     flex: 1,

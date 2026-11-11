@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useIsRestoring } from '@tanstack/react-query';
 import { LIST_PAGE_SIZE } from '@/constants/pagination';
 import { getErrorMessage } from '@/services/errors';
 import { queryClient } from '@/services/queryClient';
@@ -29,6 +30,7 @@ export function useCursorPagination<T extends { id: string }>({
   resetKey,
   cacheKey,
 }: UseCursorPaginationOptions<T>) {
+  const restoring = useIsRestoring();
   const cacheKeyRef = useRef(cacheKey);
   cacheKeyRef.current = cacheKey;
 
@@ -199,6 +201,20 @@ export function useCursorPagination<T extends { id: string }>({
     void loadInitial();
   }, [clearAll, enabled, resetKey, loadInitial]);
 
+  // Persist restore finishes after first paint — pull disk cache in so lists
+  // do not flash the empty state, then still refresh in the background.
+  useEffect(() => {
+    if (restoring || !enabled || itemsRef.current.length > 0) return;
+    const cached = readCache();
+    if (!cached) return;
+    itemsRef.current = cached;
+    setItemsState(cached);
+    cursorRef.current = cached[cached.length - 1].id;
+    setHasMore(cached.length === pageSize);
+    setLoaded(true);
+    setLoading(false);
+  }, [enabled, pageSize, readCache, restoring]);
+
   useEffect(
     () => () => {
       genRef.current += 1;
@@ -208,7 +224,7 @@ export function useCursorPagination<T extends { id: string }>({
 
   return {
     items,
-    loading,
+    loading: loading || (restoring && items.length === 0),
     loadingMore,
     hasMore,
     loaded,

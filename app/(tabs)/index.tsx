@@ -35,6 +35,7 @@ import {
 import { playPetSound, warmupPetSounds } from '@/services/petSound';
 import { petPhotoSource } from '@/utils/petPhotoSource';
 import NearYouSheet from '@/components/home/NearYouSheet';
+import CategoryLabel from '@/components/home/CategoryLabel';
 import FitLabel from '@/components/ui/FitLabel';
 import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import type { Pet } from '@/types/api';
@@ -49,53 +50,11 @@ const NIGHT_HOUR = 21;
 const GREETING_AVATAR = 42;
 const PET_SIZE = 72;
 const PET_GAP = 16;
+/** Figma category tile — fixed on every device; the row scrolls instead of shrinking. */
 const CATEGORY_WIDTH = 126;
 const CATEGORY_HEIGHT = 154;
-const CATEGORY_GAP = 8;
+const CATEGORY_GAP = 10;
 const CATEGORY_INSET = 20;
-
-type RowFit = { item: number; gap: number };
-
-/**
- * Keeps the designed size and gap when the next item already peeks in.
- * When a device width tiles the row flush, tightens the gap (then the item
- * a little) so a sliver of the next item stays on the edge. Snapping to
- * item+gap keeps that same sliver after every swipe.
- */
-function peekRow(
-  viewport: number,
-  item: number,
-  gap: number,
-  count: number,
-  inset = 0,
-  minPeek = 24,
-  shrinkItem = true,
-): RowFit {
-  if (viewport <= 0 || count <= 1) return { item, gap };
-  const visibleOf = (index: number, size: number, spacing: number) =>
-    viewport - (inset + index * (size + spacing));
-  // A clip under ~10% still reads as a full item sitting on the edge.
-  const flushHidden = Math.max(8, item * 0.1);
-  let partial = 0;
-  for (; partial < count; partial += 1) {
-    if (visibleOf(partial, item, gap) < item - flushHidden) break;
-  }
-  if (partial >= count || partial === 0) return { item, gap };
-  const peek = visibleOf(partial, item, gap);
-  if (peek >= minPeek) return { item, gap };
-
-  const minGap = Math.min(8, gap);
-  const minItem = shrinkItem ? Math.round(item * 0.78) : item;
-  const room = viewport - minPeek - inset;
-  if (room <= 0) return { item, gap };
-  const stride = room / partial;
-  const tighterGap = Math.floor(stride - item);
-  if (tighterGap >= minGap) return { item, gap: tighterGap };
-  if (!shrinkItem) return { item, gap };
-  const tighterItem = Math.floor(stride - minGap);
-  if (tighterItem >= minItem) return { item: tighterItem, gap: minGap };
-  return { item, gap };
-}
 
 /** Snap points that keep the peek, plus a final stop that shows the last item whole. */
 function peekSnapOffsets(
@@ -501,36 +460,18 @@ export default function DiscoverHomeScreen() {
 
   const petViewport = petsTrack || frameWidth;
   const categoryViewport = categoryTrack || frameWidth;
-  const petFit = peekRow(
+  const petSnaps = peekSnapOffsets(
     petViewport,
     PET_SIZE,
     PET_GAP,
-    1 + pets.length,
-    CATEGORY_INSET,
-    22,
-    false,
-  );
-  const categoryFit = peekRow(
-    categoryViewport,
-    CATEGORY_WIDTH,
-    CATEGORY_GAP,
-    CATEGORIES.length,
-    CATEGORY_INSET,
-    36,
-    false,
-  );
-  const petSnaps = peekSnapOffsets(
-    petViewport,
-    petFit.item,
-    petFit.gap,
     1 + pets.length,
     CATEGORY_INSET,
     CATEGORY_INSET,
   );
   const categorySnaps = peekSnapOffsets(
     categoryViewport,
-    categoryFit.item,
-    categoryFit.gap,
+    CATEGORY_WIDTH,
+    CATEGORY_GAP,
     CATEGORIES.length,
     CATEGORY_INSET,
     CATEGORY_INSET,
@@ -556,7 +497,7 @@ export default function DiscoverHomeScreen() {
             snapToOffsets={petSnaps}
             disableIntervalMomentum
             style={styles.petScroll}
-            contentContainerStyle={[styles.petScrollContent, { gap: petFit.gap }]}
+            contentContainerStyle={styles.petScrollContent}
           >
             <TouchableOpacity
               style={styles.petItem}
@@ -612,7 +553,7 @@ export default function DiscoverHomeScreen() {
           snapToOffsets={categorySnaps}
           disableIntervalMomentum
           style={styles.petScroll}
-          contentContainerStyle={[styles.categoryScroll, { gap: categoryFit.gap }]}
+          contentContainerStyle={styles.categoryScroll}
         >
           {CATEGORIES.map((category) => (
             <TouchableOpacity
@@ -635,13 +576,7 @@ export default function DiscoverHomeScreen() {
                   style={styles.categoryArt}
                   contentFit="contain"
                 />
-                <Text
-                  style={styles.categoryLabel}
-                  numberOfLines={2}
-                  allowFontScaling={false}
-                >
-                  {t(category.label)}
-                </Text>
+                <CategoryLabel>{t(category.label)}</CategoryLabel>
               </View>
             </TouchableOpacity>
           ))}
@@ -877,7 +812,7 @@ function makeStyles(colors: ThemeColors) {
     categoryScroll: {
       paddingLeft: 20,
       paddingRight: 20,
-      gap: 8,
+      gap: CATEGORY_GAP,
     },
     categoryCard: {
       width: CATEGORY_WIDTH,
@@ -886,7 +821,8 @@ function makeStyles(colors: ThemeColors) {
       backgroundColor: colors.background,
       paddingTop: 12,
       paddingBottom: 12,
-      paddingHorizontal: 12,
+      paddingLeft: 12,
+      paddingRight: 12,
       overflow: 'visible',
     },
     categoryInner: {
@@ -897,16 +833,6 @@ function makeStyles(colors: ThemeColors) {
     categoryArt: {
       width: 46,
       height: 61,
-    },
-    categoryLabel: {
-      width: '100%',
-      height: 40,
-      fontFamily: 'Rubik-Medium',
-      fontSize: 16,
-      lineHeight: 20,
-      color: colors.primaryText,
-      includeFontPadding: false,
-      textAlignVertical: 'top',
     },
     nearSheet: {
       marginTop: 4,

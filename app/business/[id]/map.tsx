@@ -16,6 +16,7 @@ import { openSystemDirections } from '@/services/systemApps';
 import {
   getPlace,
   readLastNearbyCoords,
+  readPlaceDetail,
   trackPlaceEvent,
   type BusinessPlaceDetail,
   type PlaceLocation,
@@ -56,13 +57,17 @@ export default function BusinessMapScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
-  const [place, setPlace] = useState<BusinessPlaceDetail | null>(null);
+  const [place, setPlace] = useState<BusinessPlaceDetail | null>(() =>
+    params.id ? readPlaceDetail(params.id) : null,
+  );
   const [selectedId, setSelectedId] = useState(params.locationId || '');
 
   useFocusEffect(
     useCallback(() => {
       const id = params.id;
       if (!id) return;
+      const cached = readPlaceDetail(id);
+      if (cached) setPlace(cached);
       const coords = userCoords(params.lat, params.lng);
       let active = true;
       getPlace(id, coords)

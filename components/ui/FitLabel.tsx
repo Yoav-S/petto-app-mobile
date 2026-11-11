@@ -16,6 +16,7 @@ function ellipsisTrim(value: string): string {
 /**
  * Source size is 16/20. If this one string is wider than the Figma text box,
  * this label only drops to 14/20. The tile width never changes.
+ * Never breaks mid-word — stays on one line and shrinks instead.
  */
 export default function FitLabel({
   children,
@@ -38,12 +39,15 @@ export default function FitLabel({
       allowFontScaling={false}
       adjustsFontSizeToFit
       minimumFontScale={COMPACT_SCALE}
+      textBreakStrategy="simple"
+      lineBreakStrategyIOS="standard"
       onTextLayout={(event) => {
         if (fontSize <= LABEL_COMPACT_SIZE) return;
         const line = event.nativeEvent.lines[0];
         if (!line) return;
         const shown = ellipsisTrim(line.text);
         const truncated = shown.length < children.length;
+        // Only treat real overflow as a shrink; ~4px of free space must stay intact.
         const overflowed = Math.ceil(line.width) > maxWidth;
         if (truncated || overflowed) setFontSize(LABEL_COMPACT_SIZE);
       }}

@@ -31,6 +31,7 @@ export const queryKeys = {
     me: ['ragly', 'profile', 'me'] as const,
   },
   businesses: {
+    detail: (businessId: string) => ['ragly', 'businesses', businessId, 'detail'] as const,
     reviews: (businessId: string) => ['ragly', 'businesses', businessId, 'reviews'] as const,
   },
 } as const;

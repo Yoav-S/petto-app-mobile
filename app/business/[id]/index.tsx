@@ -29,6 +29,7 @@ import { t } from '@/i18n';
 import { getErrorMessage } from '@/services/errors';
 import WriteReviewSheet from '@/components/business/WriteReviewSheet';
 import BranchMap, { pinsFromLocations } from '@/components/business/BranchMap';
+import BusinessDetailSkeleton from '@/components/business/BusinessDetailSkeleton';
 import { openSystemDirections, openSystemPhones } from '@/services/systemApps';
 import { postedLabel } from '@/utils/reviewPosted';
 import { formatKm, formatRating } from '@/utils/localeFormat';
@@ -37,6 +38,8 @@ import { branchHoursStatus, formatClosesAt, formatOpensAt, placeHoursStatus } fr
 import {
   getPlace,
   readLastNearbyCoords,
+  readPlaceDetail,
+  rememberPlaceDetail,
   rememberPlaceReview,
   trackPlaceEvent,
   upsertOwnReview,
@@ -256,7 +259,12 @@ export default function BusinessScreen() {
   const { structuralScale } = useResponsiveLayout();
   const coverHeight = Math.round(DESIGN_COVER_HEIGHT * structuralScale);
 
-  const [place, setPlace] = useState<BusinessPlaceDetail | null>(null);
+  const [place, setPlace] = useState<BusinessPlaceDetail | null>(() =>
+    params.id ? readPlaceDetail(params.id) : null,
+  );
+  const [detailLoading, setDetailLoading] = useState(() =>
+    Boolean(params.id) && !readPlaceDetail(params.id ?? ''),
+  );
   const [aboutOpen, setAboutOpen] = useState(false);
   const [aboutLineCount, setAboutLineCount] = useState(0);
   const [photoOpen, setPhotoOpen] = useState(false);
@@ -274,34 +282,42 @@ export default function BusinessScreen() {
   const imageContrast = useImageStatusBarStyle(coverSource, isDark ? 'light' : 'dark');
   useStatusBarOverride(image ? imageContrast.style : isDark ? 'light' : 'dark');
 
+  useEffect(() => {
+    if (!params.id) return;
+    const cached = readPlaceDetail(params.id);
+    setPlace(cached);
+    setDetailLoading(!cached);
+    setLocationsOpen(false);
+  }, [params.id]);
+
   useFocusEffect(
     useCallback(() => {
       const id = params.id;
       if (!id) return;
       const coords = userCoords(params.lat, params.lng);
       let active = true;
+      if (!readPlaceDetail(id)) setDetailLoading(true);
       getPlace(id, coords)
         .then((detail) => {
           if (!active) return;
           const pending = savedReviewRef.current;
-          setPlace(
-            pending
-              ? { ...detail, reviews: upsertOwnReview(detail.reviews ?? [], pending) }
-              : detail,
-          );
+          const next = pending
+            ? { ...detail, reviews: upsertOwnReview(detail.reviews ?? [], pending) }
+            : detail;
+          if (pending) rememberPlaceDetail(next);
+          setPlace(next);
+          setDetailLoading(false);
         })
         .catch((err) => {
-          if (active) toast.showError(getErrorMessage(err));
+          if (!active) return;
+          setDetailLoading(false);
+          toast.showError(getErrorMessage(err));
         });
       return () => {
         active = false;
       };
     }, [params.id, reloadToken, toast]),
   );
-
-  useEffect(() => {
-    setLocationsOpen(false);
-  }, [params.id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -622,7 +638,9 @@ export default function BusinessScreen() {
           ) : null}
         </View>
 
-        {showHoursCard ? (
+        {detailLoading && !place ? <BusinessDetailSkeleton /> : null}
+
+        {place && showHoursCard ? (
           <View style={styles.hoursCard}>
             {serviceCategories.length ? (
               <View style={styles.serviceTabs}>
@@ -697,7 +715,7 @@ export default function BusinessScreen() {
           </View>
         ) : null}
 
-        {locationCards.length > 1 ? (
+        {place && locationCards.length > 1 ? (
           <View style={styles.locationsCard}>
             <View style={styles.sectionHead}>
               <Text style={styles.sectionTitle}>{t('business.locations_title')}</Text>
@@ -728,7 +746,7 @@ export default function BusinessScreen() {
           </View>
         ) : null}
 
-        {mapPins.length ? (
+        {place && mapPins.length ? (
           <View style={styles.mapCard}>
             <View style={styles.sectionHead}>
               <Text style={styles.sectionTitle}>{t('business.map')}</Text>
@@ -757,6 +775,7 @@ export default function BusinessScreen() {
           </View>
         ) : null}
 
+        {place ? (
         <View style={styles.card}>
           {reviews.length === 0 ? (
             <View style={styles.reviewsEmpty}>
@@ -825,8 +844,9 @@ export default function BusinessScreen() {
             </View>
           )}
         </View>
+        ) : null}
 
-        {contactPhones.length || website || instagram ? (
+        {place && (contactPhones.length || website || instagram) ? (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>{t('business.contact')}</Text>
             <View style={styles.contactList}>
@@ -984,11 +1004,15 @@ export default function BusinessScreen() {
         onSaved={(review) => {
           savedReviewRef.current = review;
           if (params.id) rememberPlaceReview(params.id, review);
-          setPlace((current) =>
-            current
-              ? { ...current, reviews: upsertOwnReview(current.reviews ?? [], review) }
-              : current,
-          );
+          setPlace((current) => {
+            if (!current) return current;
+            const next = {
+              ...current,
+              reviews: upsertOwnReview(current.reviews ?? [], review),
+            };
+            rememberPlaceDetail(next);
+            return next;
+          });
           setReloadToken((value) => value + 1);
         }}
       />

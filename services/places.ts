@@ -199,6 +199,21 @@ export function listPlaces(options: {
   });
 }
 
+export function readPlaceDetail(id: string): BusinessPlaceDetail | null {
+  return queryClient.getQueryData<BusinessPlaceDetail>(queryKeys.businesses.detail(id)) ?? null;
+}
+
+export function rememberPlaceDetail(detail: BusinessPlaceDetail): void {
+  queryClient.setQueryData(queryKeys.businesses.detail(detail.id), detail);
+  if (detail.reviews?.length) {
+    const key = queryKeys.businesses.reviews(detail.id);
+    const cached = queryClient.getQueryData<PlaceReview[]>(key);
+    if (!cached?.length) {
+      queryClient.setQueryData(key, detail.reviews);
+    }
+  }
+}
+
 export function getPlace(
   id: string,
   coords?: { latitude: number; longitude: number },
@@ -209,7 +224,12 @@ export function getPlace(
     params.set('longitude', String(coords.longitude));
   }
   const query = params.toString();
-  return apiGet<BusinessPlaceDetail>(`/businesses/${id}${query ? `?${query}` : ''}`);
+  return apiGet<BusinessPlaceDetail>(`/businesses/${id}${query ? `?${query}` : ''}`).then(
+    (detail) => {
+      rememberPlaceDetail(detail);
+      return detail;
+    },
+  );
 }
 
 export function listPlaceReviews(
