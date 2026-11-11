@@ -576,7 +576,9 @@ export default function DiscoverHomeScreen() {
                   style={styles.categoryArt}
                   contentFit="contain"
                 />
-                <CategoryLabel>{t(category.label)}</CategoryLabel>
+                <View style={styles.categoryLabelWrap}>
+                  <CategoryLabel>{t(category.label)}</CategoryLabel>
+                </View>
               </View>
             </TouchableOpacity>
           ))}
@@ -827,12 +829,18 @@ function makeStyles(colors: ThemeColors) {
     },
     categoryInner: {
       flex: 1,
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start',
       gap: 10,
     },
     categoryArt: {
       width: 46,
       height: 61,
+      flexShrink: 0,
+    },
+    categoryLabelWrap: {
+      marginTop: 'auto',
+      width: '100%',
+      flexShrink: 0,
     },
     nearSheet: {
       marginTop: 4,

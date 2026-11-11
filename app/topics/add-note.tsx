@@ -129,7 +129,7 @@ export default function AddNoteScreen() {
     }
   };
 
-  const header = <ScreenHeader title={t('topics.add_note')} />;
+  const header = <ScreenHeader title={t('topics.add_note')} fit="wrap" />;
 
   if (!recordId || loadingRecord) {
     return (

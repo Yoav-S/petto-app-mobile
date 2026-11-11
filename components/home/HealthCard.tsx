@@ -10,6 +10,7 @@ import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 import { Image } from 'expo-image';
 import { useHomePanelLayout } from '@/hooks/useHomePanelLayout';
 import { type ThemeColors } from '@/constants/theme';
+import ShrinkToFitText from '@/components/ui/ShrinkToFitText';
 
 /** Figma Topics card: 335×118, padding 16, inner gap 10. */
 const TOPICS = {
@@ -84,9 +85,15 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
           <CategoryIcon />
           <View style={styles.column}>
             <View style={styles.headerRow}>
-              <Text style={[homeCardTypography.title, styles.headerTitle]} numberOfLines={1}>
+              <ShrinkToFitText
+                maxFontSize={16}
+                minFontSize={12}
+                lineHeight={20}
+                maxLines={1}
+                style={[homeCardTypography.title, styles.headerTitle]}
+              >
                 {t('home.topicsCard.title')}
-              </Text>
+              </ShrinkToFitText>
               {latestRecord?.reminder_date || latestRecord?.reminder_time ? (
                 <View style={styles.dateMeta}>
                   <Ionicons
@@ -129,7 +136,9 @@ export default function HealthCard({ latestRecord, allDoneToday = false, loading
                 <Text
                   style={[homeCardTypography.note, homeCardTypography.noteCentered]}
                   numberOfLines={2}
-                  ellipsizeMode="tail"
+                  ellipsizeMode="clip"
+                  textBreakStrategy="simple"
+                  android_hyphenationFrequency="none"
                 >
                   {allDoneToday
                     ? t('home.topicsCard.allDone')
@@ -192,7 +201,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flexShrink: 0,
   },
   headerTitle: {
-    flexShrink: 1,
+    flex: 1,
+    minWidth: 0,
     includeFontPadding: false,
   },
   dateMeta: {
@@ -200,8 +210,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: 4,
-    flexShrink: 1,
-    maxWidth: '55%',
+    flexShrink: 0,
+    maxWidth: '42%',
   },
   body: {
     width: '100%',

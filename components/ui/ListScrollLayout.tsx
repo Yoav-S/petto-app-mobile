@@ -7,7 +7,9 @@ import {
 import {
   DOCUMENT_BOTTOM_SOLID,
   DOCUMENT_CONTENT_TOP_NUDGE,
+  HEADER_LAYOUT,
   LIST_CONTENT_TOP_NUDGE,
+  LIST_HEADER_TABS_GAP,
   LIST_SCROLL_END_CLEARANCE,
   LIST_TABS_CONTENT_GAP,
 } from '@/constants/layout';
@@ -23,6 +25,7 @@ import {
   readScrollFadeMemory,
   writeScrollFadeMemory,
 } from '@/components/ui/scrollFadeMemory';
+import { useHeaderTopPadding } from '@/utils/headerLayout';
 
 export interface ListScrollInsets {
   /** Inset so first row clears floating chrome (includes solid gap below tabs). */
@@ -101,13 +104,17 @@ export default function ListScrollLayout({
 }: ListScrollLayoutProps) {
   const styles = useThemedStyles(makeStyles);
   const surface = backgroundColor;
+  const headerTop = useHeaderTopPadding();
   const remembered = readScrollFadeMemory(fadeKey);
   const rememberedRef = useRef(remembered);
   const fadeKeyRef = useRef(fadeKey);
   /** Content-size reports are tagged with the fadeKey they belong to. */
   const measuredFadeKeyRef = useRef<string | undefined>(undefined);
+  /** ScreenHeader (~top+44+22) + tabs gap + 28pt segmented row — avoids 0→measured jump. */
+  const chromeEstimate =
+    headerTop + HEADER_LAYOUT.height + 22 + LIST_HEADER_TABS_GAP + 28;
   const [chromeContentHeight, setChromeContentHeight] = useState(
-    rememberedRef.current?.chromeHeight ?? 0,
+    rememberedRef.current?.chromeHeight ?? (chrome != null ? chromeEstimate : 0),
   );
   const [isStaticView, setIsStaticView] = useState(false);
   const overflowLatch = useRef(Boolean(remembered?.scrollable));

@@ -92,8 +92,10 @@ export default function HealthDetailsScreen() {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, title: titleParam } = useLocalSearchParams<{ id: string; title?: string }>();
   const recordId = normalizeRouteParam(id);
+  /** Passed from the list so the header never flashes «Topics» → record name. */
+  const passedTitle = normalizeRouteParam(titleParam);
   const { activePetId } = useActivePet();
   const insets = useSafeAreaInsets();
   const { contentWidth } = useResponsiveLayout();
@@ -522,9 +524,24 @@ export default function HealthDetailsScreen() {
     [colors.secondaryText, failedPhotoIds, noteListItems, openNote, openReminder, record?.status, styles],
   );
 
+  const headerTitle =
+    (record?.title?.trim() || passedTitle || t('topics.title')).trim();
+
+  const menuButton = record ? (
+    <HeaderIconButton
+      onPress={() => setMenuVisible(true)}
+      accessibilityLabel={t('topics.topic_actions')}
+    >
+      <Ionicons name="ellipsis-horizontal" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
+    </HeaderIconButton>
+  ) : undefined;
+
   if (loading) {
     return (
-      <HeaderScrollLayout header={<ScreenHeader title={t('topics.title')} />} edges={['left', 'right']}>
+      <HeaderScrollLayout
+        header={<ScreenHeader title={headerTitle} right={menuButton} fit="wrap" />}
+        edges={['left', 'right']}
+      >
         {({ paddingTop }) => (
           <View style={[styles.centered, { paddingTop }]}>
             <ActivityIndicator color={colors.primaryText} />
@@ -536,7 +553,7 @@ export default function HealthDetailsScreen() {
 
   if (error || !record) {
     return (
-      <HeaderScrollLayout header={<ScreenHeader title={t('topics.title')} />} edges={['left', 'right']}>
+      <HeaderScrollLayout header={<ScreenHeader title={headerTitle} fit="wrap" />} edges={['left', 'right']}>
         {({ paddingTop }) => (
           <View style={[styles.centered, { paddingTop }]}>
             <EmptyState
@@ -553,19 +570,10 @@ export default function HealthDetailsScreen() {
 
   const isActive = record.status === 'active';
 
-  const menuButton = (
-    <HeaderIconButton
-      onPress={() => setMenuVisible(true)}
-      accessibilityLabel={t('topics.topic_actions')}
-    >
-      <Ionicons name="ellipsis-horizontal" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
-    </HeaderIconButton>
-  );
-
   return (
     <>
       <HeaderScrollLayout
-        header={<ScreenHeader title={record.title} right={menuButton} />}
+        header={<ScreenHeader title={headerTitle} right={menuButton} fit="wrap" />}
         edges={['left', 'right']}
         topFade={false}
         bottomFade={false}

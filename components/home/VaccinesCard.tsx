@@ -6,6 +6,7 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
 import { homeCategoryIconBg, HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { t } from '@/i18n';
+import ShrinkToFitText from '@/components/ui/ShrinkToFitText';
 
 interface VaccinesCardProps {
   latestVaccine: {
@@ -72,9 +73,15 @@ export default function VaccinesCard({ latestVaccine, loading, onPress }: Vaccin
         <View style={styles.contentContainer}>
           <View style={styles.iconTitleBlock}>
             <CategoryIcon />
-            <Text style={homeCardTypography.title} numberOfLines={1}>
+            <ShrinkToFitText
+              maxFontSize={16}
+              minFontSize={12}
+              lineHeight={20}
+              maxLines={1}
+              style={[homeCardTypography.title, styles.cardTitle]}
+            >
               {t('home.vaccinesCard.title')}
-            </Text>
+            </ShrinkToFitText>
           </View>
 
           <View
@@ -150,6 +157,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     width: '100%',
     gap: 10,
     flexShrink: 0,
+  },
+  cardTitle: {
+    width: '100%',
+    includeFontPadding: false,
   },
   vaccineDetails: {
     width: '100%',

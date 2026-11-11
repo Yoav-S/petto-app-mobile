@@ -13,6 +13,7 @@ import {
 } from 'react-native-safe-area-context';
 import {
   HEADER_CONTENT_GAP,
+  HEADER_LAYOUT,
   HEADER_SCROLL_GAP,
   LIST_SCROLL_END_CLEARANCE,
   LIST_TOP_FADE_SOLID_STRIP,
@@ -34,6 +35,7 @@ import {
   hasActiveScrollOverflow,
   useScrollFadeMetricsState,
 } from '@/components/ui/scrollFadeMetrics';
+import { useHeaderTopPadding } from '@/utils/headerLayout';
 
 type FadeMode = 'document' | 'form' | 'scroll' | 'list';
 
@@ -99,7 +101,12 @@ export default function HeaderScrollLayout({
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const keyboardOpen = useKeyboardOpen();
-  const [chromeHeight, setChromeHeight] = useState(0);
+  const headerTop = useHeaderTopPadding();
+  /** ScreenHeader wrap bottom pad — seed so content does not jump from 0 → measured. */
+  const SCREEN_HEADER_BOTTOM = 22;
+  const [chromeHeight, setChromeHeight] = useState(
+    () => headerTop + HEADER_LAYOUT.height + SCREEN_HEADER_BOTTOM + chromePaddingBottom,
+  );
   const { metrics, reportViewport, reportContent, reportPinnedFooterOverflow } =
     useScrollFadeMetricsState();
   const hasOverflow = hasActiveScrollOverflow(metrics);

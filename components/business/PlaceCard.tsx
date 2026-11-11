@@ -79,7 +79,7 @@ export default function PlaceCard({
         <View style={styles.chipRow}>
           {categories.map((category) => (
             <View key={category} style={styles.categoryChip}>
-              <Text style={styles.categoryChipText} numberOfLines={1}>
+              <Text style={styles.categoryChipText} numberOfLines={1} ellipsizeMode="clip">
                 {t(CATEGORY_LABEL[category])}
               </Text>
             </View>
@@ -245,13 +245,15 @@ function makeStyles(colors: ThemeColors) {
     chipRow: {
       minHeight: 16,
       flexDirection: 'row',
-      flexWrap: 'nowrap',
+      flexWrap: 'wrap',
       alignItems: 'center',
       gap: 6,
+      rowGap: 6,
     },
     categoryChip: {
-      height: 16,
-      flexShrink: 1,
+      minHeight: 16,
+      flexGrow: 0,
+      flexShrink: 0,
       justifyContent: 'center',
       borderRadius: 6,
       backgroundColor: colors.background,

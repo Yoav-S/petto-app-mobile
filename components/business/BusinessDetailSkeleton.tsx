@@ -3,9 +3,6 @@ import { Animated, StyleSheet, View } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 
-/** Same reserved height as the live map preview window. */
-const MAP_PREVIEW_HEIGHT = 200;
-
 /**
  * Keeps business-detail section sizes stable while the first fetch is in flight,
  * so Near You → business does not flash empty reviews / missing cards.
@@ -42,10 +39,6 @@ export default function BusinessDetailSkeleton() {
         <View style={[styles.line, { width: '55%' }]} />
         <View style={[styles.line, { width: '62%' }]} />
       </View>
-      <View style={styles.mapCard}>
-        <View style={[styles.title, { width: 72 }]} />
-        <View style={styles.mapWindow} />
-      </View>
       <View style={styles.card}>
         <View style={styles.sectionHead}>
           <View style={[styles.title, { width: 110 }]} />
@@ -69,19 +62,6 @@ function makeStyles(c: ThemeColors) {
       paddingBottom: 22,
       paddingHorizontal: 20,
       gap: 16,
-    },
-    mapCard: {
-      backgroundColor: c.surface,
-      borderRadius: 24,
-      paddingTop: 22,
-      paddingBottom: 22,
-      paddingHorizontal: 20,
-      gap: 16,
-    },
-    mapWindow: {
-      height: MAP_PREVIEW_HEIGHT,
-      borderRadius: 24,
-      backgroundColor: c.background,
     },
     card: {
       backgroundColor: c.surface,

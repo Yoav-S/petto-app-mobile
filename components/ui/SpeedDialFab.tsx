@@ -20,7 +20,6 @@ import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /** Figma 375×812: 56×56 at left 299 / top 728 → right 20, bottom 28. */
@@ -183,7 +182,15 @@ export default function SpeedDialFab({
                   contentFit="contain"
                 />
               ) : null}
-              <Text style={styles.menuLabel}>{item.label}</Text>
+              <Text
+                style={styles.menuLabel}
+                numberOfLines={1}
+                ellipsizeMode="clip"
+                textBreakStrategy="simple"
+                android_hyphenationFrequency="none"
+              >
+                {item.label}
+              </Text>
             </TouchableOpacity>
           ))}
         </Animated.View>

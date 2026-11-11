@@ -122,7 +122,7 @@ export default function AddHealthScreen() {
 
   const screenTitle = isEditing ? t('topics.edit_topic') : t('topics.add_health');
 
-  const header = <VaccineScreenHeader title={screenTitle} icon="close" />;
+  const header = <VaccineScreenHeader title={screenTitle} icon="close" fit="wrap" />;
 
   if (isEditing && loading) {
     return (

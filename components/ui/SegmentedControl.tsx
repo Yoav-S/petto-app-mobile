@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
-
 interface SegmentedControlProps {
   tabs: string[];
   activeTab: string;
@@ -48,7 +47,16 @@ export default function SegmentedControl({
             onPress={() => onTabChange(tab)}
             activeOpacity={0.85}
           >
-            <Text style={[styles.label, isActive && styles.labelActive]} numberOfLines={1}>
+            <Text
+              style={[styles.label, isActive && styles.labelActive]}
+              numberOfLines={1}
+              ellipsizeMode="clip"
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+              allowFontScaling={false}
+              textBreakStrategy="simple"
+              android_hyphenationFrequency="none"
+            >
               {getLabel ? getLabel(tab) : tab}
             </Text>
           </TouchableOpacity>

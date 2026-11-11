@@ -1,25 +1,40 @@
-import React, { useEffect, useState } from 'react';
-import { Platform, Text, View, StyleSheet, type TextStyle } from 'react-native';
+import React, { useMemo } from 'react';
+import { Text, View, StyleSheet, type TextStyle } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
-import FitLabel, {
-  LABEL_COMPACT_SIZE,
-  LABEL_LINE_HEIGHT,
-  LABEL_SOURCE_SIZE,
-} from '@/components/ui/FitLabel';
+import { LABEL_LINE_HEIGHT, LABEL_SOURCE_SIZE } from '@/components/ui/FitLabel';
 
 /** Inner text box inside the 126-wide card (12px padding each side). */
 export const CATEGORY_LABEL_WIDTH = 102;
 const LABEL_SLOT_HEIGHT = LABEL_LINE_HEIGHT * 2;
 
-function hasWordBreak(value: string): boolean {
-  return /[\s\n]/.test(value.trim());
+function Line({
+  text,
+  style,
+}: {
+  text: string;
+  style?: TextStyle;
+}) {
+  const styles = useThemedStyles(makeStyles);
+
+  return (
+    <Text
+      style={[styles.line, style]}
+      numberOfLines={1}
+      ellipsizeMode="clip"
+      allowFontScaling={false}
+      textBreakStrategy="simple"
+      android_hyphenationFrequency="none"
+    >
+      {text}
+    </Text>
+  );
 }
 
 /**
- * Two-line category title. One-word labels sit on the bottom line so they
- * share the baseline with two-line titles. Words never split mid-token —
- * single words shrink instead; multi-word copy wraps only at spaces.
+ * Category tiles at full 16px — never shrinks.
+ * One word → bottom row.
+ * Two+ words → first word on line 1, the rest on line 2 (always both visible).
  */
 export default function CategoryLabel({
   children,
@@ -29,48 +44,26 @@ export default function CategoryLabel({
   style?: TextStyle;
 }) {
   const styles = useThemedStyles(makeStyles);
-  const label = children.replace(/\u00a0/g, ' ').trim();
-  const multiWord = hasWordBreak(label);
-  const [fontSize, setFontSize] = useState(LABEL_SOURCE_SIZE);
+  const label = useMemo(
+    () => children.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim(),
+    [children],
+  );
+  const words = useMemo(() => label.split(' ').filter(Boolean), [label]);
+  const line1 = words[0] ?? '';
+  const line2 = words.length > 1 ? words.slice(1).join(' ') : '';
 
-  useEffect(() => {
-    setFontSize(LABEL_SOURCE_SIZE);
-  }, [label]);
-
-  if (!multiWord) {
+  if (!line2) {
     return (
-      <View style={styles.slot}>
-        <FitLabel maxWidth={CATEGORY_LABEL_WIDTH} style={[styles.single, style]}>
-          {label}
-        </FitLabel>
+      <View style={[styles.slot, styles.slotOneLine]}>
+        <Line text={line1} style={style} />
       </View>
     );
   }
 
   return (
     <View style={styles.slot}>
-      <Text
-        style={[styles.multi, style, { fontSize }]}
-        numberOfLines={2}
-        allowFontScaling={false}
-        textBreakStrategy="simple"
-        lineBreakStrategyIOS="standard"
-        onTextLayout={(event) => {
-          if (fontSize <= LABEL_COMPACT_SIZE) return;
-          const lines = event.nativeEvent.lines;
-          if (!lines.length) return;
-          const brokeWord = lines.some((line, index) => {
-            if (index === lines.length - 1) return false;
-            const next = lines[index + 1]?.text?.trimStart() ?? '';
-            if (!next) return false;
-            // Real wraps end on a space/newline. Anything else is a mid-word split.
-            return !(/\s$/u.test(line.text) || line.text.endsWith('\n'));
-          });
-          if (brokeWord) setFontSize(LABEL_COMPACT_SIZE);
-        }}
-      >
-        {label}
-      </Text>
+      <Line text={line1} style={style} />
+      <Line text={line2} style={style} />
     </View>
   );
 }
@@ -80,18 +73,20 @@ const makeStyles = (c: ThemeColors) =>
     slot: {
       width: '100%',
       height: LABEL_SLOT_HEIGHT,
+      flexShrink: 0,
+      justifyContent: 'flex-start',
+    },
+    slotOneLine: {
       justifyContent: 'flex-end',
     },
-    single: {
-      textAlign: 'left',
-      color: c.primaryText,
-      ...(Platform.OS === 'android' ? { textAlignVertical: 'center' as const } : null),
-    },
-    multi: {
+    line: {
       width: '100%',
+      height: LABEL_LINE_HEIGHT,
       fontFamily: 'Rubik-Medium',
+      fontSize: LABEL_SOURCE_SIZE,
       lineHeight: LABEL_LINE_HEIGHT,
       color: c.primaryText,
       includeFontPadding: false,
+      textAlign: 'left',
     },
   });

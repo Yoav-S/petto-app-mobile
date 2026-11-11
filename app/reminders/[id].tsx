@@ -446,6 +446,7 @@ export default function EditReminderScreen() {
       title={headerTitle}
       icon={readOnly ? 'back' : 'close'}
       onBack={readOnly ? leaveRecent : undefined}
+      fit="wrap"
     />
   );
   const showHistory = readOnly && fireHistory.length > 0;

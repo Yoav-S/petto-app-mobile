@@ -366,7 +366,7 @@ export default function EditNoteScreen() {
     });
   };
 
-  const header = <ScreenHeader title={t('topics.edit_note')} />;
+  const header = <ScreenHeader title={t('topics.edit_note')} fit="wrap" />;
 
   if (loading) {
     return (

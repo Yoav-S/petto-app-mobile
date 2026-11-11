@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
@@ -10,7 +10,7 @@ import { useHeaderTopPadding } from '@/utils/headerLayout';
 import HeaderIconButton, {
   HEADER_ICON_BTN,
 } from '@/components/ui/HeaderIconButton';
-import HeaderTitle from '@/components/ui/HeaderTitle';
+import HeaderTitle, { headerTitleNeedsTwoLines } from '@/components/ui/HeaderTitle';
 
 interface SettingsHeaderProps {
   title: string;
@@ -20,6 +20,8 @@ interface SettingsHeaderProps {
   /** Bottom padding of the rounded card. Default keeps the shared header height. */
   roundedBottom?: number;
 }
+
+const TITLE_LINE = 28;
 
 /**
  * Settings-style header. Owns top inset like ScreenHeader so it matches
@@ -35,6 +37,14 @@ export default function SettingsHeader({
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const paddingTop = useHeaderTopPadding();
+  const { width } = useWindowDimensions();
+  const twoLines = useMemo(
+    () => headerTitleNeedsTwoLines(title, width),
+    [title, width],
+  );
+  const rowMinHeight = twoLines
+    ? TITLE_LINE * 2 + HEADER_LAYOUT.paddingVertical * 2
+    : HEADER_LAYOUT.height;
 
   return (
     <View style={styles.wrap}>
@@ -45,7 +55,7 @@ export default function SettingsHeader({
           rounded ? [styles.rounded, { paddingBottom: roundedBottom }] : null,
         ]}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, { minHeight: rowMinHeight }]}>
           <HeaderIconButton
             onPress={() => router.back()}
             accessibilityLabel={t('petOnboarding.back')}
@@ -67,15 +77,16 @@ const makeStyles = (c: ThemeColors) =>
     wrap: {
       width: '100%',
       backgroundColor: c.background,
+      overflow: 'visible',
     },
     header: {
-      minHeight: HEADER_LAYOUT.height,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: HEADER_LAYOUT.paddingHorizontal,
       paddingVertical: HEADER_LAYOUT.paddingVertical,
       gap: HEADER_LAYOUT.iconTitleGap,
+      overflow: 'visible',
     },
     rightSpacer: {
       width: HEADER_ICON_BTN.size,
@@ -92,5 +103,6 @@ const makeStyles = (c: ThemeColors) =>
       shadowRadius: 20,
       boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.078)',
       elevation: 4,
+      overflow: 'visible',
     },
   });

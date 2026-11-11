@@ -8,6 +8,7 @@ import { makeHomeCardTypography } from '@/components/home/homeCardTypography';
 import { homeCategoryIconBg, HOME_CATEGORY_ICONS } from '@/components/home/categoryIcons';
 import { t } from '@/i18n';
 import { formatLocaleClock, formatUpcomingCount } from '@/utils/localeFormat';
+import ShrinkToFitText from '@/components/ui/ShrinkToFitText';
 
 interface RemindersCardProps {
   nextReminder: {
@@ -78,9 +79,15 @@ export default function RemindersCard({
         <View style={styles.contentContainer}>
           <View style={styles.iconTitleBlock}>
             <CategoryIcon />
-            <Text style={homeCardTypography.title} numberOfLines={1}>
+            <ShrinkToFitText
+              maxFontSize={16}
+              minFontSize={12}
+              lineHeight={20}
+              maxLines={1}
+              style={[homeCardTypography.title, styles.cardTitle]}
+            >
               {t('home.remindersCard.title')}
-            </Text>
+            </ShrinkToFitText>
           </View>
 
           <View
@@ -102,7 +109,9 @@ export default function RemindersCard({
               <Text
                 style={[homeCardTypography.note, homeCardTypography.noteCentered]}
                 numberOfLines={3}
-                ellipsizeMode="tail"
+                ellipsizeMode="clip"
+                textBreakStrategy="simple"
+                android_hyphenationFrequency="none"
               >
                 {allDoneToday
                   ? t('home.remindersCard.allDone')
@@ -162,6 +171,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     width: '100%',
     gap: 10,
     flexShrink: 0,
+  },
+  cardTitle: {
+    width: '100%',
+    includeFontPadding: false,
   },
   reminderDetails: {
     width: '100%',

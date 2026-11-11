@@ -397,7 +397,7 @@ export default function RemindersScreen() {
         contentBottomPadding={Math.max(0, fabTopInset - REMINDER_LIST_ITEM_GAP + 16)}
         chrome={
           <>
-            <ScreenHeader title={t('reminders.title')} />
+            <ScreenHeader title={t('reminders.title')} fit="wrap" />
             <SegmentedControl
               tabs={[...TABS]}
               activeTab={activeTab}

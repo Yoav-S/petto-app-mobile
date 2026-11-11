@@ -28,7 +28,6 @@ import { useSettledModalVisible } from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 import { getErrorMessage } from '@/services/errors';
 import WriteReviewSheet from '@/components/business/WriteReviewSheet';
-import BranchMap, { pinsFromLocations } from '@/components/business/BranchMap';
 import BusinessDetailSkeleton from '@/components/business/BusinessDetailSkeleton';
 import { openSystemDirections, openSystemPhones } from '@/services/systemApps';
 import { postedLabel } from '@/utils/reviewPosted';
@@ -53,7 +52,6 @@ import {
 
 const WEEK: Weekday[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const LOCATION_PREVIEW = 4;
-const MAP_PREVIEW_HEIGHT = 200;
 const DAY_KEY: Record<Weekday, string> = {
   mon: 'business.day_mon',
   tue: 'business.day_tue',
@@ -414,12 +412,6 @@ export default function BusinessScreen() {
   );
   const previewLocations = locationCards.slice(0, LOCATION_PREVIEW);
   const locationsNeedPager = locationCards.length > LOCATION_PREVIEW;
-  const mapFallbackCategory =
-    selectedCategory ?? place?.category ?? params.category ?? 'veterinarian';
-  const mapPins = useMemo(
-    () => pinsFromLocations(locationCards, mapFallbackCategory, selectedCategory),
-    [locationCards, mapFallbackCategory, selectedCategory],
-  );
   const serviceKey = serviceCategories.join('|');
   const photoPresented = useSettledModalVisible(photoOpen && Boolean(image));
   const locationsPresented = useSettledModalVisible(locationsOpen);
@@ -654,7 +646,11 @@ export default function BusinessScreen() {
                       accessibilityRole="button"
                       accessibilityState={{ selected: on }}
                     >
-                      <Text style={[styles.serviceTabText, on && styles.serviceTabTextOn]}>
+                      <Text
+                        style={[styles.serviceTabText, on && styles.serviceTabTextOn]}
+                        numberOfLines={1}
+                        ellipsizeMode="clip"
+                      >
                         {t(CATEGORY_KEY[item])}
                       </Text>
                     </Pressable>
@@ -743,35 +739,6 @@ export default function BusinessScreen() {
                 />
               ))}
             </View>
-          </View>
-        ) : null}
-
-        {place && mapPins.length ? (
-          <View style={styles.mapCard}>
-            <View style={styles.sectionHead}>
-              <Text style={styles.sectionTitle}>{t('business.map')}</Text>
-            </View>
-            <Pressable
-              style={styles.mapWindow}
-              onPress={() =>
-                router.push({
-                  pathname: '/business/[id]/map',
-                  params: {
-                    id: params.id,
-                    locationId: currentBranch?.id || trackedLocationId,
-                    name,
-                    lat: params.lat || '',
-                    lng: params.lng || '',
-                  },
-                } as never)
-              }
-              accessibilityRole="button"
-              accessibilityLabel={t('business.open_map')}
-            >
-              <View pointerEvents="none" style={styles.mapPreview}>
-                <BranchMap pins={mapPins} selectedId={currentBranch?.id} />
-              </View>
-            </Pressable>
           </View>
         ) : null}
 
@@ -1099,23 +1066,6 @@ const makeStyles = (c: ThemeColors) =>
     locationsList: {
       gap: 8,
     },
-    mapCard: {
-      backgroundColor: c.surface,
-      borderRadius: 24,
-      paddingTop: 22,
-      paddingBottom: 22,
-      paddingHorizontal: 20,
-      gap: 16,
-    },
-    mapWindow: {
-      height: MAP_PREVIEW_HEIGHT,
-      borderRadius: 24,
-      overflow: 'hidden',
-      backgroundColor: c.background,
-    },
-    mapPreview: {
-      flex: 1,
-    },
     locationsScreen: {
       flex: 1,
       backgroundColor: c.background,
@@ -1188,10 +1138,14 @@ const makeStyles = (c: ThemeColors) =>
       flexDirection: 'row',
       flexWrap: 'wrap',
       alignItems: 'center',
+      alignContent: 'flex-start',
       gap: 4,
+      rowGap: 4,
     },
     serviceTab: {
       minHeight: 28,
+      flexGrow: 0,
+      flexShrink: 0,
       borderRadius: 10,
       backgroundColor: c.background,
       paddingHorizontal: 8,
@@ -1203,6 +1157,7 @@ const makeStyles = (c: ThemeColors) =>
       fontSize: 14,
       lineHeight: 20,
       color: c.secondaryText,
+      includeFontPadding: false,
     },
     serviceTabTextOn: {
       color: c.primaryText,

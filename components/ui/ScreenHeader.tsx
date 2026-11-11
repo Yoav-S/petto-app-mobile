@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
@@ -9,7 +9,10 @@ import { useHeaderLayout } from '@/utils/headerLayout';
 import HeaderIconButton, {
   HEADER_ICON_BTN,
 } from '@/components/ui/HeaderIconButton';
-import HeaderTitle from '@/components/ui/HeaderTitle';
+import HeaderTitle, {
+  headerTitleNeedsTwoLines,
+  type HeaderTitleFit,
+} from '@/components/ui/HeaderTitle';
 
 interface ScreenHeaderProps {
   title: string;
@@ -18,17 +21,38 @@ interface ScreenHeaderProps {
   onBack?: () => void;
   /** Optional trailing control (e.g. ⋮ menu). Replaces the layout spacer. */
   right?: React.ReactNode;
+  /**
+   * oneLine — Reminders: keep multi-word titles on one line.
+   * wrap — Topics: wrap at a space so both words show.
+   */
+  fit?: HeaderTitleFit;
 }
 
-/**
- * App-wide title row. Owns top safe-area + Figma gap so every screen matches
- * Add Health (header row at top: 56). Parent must NOT pad the top safe area.
- */
-export default function ScreenHeader({ title, icon = 'back', onBack, right }: ScreenHeaderProps) {
+const TITLE_LINE = 28;
+
+export default function ScreenHeader({
+  title,
+  icon = 'back',
+  onBack,
+  right,
+  fit = 'wrap',
+}: ScreenHeaderProps) {
   const router = useRouter();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const layout = useHeaderLayout();
+  const { width } = useWindowDimensions();
+  const twoLines = useMemo(
+    () => headerTitleNeedsTwoLines(title, width, fit),
+    [title, width, fit],
+  );
+  const rowMinHeight = twoLines
+    ? TITLE_LINE * 2 + HEADER_LAYOUT.paddingVertical * 2
+    : layout.height;
+  // Empty right spacer only balances single-word titles. Two-word titles are
+  // left-aligned — drop it so they can use that ~32pt of free space.
+  const multiWord = title.trim().split(/\s+/).filter(Boolean).length > 1;
+  const trailing = right ?? (multiWord ? null : <View style={styles.spacer} />);
 
   return (
     <View style={[styles.wrap, { paddingTop: layout.paddingTop }]}>
@@ -36,7 +60,7 @@ export default function ScreenHeader({ title, icon = 'back', onBack, right }: Sc
         style={[
           styles.container,
           {
-            minHeight: layout.height,
+            minHeight: rowMinHeight,
             paddingHorizontal: layout.paddingHorizontal,
             paddingVertical: layout.paddingVertical,
             gap: HEADER_LAYOUT.iconTitleGap,
@@ -51,9 +75,9 @@ export default function ScreenHeader({ title, icon = 'back', onBack, right }: Sc
           />
         </HeaderIconButton>
 
-        <HeaderTitle>{title}</HeaderTitle>
+        <HeaderTitle fit={fit}>{title}</HeaderTitle>
 
-        {right ?? <View style={styles.spacer} />}
+        {trailing}
       </View>
     </View>
   );
@@ -73,11 +97,13 @@ const makeStyles = (c: ThemeColors) =>
       shadowRadius: 20,
       boxShadow: '0px 4px 20px rgba(45, 45, 42, 0.078)',
       elevation: 4,
+      overflow: 'visible',
     },
     container: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      overflow: 'visible',
     },
     spacer: {
       width: HEADER_ICON_BTN.size,

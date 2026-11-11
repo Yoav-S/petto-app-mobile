@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-
 /** Figma empty block: text↔CTA gap 22, title↔subtitle gap 4, CTA 124×48. */
 const EMPTY = {
   stackGap: 22,
@@ -58,10 +57,23 @@ export default function EmptyState({
         ]}
       >
         <View style={[styles.textStack, { width: textWidth }]}>
-          <Text style={styles.title} numberOfLines={2}>
+          <Text
+            style={styles.title}
+            numberOfLines={2}
+            ellipsizeMode="clip"
+            textBreakStrategy="simple"
+            lineBreakStrategyIOS="standard"
+            android_hyphenationFrequency="none"
+          >
             {title}
           </Text>
-          <Text style={styles.subtitle} numberOfLines={3}>
+          <Text
+            style={styles.subtitle}
+            numberOfLines={3}
+            ellipsizeMode="clip"
+            textBreakStrategy="simple"
+            android_hyphenationFrequency="none"
+          >
             {subtitle}
           </Text>
         </View>

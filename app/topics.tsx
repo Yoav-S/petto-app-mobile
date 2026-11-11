@@ -260,7 +260,7 @@ export default function HealthScreen() {
         contentBottomPadding={Math.max(0, fabTopInset - HEALTH_LIST_ITEM_GAP + 16)}
         chrome={
           <>
-            <ScreenHeader title={t('topics.title')} />
+            <ScreenHeader title={t('topics.title')} fit="wrap" />
             <SegmentedControl
               tabs={[...TABS]}
               activeTab={activeTab}
@@ -345,7 +345,10 @@ export default function HealthScreen() {
                         hasReminder={Boolean(item.linked_reminder_date || item.linked_reminder_time)}
                         onPress={() => {
                           setSwipeOpenId(null);
-                          router.push(`/topics/${item.id}` as never);
+                          router.push({
+                            pathname: '/topics/[id]',
+                            params: { id: item.id, title: item.title },
+                          } as never);
                         }}
                         onReminderPress={
                           item.latest_note_id
