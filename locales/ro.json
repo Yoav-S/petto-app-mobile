@@ -49,8 +49,8 @@
     "addFirstPet": "Adaugă primul animal pentru a începe",
     "vaccinesCard": {
       "title": "Vaccinuri",
-      "last": "Ultima administrare:",
-      "next": "Valabil până la:",
+      "last": "Ultima:",
+      "next": "Valabil:",
       "empty": "Niciun vaccin încă"
     },
     "remindersCard": {
@@ -96,7 +96,7 @@
     "contact": "Date de contact",
     "opening_hours": "Program",
     "call": "Sună",
-    "directions": "Indicații de orientare",
+    "directions": "Traseu",
     "open_in": "Deschide în",
     "google_maps": "Google Maps",
     "waze": "Waze",
@@ -194,7 +194,7 @@
     "weight_label": "Greutate (kg)",
     "weight_unit": "kg",
     "color": "Culoare",
-    "neutered": "Castrat / Sterilizat",
+    "neutered": "Castrat",
     "serial": "Pașaport / Serie",
     "chip_id": "Numărul microcipului",
     "age_year": "an",

@@ -1421,7 +1421,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     reviewHead: {
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       gap: 16,
     },
     reviewAvatar: {
