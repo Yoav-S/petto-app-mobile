@@ -1,97 +1,172 @@
 import React, { useMemo } from 'react';
-import { Text, View, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet, useWindowDimensions } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { HEADER_LAYOUT } from '@/constants/layout';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
+import { estimateTextWidth, wrapTextAtWords } from '@/utils/textWidth';
 
-/** Kept for callers. */
+/** Kept for callers — titles are always left + full size. */
 export type HeaderTitleFit = 'oneLine' | 'wrap';
 
 interface HeaderTitleProps {
   children: string;
   fit?: HeaderTitleFit;
+  /** When true, a real trailing control is present (⋮). Otherwise title uses full width. */
+  hasTrailing?: boolean;
 }
 
 const TITLE_MAX = 24;
 const TITLE_LINE = 28;
+/** Gap from the back/close chip to the title — fixed cross-app. */
+export const TITLE_FROM_ARROW = 16;
 
 export type HeaderTitleLayout = {
   display: string;
-  align: 'left' | 'center';
+  align: 'left';
   fontSize: number;
   lineHeight: number;
   singleWord: boolean;
   lines: 1 | 2;
 };
 
-export function titleBoxWidth(windowWidth: number, multiWord = false): number {
-  // Multi-word titles drop the empty trailing spacer (~32) for more room.
-  const trailing = multiWord ? 0 : HEADER_ICON_BTN.size;
+export function titleBoxWidth(windowWidth: number, hasTrailing = false): number {
   return Math.max(
     0,
     windowWidth -
       HEADER_LAYOUT.paddingHorizontal * 2 -
       HEADER_ICON_BTN.size -
-      HEADER_LAYOUT.iconTitleGap -
-      trailing,
+      TITLE_FROM_ARROW -
+      (hasTrailing ? HEADER_ICON_BTN.size : 0),
   );
 }
 
 export function headerTitleNeedsTwoLines(
-  _title: string,
-  _windowWidth: number,
+  title: string,
+  windowWidth: number,
   _fit: HeaderTitleFit = 'wrap',
+  hasTrailing = false,
 ): boolean {
-  return false;
+  return layoutHeaderTitle(title, titleBoxWidth(windowWidth, hasTrailing)).lines === 2;
 }
 
-/** Fixed 24 / 28 — same for Topics and Reminders. One line, never shrinks. */
-export default function HeaderTitle({ children, fit: _fit = 'wrap' }: HeaderTitleProps) {
+/**
+ * Cross-app header title:
+ * - Always left-aligned
+ * - 16px from the back arrow (via parent gap)
+ * - Full 24px — never shrinks for short titles
+ * - Uses the full line; wraps at a space only when needed so no word is cut
+ */
+export default function HeaderTitle({
+  children,
+  fit: _fit = 'wrap',
+  hasTrailing = false,
+}: HeaderTitleProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const { width: windowWidth } = useWindowDimensions();
   const title = useMemo(() => children.replace(/\s+/g, ' ').trim(), [children]);
-  const singleWord = title.split(' ').filter(Boolean).length <= 1;
+  const boxWidth = useMemo(
+    () => titleBoxWidth(windowWidth, hasTrailing),
+    [windowWidth, hasTrailing],
+  );
+  const layout = useMemo(
+    () => layoutHeaderTitle(title, boxWidth),
+    [title, boxWidth],
+  );
+  const rows = useMemo(
+    () => layout.display.split('\n').map((row) => row.trim()).filter(Boolean),
+    [layout.display],
+  );
 
   return (
-    <View style={styles.box}>
-      <Text
-        style={[
-          styles.title,
-          {
-            color: colors.primaryText,
-            textAlign: singleWord ? 'center' : 'left',
-            fontSize: TITLE_MAX,
-            lineHeight: TITLE_LINE,
-          },
-        ]}
-        numberOfLines={1}
-        ellipsizeMode="clip"
-        allowFontScaling={false}
-        textBreakStrategy="simple"
-        lineBreakStrategyIOS="standard"
-        android_hyphenationFrequency="none"
-      >
-        {title}
-      </Text>
+    <View
+      style={[
+        styles.box,
+        { minHeight: TITLE_LINE * Math.max(1, rows.length) },
+      ]}
+    >
+      {rows.map((row, index) => (
+        <Text
+          key={`${index}-${row}`}
+          style={[
+            styles.title,
+            {
+              color: colors.primaryText,
+              fontSize: TITLE_MAX,
+              height: TITLE_LINE,
+              lineHeight: TITLE_LINE,
+            },
+          ]}
+          numberOfLines={1}
+          ellipsizeMode="clip"
+          allowFontScaling={false}
+          textBreakStrategy="simple"
+          lineBreakStrategyIOS="standard"
+          android_hyphenationFrequency="none"
+        >
+          {row}
+        </Text>
+      ))}
     </View>
   );
 }
 
 export function layoutHeaderTitle(
   title: string,
-  _boxWidth: number,
+  boxWidth: number,
   _fit: HeaderTitleFit = 'wrap',
 ): HeaderTitleLayout {
   const trimmed = title.replace(/\s+/g, ' ').trim();
-  const singleWord = trimmed.split(' ').filter(Boolean).length <= 1;
+  const words = trimmed.split(' ').filter(Boolean);
+  const singleWord = words.length <= 1;
+
+  if (!trimmed) {
+    return {
+      display: '',
+      align: 'left',
+      fontSize: TITLE_MAX,
+      lineHeight: TITLE_LINE,
+      singleWord: true,
+      lines: 1,
+    };
+  }
+
+  // One token: always one full-size left line (never center).
+  if (singleWord || boxWidth <= 0) {
+    return {
+      display: trimmed,
+      align: 'left',
+      fontSize: TITLE_MAX,
+      lineHeight: TITLE_LINE,
+      singleWord,
+      lines: 1,
+    };
+  }
+
+  // Fits on one line → one line. Otherwise wrap at a space so every word shows.
+  if (estimateTextWidth(trimmed, TITLE_MAX) <= boxWidth) {
+    return {
+      display: trimmed,
+      align: 'left',
+      fontSize: TITLE_MAX,
+      lineHeight: TITLE_LINE,
+      singleWord: false,
+      lines: 1,
+    };
+  }
+
+  const wrapped =
+    wrapTextAtWords(trimmed, boxWidth, TITLE_MAX) ??
+    `${words[0]}\n${words.slice(1).join(' ')}`;
+
   return {
-    display: trimmed,
-    align: singleWord ? 'center' : 'left',
+    display: wrapped,
+    align: 'left',
     fontSize: TITLE_MAX,
     lineHeight: TITLE_LINE,
-    singleWord,
-    lines: 1,
+    singleWord: false,
+    lines: 2,
   };
 }
 
@@ -105,15 +180,14 @@ const makeStyles = (_c: ThemeColors) =>
     box: {
       flex: 1,
       minWidth: 0,
-      justifyContent: 'center',
-      minHeight: TITLE_LINE,
+      // Top-align so line 1 sits with the back arrow; line 2 grows downward.
+      justifyContent: 'flex-start',
+      overflow: 'visible',
     },
     title: {
       width: '100%',
-      minHeight: TITLE_LINE,
       fontFamily: 'Rubik-Regular',
-      fontSize: TITLE_MAX,
-      lineHeight: TITLE_LINE,
+      textAlign: 'left',
       includeFontPadding: false,
     },
   });

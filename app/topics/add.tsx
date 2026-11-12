@@ -167,7 +167,7 @@ export default function AddHealthScreen() {
           scrollInsetTop={paddingTop}
           contentContainerStyle={{ paddingTop: layout.formTop }}
           footer={{
-            label: t('pickers.done'),
+            label: t('common.save'),
             disabled: !canSave,
             loading: submitting,
             onPress: handleSave,

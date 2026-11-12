@@ -88,9 +88,9 @@ export const HEADER_LAYOUT = {
   height: 44,
   paddingHorizontal: 20,
   paddingVertical: 6,
-  /** Gap between the 32px back/close chip and the title (min distance from arrow). */
+  /** Gap between the 32px back/close chip and the title (fixed 16 cross-app). */
   iconTitleGap: 16,
-  /** Extra inset used when deciding if a short title can stay centered. */
+  /** @deprecated Titles are left-aligned; kept for older call sites. */
   titleEdgeInset: 12,
 } as const;
 

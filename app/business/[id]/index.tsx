@@ -32,6 +32,7 @@ import BusinessDetailSkeleton from '@/components/business/BusinessDetailSkeleton
 import { openSystemDirections, openSystemPhones } from '@/services/systemApps';
 import { postedLabel } from '@/utils/reviewPosted';
 import { formatKm, formatRating } from '@/utils/localeFormat';
+import { placeCategoryChipLabel } from '@/utils/placeCategoryLabel';
 import { useToast } from '@/context/ToastContext';
 import { branchHoursStatus, formatClosesAt, formatOpensAt, placeHoursStatus } from '@/services/placeHours';
 import {
@@ -60,13 +61,6 @@ const DAY_KEY: Record<Weekday, string> = {
   fri: 'business.day_fri',
   sat: 'business.day_sat',
   sun: 'business.day_sun',
-};
-const CATEGORY_KEY: Record<BusinessCategory, string> = {
-  veterinarian: 'home.category_veterinary',
-  groomer: 'home.category_grooming',
-  pharmacy: 'home.category_pharmacies',
-  pet_friendly: 'home.category_friendly',
-  pet_store: 'home.tag_pet_store',
 };
 function hoursListed(hours: OpeningHours | undefined): boolean {
   return Boolean(hours) && hours?.provided !== false;
@@ -418,7 +412,14 @@ export default function BusinessScreen() {
 
   useEffect(() => {
     const available = serviceKey.split('|').filter(Boolean) as BusinessCategory[];
-    const fromParam = params.category && CATEGORY_KEY[params.category] ? params.category : null;
+    const fromParam =
+      params.category === 'veterinarian'
+      || params.category === 'groomer'
+      || params.category === 'pharmacy'
+      || params.category === 'pet_friendly'
+      || params.category === 'pet_store'
+        ? params.category
+        : null;
     setSelectedCategory((current) => {
       if (current && available.includes(current)) return current;
       if (fromParam && available.includes(fromParam)) return fromParam;
@@ -651,7 +652,7 @@ export default function BusinessScreen() {
                         numberOfLines={1}
                         ellipsizeMode="clip"
                       >
-                        {t(CATEGORY_KEY[item])}
+                        {placeCategoryChipLabel(item)}
                       </Text>
                     </Pressable>
                   );

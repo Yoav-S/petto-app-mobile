@@ -48,7 +48,7 @@ function DetailCard({
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.card, { flex }]}>
-      <Text style={styles.label} numberOfLines={1} allowFontScaling={false}>
+      <Text style={styles.label} allowFontScaling={false}>
         {label}
       </Text>
       <Text style={styles.value} numberOfLines={2} allowFontScaling={false}>
@@ -72,8 +72,9 @@ export default function PetProfilePanel({ pet }: PetProfilePanelProps) {
         <DetailCard label={t('profile.weight')} value={formatWeight(pet?.weight)} flex={98} />
       </View>
       <View style={styles.row}>
-        <DetailCard label={t('profile.neutered')} value={formatNeutered(pet?.is_neutered)} flex={98} />
-        <DetailCard label={t('profile.chip_id')} value={pet?.chip_id || EMPTY_VALUE} flex={229} />
+        {/* Wider than weight — "Neutered" / long locale labels must not clip. */}
+        <DetailCard label={t('profile.neutered')} value={formatNeutered(pet?.is_neutered)} flex={150} />
+        <DetailCard label={t('profile.chip_id')} value={pet?.chip_id || EMPTY_VALUE} flex={177} />
       </View>
     </View>
   );
@@ -90,20 +91,21 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     gap: 8,
   },
   card: {
-    height: 100,
+    minHeight: 100,
     borderRadius: 20,
     backgroundColor: c.background,
     paddingTop: 16,
     paddingHorizontal: 12,
     paddingBottom: 12,
     gap: 8,
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   label: {
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 20,
     color: c.secondaryText,
+    flexShrink: 0,
   },
   value: {
     fontFamily: 'Rubik-Regular',

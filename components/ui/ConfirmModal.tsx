@@ -43,13 +43,11 @@ const MODAL = {
   buttonRadius: 10,
 } as const;
 
-/** Both dialog buttons share the row and size themselves to their label. */
+/** Shared chrome — cancel/confirm get different flex so the red action is wider. */
 const BUTTON_SHAPE: ViewStyle = {
-  flexGrow: 1,
   flexShrink: 1,
   flexBasis: 0,
   minWidth: 0,
-  maxWidth: '100%',
   minHeight: MODAL.buttonHeight,
   paddingHorizontal: MODAL.buttonPadH,
   paddingVertical: MODAL.buttonPadV,
@@ -101,14 +99,22 @@ export function ConfirmDialogSurface({
                   onPress={onCancel}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.cancelText}>{cancelText ?? t('common.cancel')}</Text>
+                  <Text
+                    style={styles.cancelText}
+                    numberOfLines={1}
+                    ellipsizeMode="clip"
+                    allowFontScaling={false}
+                  >
+                    {cancelText ?? t('common.cancel')}
+                  </Text>
                 </TouchableOpacity>
               )}
 
               <TouchableOpacity
-                style={
-                  variant === 'primary' ? styles.confirmButtonPrimary : styles.confirmButton
-                }
+                style={[
+                  variant === 'primary' ? styles.confirmButtonPrimary : styles.confirmButton,
+                  hideCancel ? styles.confirmButtonSolo : null,
+                ]}
                 onPress={onConfirm}
                 activeOpacity={0.7}
               >
@@ -116,6 +122,11 @@ export function ConfirmDialogSurface({
                   style={
                     variant === 'primary' ? styles.confirmTextPrimary : styles.confirmText
                   }
+                  numberOfLines={1}
+                  ellipsizeMode="clip"
+                  allowFontScaling={false}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
                 >
                   {confirmText}
                 </Text>
@@ -236,45 +247,47 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'stretch',
     justifyContent: 'center',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
   },
   cancelButton: {
     ...BUTTON_SHAPE,
+    // Slightly narrower than the red confirm action.
+    flexGrow: 1,
     backgroundColor: c.panel,
   },
   confirmButton: {
     ...BUTTON_SHAPE,
+    // Extra width so long “delete / I’m sure” labels stay on one line.
+    flexGrow: 1.45,
     backgroundColor: c.dangerSoft,
   },
   confirmButtonPrimary: {
     ...BUTTON_SHAPE,
+    flexGrow: 1.45,
     backgroundColor: c.button.primaryBg,
   },
+  confirmButtonSolo: {
+    flexGrow: 1,
+  },
   cancelText: {
-    width: '100%',
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 18,
     color: c.primaryText,
     textAlign: 'center',
-    flexShrink: 1,
   },
   confirmText: {
-    width: '100%',
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 18,
     color: c.error,
     textAlign: 'center',
-    flexShrink: 1,
   },
   confirmTextPrimary: {
-    width: '100%',
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 18,
     color: c.button.primaryText,
     textAlign: 'center',
-    flexShrink: 1,
   },
 });

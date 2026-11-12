@@ -38,6 +38,8 @@ import NearYouSheet from '@/components/home/NearYouSheet';
 import CategoryLabel from '@/components/home/CategoryLabel';
 import FitLabel from '@/components/ui/FitLabel';
 import HeaderIconButton from '@/components/ui/HeaderIconButton';
+import { placeCategoryLabel } from '@/utils/placeCategoryLabel';
+import type { BusinessCategory } from '@/services/places';
 import type { Pet } from '@/types/api';
 
 /** Greeting switches at these local hours. */
@@ -109,12 +111,12 @@ const CATEGORY_ART = {
   pet_friendly: require('@/assets/images/categories/pet-friendly.png'),
 } as const;
 
-const CATEGORIES: { key: keyof typeof CATEGORY_ART; label: string }[] = [
-  { key: 'veterinarian', label: 'home.category_veterinary' },
-  { key: 'groomer', label: 'home.category_grooming' },
-  { key: 'pet_store', label: 'home.category_shops' },
-  { key: 'pharmacy', label: 'home.category_pharmacies' },
-  { key: 'pet_friendly', label: 'home.category_friendly' },
+const CATEGORIES: BusinessCategory[] = [
+  'veterinarian',
+  'groomer',
+  'pet_store',
+  'pharmacy',
+  'pet_friendly',
 ];
 
 type LocationModule = typeof import('expo-location');
@@ -557,7 +559,7 @@ export default function DiscoverHomeScreen() {
         >
           {CATEGORIES.map((category) => (
             <TouchableOpacity
-              key={category.key}
+              key={category}
               style={[
                 styles.categoryCard,
                 isDark ? { backgroundColor: colors.iconChip } : null,
@@ -566,18 +568,18 @@ export default function DiscoverHomeScreen() {
               onPress={() =>
                 router.push({
                   pathname: '/business/category/[category]',
-                  params: { category: category.key },
+                  params: { category },
                 } as never)
               }
             >
               <View style={styles.categoryInner}>
                 <Image
-                  source={CATEGORY_ART[category.key]}
+                  source={CATEGORY_ART[category]}
                   style={styles.categoryArt}
                   contentFit="contain"
                 />
                 <View style={styles.categoryLabelWrap}>
-                  <CategoryLabel>{t(category.label)}</CategoryLabel>
+                  <CategoryLabel>{placeCategoryLabel(category)}</CategoryLabel>
                 </View>
               </View>
             </TouchableOpacity>

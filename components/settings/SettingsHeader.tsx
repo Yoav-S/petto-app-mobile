@@ -10,7 +10,10 @@ import { useHeaderTopPadding } from '@/utils/headerLayout';
 import HeaderIconButton, {
   HEADER_ICON_BTN,
 } from '@/components/ui/HeaderIconButton';
-import HeaderTitle, { headerTitleNeedsTwoLines } from '@/components/ui/HeaderTitle';
+import HeaderTitle, {
+  headerTitleNeedsTwoLines,
+  TITLE_FROM_ARROW,
+} from '@/components/ui/HeaderTitle';
 
 interface SettingsHeaderProps {
   title: string;
@@ -24,8 +27,8 @@ interface SettingsHeaderProps {
 const TITLE_LINE = 28;
 
 /**
- * Settings-style header. Owns top inset like ScreenHeader so it matches
- * Add Health title height. Parent must NOT pad the top safe area.
+ * Settings-style header. Owns top inset like ScreenHeader.
+ * Titles are left-aligned, 16px from the arrow, full line width.
  */
 export default function SettingsHeader({
   title,
@@ -39,7 +42,7 @@ export default function SettingsHeader({
   const paddingTop = useHeaderTopPadding();
   const { width } = useWindowDimensions();
   const twoLines = useMemo(
-    () => headerTitleNeedsTwoLines(title, width),
+    () => headerTitleNeedsTwoLines(title, width, 'wrap', false),
     [title, width],
   );
   const rowMinHeight = twoLines
@@ -55,7 +58,16 @@ export default function SettingsHeader({
           rounded ? [styles.rounded, { paddingBottom: roundedBottom }] : null,
         ]}
       >
-        <View style={[styles.header, { minHeight: rowMinHeight }]}>
+        <View
+          style={[
+            styles.header,
+            {
+              minHeight: rowMinHeight,
+              // Two-line titles: keep the first line level with the back arrow.
+              alignItems: twoLines ? 'flex-start' : 'center',
+            },
+          ]}
+        >
           <HeaderIconButton
             onPress={() => router.back()}
             accessibilityLabel={t('petOnboarding.back')}
@@ -63,9 +75,14 @@ export default function SettingsHeader({
             <Ionicons name="chevron-back" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
           </HeaderIconButton>
 
-          <HeaderTitle>{title}</HeaderTitle>
-
-          <View style={styles.rightSpacer} />
+          <View
+            style={[
+              styles.titleSlot,
+              twoLines ? { paddingTop: (HEADER_ICON_BTN.size - TITLE_LINE) / 2 } : null,
+            ]}
+          >
+            <HeaderTitle hasTrailing={false}>{title}</HeaderTitle>
+          </View>
         </View>
       </View>
     </View>
@@ -81,16 +98,14 @@ const makeStyles = (c: ThemeColors) =>
     },
     header: {
       flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
       paddingHorizontal: HEADER_LAYOUT.paddingHorizontal,
       paddingVertical: HEADER_LAYOUT.paddingVertical,
-      gap: HEADER_LAYOUT.iconTitleGap,
+      gap: TITLE_FROM_ARROW,
       overflow: 'visible',
     },
-    rightSpacer: {
-      width: HEADER_ICON_BTN.size,
-      height: HEADER_ICON_BTN.size,
+    titleSlot: {
+      flex: 1,
+      minWidth: 0,
     },
     rounded: {
       paddingBottom: 22,

@@ -37,7 +37,7 @@ import { useActivePet } from '@/store/petStore';
 import { formatDisplayDate, parseIsoDate } from '@/utils/calendar';
 import type { PetType } from '@/store/petOnboardingDraft';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { HEADER_LAYOUT, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
+import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { DiscardChangesModal } from '@/components/ui/ConfirmModal';
 
@@ -60,8 +60,7 @@ function AddPetHeader() {
         >
           <Ionicons name="close" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
         </HeaderIconButton>
-        <HeaderTitle>{t('pets.add_title')}</HeaderTitle>
-        <View style={styles.headerTitleSpacer} />
+        <HeaderTitle hasTrailing={false}>{t('pets.add_title')}</HeaderTitle>
       </View>
     </View>
   );
@@ -415,12 +414,7 @@ const makeStyles = (c: ThemeColors) =>
       minHeight: HEADER_ROW,
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: HEADER_LAYOUT.iconTitleGap,
-    },
-    headerTitleSpacer: {
-      width: HEADER_ICON_BTN.size,
-      height: HEADER_ICON_BTN.size,
+      gap: 16,
     },
     safeArea: {
       flex: 1,

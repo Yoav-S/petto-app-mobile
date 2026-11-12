@@ -9,6 +9,7 @@ import { t } from '@/i18n';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import PlaceCard from '@/components/business/PlaceCard';
 import { PlaceCardSkeletons } from '@/components/business/PlaceCardSkeleton';
+import { placeCategoryLabel } from '@/utils/placeCategoryLabel';
 import {
   listPlaces,
   PLACE_IMPRESSION_VIEWABILITY,
@@ -22,14 +23,6 @@ import {
   type BusinessPlace,
   type NearbyCoords,
 } from '@/services/places';
-
-const CATEGORY_LABEL: Record<BusinessCategory, string> = {
-  veterinarian: 'home.category_veterinary',
-  groomer: 'home.category_grooming',
-  pharmacy: 'home.category_pharmacies',
-  pet_friendly: 'home.category_friendly',
-  pet_store: 'home.category_shops',
-};
 
 function isCategory(value: string | undefined): value is BusinessCategory {
   return value === 'veterinarian'
@@ -259,7 +252,7 @@ export default function CategoryPlacesScreen() {
         }}
       >
         <SettingsHeader
-          title={category ? t(CATEGORY_LABEL[category]) : t('home.categories')}
+          title={category ? placeCategoryLabel(category) : t('home.categories')}
           backgroundColor={colors.surface}
           rounded
           roundedBottom={10}

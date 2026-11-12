@@ -3,8 +3,10 @@ import { Text, View, StyleSheet, type TextStyle } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { LABEL_LINE_HEIGHT, LABEL_SOURCE_SIZE } from '@/components/ui/FitLabel';
+import { formatPlaceCategoryText } from '@/utils/placeCategoryLabel';
+import { estimateTextWidth, wrapTextAtWords } from '@/utils/textWidth';
 
-/** Inner text box inside the 126-wide card (12px padding each side). */
+/** Inner text box: 126 card − 12px left − 12px right. */
 export const CATEGORY_LABEL_WIDTH = 102;
 const LABEL_SLOT_HEIGHT = LABEL_LINE_HEIGHT * 2;
 
@@ -32,9 +34,9 @@ function Line({
 }
 
 /**
- * Category tiles at full 16px — never shrinks.
- * One word → bottom row.
- * Two+ words → first word on line 1, the rest on line 2 (always both visible).
+ * Full 16px. One line when it fits.
+ * Only wraps at a space when the phrase is wider than the tile — never mid-word,
+ * never forced two-line splits for short labels.
  */
 export default function CategoryLabel({
   children,
@@ -45,25 +47,30 @@ export default function CategoryLabel({
 }) {
   const styles = useThemedStyles(makeStyles);
   const label = useMemo(
-    () => children.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim(),
+    () => formatPlaceCategoryText(children.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim()),
     [children],
   );
-  const words = useMemo(() => label.split(' ').filter(Boolean), [label]);
-  const line1 = words[0] ?? '';
-  const line2 = words.length > 1 ? words.slice(1).join(' ') : '';
 
-  if (!line2) {
-    return (
-      <View style={[styles.slot, styles.slotOneLine]}>
-        <Line text={line1} style={style} />
-      </View>
-    );
-  }
+  const rows = useMemo(() => {
+    if (!label) return [] as string[];
+    const words = label.split(' ').filter(Boolean);
+    if (words.length <= 1) return [label];
+    if (estimateTextWidth(label, LABEL_SOURCE_SIZE) <= CATEGORY_LABEL_WIDTH) {
+      return [label];
+    }
+    const wrapped =
+      wrapTextAtWords(label, CATEGORY_LABEL_WIDTH, LABEL_SOURCE_SIZE) ??
+      `${words[0]}\n${words.slice(1).join(' ')}`;
+    return wrapped.split('\n').map((row) => row.trim()).filter(Boolean);
+  }, [label]);
+
+  const oneLine = rows.length <= 1;
 
   return (
-    <View style={styles.slot}>
-      <Line text={line1} style={style} />
-      <Line text={line2} style={style} />
+    <View style={[styles.slot, oneLine ? styles.slotOneLine : null]}>
+      {rows.map((row, index) => (
+        <Line key={`${index}-${row}`} text={row} style={style} />
+      ))}
     </View>
   );
 }

@@ -6,21 +6,13 @@ import { PLACE_CARD_SHADOW } from '@/constants/layout';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import ListRowPressable from '@/components/ui/ListRowPressable';
-import { t } from '@/i18n';
 import { formatKm, formatRating } from '@/utils/localeFormat';
+import { placeCategoryChipLabel } from '@/utils/placeCategoryLabel';
 import { placeHoursStatus } from '@/services/placeHours';
 import type { BusinessPlace } from '@/services/places';
 
 /** Figma image is 335×278 on a 375-wide screen. The card width follows the device; the height keeps this ratio. */
 const BUSINESS_IMAGE_RATIO = 335 / 278;
-
-const CATEGORY_LABEL: Record<BusinessPlace['category'], string> = {
-  veterinarian: 'home.category_veterinary',
-  groomer: 'home.category_grooming',
-  pet_store: 'home.tag_pet_store',
-  pharmacy: 'home.category_pharmacies',
-  pet_friendly: 'home.category_friendly',
-};
 
 export default function PlaceCard({
   place,
@@ -80,7 +72,7 @@ export default function PlaceCard({
           {categories.map((category) => (
             <View key={category} style={styles.categoryChip}>
               <Text style={styles.categoryChipText} numberOfLines={1} ellipsizeMode="clip">
-                {t(CATEGORY_LABEL[category])}
+                {placeCategoryChipLabel(category)}
               </Text>
             </View>
           ))}

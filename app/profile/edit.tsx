@@ -354,8 +354,7 @@ export default function EditProfileScreen() {
           >
             <Ionicons name="chevron-back" size={HEADER_ICON_BTN.iconSize} color={colors.primaryText} />
           </HeaderIconButton>
-          <HeaderTitle>{t('profile.edit.title')}</HeaderTitle>
-          <View style={styles.headerSpacer} />
+          <HeaderTitle hasTrailing={false}>{t('profile.edit.title')}</HeaderTitle>
         </View>
       </View>
 
@@ -567,17 +566,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     elevation: 4,
   },
   header: {
-    height: 44,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
     paddingVertical: 6,
-    gap: HEADER_LAYOUT.iconTitleGap,
-  },
-  headerSpacer: {
-    width: HEADER_ICON_BTN.size,
-    height: HEADER_ICON_BTN.size,
+    gap: 16,
   },
   centered: {
     flex: 1,

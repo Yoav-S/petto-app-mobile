@@ -11,6 +11,7 @@ import HeaderIconButton, {
 } from '@/components/ui/HeaderIconButton';
 import HeaderTitle, {
   headerTitleNeedsTwoLines,
+  TITLE_FROM_ARROW,
   type HeaderTitleFit,
 } from '@/components/ui/HeaderTitle';
 
@@ -19,12 +20,9 @@ interface ScreenHeaderProps {
   /** Back chevron (default) or close X. */
   icon?: 'back' | 'close';
   onBack?: () => void;
-  /** Optional trailing control (e.g. ⋮ menu). Replaces the layout spacer. */
+  /** Optional trailing control (e.g. ⋮ menu). */
   right?: React.ReactNode;
-  /**
-   * oneLine — Reminders: keep multi-word titles on one line.
-   * wrap — Topics: wrap at a space so both words show.
-   */
+  /** Kept for callers — titles always left-align and wrap only when needed. */
   fit?: HeaderTitleFit;
 }
 
@@ -42,17 +40,14 @@ export default function ScreenHeader({
   const styles = useThemedStyles(makeStyles);
   const layout = useHeaderLayout();
   const { width } = useWindowDimensions();
+  const hasTrailing = right != null;
   const twoLines = useMemo(
-    () => headerTitleNeedsTwoLines(title, width, fit),
-    [title, width, fit],
+    () => headerTitleNeedsTwoLines(title, width, fit, hasTrailing),
+    [title, width, fit, hasTrailing],
   );
   const rowMinHeight = twoLines
     ? TITLE_LINE * 2 + HEADER_LAYOUT.paddingVertical * 2
     : layout.height;
-  // Empty right spacer only balances single-word titles. Two-word titles are
-  // left-aligned — drop it so they can use that ~32pt of free space.
-  const multiWord = title.trim().split(/\s+/).filter(Boolean).length > 1;
-  const trailing = right ?? (multiWord ? null : <View style={styles.spacer} />);
 
   return (
     <View style={[styles.wrap, { paddingTop: layout.paddingTop }]}>
@@ -63,7 +58,9 @@ export default function ScreenHeader({
             minHeight: rowMinHeight,
             paddingHorizontal: layout.paddingHorizontal,
             paddingVertical: layout.paddingVertical,
-            gap: HEADER_LAYOUT.iconTitleGap,
+            gap: TITLE_FROM_ARROW,
+            // Two-line titles: pin the first line to the arrow, don't center the block.
+            alignItems: twoLines ? 'flex-start' : 'center',
           },
         ]}
       >
@@ -75,9 +72,18 @@ export default function ScreenHeader({
           />
         </HeaderIconButton>
 
-        <HeaderTitle fit={fit}>{title}</HeaderTitle>
+        <View
+          style={[
+            styles.titleSlot,
+            twoLines ? { paddingTop: (HEADER_ICON_BTN.size - TITLE_LINE) / 2 } : null,
+          ]}
+        >
+          <HeaderTitle fit={fit} hasTrailing={hasTrailing}>
+            {title}
+          </HeaderTitle>
+        </View>
 
-        {trailing}
+        {right}
       </View>
     </View>
   );
@@ -102,11 +108,10 @@ const makeStyles = (c: ThemeColors) =>
     container: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
       overflow: 'visible',
     },
-    spacer: {
-      width: HEADER_ICON_BTN.size,
-      height: HEADER_ICON_BTN.size,
+    titleSlot: {
+      flex: 1,
+      minWidth: 0,
     },
   });
