@@ -1,99 +1,82 @@
 import React, { useMemo } from 'react';
-import { Text, View, StyleSheet, type TextStyle } from 'react-native';
+import { Text, StyleSheet, type TextStyle } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
-import { LABEL_LINE_HEIGHT, LABEL_SOURCE_SIZE } from '@/components/ui/FitLabel';
+import { useLocale } from '@/context/LocaleContext';
 import { formatPlaceCategoryText } from '@/utils/placeCategoryLabel';
-import { estimateTextWidth, wrapTextAtWords } from '@/utils/textWidth';
-
-/** Inner text box: 126 card − 12px left − 12px right. */
-export const CATEGORY_LABEL_WIDTH = 102;
-const LABEL_SLOT_HEIGHT = LABEL_LINE_HEIGHT * 2;
-
-function Line({
-  text,
-  style,
-}: {
-  text: string;
-  style?: TextStyle;
-}) {
-  const styles = useThemedStyles(makeStyles);
-
-  return (
-    <Text
-      style={[styles.line, style]}
-      numberOfLines={1}
-      ellipsizeMode="clip"
-      allowFontScaling={false}
-      textBreakStrategy="simple"
-      android_hyphenationFrequency="none"
-    >
-      {text}
-    </Text>
-  );
-}
+import { layoutCategoryTileLabel } from '@/utils/textWidth';
 
 /**
- * Full 16px. One line when it fits.
- * Only wraps at a space when the phrase is wider than the tile — never mid-word,
- * never forced two-line splits for short labels.
+ * Figma category tile type:
+ * - EN / HE: Rubik Medium 16 / 20
+ * - RU / RO: Rubik Medium 14 / 20 (longer copy)
+ *
+ * Word layout (any language):
+ * - 1 word → one line
+ * - 2 words → one line when it fits, else split
+ * - 3+ words → first word on top, remaining on bottom
  */
+const CATEGORY_LINE_HEIGHT = 20;
+/** Matches CategoryTile: width 126 − padLeft 12 − padRight 0. */
+const DEFAULT_LABEL_WIDTH = 114;
+
 export default function CategoryLabel({
   children,
+  maxWidth = DEFAULT_LABEL_WIDTH,
   style,
 }: {
   children: string;
+  maxWidth?: number;
   style?: TextStyle;
 }) {
+  const { locale } = useLocale();
   const styles = useThemedStyles(makeStyles);
+  const maxFontSize = locale === 'ru' || locale === 'ro' ? 14 : 16;
   const label = useMemo(
     () => formatPlaceCategoryText(children.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim()),
     [children],
   );
-
-  const rows = useMemo(() => {
-    if (!label) return [] as string[];
-    const words = label.split(' ').filter(Boolean);
-    if (words.length <= 1) return [label];
-    if (estimateTextWidth(label, LABEL_SOURCE_SIZE) <= CATEGORY_LABEL_WIDTH) {
-      return [label];
-    }
-    const wrapped =
-      wrapTextAtWords(label, CATEGORY_LABEL_WIDTH, LABEL_SOURCE_SIZE) ??
-      `${words[0]}\n${words.slice(1).join(' ')}`;
-    return wrapped.split('\n').map((row) => row.trim()).filter(Boolean);
-  }, [label]);
-
-  const oneLine = rows.length <= 1;
+  const layout = useMemo(
+    () => layoutCategoryTileLabel(label, maxWidth, maxFontSize),
+    [label, maxFontSize, maxWidth],
+  );
 
   return (
-    <View style={[styles.slot, oneLine ? styles.slotOneLine : null]}>
-      {rows.map((row, index) => (
-        <Line key={`${index}-${row}`} text={row} style={style} />
-      ))}
-    </View>
+    <Text
+      style={[
+        styles.label,
+        {
+          fontSize: layout.fontSize,
+          minHeight: CATEGORY_LINE_HEIGHT * layout.lines,
+        },
+        style,
+      ]}
+      numberOfLines={layout.lines}
+      ellipsizeMode="clip"
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1}
+      textBreakStrategy="simple"
+      lineBreakStrategyIOS="standard"
+      android_hyphenationFrequency="none"
+    >
+      {layout.display}
+    </Text>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    slot: {
+    label: {
+      alignSelf: 'stretch',
       width: '100%',
-      height: LABEL_SLOT_HEIGHT,
-      flexShrink: 0,
-      justifyContent: 'flex-start',
-    },
-    slotOneLine: {
-      justifyContent: 'flex-end',
-    },
-    line: {
-      width: '100%',
-      height: LABEL_LINE_HEIGHT,
+      margin: 0,
+      padding: 0,
       fontFamily: 'Rubik-Medium',
-      fontSize: LABEL_SOURCE_SIZE,
-      lineHeight: LABEL_LINE_HEIGHT,
+      lineHeight: CATEGORY_LINE_HEIGHT,
+      letterSpacing: 0,
       color: c.primaryText,
       includeFontPadding: false,
       textAlign: 'left',
+      textAlignVertical: 'center',
     },
   });

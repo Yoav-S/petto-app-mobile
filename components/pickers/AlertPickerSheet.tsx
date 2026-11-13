@@ -162,7 +162,7 @@ export default function AlertPickerSheet({
             onClose();
           }}
         >
-          <Text style={styles.doneText}>{t('pickers.done')}</Text>
+          <Text style={styles.doneText}>{t('common.save')}</Text>
         </Pressable>
       </View>
     </BottomSheetModal>

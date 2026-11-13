@@ -58,7 +58,16 @@
           }
         }
       ],
-      "expo-localization",
+      [
+        "expo-localization",
+        {
+          "supportsRTL": true,
+          "supportedLocales": {
+            "ios": ["en", "ro", "ru", "he"],
+            "android": ["en", "ro", "ru", "he"]
+          }
+        }
+      ],
       [
         "expo-location",
         {
@@ -107,6 +116,7 @@
         }
       ],
       "./plugins/withAndroidAdaptiveOrientation.js",
+      "./plugins/withAppLocales.js",
       "@react-native-community/datetimepicker"
     ],
     "experiments": {

@@ -550,7 +550,7 @@
   },
   "petOnboarding": {
     "skip": "דלג",
-    "done": "סיום",
+    "done": "שמור",
     "finish": "סיום",
     "back": "חזרה",
     "leave_title": "לצאת מההגדרה?",
@@ -581,7 +581,7 @@
     "birth_subtitle": "אופציונלי — אפשר להוסיף מאוחר יותר.",
     "birth_select": "בחר תאריך לידה",
     "birth_sheet_title": "בחר תאריך",
-    "birth_confirm": "סיום",
+    "birth_confirm": "שמור",
     "birth_missing_data": "יש להשלים את השלבים הקודמים תחילה.",
     "weekday_sun": "א",
     "weekday_mon": "ב",

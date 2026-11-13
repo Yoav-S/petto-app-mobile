@@ -56,7 +56,7 @@ export default function PetOnboardingStepShell({
                 style={[styles.doneBtn, doneBtnStyle]}
                 accessibilityRole="button"
               >
-                <Text style={styles.doneText}>{t('petOnboarding.done')}</Text>
+                <Text style={styles.doneText}>{t('common.save')}</Text>
               </Pressable>
             ) : (
               <View
@@ -65,7 +65,7 @@ export default function PetOnboardingStepShell({
                 accessibilityRole="button"
                 accessibilityState={{ disabled: true }}
               >
-                <Text style={styles.doneText}>{t('petOnboarding.done')}</Text>
+                <Text style={styles.doneText}>{t('common.save')}</Text>
               </View>
             )}
           </View>

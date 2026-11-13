@@ -1,64 +1,67 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Dimensions,
-  Keyboard,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  type KeyboardEvent,
-} from 'react-native';
-import { dismissKeyboard, useKeyboardOpen } from '@/components/ui/keyboardUtils';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, Text } from 'react-native';
+import Animated, {
+  KeyboardState,
+  runOnJS,
+  useAnimatedKeyboard,
+  useAnimatedReaction,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
+import { dismissKeyboard } from '@/components/ui/keyboardUtils';
 import { useColors } from '@/context/ThemeContext';
+import { useLocale } from '@/context/LocaleContext';
 import { t } from '@/i18n';
 
-/** Lift for the full-screen Done overlay — isolated from scroll math. */
-function doneOverlayBottom(e: KeyboardEvent): number {
-  const { screenY, height } = e.endCoordinates;
-  const kbH = Math.round(height ?? 0);
-  const windowH = Dimensions.get('window').height;
-  const screenH = Dimensions.get('screen').height;
-
-  if (Platform.OS === 'android') {
-    // Root overlay spans the physical display; screenY is in screen coordinates.
-    if (typeof screenY === 'number' && Number.isFinite(screenY)) {
-      return Math.max(0, Math.round(screenH - screenY));
-    }
-    return Math.max(0, kbH);
-  }
-
-  if (typeof screenY === 'number' && Number.isFinite(screenY)) {
-    return Math.max(0, Math.round(windowH - screenY));
-  }
-  return Math.max(0, kbH);
-}
-
-/** Done pill above the keyboard — no Save here. */
+/**
+ * Done pill above the keyboard — rides the keyboard height so open/close
+ * stays smooth (no late mount jump after keyboardDidShow).
+ */
 export default function GlobalKeyboardDoneButton() {
-  const keyboardOpen = useKeyboardOpen();
-  const [bottom, setBottom] = useState(0);
+  // Re-evaluate `t()` when the in-app language changes.
+  useLocale();
   const colors = useColors();
+  const [interactive, setInteractive] = useState(false);
+  const keyboard = useAnimatedKeyboard({
+    isStatusBarTranslucentAndroid: true,
+    isNavigationBarTranslucentAndroid: true,
+  });
 
-  useEffect(() => {
-    const onFrame = (e: KeyboardEvent) => setBottom(doneOverlayBottom(e));
-    const onHide = () => setBottom(0);
+  useAnimatedReaction(
+    () => {
+      const height = keyboard.height.value;
+      const state = keyboard.state.value;
+      return (
+        height > 8 &&
+        (state === KeyboardState.OPENING ||
+          state === KeyboardState.OPEN ||
+          state === KeyboardState.CLOSING)
+      );
+    },
+    (active, prev) => {
+      if (active !== prev) runOnJS(setInteractive)(active);
+    },
+  );
 
-    const showSub = Keyboard.addListener('keyboardDidShow', onFrame);
-    const changeSub = Keyboard.addListener('keyboardDidChangeFrame', onFrame);
-    const hideSub = Keyboard.addListener('keyboardDidHide', onHide);
-    return () => {
-      showSub.remove();
-      changeSub.remove();
-      hideSub.remove();
+  const hostStyle = useAnimatedStyle(() => {
+    const height = keyboard.height.value;
+    const state = keyboard.state.value;
+    const active =
+      height > 0 &&
+      (state === KeyboardState.OPENING ||
+        state === KeyboardState.OPEN ||
+        state === KeyboardState.CLOSING);
+    return {
+      bottom: height,
+      opacity: active ? 1 : 0,
     };
-  }, []);
-
-  if (!keyboardOpen || bottom <= 0) return null;
+  });
 
   return (
-    <View style={styles.overlay} pointerEvents="box-none">
-      <View pointerEvents="box-none" style={[styles.host, { bottom }]}>
+    <Animated.View style={styles.overlay} pointerEvents="box-none">
+      <Animated.View
+        pointerEvents={interactive ? 'box-none' : 'none'}
+        style={[styles.host, hostStyle]}
+      >
         <Pressable
           style={({ pressed }) => [
             styles.doneBtn,
@@ -77,8 +80,8 @@ export default function GlobalKeyboardDoneButton() {
             {t('pickers.done')}
           </Text>
         </Pressable>
-      </View>
-    </View>
+      </Animated.View>
+    </Animated.View>
   );
 }
 

@@ -13,13 +13,38 @@ export function dismissKeyboard(): void {
   Keyboard.dismiss();
 }
 
-/** Whether the software keyboard is open. */
+function keyboardShowEvent(): 'keyboardWillShow' | 'keyboardDidShow' {
+  return Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+}
+
+function keyboardHideEvent(): 'keyboardWillHide' | 'keyboardDidHide' {
+  return Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+}
+
+function keyboardFrameEvent(): 'keyboardWillChangeFrame' | 'keyboardDidShow' {
+  return Platform.OS === 'ios' ? 'keyboardWillChangeFrame' : 'keyboardDidShow';
+}
+
+function offsetFromEvent(e: KeyboardEvent): number {
+  const kbH = Math.round(e.endCoordinates?.height ?? 0);
+  if (Platform.OS === 'android') {
+    return Math.max(0, kbH);
+  }
+  const winH = Dimensions.get('window').height;
+  const screenY = e.endCoordinates?.screenY;
+  if (typeof screenY === 'number') {
+    return Math.max(0, Math.round(winH - screenY));
+  }
+  return Math.max(0, kbH);
+}
+
+/** Whether the software keyboard is open (iOS: tracks willShow/willHide to avoid layout lag). */
 export function useKeyboardOpen(): boolean {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const showSub = Keyboard.addListener('keyboardDidShow', () => setOpen(true));
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => setOpen(false));
+    const showSub = Keyboard.addListener(keyboardShowEvent(), () => setOpen(true));
+    const hideSub = Keyboard.addListener(keyboardHideEvent(), () => setOpen(false));
     return () => {
       showSub.remove();
       hideSub.remove();
@@ -31,32 +56,20 @@ export function useKeyboardOpen(): boolean {
 
 /**
  * Keyboard lift for in-app scroll/focus.
+ * iOS listens to willChangeFrame so padding moves with the keyboard animation.
  * Android: reported keyboard height (scroll math stays separate from Done overlay).
  */
 export function useKeyboardBottomOffset(): number {
   const [offset, setOffset] = useState(0);
 
   useEffect(() => {
-    const onShow = (e: KeyboardEvent) => {
-      const kbH = Math.round(e.endCoordinates?.height ?? 0);
-      if (Platform.OS === 'android') {
-        setOffset(Math.max(0, kbH));
-        return;
-      }
-      const winH = Dimensions.get('window').height;
-      const screenY = e.endCoordinates?.screenY;
-      if (typeof screenY === 'number') {
-        setOffset(Math.max(0, Math.round(winH - screenY)));
-        return;
-      }
-      setOffset(Math.max(0, kbH));
-    };
+    const onFrame = (e: KeyboardEvent) => setOffset(offsetFromEvent(e));
     const onHide = () => setOffset(0);
 
-    const showSub = Keyboard.addListener('keyboardDidShow', onShow);
-    const hideSub = Keyboard.addListener('keyboardDidHide', onHide);
+    const frameSub = Keyboard.addListener(keyboardFrameEvent(), onFrame);
+    const hideSub = Keyboard.addListener(keyboardHideEvent(), onHide);
     return () => {
-      showSub.remove();
+      frameSub.remove();
       hideSub.remove();
     };
   }, []);

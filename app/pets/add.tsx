@@ -220,7 +220,7 @@ export default function AddPetScreen() {
             alignItems: 'center',
           }}
           footer={{
-            label: t('home.add_pet'),
+            label: t('common.save'),
             disabled: !canSave,
             loading: submitting,
             onPress: () => void handleSave(),

@@ -204,7 +204,7 @@ function makeStyles(colors: ThemeColors) {
     },
     titleRow: {
       width: '100%',
-      height: 24,
+      minHeight: 26,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -214,7 +214,7 @@ function makeStyles(colors: ThemeColors) {
       flex: 1,
       fontFamily: 'Rubik-Medium',
       fontSize: 20,
-      lineHeight: 24,
+      lineHeight: 26,
       color: colors.primaryText,
       includeFontPadding: false,
     },

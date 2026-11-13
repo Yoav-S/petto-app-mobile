@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { t, type AppLocale } from '@/i18n';
@@ -29,7 +29,10 @@ export default function LanguageSettingsScreen() {
             <Pressable
               key={code}
               style={styles.row}
-              onPress={() => setLocale(code)}
+              onPress={() => {
+                Keyboard.dismiss();
+                setLocale(code);
+              }}
               accessibilityRole="radio"
               accessibilityState={{ selected }}
             >

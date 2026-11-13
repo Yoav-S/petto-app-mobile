@@ -98,7 +98,7 @@ export default function BirthDatePickerSheet({
             style={[styles.confirmBtn, !canConfirm && styles.confirmBtnDisabled]}
           >
             <Text style={styles.confirmText}>
-              {confirmLabel ?? t('petOnboarding.birth_confirm')}
+              {confirmLabel ?? t('common.save')}
             </Text>
           </Pressable>
         </View>

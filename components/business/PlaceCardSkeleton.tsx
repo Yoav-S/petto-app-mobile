@@ -80,7 +80,7 @@ function makeStyles(colors: ThemeColors) {
       gap: 8,
     },
     titleRow: {
-      height: 24,
+      minHeight: 26,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',

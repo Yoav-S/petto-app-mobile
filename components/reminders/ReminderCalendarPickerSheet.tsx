@@ -103,7 +103,7 @@ export default function ReminderCalendarPickerSheet({
             onPress={handleConfirm}
             disabled={!canConfirm}
           >
-            <Text style={styles.doneText}>{t('petOnboarding.birth_confirm')}</Text>
+            <Text style={styles.doneText}>{t('common.save')}</Text>
           </Pressable>
         </View>
     </BottomSheetModal>

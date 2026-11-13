@@ -35,7 +35,7 @@ import {
 import { playPetSound, warmupPetSounds } from '@/services/petSound';
 import { petPhotoSource } from '@/utils/petPhotoSource';
 import NearYouSheet from '@/components/home/NearYouSheet';
-import CategoryLabel from '@/components/home/CategoryLabel';
+import CategoryTile, { CATEGORY_TILE } from '@/components/home/CategoryTile';
 import FitLabel from '@/components/ui/FitLabel';
 import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import { placeCategoryLabel } from '@/utils/placeCategoryLabel';
@@ -52,10 +52,6 @@ const NIGHT_HOUR = 21;
 const GREETING_AVATAR = 42;
 const PET_SIZE = 72;
 const PET_GAP = 16;
-/** Figma category tile — fixed on every device; the row scrolls instead of shrinking. */
-const CATEGORY_WIDTH = 126;
-const CATEGORY_HEIGHT = 154;
-const CATEGORY_GAP = 10;
 const CATEGORY_INSET = 20;
 
 /** Snap points that keep the peek, plus a final stop that shows the last item whole. */
@@ -472,8 +468,8 @@ export default function DiscoverHomeScreen() {
   );
   const categorySnaps = peekSnapOffsets(
     categoryViewport,
-    CATEGORY_WIDTH,
-    CATEGORY_GAP,
+    CATEGORY_TILE.width,
+    CATEGORY_TILE.gap,
     CATEGORIES.length,
     CATEGORY_INSET,
     CATEGORY_INSET,
@@ -558,31 +554,18 @@ export default function DiscoverHomeScreen() {
           contentContainerStyle={styles.categoryScroll}
         >
           {CATEGORIES.map((category) => (
-            <TouchableOpacity
+            <CategoryTile
               key={category}
-              style={[
-                styles.categoryCard,
-                isDark ? { backgroundColor: colors.iconChip } : null,
-              ]}
-              activeOpacity={0.85}
+              label={placeCategoryLabel(category)}
+              art={CATEGORY_ART[category]}
+              backgroundColor={isDark ? colors.iconChip : undefined}
               onPress={() =>
                 router.push({
                   pathname: '/business/category/[category]',
                   params: { category },
                 } as never)
               }
-            >
-              <View style={styles.categoryInner}>
-                <Image
-                  source={CATEGORY_ART[category]}
-                  style={styles.categoryArt}
-                  contentFit="contain"
-                />
-                <View style={styles.categoryLabelWrap}>
-                  <CategoryLabel>{placeCategoryLabel(category)}</CategoryLabel>
-                </View>
-              </View>
-            </TouchableOpacity>
+            />
           ))}
         </ScrollView>
         </View>
@@ -816,33 +799,9 @@ function makeStyles(colors: ThemeColors) {
     categoryScroll: {
       paddingLeft: 20,
       paddingRight: 20,
-      gap: CATEGORY_GAP,
-    },
-    categoryCard: {
-      width: CATEGORY_WIDTH,
-      height: CATEGORY_HEIGHT,
-      borderRadius: 12,
-      backgroundColor: colors.background,
-      paddingTop: 12,
-      paddingBottom: 12,
-      paddingLeft: 12,
-      paddingRight: 12,
-      overflow: 'visible',
-    },
-    categoryInner: {
-      flex: 1,
-      justifyContent: 'flex-start',
-      gap: 10,
-    },
-    categoryArt: {
-      width: 46,
-      height: 61,
-      flexShrink: 0,
-    },
-    categoryLabelWrap: {
-      marginTop: 'auto',
-      width: '100%',
-      flexShrink: 0,
+      gap: CATEGORY_TILE.gap,
+      alignItems: 'flex-start',
+      flexGrow: 0,
     },
     nearSheet: {
       marginTop: 4,

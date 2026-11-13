@@ -355,7 +355,7 @@ export default function AddVaccineScreen() {
         onClose={() => setDateSheet(null)}
         onConfirm={handleVaccinatedDateChange}
         title={t('vaccines.vaccinated_on')}
-        confirmLabel={t('petOnboarding.birth_confirm')}
+        confirmLabel={t('common.save')}
       />
 
       <BirthDatePickerSheet
@@ -366,7 +366,7 @@ export default function AddVaccineScreen() {
         allowFuture
         minDate={date}
         title={t('vaccines.valid_until')}
-        confirmLabel={t('petOnboarding.birth_confirm')}
+        confirmLabel={t('common.save')}
       />
 
       <VaccinePhotoViewer

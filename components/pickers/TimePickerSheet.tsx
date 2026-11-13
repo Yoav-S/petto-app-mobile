@@ -204,7 +204,7 @@ function AndroidTimeSheet({
           />
         </View>
         <Pressable style={[styles.done, { backgroundColor: colors.brand }]} onPress={confirm}>
-          <Text style={[styles.doneText, { color: colors.button.primaryText }]}>{t('pickers.done')}</Text>
+          <Text style={[styles.doneText, { color: colors.button.primaryText }]}>{t('common.save')}</Text>
         </Pressable>
       </View>
     </BottomSheetModal>
@@ -271,7 +271,7 @@ function IosTimeSheet({
             />
           </View>
           <Pressable style={[styles.done, { backgroundColor: colors.brand }]} onPress={confirm}>
-            <Text style={[styles.doneText, { color: colors.button.primaryText }]}>{t('pickers.done')}</Text>
+            <Text style={[styles.doneText, { color: colors.button.primaryText }]}>{t('common.save')}</Text>
           </Pressable>
         </View>
       </PickerBoundary>

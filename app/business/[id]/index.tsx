@@ -24,10 +24,14 @@ import { useImageStatusBarStyle } from '@/hooks/useImageStatusBarStyle';
 import { useStatusBarOverride } from '@/context/SystemBarsContext';
 import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
 import ListRowPressable from '@/components/ui/ListRowPressable';
-import { useSettledModalVisible } from '@/components/ui/BottomSheetModal';
+import {
+  useSettledModalVisible,
+  waitForBottomSheetsToSettle,
+} from '@/components/ui/BottomSheetModal';
 import { t } from '@/i18n';
 import { getErrorMessage } from '@/services/errors';
 import WriteReviewSheet from '@/components/business/WriteReviewSheet';
+import ReviewActionsSheet from '@/components/business/ReviewActionsSheet';
 import BusinessDetailSkeleton from '@/components/business/BusinessDetailSkeleton';
 import { openSystemDirections, openSystemPhones } from '@/services/systemApps';
 import { postedLabel } from '@/utils/reviewPosted';
@@ -36,11 +40,13 @@ import { placeCategoryChipLabel } from '@/utils/placeCategoryLabel';
 import { useToast } from '@/context/ToastContext';
 import { branchHoursStatus, formatClosesAt, formatOpensAt, placeHoursStatus } from '@/services/placeHours';
 import {
+  deletePlaceReview,
   getPlace,
   readLastNearbyCoords,
   readPlaceDetail,
   rememberPlaceDetail,
   rememberPlaceReview,
+  reportPlaceReview,
   trackPlaceEvent,
   upsertOwnReview,
   type BusinessCategory,
@@ -53,6 +59,12 @@ import {
 
 const WEEK: Weekday[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const LOCATION_PREVIEW = 4;
+/** Horizontal preview strip — full list is behind See all. */
+const REVIEW_PREVIEW = 10;
+const REVIEW_AVATAR = 36;
+const REVIEW_HEAD_GAP = 16;
+const REVIEW_MENU = 24;
+const REVIEW_NAME_GAP = 8;
 const DAY_KEY: Record<Weekday, string> = {
   mon: 'business.day_mon',
   tue: 'business.day_tue',
@@ -261,6 +273,7 @@ export default function BusinessScreen() {
   const [aboutLineCount, setAboutLineCount] = useState(0);
   const [photoOpen, setPhotoOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [menuReview, setMenuReview] = useState<PlaceReview | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const savedReviewRef = useRef<PlaceReview | null>(null);
   const [locationsOpen, setLocationsOpen] = useState(false);
@@ -342,6 +355,7 @@ export default function BusinessScreen() {
     setAboutLineCount(0);
   }, [place?.id, description]);
   const reviews = place?.reviews ?? [];
+  const previewReviews = reviews.slice(0, REVIEW_PREVIEW);
   const phones = place?.phone ?? [];
   const branches = place?.locations ?? [];
   const fallbackBranch: PlaceLocation[] = place
@@ -778,7 +792,7 @@ export default function BusinessScreen() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.reviewRow}
               >
-                {reviews.map((review) => (
+                {previewReviews.map((review) => (
                   <View key={review.id} style={styles.reviewCard}>
                     <View style={styles.reviewHead}>
                       {review.author_photo ? (
@@ -790,22 +804,57 @@ export default function BusinessScreen() {
                       ) : (
                         <View style={styles.reviewAvatar} />
                       )}
-                      <View style={styles.reviewIdentity}>
-                        <Text style={styles.reviewName} numberOfLines={1}>
-                          {review.author_name || t('business.pet_parent')}
+                      {/* One text column: starts with name, ends at the ⋮ edge */}
+                      <View style={styles.reviewCopy}>
+                        <View style={styles.reviewIdentity}>
+                          <View style={styles.reviewNameRow}>
+                            <Text style={styles.reviewName} numberOfLines={1}>
+                              {review.author_name || t('business.pet_parent')}
+                            </Text>
+                            <Pressable
+                              style={styles.reviewMenu}
+                              onPress={() => setMenuReview(review)}
+                              hitSlop={8}
+                              accessibilityRole="button"
+                              accessibilityLabel={t('business.review_actions')}
+                            >
+                              <Ionicons
+                                name="ellipsis-horizontal"
+                                size={20}
+                                color={colors.primaryText}
+                              />
+                            </Pressable>
+                          </View>
+                          <View style={styles.reviewRating}>
+                            <Star
+                              size={12}
+                              color={isDark ? colors.brand : '#004741'}
+                              fill={isDark ? colors.brand : '#004741'}
+                            />
+                            <Text
+                              style={[
+                                styles.reviewRatingText,
+                                { color: isDark ? colors.primaryText : '#1F2937' },
+                              ]}
+                            >
+                              {formatRating(review.rating)}
+                            </Text>
+                          </View>
+                        </View>
+                        {review.comment ? (
+                          <Text
+                            style={styles.reviewBody}
+                            numberOfLines={3}
+                            ellipsizeMode="tail"
+                          >
+                            {review.comment}
+                          </Text>
+                        ) : null}
+                        <Text style={styles.reviewDate}>
+                          {postedLabel(review.created_at)}
                         </Text>
-                        <Text style={styles.reviewDate}>{postedLabel(review.created_at)}</Text>
-                      </View>
-                      <View style={styles.ratingChip}>
-                        <Star size={12} color="#F6F7F9" fill="#F6F7F9" />
-                        <Text style={styles.ratingText}>{formatRating(review.rating)}</Text>
                       </View>
                     </View>
-                    {review.comment ? (
-                      <Text style={styles.reviewBody} numberOfLines={3}>
-                        {review.comment}
-                      </Text>
-                    ) : null}
                   </View>
                 ))}
               </ScrollView>
@@ -982,6 +1031,82 @@ export default function BusinessScreen() {
             return next;
           });
           setReloadToken((value) => value + 1);
+        }}
+      />
+
+      <ReviewActionsSheet
+        visible={menuReview !== null}
+        isMine={menuReview?.is_mine === true}
+        onClose={() => setMenuReview(null)}
+        onEdit={() => {
+          if (!params.id || !menuReview) return;
+          router.push({
+            pathname: '/business/[id]/reviews/[reviewId]',
+            params: {
+              id: params.id,
+              reviewId: menuReview.id,
+              rating: String(menuReview.rating),
+              comment: menuReview.comment ?? '',
+            },
+          } as never);
+        }}
+        onRemove={() => {
+          const businessId = params.id;
+          const review = menuReview;
+          if (!businessId || !review) return;
+          setMenuReview(null);
+          setPlace((current) => {
+            if (!current) return current;
+            const next = {
+              ...current,
+              reviews: (current.reviews ?? []).filter((item) => item.id !== review.id),
+            };
+            rememberPlaceDetail(next);
+            return next;
+          });
+          const restore = () => {
+            setPlace((current) => {
+              if (!current) return current;
+              if ((current.reviews ?? []).some((item) => item.id === review.id)) return current;
+              return {
+                ...current,
+                reviews: upsertOwnReview(current.reviews ?? [], review),
+              };
+            });
+          };
+          void waitForBottomSheetsToSettle().then(() => {
+            toast.showUndo({
+              message: t('business.review_deleted'),
+              onUndo: restore,
+              onCommit: async () => {
+                try {
+                  await deletePlaceReview(businessId);
+                } catch (err) {
+                  restore();
+                  toast.showError(getErrorMessage(err));
+                }
+              },
+            });
+          });
+        }}
+        onReport={(reason) => {
+          const review = menuReview;
+          const businessId = params.id;
+          setMenuReview(null);
+          if (!review || !businessId) return;
+          void waitForBottomSheetsToSettle().then(() => {
+            toast.showUndo({
+              message: t('business.report_submitted'),
+              onUndo: () => {},
+              onCommit: async () => {
+                try {
+                  await reportPlaceReview(businessId, review.id, reason);
+                } catch (err) {
+                  toast.showError(getErrorMessage(err));
+                }
+              },
+            });
+          });
         }}
       />
     </View>
@@ -1423,20 +1548,61 @@ const makeStyles = (c: ThemeColors) =>
     reviewHead: {
       flexDirection: 'row',
       alignItems: 'flex-start',
-      gap: 16,
+      gap: REVIEW_HEAD_GAP,
     },
     reviewAvatar: {
-      width: 36,
-      height: 36,
+      width: REVIEW_AVATAR,
+      height: REVIEW_AVATAR,
       borderRadius: 10,
       backgroundColor: c.border,
+      flexShrink: 0,
+    },
+    reviewCopy: {
+      flex: 1,
+      minWidth: 0,
+      gap: 6,
     },
     reviewIdentity: {
-      flex: 1,
+      gap: 2,
+    },
+    reviewNameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: REVIEW_NAME_GAP,
+      minHeight: 20,
     },
     reviewName: {
+      flex: 1,
+      minWidth: 0,
       fontFamily: 'Rubik-Medium',
       fontSize: 16,
+      lineHeight: 20,
+      color: c.primaryText,
+    },
+    reviewMenu: {
+      width: REVIEW_MENU,
+      height: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    /** Figma: 32×16, gap 4 — no chip background. */
+    reviewRating: {
+      width: 32,
+      height: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    reviewRatingText: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 10,
+      lineHeight: 16,
+      color: '#1F2937',
+    },
+    reviewBody: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 14,
       lineHeight: 20,
       color: c.primaryText,
     },
@@ -1445,12 +1611,6 @@ const makeStyles = (c: ThemeColors) =>
       fontSize: 12,
       lineHeight: 16,
       color: c.secondaryText,
-    },
-    reviewBody: {
-      fontFamily: 'Rubik-Regular',
-      fontSize: 14,
-      lineHeight: 20,
-      color: c.primaryText,
     },
     distanceChip: {
       height: 32,

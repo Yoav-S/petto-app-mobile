@@ -284,7 +284,7 @@ export default function PetBirthOnboardingScreen() {
       <BirthDatePickerSheet
         visible={sheetVisible}
         initialDate={parseIsoDate(birthDate)}
-        confirmLabel={t('petOnboarding.birth_confirm')}
+        confirmLabel={t('common.save')}
         onClose={() => setSheetVisible(false)}
         onConfirm={handleConfirmDate}
       />

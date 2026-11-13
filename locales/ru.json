@@ -552,7 +552,7 @@
   },
   "petOnboarding": {
     "skip": "Пропустить",
-    "done": "Готово",
+    "done": "Добавить",
     "finish": "Домой",
     "back": "Назад",
     "leave_title": "Выйти сейчас?",
@@ -583,7 +583,7 @@
     "birth_subtitle": "Это необязательно — можно добавить позже.",
     "birth_select": "Выберите дату рождения",
     "birth_sheet_title": "Выбрать дату",
-    "birth_confirm": "Применить",
+    "birth_confirm": "Добавить",
     "birth_missing_data": "Сначала завершите предыдущие шаги.",
     "weekday_sun": "Вс",
     "weekday_mon": "Пн",

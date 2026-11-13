@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import {
   Dimensions,
   Keyboard,
+  Platform,
   UIManager,
   type EmitterSubscription,
   type KeyboardEvent,
@@ -181,7 +182,8 @@ export function useKeyboardAwareScroll(
         return;
       }
 
-      keyboardShowSub.current = Keyboard.addListener('keyboardDidShow', (ev) => {
+      const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+      keyboardShowSub.current = Keyboard.addListener(showEvent, (ev) => {
         keyboardShowSub.current?.remove();
         keyboardShowSub.current = null;
         runScroll(keyboardHeightFromEvent(ev));
