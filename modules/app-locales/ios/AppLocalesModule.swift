@@ -5,13 +5,20 @@ public class AppLocalesModule: Module {
     Name("AppLocales")
 
     AsyncFunction("setAppLocale") { (languageTag: String) -> Bool in
-      // Prefer this language for the app process. Soft keyboard language still
-      // requires the layout to be enabled in system settings; after reload iOS
-      // usually opens the matching input if the user has it installed.
-      UserDefaults.standard.set([languageTag], forKey: "AppleLanguages")
-      UserDefaults.standard.set(languageTag, forKey: "AppleLocale")
+      let tag = languageTag.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard !tag.isEmpty else { return false }
+      let previous = UserDefaults.standard.string(forKey: "AppleLocale") ?? ""
+      UserDefaults.standard.set([tag], forKey: "AppleLanguages")
+      UserDefaults.standard.set(tag, forKey: "AppleLocale")
       UserDefaults.standard.synchronize()
-      return true
+      let prevLang = String(previous.prefix(while: { $0 != "-" && $0 != "_" }))
+      let nextLang = String(tag.prefix(while: { $0 != "-" && $0 != "_" }))
+      return prevLang.caseInsensitiveCompare(nextLang) != .orderedSame
+    }
+
+    AsyncFunction("restartApp") { () -> Bool in
+      // JS uses Updates.reloadAsync on iOS; kept for API parity.
+      return false
     }
   }
 }

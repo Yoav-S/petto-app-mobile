@@ -49,6 +49,8 @@ function BootSpinner() {
 }
 
 function RootLayoutNav() {
+  // Re-render in-place when language changes (never remount the Stack).
+  useLocale();
   const { colors } = useTheme();
   const { user, isLoading, isSyncing, hasPets, hasAccountName, onboardingResume } = useAuth();
   const { resetDraft } = usePetOnboardingDraft();
@@ -206,7 +208,6 @@ function RootLayoutNav() {
 
 function ThemedApp() {
   const { isDark, colors } = useTheme();
-  const { locale } = useLocale();
   useCompactPortraitLock();
   const [fontsLoaded, fontError] = useFonts({
     'Rubik-Regular': Rubik_400Regular,
@@ -226,10 +227,8 @@ function ThemedApp() {
         <ToastProvider>
             <UpgradeLimitProvider>
             <ReminderPromptProvider>
-            <View style={{ flex: 1 }}>
-              <View key={locale} style={{ flex: 1, backgroundColor: colors.background }}>
-                <RootLayoutNav />
-              </View>
+            <View style={{ flex: 1, backgroundColor: colors.background }}>
+              <RootLayoutNav />
               <GlobalKeyboardDoneButton />
             </View>
             </ReminderPromptProvider>

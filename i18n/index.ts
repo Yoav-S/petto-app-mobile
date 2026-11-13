@@ -60,9 +60,9 @@ function lookup(source: Translations | undefined, keys: string[]): unknown {
   return result;
 }
 
-export function t(key: string): string {
+export function t(key: string, forLocale: AppLocale = currentLocale): string {
   const keys = key.split('.');
-  const value = lookup(locales[currentLocale], keys);
+  const value = lookup(locales[forLocale], keys);
   if (value != null) return value as string;
   // Fall back to English for any key missing in the active locale.
   const fallback = lookup(locales.en, keys);

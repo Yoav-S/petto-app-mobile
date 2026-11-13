@@ -1,10 +1,7 @@
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Keyboard, Platform, Pressable, StyleSheet, Text } from 'react-native';
 import Animated, {
-  KeyboardState,
-  runOnJS,
   useAnimatedKeyboard,
-  useAnimatedReaction,
   useAnimatedStyle,
 } from 'react-native-reanimated';
 import { dismissKeyboard } from '@/components/ui/keyboardUtils';
@@ -13,54 +10,41 @@ import { useLocale } from '@/context/LocaleContext';
 import { t } from '@/i18n';
 
 /**
- * Done pill above the keyboard — rides the keyboard height so open/close
- * stays smooth (no late mount jump after keyboardDidShow).
+ * Done pill above the keyboard.
+ * Position follows animated keyboard height; visibility trusts Keyboard
+ * show/hide events so it never sticks after dismiss.
  */
 export default function GlobalKeyboardDoneButton() {
-  // Re-evaluate `t()` when the in-app language changes.
-  useLocale();
+  const { locale } = useLocale();
   const colors = useColors();
-  const [interactive, setInteractive] = useState(false);
+  const [visible, setVisible] = useState(false);
   const keyboard = useAnimatedKeyboard({
     isStatusBarTranslucentAndroid: true,
     isNavigationBarTranslucentAndroid: true,
   });
 
-  useAnimatedReaction(
-    () => {
-      const height = keyboard.height.value;
-      const state = keyboard.state.value;
-      return (
-        height > 8 &&
-        (state === KeyboardState.OPENING ||
-          state === KeyboardState.OPEN ||
-          state === KeyboardState.CLOSING)
-      );
-    },
-    (active, prev) => {
-      if (active !== prev) runOnJS(setInteractive)(active);
-    },
-  );
-
-  const hostStyle = useAnimatedStyle(() => {
-    const height = keyboard.height.value;
-    const state = keyboard.state.value;
-    const active =
-      height > 0 &&
-      (state === KeyboardState.OPENING ||
-        state === KeyboardState.OPEN ||
-        state === KeyboardState.CLOSING);
-    return {
-      bottom: height,
-      opacity: active ? 1 : 0,
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const showSub = Keyboard.addListener(showEvent, () => setVisible(true));
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
     };
-  });
+  }, []);
+
+  const hostStyle = useAnimatedStyle(() => ({
+    bottom: Math.max(0, keyboard.height.value),
+  }));
+
+  // Pass locale so React Compiler / memoization cannot keep a stale label.
+  const label = t('pickers.done', locale);
 
   return (
     <Animated.View style={styles.overlay} pointerEvents="box-none">
       <Animated.View
-        pointerEvents={interactive ? 'box-none' : 'none'}
-        style={[styles.host, hostStyle]}
+        pointerEvents={visible ? 'box-none' : 'none'}
+        style={[styles.host, hostStyle, { opacity: visible ? 1 : 0 }]}
       >
         <Pressable
           style={({ pressed }) => [
@@ -74,10 +58,10 @@ export default function GlobalKeyboardDoneButton() {
           onPress={dismissKeyboard}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel={t('pickers.done')}
+          accessibilityLabel={label}
         >
           <Text style={[styles.doneLabel, { color: colors.primaryText }]}>
-            {t('pickers.done')}
+            {label}
           </Text>
         </Pressable>
       </Animated.View>

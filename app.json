@@ -62,6 +62,7 @@
         "expo-localization",
         {
           "supportsRTL": true,
+          "allowDynamicLocaleChangesAndroid": true,
           "supportedLocales": {
             "ios": ["en", "ro", "ru", "he"],
             "android": ["en", "ro", "ru", "he"]

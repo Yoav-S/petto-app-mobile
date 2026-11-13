@@ -1,8 +1,5 @@
 {
-  "platforms": ["android", "ios"],
-  "android": {
-    "modules": ["expo.modules.applocales.AppLocalesModule"]
-  },
+  "platforms": ["ios"],
   "ios": {
     "modules": ["AppLocalesModule"]
   }
