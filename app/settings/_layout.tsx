@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
+import { useLocale } from '@/context/LocaleContext';
 import { useThemedStatusBar } from '@/context/SystemBarsContext';
 
 /**
@@ -9,6 +10,8 @@ import { useThemedStatusBar } from '@/context/SystemBarsContext';
  */
 export default function SettingsLayout() {
   useThemedStatusBar();
+  // Subscribe so focused settings scenes refresh copy on language change.
+  useLocale();
   const { colors } = useTheme();
 
   return (

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { centeredInputText, NAME_FIELD_TEXT } from '@/constants/textField';
+import { useDeferredFocus } from '@/hooks/useDeferredFocus';
 
 const CARD_SHADOW = {
   shadowColor: '#2D2D2A',
@@ -75,10 +76,12 @@ function NameFieldCard({
 }: Omit<NameFieldCardProps, 'label' | 'focused'>) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
+  const inputRef = useDeferredFocus(autoFocus);
   return (
     <FieldCardShell cardStyle={cardStyle}>
       <View style={styles.nameInnerCentered}>
         <TextInput
+          ref={inputRef}
           style={styles.nameInput}
           value={value}
           onChangeText={onChangeText}
@@ -87,7 +90,6 @@ function NameFieldCard({
           placeholder={placeholder}
           placeholderTextColor={colors.secondaryText}
           textAlignVertical="center"
-          autoFocus={autoFocus}
         />
       </View>
     </FieldCardShell>

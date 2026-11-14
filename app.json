@@ -33,6 +33,9 @@
         "com.google.android.gms.permission.AD_ID"
       ]
     },
+    "androidNavigationBar": {
+      "enforceContrast": false
+    },
     "web": {
       "output": "single",
       "favicon": "./assets/images/favicon.png"
@@ -54,7 +57,7 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
-            "backgroundColor": "#ffffff"
+            "backgroundColor": "#1A1D20"
           }
         }
       ],
@@ -118,6 +121,7 @@
       ],
       "./plugins/withAndroidAdaptiveOrientation.js",
       "./plugins/withAppLocales.js",
+      "./plugins/withTransparentNavBar.js",
       "@react-native-community/datetimepicker"
     ],
     "experiments": {

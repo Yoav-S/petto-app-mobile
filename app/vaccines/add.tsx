@@ -8,6 +8,7 @@ import {
   Alert,
   Keyboard,
 } from 'react-native';
+import { useDeferredFocus } from '@/hooks/useDeferredFocus';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -98,6 +99,7 @@ export default function AddVaccineScreen() {
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const nameInputRef = useDeferredFocus(true);
 
   const openDateSheet = (target: DateSheet) => {
     setPhotoSheetVisible(false);
@@ -232,12 +234,12 @@ export default function AddVaccineScreen() {
             ]}
           >
             <TextInput
+              ref={nameInputRef}
               style={styles.nameInput}
               value={name}
               onChangeText={setName}
               placeholder={t('vaccines.field_name_placeholder')}
               placeholderTextColor={colors.secondaryText}
-              autoFocus
               returnKeyType="next"
               textAlignVertical="center"
             />

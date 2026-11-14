@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import type { TextFieldFocusHandler } from '@/hooks/useKeyboardAwareScroll';
+import { useDeferredFocus } from '@/hooks/useDeferredFocus';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
@@ -59,17 +60,11 @@ export default function HealthNoteEditorCard({
   const layout = useHealthNoteCardLayout();
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(photoUri) && !imageFailed;
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useDeferredFocus(autoFocus);
 
   useEffect(() => {
     setImageFailed(false);
   }, [photoUri]);
-
-  useEffect(() => {
-    if (!autoFocus) return;
-    const id = setTimeout(() => inputRef.current?.focus(), 250);
-    return () => clearTimeout(id);
-  }, [autoFocus]);
 
   return (
     <View
@@ -114,7 +109,6 @@ export default function HealthNoteEditorCard({
           onFocus={onNoteFocus}
           onBlur={onNoteBlur}
           multiline
-          autoFocus={autoFocus}
           placeholder={placeholder ?? t('topics.note_placeholder')}
           placeholderTextColor={colors.secondaryText}
           textAlignVertical="top"

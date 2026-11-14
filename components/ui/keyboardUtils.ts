@@ -18,6 +18,7 @@ function keyboardShowEvent(): 'keyboardWillShow' | 'keyboardDidShow' {
 }
 
 function keyboardHideEvent(): 'keyboardWillHide' | 'keyboardDidHide' {
+  // Prefer willHide on iOS so layout can ease out with the keyboard animation.
   return Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 }
 
@@ -44,7 +45,12 @@ export function useKeyboardOpen(): boolean {
 
   useEffect(() => {
     const showSub = Keyboard.addListener(keyboardShowEvent(), () => setOpen(true));
-    const hideSub = Keyboard.addListener(keyboardHideEvent(), () => setOpen(false));
+    // iOS willHide starts with the close animation — keeps footer/Done in sync.
+    // Android only has didHide; pair with didShow for open.
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setOpen(false),
+    );
     return () => {
       showSub.remove();
       hideSub.remove();

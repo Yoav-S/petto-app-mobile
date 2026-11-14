@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-nat
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
-import { t } from '@/i18n';
+import { useLocale, useT } from '@/context/LocaleContext';
 import {
   getNotificationPrefs,
   updateNotificationPrefs,
@@ -27,6 +27,8 @@ export default function NotificationsSettingsScreen() {
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { locale } = useLocale();
+  const t = useT();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
@@ -87,7 +89,7 @@ export default function NotificationsSettingsScreen() {
 
   return (
     <HeaderScrollLayout
-      header={<SettingsHeader title={t('settings.notifications')} rounded />}
+      header={<SettingsHeader key={locale} title={t('settings.notifications')} rounded />}
       contentGap={4}
       chromePaddingBottom={0}
     >

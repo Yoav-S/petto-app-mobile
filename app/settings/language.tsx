@@ -2,9 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
-import { t, type AppLocale } from '@/i18n';
+import { type AppLocale } from '@/i18n';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
-import { useLocale } from '@/context/LocaleContext';
+import { useLocale, useT } from '@/context/LocaleContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import { HeaderScrollScreen } from '@/components/ui/HeaderScrollLayout';
 
@@ -12,12 +12,13 @@ const OPTIONS: AppLocale[] = ['en', 'ro', 'ru'];
 
 export default function LanguageSettingsScreen() {
   const { locale, setLocale } = useLocale();
+  const t = useT();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
 
   return (
     <HeaderScrollScreen
-      header={<SettingsHeader title={t('settings.language')} rounded />}
+      header={<SettingsHeader key={locale} title={t('settings.language')} rounded />}
       contentGap={4}
       chromePaddingBottom={0}
       contentContainerStyle={styles.content}

@@ -13,7 +13,7 @@ import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useSettledModalVisible } from '@/components/ui/BottomSheetModal';
-import { t } from '@/i18n';
+import { useT } from '@/context/LocaleContext';
 
 interface ConfirmModalProps {
   visible: boolean;
@@ -67,6 +67,7 @@ export function ConfirmDialogSurface({
   variant = 'danger',
   hideCancel = false,
 }: Omit<ConfirmModalProps, 'visible'>) {
+  const t = useT();
   const styles = useThemedStyles(makeStyles);
   const { contentWidth } = useResponsiveLayout();
   const modalWidth = Math.min(contentWidth + Spacing.lg * 2, MODAL.maxWidth);
@@ -170,6 +171,7 @@ export function DiscardChangesModal({
   onDiscard: () => void;
   onStay: () => void;
 }) {
+  const t = useT();
   return (
     <ConfirmModal
       visible={visible}
@@ -191,6 +193,7 @@ export function SignOutModal({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const t = useT();
   return (
     <ConfirmModal
       visible={visible}

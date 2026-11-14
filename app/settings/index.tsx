@@ -4,8 +4,8 @@ import { useRouter } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
-import { t, currentLocale } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
+import { useLocale, useT } from '@/context/LocaleContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import { HeaderScrollScreen } from '@/components/ui/HeaderScrollLayout';
 import { SignOutModal } from '@/components/ui/ConfirmModal';
@@ -28,15 +28,17 @@ const ROWS: SettingsRow[] = [
 export default function SettingsScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
+  const { locale } = useLocale();
+  const t = useT();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const [signOutVisible, setSignOutVisible] = useState(false);
-  const languageLabel = t(`settings.language_${currentLocale}`);
+  const languageLabel = t(`settings.language_${locale}`);
 
   return (
     <>
     <HeaderScrollScreen
-      header={<SettingsHeader title={t('settings.title')} rounded />}
+      header={<SettingsHeader key={locale} title={t('settings.title')} rounded />}
       contentGap={4}
       chromePaddingBottom={0}
       contentContainerStyle={styles.content}

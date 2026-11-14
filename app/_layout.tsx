@@ -25,7 +25,6 @@ import { ReminderPromptProvider } from '@/context/ReminderPromptContext';
 import { useReminderNotificationRouting } from '@/hooks/useReminderNotificationRouting';
 import GlobalKeyboardDoneButton from '@/components/ui/GlobalKeyboardDoneButton';
 import AppSplash from '@/components/ui/AppSplash';
-import { SPLASH_BACKGROUND } from '@/constants/splash';
 import { SystemBarsProvider } from '@/context/SystemBarsContext';
 import { useCompactPortraitLock } from '@/hooks/useCompactPortraitLock';
 
@@ -42,7 +41,10 @@ const MIN_SPLASH_MS = 500;
 function BootSpinner() {
   const { colors } = useTheme();
   return (
-    <View style={styles.bootSpinner} pointerEvents="auto">
+    <View
+      style={[styles.bootSpinner, { backgroundColor: colors.surface }]}
+      pointerEvents="auto"
+    >
       <ActivityIndicator size="large" color={colors.brand} />
     </View>
   );
@@ -265,7 +267,6 @@ const styles = StyleSheet.create({
   },
   bootSpinner: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: SPLASH_BACKGROUND,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10000,

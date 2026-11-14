@@ -137,7 +137,13 @@ export default function SpeedDialFab({
 
   return (
     <View
-      style={[styles.layer, { zIndex: interceptTouches ? 100 : 1 }]}
+      style={[
+        styles.layer,
+        {
+          zIndex: interceptTouches ? 100 : 30,
+          elevation: interceptTouches ? 100 : 30,
+        },
+      ]}
       pointerEvents="box-none"
     >
       <AnimatedPressable

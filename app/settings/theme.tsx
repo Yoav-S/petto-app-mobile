@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
-import { t } from '@/i18n';
+import { useLocale, useT } from '@/context/LocaleContext';
 import { useTheme, useThemedStyles, type ThemeMode } from '@/context/ThemeContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import { HeaderScrollScreen } from '@/components/ui/HeaderScrollLayout';
@@ -11,11 +11,13 @@ const OPTIONS: ThemeMode[] = ['light', 'dark', 'system'];
 
 export default function ThemeSettingsScreen() {
   const { mode, setMode, colors } = useTheme();
+  const { locale } = useLocale();
+  const t = useT();
   const styles = useThemedStyles(makeStyles);
 
   return (
     <HeaderScrollScreen
-      header={<SettingsHeader title={t('settings.theme')} rounded />}
+      header={<SettingsHeader key={locale} title={t('settings.theme')} rounded />}
       contentGap={4}
       chromePaddingBottom={0}
       contentContainerStyle={styles.content}

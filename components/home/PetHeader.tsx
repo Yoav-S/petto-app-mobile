@@ -235,7 +235,10 @@ export default function PetHeader({
         style={[styles.panelBody, { paddingBottom: cardsBottomInset }]}
         pointerEvents="box-none"
       >
-        <View pointerEvents="none" style={styles.panelSurface} />
+        <View
+          pointerEvents="none"
+          style={[styles.panelSurface, { bottom: cardsBottomInset }]}
+        />
         <View style={styles.handleRow} pointerEvents="none">
           <View style={styles.handle} />
         </View>
@@ -249,7 +252,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   wrapper: {
     flex: 1,
     backgroundColor: c.panel,
-    zIndex: 2,
   },
   cover: {
     width: '100%',

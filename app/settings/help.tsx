@@ -3,26 +3,25 @@ import { View, Text, StyleSheet, TouchableOpacity, Linking, Alert } from 'react-
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
-import { t } from '@/i18n';
+import { useLocale, useT } from '@/context/LocaleContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import { HeaderScrollScreen } from '@/components/ui/HeaderScrollLayout';
 
 /** Users write here; Cloudflare forwards to pettoservices@gmail.com. */
 const SUPPORT_EMAIL = 'support@ragly.cloud';
 
-function buildSupportMailto(): string {
-  const subject = encodeURIComponent(t('settings.support_email_subject'));
-  const body = encodeURIComponent(t('settings.support_email_body'));
-  return `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
-}
-
 export default function HelpSettingsScreen() {
+  const { locale } = useLocale();
+  const t = useT();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
 
   const handleEmailPress = async () => {
+    const subject = encodeURIComponent(t('settings.support_email_subject'));
+    const body = encodeURIComponent(t('settings.support_email_body'));
+    const mailto = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
     try {
-      await Linking.openURL(buildSupportMailto());
+      await Linking.openURL(mailto);
     } catch {
       Alert.alert(
         t('settings.contact_support'),
@@ -33,7 +32,7 @@ export default function HelpSettingsScreen() {
 
   return (
     <HeaderScrollScreen
-      header={<SettingsHeader title={t('settings.support_title')} rounded />}
+      header={<SettingsHeader key={locale} title={t('settings.support_title')} rounded />}
       contentGap={4}
       chromePaddingBottom={0}
       contentContainerStyle={styles.content}

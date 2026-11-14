@@ -431,7 +431,7 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: c.panel,
+      backgroundColor: 'transparent',
     },
     screen: {
       flex: 1,

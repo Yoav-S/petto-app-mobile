@@ -40,12 +40,13 @@ function resolveScheme(mode: ThemeMode, system: ColorSchemeName): ThemeScheme {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  // New installs / no saved preference → follow the OS. Never overwrite a
+  // stored light/dark/system choice on launch.
   const [mode, setModeState] = useState<ThemeMode>('system');
   const [systemScheme, setSystemScheme] = useState<ColorSchemeName>(
     Appearance.getColorScheme(),
   );
 
-  // Restore the saved choice once on mount.
   useEffect(() => {
     (async () => {
       try {
@@ -53,13 +54,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         if (saved === 'light' || saved === 'dark' || saved === 'system') {
           setModeState(saved);
         }
+        // No key → leave `system` (first launch / new account device).
       } catch {
-        // Ignore — fall back to system default.
+        // Ignore — stay on system.
       }
     })();
   }, []);
 
-  // Track OS appearance so `system` mode stays live.
   useEffect(() => {
     const sub = Appearance.addChangeListener(({ colorScheme }) =>
       setSystemScheme(colorScheme),
@@ -67,6 +68,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => sub.remove();
   }, []);
 
+  /** Persist only when the user picks a theme in settings. */
   const setMode = useCallback((next: ThemeMode) => {
     setModeState(next);
     AsyncStorage.setItem(THEME_MODE_KEY, next).catch(() => {});

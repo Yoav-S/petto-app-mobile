@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
-import { t } from '@/i18n';
+import { useT } from '@/context/LocaleContext';
 import { HEADER_LAYOUT } from '@/constants/layout';
 import { useHeaderTopPadding } from '@/utils/headerLayout';
 import HeaderIconButton, {
@@ -37,6 +37,7 @@ export default function SettingsHeader({
   roundedBottom = 22,
 }: SettingsHeaderProps) {
   const router = useRouter();
+  const t = useT();
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const paddingTop = useHeaderTopPadding();
@@ -69,6 +70,7 @@ export default function SettingsHeader({
           ]}
         >
           <HeaderIconButton
+            plain
             onPress={() => router.back()}
             accessibilityLabel={t('petOnboarding.back')}
           >

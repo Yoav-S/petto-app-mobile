@@ -11,6 +11,7 @@ import {
   SUPPORTED_LOCALES,
   currentLocale,
   setActiveLocale,
+  t as translateKey,
   type AppLocale,
 } from '@/i18n';
 
@@ -55,11 +56,15 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const setLocale = useCallback((next: AppLocale) => {
     setLocaleState((prev) => {
       if (prev === next) return prev;
-      setActiveLocale(next);
       AsyncStorage.setItem(LOCALE_KEY, next).catch(() => {});
       return next;
     });
   }, []);
+
+  // Keep module-level `t()` in sync whenever React locale state changes.
+  useEffect(() => {
+    setActiveLocale(locale);
+  }, [locale]);
 
   const value = useMemo(() => ({ locale, setLocale }), [locale, setLocale]);
 
@@ -67,3 +72,12 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useLocale = () => useContext(LocaleContext);
+
+/**
+ * Translate with a live locale subscription so copy updates immediately
+ * (React Compiler will not freeze strings across language changes).
+ */
+export function useT() {
+  const { locale } = useLocale();
+  return useCallback((key: string) => translateKey(key, locale), [locale]);
+}

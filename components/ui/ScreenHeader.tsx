@@ -64,7 +64,7 @@ export default function ScreenHeader({
           },
         ]}
       >
-        <HeaderIconButton onPress={onBack ?? (() => router.back())}>
+        <HeaderIconButton plain onPress={onBack ?? (() => router.back())}>
           <Ionicons
             name={icon === 'close' ? 'close' : 'chevron-back'}
             size={HEADER_ICON_BTN.iconSize}

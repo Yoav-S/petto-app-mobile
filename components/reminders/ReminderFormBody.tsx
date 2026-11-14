@@ -27,6 +27,7 @@ import {
   type HealthKeyboardFooterProps,
 } from '@/components/health/HealthKeyboardFooter';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
+import { useDeferredFocus } from '@/hooks/useDeferredFocus';
 import {
   KEYBOARD_DONE_BAR_HEIGHT,
   useKeyboardWindowResized,
@@ -164,6 +165,7 @@ export default function ReminderFormBody({
 }: ReminderFormBodyProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const titleInputRef = useDeferredFocus(autoFocus && !readOnly);
   const { scrollRef, keyboardOffset, onScroll, onInputFocus } = useKeyboardAwareScroll(
     scrollPaddingBottom,
   );
@@ -220,6 +222,7 @@ export default function ReminderFormBody({
                 </Text>
               ) : (
                 <TextInput
+                  ref={titleInputRef}
                   style={styles.recentTitleInput}
                   value={title}
                   onChangeText={onTitleChange}
@@ -227,7 +230,6 @@ export default function ReminderFormBody({
                   onFocus={onInputFocus}
                   placeholder={t('reminders.field_name_placeholder')}
                   placeholderTextColor={colors.secondaryText}
-                  autoFocus={autoFocus}
                   returnKeyType="next"
                   textAlignVertical="center"
                 />
@@ -249,13 +251,13 @@ export default function ReminderFormBody({
             ]}
           >
             <TextInput
+              ref={titleInputRef}
               style={styles.nameInput}
               value={title}
               onChangeText={onTitleChange}
               onBlur={onTitleBlur}
               placeholder={t('reminders.field_name_placeholder')}
               placeholderTextColor={colors.secondaryText}
-              autoFocus={autoFocus && !readOnly}
               editable={!readOnly}
               onFocus={onInputFocus}
               returnKeyType="next"

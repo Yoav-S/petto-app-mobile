@@ -48,6 +48,8 @@ interface HeaderIconButtonProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
+  /** No chip fill/shadow — icon only (headers that already sit on a surface). */
+  plain?: boolean;
 }
 
 /** Shared 32×32 icon chip used in headers across the app. */
@@ -57,13 +59,14 @@ export default function HeaderIconButton({
   children,
   style,
   disabled,
+  plain = false,
 }: HeaderIconButtonProps) {
   const styles = useThemedStyles(makeStyles);
   const face = StyleSheet.flatten(style)?.backgroundColor;
   const faceStyle = face ? { backgroundColor: face } : null;
   return (
-    <View style={[styles.outer, style]} collapsable={false}>
-      <View style={[styles.fill, faceStyle]} collapsable={false}>
+    <View style={[styles.outer, plain && styles.plain, style]} collapsable={false}>
+      <View style={[styles.fill, plain && styles.plainFill, faceStyle]} collapsable={false}>
         <TouchableOpacity
           onPress={onPress}
           disabled={disabled || !onPress}
@@ -91,11 +94,21 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.iconChip,
       ...HEADER_ICON_BTN_SHADOW,
     },
+    plain: {
+      backgroundColor: 'transparent',
+      shadowOpacity: 0,
+      shadowRadius: 0,
+      elevation: 0,
+      boxShadow: 'none',
+    },
     fill: {
       flex: 1,
       borderRadius: HEADER_ICON_BTN.radius,
       backgroundColor: c.iconChip,
       overflow: 'hidden',
+    },
+    plainFill: {
+      backgroundColor: 'transparent',
     },
     hit: {
       flex: 1,
