@@ -1,16 +1,18 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SPLASH_DARK, SPLASH_LIGHT, SPLASH_LOGO } from '@/constants/splash';
 import { useTheme } from '@/context/ThemeContext';
 
 /**
- * Brand splash: Ragly wordmark centered. Follows the resolved theme scheme
- * (including system) so dark-mode cold starts stay dark.
+ * Brand splash: Ragly wordmark centered.
+ * Palette is locked for this mount so mid-boot theme/Appearance flips
+ * cannot flash white ↔ dark under the logo.
  */
 export default function AppSplash() {
   const { isDark } = useTheme();
   const { width, height } = useWindowDimensions();
-  const palette = isDark ? SPLASH_DARK : SPLASH_LIGHT;
+  const paletteRef = useRef(isDark ? SPLASH_DARK : SPLASH_LIGHT);
+  const palette = paletteRef.current;
   const left = (width - SPLASH_LOGO.width) / 2;
   const top = height * (SPLASH_LOGO.top / 812);
 

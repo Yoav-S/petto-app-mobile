@@ -8,6 +8,10 @@ import { router, type Href } from 'expo-router';
  * a leftover IME animation from the previous surface.
  */
 export function pushDirect(href: Href): void {
-  Keyboard.dismiss();
+  // Only dismiss when something is up — avoid restarting a closed IME
+  // into the next screen's deferred autofocus.
+  if (Keyboard.isVisible?.() ?? false) {
+    Keyboard.dismiss();
+  }
   router.push(href, { withAnchor: true });
 }

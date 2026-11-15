@@ -1,69 +1,57 @@
-import React, { useEffect, useState } from 'react';
-import { Keyboard, Platform, Pressable, StyleSheet, Text } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import Animated, {
-  Extrapolation,
-  interpolate,
+  KeyboardState,
   runOnJS,
   useAnimatedKeyboard,
   useAnimatedReaction,
   useAnimatedStyle,
-  useSharedValue,
-  withTiming,
 } from 'react-native-reanimated';
 import { dismissKeyboard } from '@/components/ui/keyboardUtils';
 import { useColors } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
 import { t } from '@/i18n';
 
-const FADE_MS = 200;
-
 /**
- * Done pill above the keyboard.
- * Fades with keyboard show/hide; rides animated height so it does not
- * pop or jump during FAB → create navigation races.
+ * Done pill above the keyboard — rides animated height + KeyboardState so
+ * open/close stays smooth (no event-fade / translateY flicker).
  */
 export default function GlobalKeyboardDoneButton() {
   const { locale } = useLocale();
   const colors = useColors();
   const [interactive, setInteractive] = useState(false);
-  const fade = useSharedValue(0);
   const keyboard = useAnimatedKeyboard({
     isStatusBarTranslucentAndroid: true,
     isNavigationBarTranslucentAndroid: true,
   });
 
-  useEffect(() => {
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const showSub = Keyboard.addListener(showEvent, () => {
-      fade.value = withTiming(1, { duration: FADE_MS });
-    });
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      fade.value = withTiming(0, { duration: FADE_MS });
-    });
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, [fade]);
-
   useAnimatedReaction(
-    () => fade.value > 0.04,
+    () => {
+      const height = keyboard.height.value;
+      const state = keyboard.state.value;
+      return (
+        height > 8 &&
+        (state === KeyboardState.OPENING ||
+          state === KeyboardState.OPEN ||
+          state === KeyboardState.CLOSING)
+      );
+    },
     (active, prev) => {
       if (active !== prev) runOnJS(setInteractive)(active);
     },
   );
 
   const hostStyle = useAnimatedStyle(() => {
-    const h = Math.max(0, keyboard.height.value);
+    const height = keyboard.height.value;
+    const state = keyboard.state.value;
+    const active =
+      height > 0 &&
+      (state === KeyboardState.OPENING ||
+        state === KeyboardState.OPEN ||
+        state === KeyboardState.CLOSING);
     return {
-      bottom: h,
-      opacity: fade.value,
-      transform: [
-        {
-          translateY: interpolate(fade.value, [0, 1], [8, 0], Extrapolation.CLAMP),
-        },
-      ],
+      bottom: Math.max(0, height),
+      opacity: active ? 1 : 0,
     };
   });
 

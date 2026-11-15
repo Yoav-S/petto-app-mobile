@@ -13,9 +13,22 @@ const CLEAR_FN = `
     @Suppress("DEPRECATION")
     window.navigationBarColor = android.graphics.Color.TRANSPARENT
     window.decorView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+      window.navigationBarDividerColor = android.graphics.Color.TRANSPARENT
+    }
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
       window.isStatusBarContrastEnforced = false
       window.isNavigationBarContrastEnforced = false
+    }
+    if (android.os.Build.VERSION.SDK_INT >= 35) {
+      try {
+        val method = window.javaClass.getMethod(
+          "setNavigationBarContrastEnforced",
+          Boolean::class.javaPrimitiveType,
+        )
+        method.invoke(window, false)
+      } catch (_: Throwable) {
+      }
     }
   }
 `;
@@ -42,6 +55,18 @@ function withTransparentNavBar(config) {
         add: true,
         parent: { name: parent },
         name: 'android:navigationBarColor',
+        value: '@android:color/transparent',
+      });
+      mod.modResults = AndroidConfig.Styles.assignStylesValue(mod.modResults, {
+        add: true,
+        parent: { name: parent },
+        name: 'android:statusBarColor',
+        value: '@android:color/transparent',
+      });
+      mod.modResults = AndroidConfig.Styles.assignStylesValue(mod.modResults, {
+        add: true,
+        parent: { name: parent },
+        name: 'android:navigationBarDividerColor',
         value: '@android:color/transparent',
       });
     }

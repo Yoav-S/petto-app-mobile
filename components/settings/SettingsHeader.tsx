@@ -70,7 +70,6 @@ export default function SettingsHeader({
           ]}
         >
           <HeaderIconButton
-            plain
             onPress={() => router.back()}
             accessibilityLabel={t('petOnboarding.back')}
           >

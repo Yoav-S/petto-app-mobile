@@ -491,12 +491,13 @@ const makeStyles = (c: ThemeColors) =>
       paddingRight: 10,
       paddingBottom: 6,
       paddingLeft: 10,
-      backgroundColor: '#F6F7F9',
+      // Light: soft chip; dark: elevated dark chip + light label.
+      backgroundColor: c.iconChip,
       alignItems: 'center',
       justifyContent: 'center',
     },
     tabOn: {
-      backgroundColor: '#004741',
+      backgroundColor: c.brandDark,
     },
     tabLabel: {
       height: 20,
@@ -510,10 +511,10 @@ const makeStyles = (c: ThemeColors) =>
       includeFontPadding: false,
       textAlign: 'center',
       textAlignVertical: 'center',
-      color: '#1F2937',
+      color: c.primaryText,
     },
     tabTextOn: {
-      color: '#F6F7F9',
+      color: c.button.primaryText,
     },
     aboutWrap: {
       marginTop: 16,

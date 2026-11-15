@@ -22,7 +22,6 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import {
   dismissKeyboard,
   useKeyboardBottomOffset,
-  useKeyboardOpen,
   useKeyboardWindowResized,
   KEYBOARD_DONE_BAR_HEIGHT,
 } from '@/components/ui/keyboardUtils';
@@ -153,7 +152,6 @@ export function HealthFormSaveScroll({
   fitScroll = false,
 }: HealthFormSaveScrollProps) {
   const keyboardHeight = useKeyboardBottomOffset();
-  const keyboardOpen = useKeyboardOpen();
   const windowResized = useKeyboardWindowResized();
   const insets = useSafeAreaInsets();
   const scrollFade = useScrollFadeReporter();
@@ -164,9 +162,9 @@ export function HealthFormSaveScroll({
   const scrollYRef = useRef(0);
   const localScrollRef = useRef<ScrollView>(null);
 
-  const footerPadBottom = keyboardOpen
-    ? FOOTER.minBottom + FOOTER.safeGap
-    : Math.max(insets.bottom, FOOTER.minBottom) + FOOTER.safeGap;
+  // Stable pad — toggling for keyboardOpen made Save jump on close.
+  const footerPadBottom =
+    Math.max(insets.bottom, FOOTER.minBottom) + FOOTER.safeGap;
 
   const setScrollRef = useCallback(
     (node: ScrollView | null) => {
@@ -196,11 +194,12 @@ export function HealthFormSaveScroll({
 
   /**
    * Trailing scroll extent so max scroll parks Save on the Done chip.
-   * Android (adjustResize): the viewport already shrinks — only reserve the Done band.
-   * iOS: lift Save by keyboard height + Done band.
+   * Follow keyboardHeight (willChangeFrame on iOS) so room eases with the IME —
+   * do not snap on a boolean open/close.
+   * Android adjustResize: viewport already shrinks — only reserve the Done band.
    */
   useEffect(() => {
-    if (!keyboardOpen) {
+    if (keyboardHeight <= 0) {
       setScrollRoom(0);
       return;
     }
@@ -209,7 +208,7 @@ export function HealthFormSaveScroll({
         ? Math.max(0, KEYBOARD_DONE_BAR_HEIGHT - footerPadBottom)
         : Math.max(0, keyboardHeight + KEYBOARD_DONE_BAR_HEIGHT - footerPadBottom);
     setScrollRoom(room);
-  }, [footerPadBottom, keyboardHeight, keyboardOpen, windowResized]);
+  }, [footerPadBottom, keyboardHeight, windowResized]);
 
   const handleScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -316,16 +315,12 @@ export function HealthKeyboardFooter({
   tone = 'primary',
 }: HealthKeyboardFooterProps) {
   const styles = useThemedStyles(makeStyles);
-  const keyboardOpen = useKeyboardOpen();
   const insets = useSafeAreaInsets();
   const { contentWidth } = useResponsiveLayout();
 
   const footerPadBottom = useMemo(
-    () =>
-      keyboardOpen
-        ? FOOTER.minBottom + FOOTER.safeGap
-        : Math.max(insets.bottom, FOOTER.minBottom) + FOOTER.safeGap,
-    [insets.bottom, keyboardOpen],
+    () => Math.max(insets.bottom, FOOTER.minBottom) + FOOTER.safeGap,
+    [insets.bottom],
   );
 
   const handlePress = () => {

@@ -2,17 +2,20 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
+import * as SystemUI from 'expo-system-ui';
 import {
   statusBarStyleForHex,
   statusBarStyleForSurface,
   statusBarStyleForTheme,
 } from '@/utils/statusBarContrast';
+import { darkColors, lightColors } from '@/constants/theme';
 
 export type SystemBarContentStyle = 'light' | 'dark';
 
@@ -49,6 +52,12 @@ export function SystemBarsProvider({
   const claimsRef = useRef<Claim[]>([]);
   const [activeStyle, setActiveStyle] = useState<SystemBarContentStyle | null>(null);
   const themeStyle = statusBarStyleForTheme(isDark);
+
+  // Keep the native root / home-indicator strip on the app canvas — never white surface.
+  useEffect(() => {
+    const canvas = isDark ? darkColors.background : lightColors.background;
+    void SystemUI.setBackgroundColorAsync(canvas).catch(() => {});
+  }, [isDark]);
 
   const publish = useCallback(() => {
     const top = claimsRef.current[claimsRef.current.length - 1];
@@ -90,7 +99,7 @@ export function SystemBarsProvider({
   return (
     <SystemBarsContext.Provider value={value}>
       {children}
-      <StatusBar style={activeStyle ?? themeStyle} />
+      <StatusBar style={activeStyle ?? themeStyle} translucent />
     </SystemBarsContext.Provider>
   );
 }

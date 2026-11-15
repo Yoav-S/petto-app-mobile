@@ -194,12 +194,20 @@ export interface HealthReminderLabels {
   sentSuccessfully: string;
 }
 
+export interface HealthReminderFormatOptions {
+  /** Past reminders: date only (no "Sent," prefix, no clock). */
+  omitSentPrefix?: boolean;
+  /** Today: label only, no clock time. */
+  omitTodayTime?: boolean;
+}
+
 /** Value portion after "Reminder:" — Today/Tomorrow/date + clock time, or sent successfully. */
 export function formatHealthReminderValue(
   date: string | null | undefined,
   time: string | null | undefined,
   labels: HealthReminderLabels,
   locale?: string,
+  options?: HealthReminderFormatOptions,
 ): string {
   const datePart = normalizeToDatePart(date);
   const timeStr = formatReminderClockTime(time);
@@ -208,11 +216,15 @@ export function formatHealthReminderValue(
   const withTime = (label: string) => (timeStr ? `${label}, ${timeStr}` : label);
 
   if (datePart < todayIsoDate()) {
+    if (options?.omitSentPrefix) return formatDisplayDate(datePart);
     return `${labels.sentSuccessfully}, ${withTime(formatDisplayDate(datePart))}`;
   }
-  if (isIsoDateToday(datePart)) return withTime(labels.today);
+  if (isIsoDateToday(datePart)) {
+    if (options?.omitTodayTime) return labels.today;
+    return withTime(labels.today);
+  }
   if (isIsoDateTomorrow(datePart)) return withTime(labels.tomorrow);
-  return withTime(formatDisplayDate(datePart));
+  return withTime(formatDisplayDate(datePart, locale));
 }
 
 export function parseIsoDate(value: string | null | undefined): Date | null {

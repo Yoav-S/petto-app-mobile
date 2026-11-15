@@ -23,6 +23,8 @@ interface ThemeContextValue {
   scheme: ThemeScheme;
   colors: ThemeColors;
   isDark: boolean;
+  /** False until AsyncStorage preference has been read once. */
+  ready: boolean;
   setMode: (mode: ThemeMode) => void;
 }
 
@@ -31,6 +33,7 @@ const ThemeContext = createContext<ThemeContextValue>({
   scheme: 'light',
   colors: lightColors,
   isDark: false,
+  ready: false,
   setMode: () => {},
 });
 
@@ -43,22 +46,29 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // New installs / no saved preference → follow the OS. Never overwrite a
   // stored light/dark/system choice on launch.
   const [mode, setModeState] = useState<ThemeMode>('system');
+  const [ready, setReady] = useState(false);
   const [systemScheme, setSystemScheme] = useState<ColorSchemeName>(
     Appearance.getColorScheme(),
   );
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const saved = await AsyncStorage.getItem(THEME_MODE_KEY);
+        if (cancelled) return;
         if (saved === 'light' || saved === 'dark' || saved === 'system') {
           setModeState(saved);
         }
-        // No key → leave `system` (first launch / new account device).
       } catch {
-        // Ignore — stay on system.
+        // Stay on system.
+      } finally {
+        if (!cancelled) setReady(true);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -83,9 +93,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       scheme,
       colors: isDark ? darkColors : lightColors,
       isDark,
+      ready,
       setMode,
     }),
-    [mode, scheme, isDark, setMode],
+    [mode, scheme, isDark, ready, setMode],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

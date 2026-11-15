@@ -56,7 +56,8 @@ export function useHomePanelLayout() {
       layoutHeight - fabSize - floor,
     );
     const fabBottom = Math.max(floor, layoutHeight - fabTop - fabSize);
-    const secondLineInset = Math.max(0, fabSize - 16 + 8);
+    /** FAB overlap into the card (pad 16) — TopicsWrapDescription adds EXTRA_INSET on top. */
+    const secondLineInset = Math.max(0, fabSize - 16);
 
     return {
       cardsBottomInset: bottom,
@@ -65,6 +66,7 @@ export function useHomePanelLayout() {
       cardRowGap: DESIGN_HOME_CARD_ROW_GAP,
       halfCardGap: DESIGN_HOME_HALF_GAP,
       fabBottom,
+      fabSize,
       /** Screen Y of the add button’s top edge. */
       fabTop,
       /** Screen bottom to the top of the add button. Lists end here. */

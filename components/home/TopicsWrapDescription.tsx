@@ -4,12 +4,14 @@ import { isRTL } from '@/i18n';
 
 interface TopicsWrapDescriptionProps {
   text: string;
-  /** How much to shorten a line that runs into the add button. */
   secondLineInset: number;
-  /** Screen Y of the add button’s top. Lines above this stay full width. */
   fabTop: number;
+  fabSize?: number;
   style: StyleProp<TextStyle>;
 }
+
+/** Extra clear on the second line only — first line uses full width. */
+const EXTRA_INSET = 40;
 
 const LINE_H = 16;
 const DESC_GAP = 4;
@@ -25,7 +27,6 @@ function restAfterFirstLine(text: string, firstLine: string): string {
   return text.slice(index + trimmed.length).trimStart();
 }
 
-/** Pull a mid-word fragment back to the previous space so the line ends on a word. */
 function endOnWord(fitted: string, source: string): string {
   const line = fitted.replace(/\s+$/, '');
   if (!line) return '';
@@ -41,18 +42,33 @@ function endOnWord(fitted: string, source: string): string {
   return space > 0 ? line.slice(0, space) : '';
 }
 
-/** First visible line, never ending in the middle of a word. */
-function splitFirstLine(text: string, lineText: string): { first: string; rest: string } {
-  const first = endOnWord(lineText, text);
-  if (!first) return { first: '', rest: text.trim() };
-  const rest = restAfterFirstLine(text, first);
-  return { first, rest };
+function takeFirstWord(rest: string): { word: string; rest: string } {
+  const trimmed = rest.trimStart();
+  if (!trimmed) return { word: '', rest: '' };
+  const space = trimmed.indexOf(' ');
+  if (space < 0) return { word: trimmed, rest: '' };
+  return { word: trimmed.slice(0, space), rest: trimmed.slice(space + 1).trimStart() };
 }
 
 /**
- * Text that does not fit the line, cut before the unfinished word.
- * "2 week…" that cannot finish "week" becomes "2...".
+ * Split on the measured first line, then pull one more word up onto line 1
+ * (line 1 may sit under the FAB). Remainder stays on line 2.
  */
+function splitFirstLine(text: string, lineText: string): { first: string; rest: string } {
+  let first = endOnWord(lineText, text);
+  if (!first) return { first: '', rest: text.trim() };
+  let rest = restAfterFirstLine(text, first);
+  // Pull one more word onto line 1 only when line 2 still has remainder.
+  if (rest) {
+    const { word, rest: nextRest } = takeFirstWord(rest);
+    if (word && nextRest) {
+      first = `${first} ${word}`;
+      rest = nextRest;
+    }
+  }
+  return { first, rest };
+}
+
 function withEllipsis(fittedLine: string, source: string): string {
   const fitted = endOnWord(fittedLine, source);
   if (!fitted) return ELLIPSIS;
@@ -60,7 +76,6 @@ function withEllipsis(fittedLine: string, source: string): string {
   return `${fitted}${ELLIPSIS}`;
 }
 
-/** Drop one more whole word so the ellipsis itself can fit. */
 function dropOneWord(display: string): string {
   const bare = display.endsWith(ELLIPSIS)
     ? display.slice(0, -ELLIPSIS.length).replace(/\s+$/, '')
@@ -70,33 +85,26 @@ function dropOneWord(display: string): string {
   return `${bare.slice(0, space)}${ELLIPSIS}`;
 }
 
-function lineHitsFab(lineTop: number, fabTop: number): boolean {
-  return lineTop + LINE_H > fabTop;
-}
-
 /**
- * Two description lines. The first stays full width while it sits above the
- * add button, and uses the second line’s right edge if it would run underneath.
- * The second line always stops before the button. Overflow ends on a whole word,
- * then "...".
+ * Two description lines. Line 1 is full width (+ one word under the FAB).
+ * Line 2 is shorter so it clears the FAB.
  */
 export default function TopicsWrapDescription({
   text,
   secondLineInset,
-  fabTop,
+  fabTop: _fabTop,
   style,
 }: TopicsWrapDescriptionProps) {
   const boxRef = useRef<View>(null);
   const [width, setWidth] = useState(0);
-  const [boxTop, setBoxTop] = useState<number | null>(null);
   const [first, setFirst] = useState(text);
   const [rest, setRest] = useState('');
   const [secondText, setSecondText] = useState('');
   const align = isRTL ? 'right' : 'left';
 
-  const firstHitsFab = boxTop != null && lineHitsFab(boxTop, fabTop);
-  const firstWidth = width > 0 ? Math.max(0, width - (firstHitsFab ? secondLineInset : 0)) : 0;
-  const secondWidth = width > 0 ? Math.max(0, width - secondLineInset) : 0;
+  const secondInset = Math.max(0, secondLineInset) + EXTRA_INSET;
+  const firstWidth = width;
+  const secondWidth = width > 0 ? Math.max(0, width - secondInset) : 0;
 
   useEffect(() => {
     setFirst(text);
@@ -115,19 +123,27 @@ export default function TopicsWrapDescription({
       onLayout={(event) => {
         const next = Math.round(event.nativeEvent.layout.width);
         setWidth((prev) => (prev === next ? prev : next));
-        boxRef.current?.measureInWindow((_x, y) => {
-          if (!Number.isFinite(y)) return;
-          const rounded = Math.round(y);
-          setBoxTop((prev) => (prev === rounded ? prev : rounded));
-        });
       }}
     >
       {firstWidth > 0 ? (
-        <View style={styles.measureWrap} pointerEvents="none" collapsable={false}>
+        <View
+          style={[styles.measureWrap, { width: firstWidth }]}
+          pointerEvents="none"
+          collapsable={false}
+        >
           <Text
-            style={[style, styles.measure, { width: firstWidth }]}
+            key={`first-${firstWidth}-${text}`}
+            style={[style, styles.measure, { width: firstWidth, maxWidth: firstWidth }]}
             onTextLayout={(event) => {
-              const line = event.nativeEvent.lines[0]?.text ?? '';
+              const lines = event.nativeEvent.lines;
+              const line = lines[0]?.text ?? '';
+              // Multi-line measure: real wrap. Single line: either fits, or width failed —
+              // if the reported line is shorter than the source, still split on it.
+              if (lines.length <= 1 && line.replace(/\s+$/, '') === text.trim()) {
+                setFirst(text.trim());
+                setRest('');
+                return;
+              }
               const next = splitFirstLine(text, line);
               setFirst((prev) => (prev === next.first ? prev : next.first));
               setRest((prev) => (prev === next.rest ? prev : next.rest));
@@ -139,9 +155,14 @@ export default function TopicsWrapDescription({
       ) : null}
 
       {rest && secondWidth > 0 ? (
-        <View style={styles.measureWrap} pointerEvents="none" collapsable={false}>
+        <View
+          style={[styles.measureWrap, { width: secondWidth }]}
+          pointerEvents="none"
+          collapsable={false}
+        >
           <Text
-            style={[style, styles.measure, { width: secondWidth }]}
+            key={`second-${secondWidth}-${rest}`}
+            style={[style, styles.measure, { width: secondWidth, maxWidth: secondWidth }]}
             onTextLayout={(event) => {
               if (event.nativeEvent.lines.length <= 1) return;
               const fitted = event.nativeEvent.lines[0]?.text ?? '';

@@ -34,6 +34,8 @@
       ]
     },
     "androidNavigationBar": {
+      "backgroundColor": "#00000000",
+      "barStyle": "dark-content",
       "enforceContrast": false
     },
     "web": {
@@ -42,6 +44,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-system-ui",
       [
         "expo-audio",
         {

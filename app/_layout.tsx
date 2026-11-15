@@ -98,8 +98,19 @@ function RootLayoutNav() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Hide native splash only after this tree (incl. AppSplash) has committed,
+  // so we never reveal a blank/light frame between native and JS splash.
   useEffect(() => {
-    void SplashScreen.hideAsync().catch(() => {});
+    let cancelled = false;
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!cancelled) void SplashScreen.hideAsync().catch(() => {});
+      });
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+    };
   }, []);
 
   // Leaving mid-onboarding via logout → wipe draft and land on welcome clean.
@@ -209,15 +220,16 @@ function RootLayoutNav() {
 }
 
 function ThemedApp() {
-  const { isDark, colors } = useTheme();
+  const { isDark, colors, ready: themeReady } = useTheme();
   useCompactPortraitLock();
   const [fontsLoaded, fontError] = useFonts({
     'Rubik-Regular': Rubik_400Regular,
     'Rubik-Medium': Rubik_500Medium,
   });
 
-  // Keep the native splash visible until the actual Rubik weights are ready.
-  if (!fontsLoaded && !fontError) return null;
+  // Keep the native splash up until fonts AND theme preference are ready —
+  // otherwise AppSplash paints light then flips dark (white ↔ Ragly flash).
+  if (!themeReady || (!fontsLoaded && !fontError)) return null;
 
   const navTheme = isDark
     ? { ...DarkTheme, colors: { ...DarkTheme.colors, background: colors.background } }
@@ -241,23 +253,32 @@ function ThemedApp() {
   );
 }
 
+function RootShell() {
+  const { colors, ready } = useTheme();
+  return (
+    <GestureHandlerRootView
+      style={[styles.root, ready && { backgroundColor: colors.background }]}
+    >
+      <LocaleProvider>
+        <AuthProvider>
+          <QueryProvider>
+            <PetStoreProvider>
+              <PetOnboardingDraftProvider>
+                <ThemedApp />
+              </PetOnboardingDraftProvider>
+            </PetStoreProvider>
+          </QueryProvider>
+        </AuthProvider>
+      </LocaleProvider>
+    </GestureHandlerRootView>
+  );
+}
+
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={styles.root}>
-      <ThemeProvider>
-        <LocaleProvider>
-          <AuthProvider>
-            <QueryProvider>
-              <PetStoreProvider>
-                <PetOnboardingDraftProvider>
-                  <ThemedApp />
-                </PetOnboardingDraftProvider>
-              </PetStoreProvider>
-            </QueryProvider>
-          </AuthProvider>
-        </LocaleProvider>
-      </ThemeProvider>
-    </GestureHandlerRootView>
+    <ThemeProvider>
+      <RootShell />
+    </ThemeProvider>
   );
 }
 

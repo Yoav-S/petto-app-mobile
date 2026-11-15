@@ -12,6 +12,8 @@ interface HealthReminderLineProps {
   numberOfLines?: number;
   showLabel?: boolean;
   compact?: boolean;
+  /** Home Topics card: icon + date/Today only (no "Sent", no clock). */
+  homeCard?: boolean;
 }
 
 export default function HealthReminderLine({
@@ -21,13 +23,16 @@ export default function HealthReminderLine({
   numberOfLines = 1,
   showLabel = true,
   compact = false,
+  homeCard = false,
 }: HealthReminderLineProps) {
   const styles = useThemedStyles(makeStyles);
   const value = formatHealthReminderValue(date, time, {
     today: t('common.today'),
     tomorrow: t('topics.reminder_tomorrow'),
     sentSuccessfully: t('topics.reminder_sent_successfully'),
-  }, currentLocale);
+  }, currentLocale, homeCard
+    ? { omitSentPrefix: true, omitTodayTime: true }
+    : undefined);
 
   if (!value) return null;
 

@@ -17,13 +17,20 @@ function keyboardShowEvent(): 'keyboardWillShow' | 'keyboardDidShow' {
   return Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
 }
 
-function keyboardHideEvent(): 'keyboardWillHide' | 'keyboardDidHide' {
-  // Prefer willHide on iOS so layout can ease out with the keyboard animation.
-  return Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+function keyboardHideEvent(): 'keyboardDidHide' {
+  // didHide only — willHide zeros padding while the keyboard is still
+  // animating down and makes content jump the wrong way.
+  return 'keyboardDidHide';
 }
 
-function keyboardFrameEvent(): 'keyboardWillChangeFrame' | 'keyboardDidShow' {
-  return Platform.OS === 'ios' ? 'keyboardWillChangeFrame' : 'keyboardDidShow';
+function keyboardFrameEvent():
+  | 'keyboardWillChangeFrame'
+  | 'keyboardDidChangeFrame'
+  | 'keyboardDidShow' {
+  // iOS: willChangeFrame tracks the animation. Android 11+: didChangeFrame
+  // reports height as the IME moves; older Android falls back to didShow.
+  if (Platform.OS === 'ios') return 'keyboardWillChangeFrame';
+  return 'keyboardDidChangeFrame';
 }
 
 function offsetFromEvent(e: KeyboardEvent): number {
@@ -39,18 +46,13 @@ function offsetFromEvent(e: KeyboardEvent): number {
   return Math.max(0, kbH);
 }
 
-/** Whether the software keyboard is open (iOS: tracks willShow/willHide to avoid layout lag). */
+/** Whether the software keyboard is open. Hide waits for didHide so layout does not snap early. */
 export function useKeyboardOpen(): boolean {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const showSub = Keyboard.addListener(keyboardShowEvent(), () => setOpen(true));
-    // iOS willHide starts with the close animation — keeps footer/Done in sync.
-    // Android only has didHide; pair with didShow for open.
-    const hideSub = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => setOpen(false),
-    );
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setOpen(false));
     return () => {
       showSub.remove();
       hideSub.remove();
@@ -73,9 +75,15 @@ export function useKeyboardBottomOffset(): number {
     const onHide = () => setOffset(0);
 
     const frameSub = Keyboard.addListener(keyboardFrameEvent(), onFrame);
+    // Older Android may not emit didChangeFrame — keep didShow as a seed.
+    const showSub =
+      Platform.OS === 'android'
+        ? Keyboard.addListener('keyboardDidShow', onFrame)
+        : null;
     const hideSub = Keyboard.addListener(keyboardHideEvent(), onHide);
     return () => {
       frameSub.remove();
+      showSub?.remove();
       hideSub.remove();
     };
   }, []);
