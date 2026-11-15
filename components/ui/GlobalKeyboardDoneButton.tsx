@@ -20,10 +20,8 @@ export default function GlobalKeyboardDoneButton() {
   const { locale } = useLocale();
   const colors = useColors();
   const [interactive, setInteractive] = useState(false);
-  const keyboard = useAnimatedKeyboard({
-    isStatusBarTranslucentAndroid: true,
-    isNavigationBarTranslucentAndroid: true,
-  });
+  // Edge-to-edge already owns Android bar translucency; those options warn if set.
+  const keyboard = useAnimatedKeyboard();
 
   useAnimatedReaction(
     () => {
