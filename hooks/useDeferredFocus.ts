@@ -7,16 +7,17 @@ type TransitionEvent = {
   data?: { closing?: boolean };
 };
 
-/** Longer than a native push, so the fallback never focuses mid-slide. */
-const NO_TRANSITION_FALLBACK_MS = 600;
-
 /**
- * Focus a create-flow TextInput once the native stack push has finished.
+ * Focus a create-flow TextInput while the push is still running, so the
+ * keyboard arrives with the screen.
  *
- * Focusing while a horizontal push is still running makes iOS attach the
- * keyboard to the transition, so it slides in from the side with the screen
- * and lands late. After transitionEnd it rises from the bottom as usual.
- * Do not use TextInput `autoFocus` with a push for the same reason.
+ * - iOS attaches the keyboard to the push and slides it in with the screen.
+ * - Android's IME is a separate window and always rises from the bottom; it
+ *   starts rising alongside the slide. An early focus can be dropped there
+ *   (cursor, no keyboard), so focus is retried on transitionEnd.
+ *
+ * Do not use TextInput `autoFocus` with a push — it fires before the input
+ * is attached and is unreliable.
  */
 export function useDeferredFocus(enabled: boolean) {
   const ref = useRef<TextInput>(null);
@@ -27,30 +28,36 @@ export function useDeferredFocus(enabled: boolean) {
       if (!enabled) return;
 
       let cancelled = false;
-      let focused = false;
-      let raf = 0;
+      let endRaf = 0;
 
       const focusInput = () => {
-        if (cancelled || focused) return;
-        focused = true;
+        if (cancelled) return;
+        if (ref.current?.isFocused()) return;
         ref.current?.focus();
       };
 
-      const unsub = navigation.addListener(
+      const unsubStart = navigation.addListener(
+        'transitionStart' as never,
+        ((e: TransitionEvent) => {
+          if (!e.data?.closing) focusInput();
+        }) as never,
+      );
+      const unsubEnd = navigation.addListener(
         'transitionEnd' as never,
         ((e: TransitionEvent) => {
           if (e.data?.closing) return;
-          raf = requestAnimationFrame(focusInput);
+          endRaf = requestAnimationFrame(focusInput);
         }) as never,
       );
-      // replace / no animation: transitionEnd may never fire.
-      const fallback = setTimeout(focusInput, NO_TRANSITION_FALLBACK_MS);
+      // The screen usually mounts after transitionStart has already fired.
+      const startRaf = requestAnimationFrame(focusInput);
 
       return () => {
         cancelled = true;
-        cancelAnimationFrame(raf);
-        clearTimeout(fallback);
-        unsub();
+        cancelAnimationFrame(startRaf);
+        cancelAnimationFrame(endRaf);
+        unsubStart();
+        unsubEnd();
       };
     }, [enabled, navigation]),
   );
