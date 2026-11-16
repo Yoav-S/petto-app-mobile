@@ -6,11 +6,14 @@ import Animated, {
   useAnimatedKeyboard,
   useAnimatedReaction,
   useAnimatedStyle,
+  withTiming,
 } from 'react-native-reanimated';
 import { dismissKeyboard } from '@/components/ui/keyboardUtils';
 import { useColors } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
 import { t } from '@/i18n';
+
+const CLOSE_FADE_MS = 120;
 
 /**
  * Done pill above the keyboard — rides animated height + KeyboardState so
@@ -29,9 +32,7 @@ export default function GlobalKeyboardDoneButton() {
       const state = keyboard.state.value;
       return (
         height > 8 &&
-        (state === KeyboardState.OPENING ||
-          state === KeyboardState.OPEN ||
-          state === KeyboardState.CLOSING)
+        (state === KeyboardState.OPENING || state === KeyboardState.OPEN)
       );
     },
     (active, prev) => {
@@ -42,14 +43,14 @@ export default function GlobalKeyboardDoneButton() {
   const hostStyle = useAnimatedStyle(() => {
     const height = keyboard.height.value;
     const state = keyboard.state.value;
-    const active =
+    // Fade out as soon as closing starts: the reported height can trail the
+    // real keyboard, which left the pill hanging after the keyboard was gone.
+    const visible =
       height > 0 &&
-      (state === KeyboardState.OPENING ||
-        state === KeyboardState.OPEN ||
-        state === KeyboardState.CLOSING);
+      (state === KeyboardState.OPENING || state === KeyboardState.OPEN);
     return {
       bottom: Math.max(0, height),
-      opacity: active ? 1 : 0,
+      opacity: withTiming(visible ? 1 : 0, { duration: visible ? 0 : CLOSE_FADE_MS }),
     };
   });
 
