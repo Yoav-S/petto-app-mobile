@@ -3,11 +3,13 @@ import { View, StyleSheet, Text, TouchableOpacity, Platform } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { requireOptionalNativeModule } from 'expo-modules-core';
+import type { BlurViewProps } from 'expo-blur';
 import { useActivePet } from '@/store/petStore';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useHomePanelLayout } from '@/hooks/useHomePanelLayout';
 import { Spacing, type ThemeColors } from '@/constants/theme';
-import { useThemedStyles } from '@/context/ThemeContext';
+import { useTheme, useThemedStyles } from '@/context/ThemeContext';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
@@ -32,6 +34,11 @@ import PetProfilePanel from '@/components/home/PetProfilePanel';
 import PetSwitcherSheet from '@/components/home/PetSwitcherSheet';
 import { SignOutModal } from '@/components/ui/ConfirmModal';
 import { pushDirect } from '@/utils/navigation';
+
+const blurModule = requireOptionalNativeModule('ExpoBlurView')
+  ? (require('expo-blur') as { BlurView?: React.ComponentType<BlurViewProps>; default?: React.ComponentType<BlurViewProps> })
+  : null;
+const BlurView = blurModule?.BlurView ?? blurModule?.default ?? null;
 
 function reminderToScheduledAt(reminder: Reminder): string {
   return `${reminder.date}T${reminder.time}:00`;
@@ -119,6 +126,7 @@ function pickLatestHealthRecord(records: MedicalRecord[]): MedicalRecord | null 
 
 export default function HomeScreen() {
   const styles = useThemedStyles(makeStyles);
+  const { isDark } = useTheme();
   const { halfCardHeight, topicsCardHeight, cardRowGap, halfCardGap, fabBottom } = useHomePanelLayout();
   const router = useRouter();
   const { user, isLoading: authLoading, syncError, retryBackendSync, isSyncing, signOut } = useAuth();
@@ -300,30 +308,36 @@ export default function HomeScreen() {
             onEditProfile={() => router.push('/profile/edit' as never)}
           >
             <View style={styles.tabs}>
-              <TouchableOpacity
-                style={[styles.tab, petTab === 'overview' && styles.tabOn]}
-                onPress={() => setPetTab('overview')}
-                accessibilityRole="button"
-                accessibilityState={{ selected: petTab === 'overview' }}
-              >
-                <View style={styles.tabLabel}>
-                  <Text style={[styles.tabText, petTab === 'overview' && styles.tabTextOn]}>
-                    {t('profile.tab_overview')}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.tab, petTab === 'about' && styles.tabOn]}
-                onPress={() => setPetTab('about')}
-                accessibilityRole="button"
-                accessibilityState={{ selected: petTab === 'about' }}
-              >
-                <View style={styles.tabLabel}>
-                  <Text style={[styles.tabText, petTab === 'about' && styles.tabTextOn]}>
-                    {t('profile.tab_about')}
-                  </Text>
-                </View>
-              </TouchableOpacity>
+              {(['overview', 'about'] as const).map((tab) => {
+                const selected = petTab === tab;
+                return (
+                  <TouchableOpacity
+                    key={tab}
+                    style={[styles.tab, selected && styles.tabOn]}
+                    onPress={() => setPetTab(tab)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                  >
+                    {!selected && BlurView ? (
+                      <BlurView
+                        pointerEvents="none"
+                        intensity={40}
+                        tint={isDark ? 'dark' : 'light'}
+                        blurReductionFactor={1}
+                        experimentalBlurMethod="dimezisBlurView"
+                        style={styles.tabBlur}
+                      />
+                    ) : null}
+                    <View style={styles.tabLabel}>
+                      <Text style={[styles.tabText, selected && styles.tabTextOn]}>
+                        {tab === 'overview'
+                          ? t('profile.tab_overview')
+                          : t('profile.tab_about')}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
             {petTab === 'about' ? (
               <View style={styles.aboutWrap}>
@@ -386,7 +400,7 @@ export default function HomeScreen() {
           ) : null}
         </View>
 
-        {pet && petTab === 'overview' ? (
+        {pet ? (
           <FABMenu
             bottom={fabBottom}
             open={fabOpen}
@@ -491,13 +505,17 @@ const makeStyles = (c: ThemeColors) =>
       paddingRight: 10,
       paddingBottom: 6,
       paddingLeft: 10,
-      // Light: soft chip; dark: elevated dark chip + light label.
-      backgroundColor: c.iconChip,
+      // Unmarked: #F6F7F9 + blur(40). Dark twin: panel.
+      backgroundColor: c.panel,
+      overflow: 'hidden',
       alignItems: 'center',
       justifyContent: 'center',
     },
     tabOn: {
       backgroundColor: c.brandDark,
+    },
+    tabBlur: {
+      ...StyleSheet.absoluteFillObject,
     },
     tabLabel: {
       height: 20,

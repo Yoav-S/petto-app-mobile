@@ -235,10 +235,6 @@ export default function PetHeader({
         style={[styles.panelBody, { paddingBottom: cardsBottomInset }]}
         pointerEvents="box-none"
       >
-        <View
-          pointerEvents="none"
-          style={[styles.panelSurface, { bottom: cardsBottomInset }]}
-        />
         <View style={styles.handleRow} pointerEvents="none">
           <View style={styles.handle} />
         </View>
@@ -315,13 +311,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
     paddingTop: 32,
     paddingHorizontal: PAGE_HORIZONTAL_PADDING,
-  },
-  panelSurface: {
-    ...StyleSheet.absoluteFillObject,
     backgroundColor: c.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    overflow: 'hidden',
   },
   handleRow: {
     position: 'absolute',

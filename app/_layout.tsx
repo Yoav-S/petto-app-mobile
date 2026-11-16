@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
-import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -25,6 +25,7 @@ import { ReminderPromptProvider } from '@/context/ReminderPromptContext';
 import { useReminderNotificationRouting } from '@/hooks/useReminderNotificationRouting';
 import GlobalKeyboardDoneButton from '@/components/ui/GlobalKeyboardDoneButton';
 import AppSplash from '@/components/ui/AppSplash';
+import { SPLASH_DARK, SPLASH_LIGHT } from '@/constants/splash';
 import { SystemBarsProvider } from '@/context/SystemBarsContext';
 import { useCompactPortraitLock } from '@/hooks/useCompactPortraitLock';
 
@@ -32,28 +33,33 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-/** Keep native splash until JS mounts, then hand off to AppSplash. */
+/**
+ * Native splash stays up for the ENTIRE boot (fonts, theme, auth, routing).
+ * Hiding it early to hand off to a JS splash is what caused the Ragly text
+ * to vanish and come back (blank gap / remount). We only hide once the app
+ * destination is ready, from an onLayout sentinel after that frame paints.
+ */
 void SplashScreen.preventAutoHideAsync().catch(() => {});
-
-/** Brand splash minimum so cold start doesn't blink. */
-const MIN_SPLASH_MS = 500;
-
-function BootSpinner() {
-  const { colors } = useTheme();
-  return (
-    <View
-      style={[styles.bootSpinner, { backgroundColor: colors.surface }]}
-      pointerEvents="auto"
-    >
-      <ActivityIndicator size="large" color={colors.brand} />
-    </View>
-  );
+try {
+  SplashScreen.setOptions({ fade: false, duration: 0 });
+} catch {
+  // Expo Go may not support setOptions.
 }
 
-function RootLayoutNav() {
-  // Re-render in-place when language changes (never remount the Stack).
+const MIN_SPLASH_MS = 500;
+
+let nativeSplashHidden = false;
+function hideNativeSplashOnce() {
+  if (nativeSplashHidden) return;
+  nativeSplashHidden = true;
+  void SplashScreen.hideAsync().catch(() => {});
+}
+
+let bootSplashDismissed = false;
+
+function RootLayoutNav({ onBootReady }: { onBootReady: () => void }) {
   useLocale();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { user, isLoading, isSyncing, hasPets, hasAccountName, onboardingResume } = useAuth();
   const { resetDraft } = usePetOnboardingDraft();
   const segments = useSegments();
@@ -61,6 +67,7 @@ function RootLayoutNav() {
   const [minSplashElapsed, setMinSplashElapsed] = useState(false);
   const mountedAtRef = useRef(Date.now());
   const hadUserRef = useRef(false);
+  const bootReadyRef = useRef(false);
 
   const group = segments[0] as string | undefined;
   const authScreen = segments[1] as string | undefined;
@@ -71,7 +78,6 @@ function RootLayoutNav() {
   const onTerms = authScreen === 'terms';
   const onEmail = authScreen === 'email';
   const onYourName = authScreen === 'your-name';
-  /** Welcome / lobby — not mid-auth flows. */
   const onAuthLobby = inAuthGroup && !onVerifyEmail && !onTerms && !onEmail;
 
   const emailVerified = Boolean(user?.emailVerified);
@@ -81,7 +87,6 @@ function RootLayoutNav() {
   const petsKnown = hasPets !== null;
   const nameKnown = hasAccountName !== null;
 
-  /** Tabs, onboarding, or any signed-in stack screen (reminders, settings, …). */
   const onAuthedAppSurface =
     inTabsGroup ||
     inOnboardingGroup ||
@@ -98,22 +103,6 @@ function RootLayoutNav() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Hide native splash only after this tree (incl. AppSplash) has committed,
-  // so we never reveal a blank/light frame between native and JS splash.
-  useEffect(() => {
-    let cancelled = false;
-    const frame = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (!cancelled) void SplashScreen.hideAsync().catch(() => {});
-      });
-    });
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(frame);
-    };
-  }, []);
-
-  // Leaving mid-onboarding via logout → wipe draft and land on welcome clean.
   useEffect(() => {
     if (user) {
       hadUserRef.current = true;
@@ -145,21 +134,17 @@ function RootLayoutNav() {
 
     if (!user || !user.emailVerified || !petsKnown || !nameKnown) return;
 
-    // Existing accounts without a holder name stop here, then go home.
-    // New accounts continue into pet onboarding after the name is saved.
     if (!hasAccountName && !onYourName) {
       router.replace('/(auth)/your-name' as never);
       return;
     }
     if (!hasAccountName) return;
 
-    // No first pet yet → resume the saved step (never skip to home on cold start).
     if (hasPets === false && !inOnboardingGroup) {
       router.replace(onboardingHref(onboardingResume?.step) as never);
       return;
     }
 
-    // Has pets → app home (not welcome lobby / not stuck in onboarding).
     if (hasPets === true && (onAuthLobby || inOnboardingGroup || onYourName)) {
       router.replace('/(tabs)' as never);
     }
@@ -182,54 +167,49 @@ function RootLayoutNav() {
     router,
   ]);
 
-  /**
-   * Brand splash: auth unknown, min time, or still routing a guest onto welcome.
-   * Never reveal tabs/welcome underneath during those moments.
-   */
-  const showBrandSplash =
+  const wantSplash =
     isLoading ||
     !minSplashElapsed ||
     (loggedOut && !inAuthGroup) ||
-    (loggedInUnverified && onAuthLobby);
+    (loggedInUnverified && onAuthLobby) ||
+    (loggedInVerified && (!petsKnown || !nameKnown || !onAuthedAppSurface));
 
-  /**
-   * After splash, logged-in users still on the auth lobby (or mid-replace)
-   * get a spinner — not a peek at welcome — until home/onboarding is up.
-   */
-  const showRedirectSpinner =
-    !showBrandSplash &&
-    loggedInVerified &&
-    (!petsKnown || !nameKnown || isSyncing || !onAuthedAppSurface);
+  useEffect(() => {
+    if (wantSplash || bootReadyRef.current) return;
+    bootReadyRef.current = true;
+    onBootReady();
+  }, [wantSplash, onBootReady]);
+
+  const bootCanvas = isDark ? SPLASH_DARK.background : SPLASH_LIGHT.background;
+  const canvas = wantSplash ? bootCanvas : colors.background;
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
+    <View style={[styles.root, { backgroundColor: canvas }]}>
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: colors.background },
+          contentStyle: { backgroundColor: canvas },
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
       </Stack>
-      {showBrandSplash ? <AppSplash /> : null}
-      {showRedirectSpinner ? <BootSpinner /> : null}
     </View>
   );
 }
 
-function ThemedApp() {
-  const { isDark, colors, ready: themeReady } = useTheme();
+function AppTree({
+  onBootReady,
+  bootReady,
+  splashPalette,
+}: {
+  onBootReady: () => void;
+  bootReady: boolean;
+  splashPalette: typeof SPLASH_LIGHT | typeof SPLASH_DARK;
+}) {
+  const { isDark, colors } = useTheme();
   useCompactPortraitLock();
-  const [fontsLoaded, fontError] = useFonts({
-    'Rubik-Regular': Rubik_400Regular,
-    'Rubik-Medium': Rubik_500Medium,
-  });
-
-  // Keep the native splash up until fonts AND theme preference are ready —
-  // otherwise AppSplash paints light then flips dark (white ↔ Ragly flash).
-  if (!themeReady || (!fontsLoaded && !fontError)) return null;
 
   const navTheme = isDark
     ? { ...DarkTheme, colors: { ...DarkTheme.colors, background: colors.background } }
@@ -239,14 +219,36 @@ function ThemedApp() {
     <NavThemeProvider value={navTheme}>
       <SystemBarsProvider isDark={isDark}>
         <ToastProvider>
-            <UpgradeLimitProvider>
+          <UpgradeLimitProvider>
             <ReminderPromptProvider>
-            <View style={{ flex: 1, backgroundColor: colors.background }}>
-              <RootLayoutNav />
-              <GlobalKeyboardDoneButton />
-            </View>
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: bootReady
+                    ? colors.background
+                    : splashPalette.background,
+                }}
+              >
+                <RootLayoutNav onBootReady={onBootReady} />
+                <GlobalKeyboardDoneButton />
+                {/*
+                  Wordmark lives under the native splash for the whole boot.
+                  Same canvas + font as the eventual reveal — no second splash
+                  handoff. Native is removed only when bootReady mounts the
+                  sentinel below (after that frame has laid out).
+                */}
+                {!bootReady ? <AppSplash palette={splashPalette} /> : null}
+                {bootReady ? (
+                  <View
+                    collapsable={false}
+                    pointerEvents="none"
+                    style={styles.hideSentinel}
+                    onLayout={hideNativeSplashOnce}
+                  />
+                ) : null}
+              </View>
             </ReminderPromptProvider>
-            </UpgradeLimitProvider>
+          </UpgradeLimitProvider>
         </ToastProvider>
       </SystemBarsProvider>
     </NavThemeProvider>
@@ -254,22 +256,47 @@ function ThemedApp() {
 }
 
 function RootShell() {
-  const { colors, ready } = useTheme();
+  const { isDark, ready: themeReady } = useTheme();
+  const [fontsLoaded, fontError] = useFonts({
+    'Rubik-Regular': Rubik_400Regular,
+    'Rubik-Medium': Rubik_500Medium,
+  });
+  const [bootReady, setBootReady] = useState(() => bootSplashDismissed);
+  const splashPaletteRef = useRef<typeof SPLASH_LIGHT | typeof SPLASH_DARK | null>(null);
+
+  const onBootReady = useCallback(() => {
+    bootSplashDismissed = true;
+    setBootReady(true);
+  }, []);
+
+  const ready = themeReady && (fontsLoaded || Boolean(fontError));
+  if (ready && splashPaletteRef.current == null) {
+    splashPaletteRef.current = isDark ? SPLASH_DARK : SPLASH_LIGHT;
+  }
+  const splashPalette = splashPaletteRef.current;
+  const bootCanvas =
+    splashPalette?.background ??
+    (isDark ? SPLASH_DARK.background : SPLASH_LIGHT.background);
+
   return (
-    <GestureHandlerRootView
-      style={[styles.root, ready && { backgroundColor: colors.background }]}
-    >
-      <LocaleProvider>
-        <AuthProvider>
-          <QueryProvider>
-            <PetStoreProvider>
-              <PetOnboardingDraftProvider>
-                <ThemedApp />
-              </PetOnboardingDraftProvider>
-            </PetStoreProvider>
-          </QueryProvider>
-        </AuthProvider>
-      </LocaleProvider>
+    <GestureHandlerRootView style={[styles.root, { backgroundColor: bootCanvas }]}>
+      {ready && splashPalette ? (
+        <LocaleProvider>
+          <AuthProvider>
+            <QueryProvider>
+              <PetStoreProvider>
+                <PetOnboardingDraftProvider>
+                  <AppTree
+                    onBootReady={onBootReady}
+                    bootReady={bootReady}
+                    splashPalette={splashPalette}
+                  />
+                </PetOnboardingDraftProvider>
+              </PetStoreProvider>
+            </QueryProvider>
+          </AuthProvider>
+        </LocaleProvider>
+      ) : null}
     </GestureHandlerRootView>
   );
 }
@@ -286,11 +313,8 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  bootSpinner: {
+  hideSentinel: {
     ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10000,
-    elevation: 10000,
+    opacity: 0,
   },
 });

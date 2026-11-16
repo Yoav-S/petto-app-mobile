@@ -15,8 +15,6 @@ import {
   statusBarStyleForSurface,
   statusBarStyleForTheme,
 } from '@/utils/statusBarContrast';
-import { darkColors, lightColors } from '@/constants/theme';
-
 export type SystemBarContentStyle = 'light' | 'dark';
 
 type Claim = {
@@ -53,10 +51,9 @@ export function SystemBarsProvider({
   const [activeStyle, setActiveStyle] = useState<SystemBarContentStyle | null>(null);
   const themeStyle = statusBarStyleForTheme(isDark);
 
-  // Keep the native root / home-indicator strip on the app canvas — never white surface.
+  // Transparent under the Android nav / home-indicator — no solid strip.
   useEffect(() => {
-    const canvas = isDark ? darkColors.background : lightColors.background;
-    void SystemUI.setBackgroundColorAsync(canvas).catch(() => {});
+    void SystemUI.setBackgroundColorAsync(null).catch(() => {});
   }, [isDark]);
 
   const publish = useCallback(() => {

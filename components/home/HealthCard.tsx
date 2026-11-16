@@ -171,13 +171,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: TOPICS.radius,
-    backgroundColor: c.surface,
+    // Light: white surface. Dark: #24282D elevated chip.
+    backgroundColor: c.iconChip,
     ...cardShadow,
   },
   card: {
     flex: 1,
     height: '100%',
-    backgroundColor: c.surface,
+    backgroundColor: c.iconChip,
     borderRadius: TOPICS.radius,
     padding: TOPICS.padding,
     width: '100%',

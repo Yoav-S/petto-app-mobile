@@ -70,6 +70,13 @@ function withTransparentNavBar(config) {
         value: '@android:color/transparent',
       });
     }
+    // Hide Android 12+ splash icon plate (white circle) by matching the canvas.
+    mod.modResults = AndroidConfig.Styles.assignStylesValue(mod.modResults, {
+      add: true,
+      parent: { name: 'Theme.App.SplashScreen' },
+      name: 'windowSplashScreenIconBackgroundColor',
+      value: '@color/splashscreen_background',
+    });
     return mod;
   });
 

@@ -1,26 +1,42 @@
 import React, { useRef } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SPLASH_DARK, SPLASH_LIGHT, SPLASH_LOGO } from '@/constants/splash';
-import { useTheme } from '@/context/ThemeContext';
+
+type SplashPalette = typeof SPLASH_LIGHT | typeof SPLASH_DARK;
+
+interface AppSplashProps {
+  palette: SplashPalette;
+  /**
+   * Called from onLayout after the first JS splash frame is painted.
+   * Hide the native splash here — never from a useEffect.
+   */
+  onReady?: () => void;
+}
 
 /**
- * Brand splash: Ragly wordmark centered.
- * Palette is locked for this mount so mid-boot theme/Appearance flips
- * cannot flash white ↔ dark under the logo.
+ * Brand splash: Ragly wordmark at full opacity (no fade-in).
+ * Mounted as a stable sibling of the auth tree so it is not remounted
+ * when auth/sync state updates.
  */
-export default function AppSplash() {
-  const { isDark } = useTheme();
+export default function AppSplash({ palette, onReady }: AppSplashProps) {
   const { width, height } = useWindowDimensions();
-  const paletteRef = useRef(isDark ? SPLASH_DARK : SPLASH_LIGHT);
-  const palette = paletteRef.current;
   const left = (width - SPLASH_LOGO.width) / 2;
   const top = height * (SPLASH_LOGO.top / 812);
+  const signaledRef = useRef(false);
+
+  const signalReady = () => {
+    if (signaledRef.current) return;
+    signaledRef.current = true;
+    onReady?.();
+  };
 
   return (
     <View
       style={[styles.root, { backgroundColor: palette.background }]}
       pointerEvents="auto"
       accessibilityRole="progressbar"
+      collapsable={false}
+      onLayout={signalReady}
     >
       <Text
         style={[
