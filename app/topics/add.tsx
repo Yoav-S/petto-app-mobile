@@ -88,7 +88,11 @@ export default function AddHealthScreen() {
     };
   }, [activePetId, isEditing, recordId]);
 
-  const canSave = name.trim().length > 0 && !submitting && !loading;
+  const canSave =
+    name.trim().length > 0 &&
+    (isEditing || description.trim().length > 0) &&
+    !submitting &&
+    !loading;
 
   const isDirty =
     !loading &&
@@ -166,12 +170,10 @@ export default function AddHealthScreen() {
         <HealthFormScreen
           scrollInsetTop={paddingTop}
           contentContainerStyle={{ paddingTop: layout.formTop }}
-          footer={{
-            label: t('common.save'),
+          keyboardSave={{
             disabled: !canSave,
             loading: submitting,
             onPress: handleSave,
-            fullWidth: true,
           }}
         >
           <HealthRecordFormFields

@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
 import { useThemedStatusBar } from '@/context/SystemBarsContext';
+import { SIDE_ANIMATION } from '@/constants/screenAnimations';
 
 /**
  * Settings stack sits on the themed app background — force theme-matched
@@ -19,6 +20,7 @@ export default function SettingsLayout() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },
+        animation: SIDE_ANIMATION,
       }}
     >
       <Stack.Screen name="index" />

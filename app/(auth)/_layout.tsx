@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
+import { SIDE_ANIMATION } from '@/constants/screenAnimations';
 
 export default function AuthLayout() {
   const { colors } = useTheme();
@@ -8,6 +9,7 @@ export default function AuthLayout() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },
+        animation: SIDE_ANIMATION,
       }}
     >
       <Stack.Screen name="index" />

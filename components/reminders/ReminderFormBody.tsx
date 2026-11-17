@@ -26,9 +26,11 @@ import {
   HealthKeyboardAvoidingView,
   type HealthKeyboardFooterProps,
 } from '@/components/health/HealthKeyboardFooter';
+import { type KeyboardSaveAction } from '@/components/ui/keyboardSaveAction';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { useDeferredFocus } from '@/hooks/useDeferredFocus';
 import {
+  KEYBOARD_DONE_ACCESSORY_ID,
   KEYBOARD_DONE_BAR_HEIGHT,
   useKeyboardWindowResized,
 } from '@/components/ui/keyboardUtils';
@@ -104,6 +106,8 @@ interface ReminderFormBodyProps {
   footer?: React.ReactNode;
   /** Save at bottom of scroll — scroll into view when keyboard open. */
   saveFooter?: HealthKeyboardFooterProps;
+  /** Save on the bar above the keyboard instead of a bottom footer. */
+  keyboardSave?: KeyboardSaveAction;
   /** Extra scroll padding when a sticky footer is present. */
   scrollPaddingBottom?: number;
   /** Pin footer (delete) to the bottom; only scroll on short screens. */
@@ -152,6 +156,7 @@ export default function ReminderFormBody({
   readOnly = false,
   footer,
   saveFooter,
+  keyboardSave,
   scrollPaddingBottom = 0,
   pinFooterToBottom = false,
   footerBottomInset = 32,
@@ -171,8 +176,9 @@ export default function ReminderFormBody({
   );
   const windowResized = useKeyboardWindowResized();
   /** Extra scroll extent only while the keyboard is open. Does not stretch the resting form. */
+  const usesSaveScroll = Boolean(saveFooter || keyboardSave);
   const keyboardRoom =
-    saveFooter || readOnly || keyboardOffset <= 0
+    usesSaveScroll || readOnly || keyboardOffset <= 0
       ? 0
       : Platform.OS === 'android' && windowResized
         ? KEYBOARD_DONE_BAR_HEIGHT
@@ -190,7 +196,7 @@ export default function ReminderFormBody({
     styles.content,
     {
       paddingTop: scrollInsetTop + layout.formTop,
-      paddingBottom: saveFooter
+      paddingBottom: usesSaveScroll
         ? scrollPaddingBottom
         : scrollPaddingBottom + (fullBleed && keyboardOffset > 0 ? keyboardOffset : 0),
       gap: layout.formGap,
@@ -223,6 +229,7 @@ export default function ReminderFormBody({
               ) : (
                 <TextInput
                   ref={titleInputRef}
+                  inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
                   style={styles.recentTitleInput}
                   value={title}
                   onChangeText={onTitleChange}
@@ -230,7 +237,9 @@ export default function ReminderFormBody({
                   onFocus={onInputFocus}
                   placeholder={t('reminders.field_name_placeholder')}
                   placeholderTextColor={colors.secondaryText}
-                  returnKeyType="next"
+                  returnKeyType="done"
+                  submitBehavior="blurAndSubmit"
+                  onSubmitEditing={() => Keyboard.dismiss()}
                   textAlignVertical="center"
                 />
               )}
@@ -252,6 +261,7 @@ export default function ReminderFormBody({
           >
             <TextInput
               ref={titleInputRef}
+              inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
               style={styles.nameInput}
               value={title}
               onChangeText={onTitleChange}
@@ -260,7 +270,9 @@ export default function ReminderFormBody({
               placeholderTextColor={colors.secondaryText}
               editable={!readOnly}
               onFocus={onInputFocus}
-              returnKeyType="next"
+              returnKeyType="done"
+              submitBehavior="blurAndSubmit"
+              onSubmitEditing={() => Keyboard.dismiss()}
               textAlignVertical="center"
             />
           </View>
@@ -453,6 +465,7 @@ export default function ReminderFormBody({
             <View style={[styles.noteInner, { minHeight: 50, gap: 6 }]}>
               <Text style={styles.noteLabel}>{t('reminders.field_description')}</Text>
               <TextInput
+                inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
                 style={styles.noteInput}
                 value={note}
                 onChangeText={onNoteChange}
@@ -467,6 +480,7 @@ export default function ReminderFormBody({
                 editable={!readOnly}
                 textAlignVertical="top"
                 returnKeyType="done"
+                submitBehavior="blurAndSubmit"
                 onSubmitEditing={() => Keyboard.dismiss()}
               />
             </View>
@@ -483,9 +497,10 @@ export default function ReminderFormBody({
   return (
     <>
       <HealthKeyboardAvoidingView>
-        {saveFooter ? (
+        {usesSaveScroll ? (
           <HealthFormSaveScroll
             footer={saveFooter}
+            keyboardSave={keyboardSave}
             fieldsStyle={formFieldsStyle}
             scrollRef={scrollRef}
             onScroll={onScroll}

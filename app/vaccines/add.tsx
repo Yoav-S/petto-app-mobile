@@ -9,6 +9,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { useDeferredFocus } from '@/hooks/useDeferredFocus';
+import { KEYBOARD_DONE_ACCESSORY_ID } from '@/components/ui/keyboardUtils';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -119,7 +120,7 @@ export default function AddVaccineScreen() {
     setViewerVisible(true);
   };
 
-  const canSave = name.trim().length > 0 && !submitting;
+  const canSave = name.trim().length > 0 && clinic.trim().length > 0 && !submitting;
   const isDirty =
     name !== originalRef.current.name ||
     date !== originalRef.current.date ||
@@ -212,8 +213,7 @@ export default function AddVaccineScreen() {
               gap: layout.formGap,
               alignItems: 'center',
             }}
-            footer={{
-              label: t('common.save'),
+            keyboardSave={{
               disabled: !canSave,
               loading: submitting,
               onPress: handleSave,
@@ -235,12 +235,15 @@ export default function AddVaccineScreen() {
           >
             <TextInput
               ref={nameInputRef}
+              inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
               style={styles.nameInput}
               value={name}
               onChangeText={setName}
               placeholder={t('vaccines.field_name_placeholder')}
               placeholderTextColor={colors.secondaryText}
-              returnKeyType="next"
+              returnKeyType="done"
+              submitBehavior="blurAndSubmit"
+              onSubmitEditing={() => Keyboard.dismiss()}
               textAlignVertical="center"
             />
           </View>

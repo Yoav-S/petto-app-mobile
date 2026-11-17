@@ -27,6 +27,8 @@ import { OnboardingPhotoAdd } from '@/components/brand/onboarding';
 import { HealthFormScreen } from '@/components/health/HealthKeyboardFooter';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { t } from '@/i18n';
+import { KEYBOARD_DONE_ACCESSORY_ID } from '@/components/ui/keyboardUtils';
+import { useDeferredFocus } from '@/hooks/useDeferredFocus';
 import { createPet } from '@/services/pets';
 import { playPetSound, warmupPetSounds } from '@/services/petSound';
 import { uploadPetPhoto } from '@/services/storage';
@@ -113,6 +115,7 @@ export default function AddPetScreen() {
   const [birthSheetVisible, setBirthSheetVisible] = useState(false);
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const nameInputRef = useDeferredFocus(true);
 
   useEffect(() => {
     warmupPetSounds();
@@ -219,8 +222,7 @@ export default function AddPetScreen() {
             gap: layout.formGap,
             alignItems: 'center',
           }}
-          footer={{
-            label: t('common.save'),
+          keyboardSave={{
             disabled: !canSave,
             loading: submitting,
             onPress: () => void handleSave(),
@@ -257,6 +259,8 @@ export default function AddPetScreen() {
           </Pressable>
 
           <TextInput
+            ref={nameInputRef}
+            inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
             style={[
               styles.nameInput,
               CARD_SHADOW,
@@ -272,6 +276,8 @@ export default function AddPetScreen() {
             placeholderTextColor={colors.secondaryText}
             autoCapitalize="words"
             returnKeyType="done"
+            submitBehavior="blurAndSubmit"
+            onSubmitEditing={() => Keyboard.dismiss()}
             textAlignVertical="center"
             onFocus={onInputFocus}
           />

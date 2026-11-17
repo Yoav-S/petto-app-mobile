@@ -28,16 +28,15 @@ import AppSplash from '@/components/ui/AppSplash';
 import { SPLASH_DARK, SPLASH_LIGHT } from '@/constants/splash';
 import { SystemBarsProvider } from '@/context/SystemBarsContext';
 import { useCompactPortraitLock } from '@/hooks/useCompactPortraitLock';
+import { CREATE_SCREEN_OPTIONS, SIDE_ANIMATION } from '@/constants/screenAnimations';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
 /**
- * Native splash stays up for the ENTIRE boot (fonts, theme, auth, routing).
- * Hiding it early to hand off to a JS splash is what caused the Ragly text
- * to vanish and come back (blank gap / remount). We only hide once the app
- * destination is ready, from an onLayout sentinel after that frame paints.
+ * The native splash has no wordmark, so it is hidden from AppSplash's onLayout
+ * (never from an effect) once the JS splash with "Ragly" has painted beneath it.
  */
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 try {
@@ -189,11 +188,32 @@ function RootLayoutNav({ onBootReady }: { onBootReady: () => void }) {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: canvas },
+          animation: SIDE_ANIMATION,
+          animationTypeForReplace: 'push',
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+        <Stack.Screen name="reminders/add" options={CREATE_SCREEN_OPTIONS} />
+        <Stack.Screen name="pets/add" options={CREATE_SCREEN_OPTIONS} />
+        <Stack.Screen name="topics/add-note" options={CREATE_SCREEN_OPTIONS} />
+        <Stack.Screen
+          name="topics/add"
+          options={({ route }) =>
+            (route.params as { id?: string } | undefined)?.id
+              ? { animation: SIDE_ANIMATION }
+              : CREATE_SCREEN_OPTIONS
+          }
+        />
+        <Stack.Screen
+          name="vaccines"
+          options={({ route }) =>
+            (route.params as { screen?: string } | undefined)?.screen === 'add'
+              ? CREATE_SCREEN_OPTIONS
+              : { animation: SIDE_ANIMATION }
+          }
+        />
       </Stack>
     </View>
   );
@@ -231,13 +251,9 @@ function AppTree({
               >
                 <RootLayoutNav onBootReady={onBootReady} />
                 <GlobalKeyboardDoneButton />
-                {/*
-                  Wordmark lives under the native splash for the whole boot.
-                  Same canvas + font as the eventual reveal — no second splash
-                  handoff. Native is removed only when bootReady mounts the
-                  sentinel below (after that frame has laid out).
-                */}
-                {!bootReady ? <AppSplash palette={splashPalette} /> : null}
+                {!bootReady ? (
+                  <AppSplash palette={splashPalette} onReady={hideNativeSplashOnce} />
+                ) : null}
                 {bootReady ? (
                   <View
                     collapsable={false}

@@ -93,7 +93,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
     minHeight: 100,
     borderRadius: 20,
-    backgroundColor: c.background,
+    backgroundColor: c.iconChip,
     paddingTop: 16,
     paddingHorizontal: 12,
     paddingBottom: 12,

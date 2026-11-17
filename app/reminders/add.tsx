@@ -84,7 +84,8 @@ export default function AddReminderScreen() {
     return true;
   }, [toast]);
 
-  const canSave = title.trim().length > 0 && !!date && !!time && !submitting;
+  const canSave =
+    title.trim().length > 0 && note.trim().length > 0 && !!date && !!time && !submitting;
   const isDirty =
     title !== originalRef.current.title ||
     category !== originalRef.current.category ||
@@ -238,8 +239,7 @@ export default function AddReminderScreen() {
         onRepeatSelect={setRepeat}
         onAlertConfirm={setAlert}
         autoFocus
-        saveFooter={{
-          label: t('common.save'),
+        keyboardSave={{
           disabled: !canSave,
           loading: submitting,
           onPress: handleSave,

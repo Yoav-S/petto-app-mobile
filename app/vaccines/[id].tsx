@@ -42,7 +42,7 @@ import { uploadImage } from '@/services/storage';
 import { getErrorMessage } from '@/services/errors';
 import { addYearsToIsoDate, formatDisplayDate, isIsoDateAfter, parseIsoDate, todayIsoDate } from '@/utils/calendar';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
-import { useKeyboardOpen } from '@/components/ui/keyboardUtils';
+import { KEYBOARD_DONE_ACCESSORY_ID, useKeyboardOpen } from '@/components/ui/keyboardUtils';
 import { useVaccinationQuery } from '@/hooks/useCachedQueries';
 import { queryClient } from '@/services/queryClient';
 import { queryKeys } from '@/services/queryKeys';
@@ -291,6 +291,7 @@ export default function VaccineDetailsScreen() {
       {/* Name */}
       <View style={[styles.card, styles.nameCard]}>
         <TextInput
+          inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
           style={styles.nameInput}
           value={name}
           onChangeText={setName}

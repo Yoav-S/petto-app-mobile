@@ -13,6 +13,7 @@ import { useToast } from '@/context/ToastContext';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import { HealthFormScreen } from '@/components/health/HealthKeyboardFooter';
 import { t } from '@/i18n';
+import { KEYBOARD_DONE_ACCESSORY_ID } from '@/components/ui/keyboardUtils';
 import { getErrorMessage } from '@/services/errors';
 import { rememberPlaceReview, savePlaceReview } from '@/services/places';
 
@@ -85,6 +86,7 @@ export default function BusinessReviewScreen() {
         <View style={styles.description}>
           <Text style={styles.label}>{t('business.tell_us')}</Text>
           <TextInput
+            inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
             value={comment}
             onChangeText={setComment}
             placeholder={t('business.how_it_was')}

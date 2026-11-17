@@ -160,12 +160,10 @@ export default function AddNoteScreen() {
             contentContainerStyle={{
               paddingHorizontal: PAGE_HORIZONTAL_PADDING,
             }}
-            footer={{
-              label: t('common.save'),
+            keyboardSave={{
               disabled: !canSave,
               loading: submitting,
               onPress: handleSave,
-              fullWidth: true,
             }}
           >
             <HealthNoteEditorCard
@@ -184,6 +182,7 @@ export default function AddNoteScreen() {
                 setReminderSheetVisible(true);
               }}
               placeholder={t('topics.note_body_placeholder')}
+              autoFocus
             />
           </HealthFormScreen>
 

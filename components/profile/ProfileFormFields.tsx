@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
+import { KEYBOARD_DONE_ACCESSORY_ID } from '@/components/ui/keyboardUtils';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { centeredInputText } from '@/constants/textField';
 import type { TextFieldFocusHandler } from '@/hooks/useKeyboardAwareScroll';
@@ -50,6 +51,7 @@ export function ProfileNameField({
   return (
     <CardShell minHeight={52}>
       <TextInput
+        inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
         style={styles.nameInput}
         value={value}
         onChangeText={onChangeText}
@@ -91,6 +93,7 @@ export function ProfileTextField({
       <View style={styles.inner}>
         <Text style={styles.fieldLabel}>{label}</Text>
         <TextInput
+          inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
           style={styles.textInput}
           value={value}
           onChangeText={onChangeText}

@@ -21,6 +21,7 @@ import { buildOnboardingProgress, saveOnboardingProgress } from '@/services/onbo
 import { goToPreviousOnboardingStep } from '@/utils/onboardingRoute';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
+import { KEYBOARD_DONE_ACCESSORY_ID } from '@/components/ui/keyboardUtils';
 import { type ThemeColors } from '@/constants/theme';
 import { centeredInputText } from '@/constants/textField';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -184,6 +185,7 @@ export default function PetNameOnboardingScreen() {
 
               <TextInput
                 ref={inputRef}
+                inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
                 style={[
                   styles.input,
                   {

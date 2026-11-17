@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Keyboard } from 'react-native';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { centeredInputText, NAME_FIELD_TEXT } from '@/constants/textField';
 import { useDeferredFocus } from '@/hooks/useDeferredFocus';
+import { KEYBOARD_DONE_ACCESSORY_ID } from '@/components/ui/keyboardUtils';
 
 const CARD_SHADOW = {
   shadowColor: '#2D2D2A',
@@ -82,6 +83,7 @@ function NameFieldCard({
       <View style={styles.nameInnerCentered}>
         <TextInput
           ref={inputRef}
+          inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
           style={styles.nameInput}
           value={value}
           onChangeText={onChangeText}
@@ -90,6 +92,9 @@ function NameFieldCard({
           placeholder={placeholder}
           placeholderTextColor={colors.secondaryText}
           textAlignVertical="center"
+          returnKeyType="done"
+          submitBehavior="blurAndSubmit"
+          onSubmitEditing={() => Keyboard.dismiss()}
         />
       </View>
     </FieldCardShell>
@@ -131,6 +136,7 @@ function DescriptionFieldCard({
       <View style={[styles.inner, styles.descriptionInner]}>
         <Text style={styles.floatingLabel}>{label}</Text>
         <TextInput
+          inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
           style={styles.descriptionInput}
           value={value}
           onChangeText={onChangeText}
@@ -140,6 +146,9 @@ function DescriptionFieldCard({
           placeholderTextColor={colors.secondaryText}
           multiline
           textAlignVertical="top"
+          returnKeyType="done"
+          submitBehavior="blurAndSubmit"
+          onSubmitEditing={() => Keyboard.dismiss()}
         />
       </View>
     </FieldCardShell>

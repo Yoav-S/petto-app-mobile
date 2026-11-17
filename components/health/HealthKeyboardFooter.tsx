@@ -27,6 +27,10 @@ import {
 } from '@/components/ui/keyboardUtils';
 import { useScrollFadeReporter } from '@/components/ui/scrollFadeMetrics';
 import SavingOverlay from '@/components/ui/SavingOverlay';
+import {
+  useKeyboardSaveAction,
+  type KeyboardSaveAction,
+} from '@/components/ui/keyboardSaveAction';
 
 /** Figma sticky action bar — fixed metrics. */
 const FOOTER = {
@@ -130,7 +134,10 @@ export function HealthFormScroll({
 }
 
 interface HealthFormSaveScrollProps extends HealthFormScrollProps {
-  footer: HealthKeyboardFooterProps;
+  /** Save pinned at the bottom of the screen. */
+  footer?: HealthKeyboardFooterProps;
+  /** Save lives on the bar above the keyboard instead of the bottom footer. */
+  keyboardSave?: KeyboardSaveAction;
   fieldsStyle?: StyleProp<ViewStyle>;
   /** Keep the form still when the fields already fit. Scroll only if they don't. */
   fitScroll?: boolean;
@@ -144,6 +151,7 @@ interface HealthFormSaveScrollProps extends HealthFormScrollProps {
 export function HealthFormSaveScroll({
   children,
   footer,
+  keyboardSave,
   fieldsStyle,
   scrollRef,
   onScroll,
@@ -151,6 +159,7 @@ export function HealthFormSaveScroll({
   scrollEnabled = true,
   fitScroll = false,
 }: HealthFormSaveScrollProps) {
+  useKeyboardSaveAction(keyboardSave);
   const keyboardHeight = useKeyboardBottomOffset();
   const windowResized = useKeyboardWindowResized();
   const insets = useSafeAreaInsets();
@@ -163,8 +172,9 @@ export function HealthFormSaveScroll({
   const localScrollRef = useRef<ScrollView>(null);
 
   // Stable pad — toggling for keyboardOpen made Save jump on close.
-  const footerPadBottom =
-    Math.max(insets.bottom, FOOTER.minBottom) + FOOTER.safeGap;
+  const footerPadBottom = footer
+    ? Math.max(insets.bottom, FOOTER.minBottom) + FOOTER.safeGap
+    : 0;
 
   const setScrollRef = useCallback(
     (node: ScrollView | null) => {
@@ -253,21 +263,27 @@ export function HealthFormSaveScroll({
         >
           {children}
         </View>
-        <View
-          collapsable={false}
-          onLayout={(e) => setFooterH(e.nativeEvent.layout.height)}
-        >
-          <HealthKeyboardFooter {...footer} />
-        </View>
+        {footer ? (
+          <View
+            collapsable={false}
+            onLayout={(e) => setFooterH(e.nativeEvent.layout.height)}
+          >
+            <HealthKeyboardFooter {...footer} />
+          </View>
+        ) : (
+          <View style={{ height: Math.max(insets.bottom, FOOTER.minBottom) + FOOTER.safeGap }} />
+        )}
       </View>
       {scrollRoom > 0 ? <View style={{ height: scrollRoom }} /> : null}
+      {keyboardSave ? <SavingOverlay visible={Boolean(keyboardSave.loading)} /> : null}
     </ScrollView>
   );
 }
 
 interface HealthFormScreenProps {
   children: React.ReactNode;
-  footer: HealthKeyboardFooterProps;
+  footer?: HealthKeyboardFooterProps;
+  keyboardSave?: KeyboardSaveAction;
   contentContainerStyle?: StyleProp<ViewStyle>;
   scrollRef?: React.RefObject<ScrollView | null>;
   onScroll?: ScrollViewProps['onScroll'];
@@ -279,6 +295,7 @@ interface HealthFormScreenProps {
 export function HealthFormScreen({
   children,
   footer,
+  keyboardSave,
   contentContainerStyle,
   scrollRef,
   onScroll,
@@ -295,6 +312,7 @@ export function HealthFormScreen({
     <HealthKeyboardAvoidingView>
       <HealthFormSaveScroll
         footer={footer}
+        keyboardSave={keyboardSave}
         fieldsStyle={fieldsStyle}
         scrollRef={scrollRef}
         onScroll={onScroll}
