@@ -44,8 +44,17 @@ function sameSpot(a: NearbyCoords, b: NearbyCoords): boolean {
     && Math.abs(a.longitude - b.longitude) < 0.0002;
 }
 
+function openRank(place: BusinessPlace): number {
+  if (place.open_now === true) return 0;
+  if (place.open_now == null) return 1;
+  return 2;
+}
+
 function nearestFirst(items: BusinessPlace[]): BusinessPlace[] {
   return [...items].sort((a, b) => {
+    const rank = openRank(a) - openRank(b);
+    if (rank !== 0) return rank;
+    if (a.distance_km == null && b.distance_km == null) return 0;
     if (a.distance_km == null) return 1;
     if (b.distance_km == null) return -1;
     return a.distance_km - b.distance_km;

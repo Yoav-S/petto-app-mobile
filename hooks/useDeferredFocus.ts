@@ -17,7 +17,7 @@ const IOS_MAX_FRAMES = 60;
  * while the IME rises faster. Starting the IME this much later makes both
  * land together.
  */
-const ANDROID_FOCUS_DELAY_MS = 250;
+const ANDROID_FOCUS_DELAY_MS = 30;
 
 /**
  * Focus a create-flow TextInput as the screen slides up, so the keyboard
