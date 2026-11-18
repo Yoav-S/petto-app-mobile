@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
+import KeyboardRiseIn from '@/components/ui/KeyboardRiseIn';
 import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
 import HeaderTitle from '@/components/ui/HeaderTitle';
 import { useRouter } from 'expo-router';
@@ -27,7 +28,6 @@ import { OnboardingPhotoAdd } from '@/components/brand/onboarding';
 import { HealthFormScreen } from '@/components/health/HealthKeyboardFooter';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { t } from '@/i18n';
-import { KEYBOARD_DONE_ACCESSORY_ID } from '@/components/ui/keyboardUtils';
 import { useDeferredFocus } from '@/hooks/useDeferredFocus';
 import { createPet } from '@/services/pets';
 import { playPetSound, warmupPetSounds } from '@/services/petSound';
@@ -203,6 +203,7 @@ export default function AddPetScreen() {
 
   return (
     <>
+      <KeyboardRiseIn>
       <HeaderScrollLayout
         header={<AddPetHeader />}
         edges={['left', 'right']}
@@ -260,7 +261,6 @@ export default function AddPetScreen() {
 
           <TextInput
             ref={nameInputRef}
-            inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
             style={[
               styles.nameInput,
               CARD_SHADOW,
@@ -373,6 +373,7 @@ export default function AddPetScreen() {
           </HealthFormScreen>
         )}
       </HeaderScrollLayout>
+      </KeyboardRiseIn>
 
       <BirthDatePickerSheet
         visible={birthSheetVisible}

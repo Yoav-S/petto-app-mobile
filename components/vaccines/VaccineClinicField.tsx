@@ -13,7 +13,6 @@ import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { centeredInputText } from '@/constants/textField';
 import { t } from '@/i18n';
-import { KEYBOARD_DONE_ACCESSORY_ID } from '@/components/ui/keyboardUtils';
 
 interface VaccineClinicFieldProps {
   value: string;
@@ -40,7 +39,6 @@ export default function VaccineClinicField({
       <View style={styles.inner}>
         <Text style={styles.label}>{label}</Text>
         <TextInput
-          inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
           style={styles.input}
           value={value}
           onChangeText={onChangeText}

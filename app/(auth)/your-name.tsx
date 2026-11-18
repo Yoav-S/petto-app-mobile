@@ -16,7 +16,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { saveAccountName } from '@/services/auth';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
-import { KEYBOARD_DONE_ACCESSORY_ID } from '@/components/ui/keyboardUtils';
 import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
 import { useAuth } from '@/context/AuthContext';
 import { onboardingHref } from '@/utils/onboardingRoute';
@@ -81,7 +80,6 @@ export default function YourNameScreen() {
           <View style={[styles.inputWrap, focused && styles.inputWrapFocused]}>
             <TextInput
               ref={inputRef}
-              inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
               style={styles.input}
               value={name}
               onChangeText={(value) => {

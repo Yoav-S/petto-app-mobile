@@ -4,10 +4,12 @@ import { I18nManager } from 'react-native';
 export const SIDE_ANIMATION = I18nManager.isRTL ? 'slide_from_left' : 'slide_from_right';
 
 /**
- * Create screens (add reminder / vaccine / topic / note / pet) rise from the
- * bottom, so the keyboard focused on push comes up together with the screen.
+ * Create screens (add reminder / vaccine / topic / note / pet): a transparent
+ * modal so the previous screen stays visible while KeyboardRiseIn moves the
+ * new screen up together with the keyboard. Closing fades out.
  */
 export const CREATE_SCREEN_OPTIONS = {
-  animation: 'slide_from_bottom',
-  gestureDirection: 'vertical',
+  presentation: 'transparentModal',
+  animation: 'fade',
+  contentStyle: { backgroundColor: 'transparent' },
 } as const;

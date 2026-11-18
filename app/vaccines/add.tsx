@@ -9,8 +9,8 @@ import {
   Keyboard,
 } from 'react-native';
 import { useDeferredFocus } from '@/hooks/useDeferredFocus';
-import { KEYBOARD_DONE_ACCESSORY_ID } from '@/components/ui/keyboardUtils';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
+import KeyboardRiseIn from '@/components/ui/KeyboardRiseIn';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
@@ -198,6 +198,7 @@ export default function AddVaccineScreen() {
 
   return (
     <>
+      <KeyboardRiseIn>
       <HeaderScrollLayout
         header={<VaccineScreenHeader title={t('vaccines.add_title')} icon="close" />}
         edges={['left', 'right']}
@@ -235,7 +236,6 @@ export default function AddVaccineScreen() {
           >
             <TextInput
               ref={nameInputRef}
-              inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
               style={styles.nameInput}
               value={name}
               onChangeText={setName}
@@ -345,6 +345,7 @@ export default function AddVaccineScreen() {
           </HealthFormScreen>
         )}
       </HeaderScrollLayout>
+      </KeyboardRiseIn>
 
       <EditPhotoSheet
         visible={photoSheetVisible}

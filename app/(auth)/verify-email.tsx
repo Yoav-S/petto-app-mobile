@@ -18,7 +18,6 @@ import { useRouter } from 'expo-router';
 import { ApiError } from '@/services/api';
 import { getErrorMessage } from '@/services/errors';
 import { t } from '@/i18n';
-import { KEYBOARD_DONE_ACCESSORY_ID } from '@/components/ui/keyboardUtils';
 import {
   getPendingEmail,
   clearPendingEmail,
@@ -187,7 +186,6 @@ export default function VerifyEmailScreen() {
 
               <TextInput
                 ref={inputRef}
-                inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
                 style={styles.otpInputOverlay}
                 keyboardType="number-pad"
                 textContentType="oneTimeCode"

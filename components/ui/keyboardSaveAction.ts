@@ -31,6 +31,37 @@ function getSnapshot() {
   return active;
 }
 
+let localBarHosts = 0;
+const hostListeners = new Set<() => void>();
+
+function subscribeHosts(listener: () => void) {
+  hostListeners.add(listener);
+  return () => hostListeners.delete(listener);
+}
+
+function getHostsSnapshot() {
+  return localBarHosts;
+}
+
+/** True while a focused screen renders its own keyboard bar (create screens are native modals on iOS, above the root overlay). */
+export function useHasLocalKeyboardBar(): boolean {
+  return useSyncExternalStore(subscribeHosts, getHostsSnapshot, getHostsSnapshot) > 0;
+}
+
+/** Register this screen as hosting its own keyboard bar while focused. */
+export function useLocalKeyboardBarHost() {
+  const isFocused = useIsFocused();
+  useEffect(() => {
+    if (!isFocused) return;
+    localBarHosts += 1;
+    hostListeners.forEach((l) => l());
+    return () => {
+      localBarHosts -= 1;
+      hostListeners.forEach((l) => l());
+    };
+  }, [isFocused]);
+}
+
 /** The keyboard bar's Save action for the focused create screen, or null (shows Done). */
 export function useActiveKeyboardSave(): ActiveSave | null {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);

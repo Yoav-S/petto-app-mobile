@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import type { TextFieldFocusHandler } from '@/hooks/useKeyboardAwareScroll';
 import { useDeferredFocus } from '@/hooks/useDeferredFocus';
-import { KEYBOARD_DONE_ACCESSORY_ID } from '@/components/ui/keyboardUtils';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
@@ -105,7 +104,6 @@ export default function HealthNoteEditorCard({
 
         <TextInput
           ref={inputRef}
-          inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
           style={styles.noteInput}
           value={noteText}
           onChangeText={onChangeNoteText}

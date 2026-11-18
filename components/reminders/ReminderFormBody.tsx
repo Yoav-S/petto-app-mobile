@@ -30,7 +30,6 @@ import { type KeyboardSaveAction } from '@/components/ui/keyboardSaveAction';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { useDeferredFocus } from '@/hooks/useDeferredFocus';
 import {
-  KEYBOARD_DONE_ACCESSORY_ID,
   KEYBOARD_DONE_BAR_HEIGHT,
   useKeyboardWindowResized,
 } from '@/components/ui/keyboardUtils';
@@ -229,7 +228,6 @@ export default function ReminderFormBody({
               ) : (
                 <TextInput
                   ref={titleInputRef}
-                  inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
                   style={styles.recentTitleInput}
                   value={title}
                   onChangeText={onTitleChange}
@@ -261,7 +259,6 @@ export default function ReminderFormBody({
           >
             <TextInput
               ref={titleInputRef}
-              inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
               style={styles.nameInput}
               value={title}
               onChangeText={onTitleChange}
@@ -465,7 +462,6 @@ export default function ReminderFormBody({
             <View style={[styles.noteInner, { minHeight: 50, gap: 6 }]}>
               <Text style={styles.noteLabel}>{t('reminders.field_description')}</Text>
               <TextInput
-                inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
                 style={styles.noteInput}
                 value={note}
                 onChangeText={onNoteChange}

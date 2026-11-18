@@ -6,17 +6,8 @@ import {
   type KeyboardEvent,
 } from 'react-native';
 
-/**
- * iOS Done button is a native input accessory, so every TextInput must pass
- * `inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}` to get it.
- */
-export const KEYBOARD_DONE_ACCESSORY_ID = 'ragly-keyboard-done';
-
-/**
- * Done bar height — used for scroll clearance. On iOS the accessory is part
- * of the reported keyboard frame already, so it adds nothing extra.
- */
-export const KEYBOARD_DONE_BAR_HEIGHT = Platform.OS === 'ios' ? 0 : 56;
+/** Done / Save bar height above the keyboard — used for scroll clearance. */
+export const KEYBOARD_DONE_BAR_HEIGHT = 56;
 
 export function dismissKeyboard(): void {
   Keyboard.dismiss();

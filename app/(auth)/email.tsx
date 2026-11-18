@@ -17,7 +17,6 @@ import { ApiError } from '@/services/api';
 import { getErrorMessage } from '@/services/errors';
 import { sendOtp, setPendingEmail } from '@/services/auth';
 import { t } from '@/i18n';
-import { KEYBOARD_DONE_ACCESSORY_ID } from '@/components/ui/keyboardUtils';
 import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
 import { Spacing, type ThemeColors } from '@/constants/theme';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
@@ -94,7 +93,6 @@ export default function EmailAuthScreen() {
             <View style={[styles.inputWrap, focused && styles.inputWrapFocused]}>
               <TextInput
                 ref={inputRef}
-                inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
                 style={styles.input}
                 value={email}
                 onChangeText={(v) => {

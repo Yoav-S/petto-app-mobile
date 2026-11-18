@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
+import KeyboardRiseIn from '@/components/ui/KeyboardRiseIn';
 import { useToast } from '@/context/ToastContext';
 import VaccineScreenHeader from '@/components/vaccines/VaccineScreenHeader';
 import ReminderFormBody from '@/components/reminders/ReminderFormBody';
@@ -203,6 +204,7 @@ export default function AddReminderScreen() {
 
   return (
     <>
+    <KeyboardRiseIn>
     <HeaderScrollLayout
       header={<VaccineScreenHeader title={t('reminders.add_title')} icon="close" fit="wrap" />}
       edges={['left', 'right']}
@@ -247,6 +249,7 @@ export default function AddReminderScreen() {
         />
       )}
     </HeaderScrollLayout>
+    </KeyboardRiseIn>
     <DiscardChangesModal
       visible={discardVisible}
       onDiscard={onDiscard}

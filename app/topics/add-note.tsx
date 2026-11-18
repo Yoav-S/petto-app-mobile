@@ -7,6 +7,7 @@ import {
   Keyboard,
 } from 'react-native';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
+import KeyboardRiseIn from '@/components/ui/KeyboardRiseIn';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { type ThemeColors } from '@/constants/theme';
@@ -131,20 +132,23 @@ export default function AddNoteScreen() {
 
   const header = <ScreenHeader title={t('topics.add_note')} fit="wrap" />;
 
-  if (!recordId || loadingRecord) {
+  if (!recordId) {
     return (
-      <HeaderScrollLayout header={header} edges={['left', 'right']}>
-        {({ paddingTop }) => (
-          <View style={[styles.centered, { paddingTop }]}>
-            <ActivityIndicator color={colors.primaryText} />
-          </View>
-        )}
-      </HeaderScrollLayout>
+      <KeyboardRiseIn enabled={false}>
+        <HeaderScrollLayout header={header} edges={['left', 'right']}>
+          {({ paddingTop }) => (
+            <View style={[styles.centered, { paddingTop }]}>
+              <ActivityIndicator color={colors.primaryText} />
+            </View>
+          )}
+        </HeaderScrollLayout>
+      </KeyboardRiseIn>
     );
   }
 
   return (
     <>
+    <KeyboardRiseIn>
     <HeaderScrollLayout
       header={header}
       edges={['left', 'right']}
@@ -230,6 +234,7 @@ export default function AddNoteScreen() {
         </>
       )}
     </HeaderScrollLayout>
+    </KeyboardRiseIn>
     <DiscardChangesModal
       visible={discardVisible}
       onDiscard={onDiscard}

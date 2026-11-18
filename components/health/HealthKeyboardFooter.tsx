@@ -271,7 +271,13 @@ export function HealthFormSaveScroll({
             <HealthKeyboardFooter {...footer} />
           </View>
         ) : (
-          <View style={{ height: Math.max(insets.bottom, FOOTER.minBottom) + FOOTER.safeGap }} />
+          <View
+            style={{
+              height: keyboardSave
+                ? insets.bottom + KEYBOARD_DONE_BAR_HEIGHT
+                : Math.max(insets.bottom, FOOTER.minBottom) + FOOTER.safeGap,
+            }}
+          />
         )}
       </View>
       {scrollRoom > 0 ? <View style={{ height: scrollRoom }} /> : null}

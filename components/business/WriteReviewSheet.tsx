@@ -19,7 +19,6 @@ import BottomSheetModal from '@/components/ui/BottomSheetModal';
 import HeaderIconButton from '@/components/ui/HeaderIconButton';
 import {
   dismissKeyboard,
-  KEYBOARD_DONE_ACCESSORY_ID,
   useKeyboardWindowResized,
 } from '@/components/ui/keyboardUtils';
 import { type ThemeColors } from '@/constants/theme';
@@ -171,7 +170,6 @@ export default function WriteReviewSheet({
           <View style={styles.description}>
             <Text style={styles.label}>{t('business.tell_us')}</Text>
             <TextInput
-              inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
               value={comment}
               onChangeText={setComment}
               placeholder={t('business.how_it_was')}

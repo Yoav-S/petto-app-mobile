@@ -23,7 +23,6 @@ import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { t } from '@/i18n';
-import { KEYBOARD_DONE_ACCESSORY_ID } from '@/components/ui/keyboardUtils';
 import {
   confirmAccountEmail,
   deleteAccount,
@@ -383,7 +382,6 @@ export default function AccountSettingsScreen() {
             </Pressable>
 
             <TextInput
-              inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
               value={name}
               onChangeText={setName}
               onFocus={onInputFocus}
@@ -400,7 +398,6 @@ export default function AccountSettingsScreen() {
             <View style={styles.tallField}>
               <Text style={styles.fieldLabel}>{t('settings.account_email')}</Text>
               <TextInput
-                inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
                 value={email}
                 onChangeText={setEmail}
                 onFocus={onInputFocus}
@@ -420,7 +417,6 @@ export default function AccountSettingsScreen() {
             <View style={styles.tallField}>
               <Text style={styles.fieldLabel}>{t('settings.account_phone')}</Text>
               <TextInput
-                inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
                 value={phone}
                 onChangeText={setPhone}
                 onFocus={onInputFocus}
@@ -461,7 +457,6 @@ export default function AccountSettingsScreen() {
             <Text style={styles.otpTitle}>{t('settings.account_email_otp_title')}</Text>
             <Text style={styles.otpBody}>{t('settings.account_email_otp_body')}</Text>
             <TextInput
-              inputAccessoryViewID={KEYBOARD_DONE_ACCESSORY_ID}
               value={otp}
               onChangeText={(value) => setOtp(value.replace(/\D/g, '').slice(0, 6))}
               keyboardType="number-pad"

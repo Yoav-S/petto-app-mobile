@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  InputAccessoryView,
-  Keyboard,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Keyboard, Pressable, StyleSheet, Text } from 'react-native';
 import Animated, {
   KeyboardState,
   runOnJS,
@@ -17,8 +9,12 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { dismissKeyboard, KEYBOARD_DONE_ACCESSORY_ID } from '@/components/ui/keyboardUtils';
-import { useActiveKeyboardSave } from '@/components/ui/keyboardSaveAction';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { dismissKeyboard } from '@/components/ui/keyboardUtils';
+import {
+  useActiveKeyboardSave,
+  useHasLocalKeyboardBar,
+} from '@/components/ui/keyboardSaveAction';
 import { useColors } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
 import { t } from '@/i18n';
@@ -26,27 +22,18 @@ import { t } from '@/i18n';
 const CLOSE_FADE_MS = 120;
 const DISABLED_OPACITY = 0.45;
 
-function DonePill({ onPressed }: { onPressed?: () => void }) {
+function KeyboardBarPill({ onPressed }: { onPressed?: () => void }) {
   const { locale } = useLocale();
   const colors = useColors();
   const activeSave = useActiveKeyboardSave();
-  // After Save the screen closes while the keyboard is still sliding away —
-  // keep showing Save until it's gone instead of flipping to Done.
-  const [savedWhileOpen, setSavedWhileOpen] = useState(false);
 
-  useEffect(() => {
-    if (!savedWhileOpen) return;
-    const sub = Keyboard.addListener('keyboardDidHide', () => setSavedWhileOpen(false));
-    return () => sub.remove();
-  }, [savedWhileOpen]);
-
-  if (activeSave || savedWhileOpen) {
-    const disabled = activeSave ? activeSave.disabled : true;
+  if (activeSave) {
+    const disabled = activeSave.disabled;
     const label = t('common.save', locale);
     return (
       <Pressable
         style={[
-          styles.doneBtn,
+          styles.pill,
           disabled
             ? {
                 backgroundColor: colors.surface,
@@ -57,8 +44,7 @@ function DonePill({ onPressed }: { onPressed?: () => void }) {
         ]}
         disabled={disabled}
         onPress={() => {
-          if (!activeSave || activeSave.disabled) return;
-          setSavedWhileOpen(true);
+          if (activeSave.disabled) return;
           onPressed?.();
           dismissKeyboard();
           activeSave.press();
@@ -70,7 +56,7 @@ function DonePill({ onPressed }: { onPressed?: () => void }) {
       >
         <Text
           style={[
-            styles.doneLabel,
+            styles.label,
             { color: disabled ? colors.secondaryText : colors.button.primaryText },
           ]}
         >
@@ -84,7 +70,7 @@ function DonePill({ onPressed }: { onPressed?: () => void }) {
   return (
     <Pressable
       style={({ pressed }) => [
-        styles.doneBtn,
+        styles.pill,
         {
           backgroundColor: colors.surface,
           borderColor: colors.border,
@@ -99,33 +85,44 @@ function DonePill({ onPressed }: { onPressed?: () => void }) {
       accessibilityRole="button"
       accessibilityLabel={label}
     >
-      <Text style={[styles.doneLabel, { color: colors.primaryText }]}>{label}</Text>
+      <Text style={[styles.label, { color: colors.primaryText }]}>{label}</Text>
     </Pressable>
   );
 }
 
 /**
- * iOS: native input accessory — part of the keyboard itself, so it opens,
- * closes and slides in with a pushed screen in lockstep. Inputs opt in via
- * KEYBOARD_DONE_ACCESSORY_ID.
+ * One overlay for iOS and Android that rides the animated keyboard height
+ * frame by frame. (A global InputAccessoryView never attaches to inputs
+ * mounted later on the new architecture, so it is not used.)
+ *
+ * - Done: visible only while the keyboard is up.
+ * - Save (create screens): rides the keyboard up and down, and rests at the
+ *   bottom-right in the same spot when the keyboard is closed.
  */
-function IosDoneAccessory() {
-  return (
-    <InputAccessoryView nativeID={KEYBOARD_DONE_ACCESSORY_ID} backgroundColor="transparent">
-      <View style={styles.accessoryRow} pointerEvents="box-none">
-        <DonePill />
-      </View>
-    </InputAccessoryView>
-  );
+export default function GlobalKeyboardDoneButton() {
+  const hasLocalBar = useHasLocalKeyboardBar();
+  if (hasLocalBar) return null;
+  return <KeyboardBarOverlay />;
 }
 
-/** Android: overlay that rides the animated IME height. */
-function AndroidDoneOverlay() {
-  const [interactive, setInteractive] = useState(false);
+export function KeyboardBarOverlay() {
+  const insets = useSafeAreaInsets();
+  const activeSave = useActiveKeyboardSave();
+  const [keyboardUp, setKeyboardUp] = useState(false);
   const keyboard = useAnimatedKeyboard();
-  // Hidden from a tap (or a JS hide) until the IME starts opening again, so a
-  // stale animated height can't leave the pill floating mid-screen.
+  const hasSave = useSharedValue(false);
+  const restBottom = useSharedValue(insets.bottom);
+  // Done is hidden from a tap (or a JS hide) until the keyboard starts opening
+  // again, so a stale animated height can't leave it floating mid-screen.
   const suppressed = useSharedValue(false);
+
+  useEffect(() => {
+    hasSave.value = activeSave != null;
+  }, [activeSave, hasSave]);
+
+  useEffect(() => {
+    restBottom.value = insets.bottom;
+  }, [insets.bottom, restBottom]);
 
   useEffect(() => {
     const sub = Keyboard.addListener('keyboardDidHide', () => {
@@ -152,23 +149,28 @@ function AndroidDoneOverlay() {
         (state === KeyboardState.OPENING || state === KeyboardState.OPEN)
       );
     },
-    (active, prev) => {
-      if (active !== prev) runOnJS(setInteractive)(active);
+    (up, prev) => {
+      if (up !== prev) runOnJS(setKeyboardUp)(up);
     },
   );
 
   const hostStyle = useAnimatedStyle(() => {
-    const height = keyboard.height.value;
+    const height = Math.max(0, keyboard.height.value);
+    if (hasSave.value) {
+      return { bottom: Math.max(height, restBottom.value), opacity: 1 };
+    }
+    if (suppressed.value) return { bottom: height, opacity: 0 };
     const state = keyboard.state.value;
-    if (suppressed.value) return { bottom: Math.max(0, height), opacity: 0 };
     const visible =
       height > 0 && (state === KeyboardState.OPENING || state === KeyboardState.OPEN);
     return {
-      bottom: Math.max(0, height),
-      // Show on the same frame as the IME; fade only when closing starts.
+      bottom: height,
+      // Show on the same frame as the keyboard; fade only when closing starts.
       opacity: visible ? 1 : withTiming(0, { duration: CLOSE_FADE_MS }),
     };
   });
+
+  const interactive = activeSave != null || keyboardUp;
 
   return (
     <Animated.View style={styles.overlay} pointerEvents="box-none">
@@ -176,7 +178,7 @@ function AndroidDoneOverlay() {
         pointerEvents={interactive ? 'box-none' : 'none'}
         style={[styles.host, hostStyle]}
       >
-        <DonePill
+        <KeyboardBarPill
           onPressed={() => {
             suppressed.value = true;
           }}
@@ -184,10 +186,6 @@ function AndroidDoneOverlay() {
       </Animated.View>
     </Animated.View>
   );
-}
-
-export default function GlobalKeyboardDoneButton() {
-  return Platform.OS === 'ios' ? <IosDoneAccessory /> : <AndroidDoneOverlay />;
 }
 
 const styles = StyleSheet.create({
@@ -201,13 +199,7 @@ const styles = StyleSheet.create({
     right: 20,
     paddingVertical: 8,
   },
-  accessoryRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  doneBtn: {
+  pill: {
     minWidth: 100,
     height: 40,
     borderRadius: 12,
@@ -216,7 +208,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 14,
   },
-  doneLabel: {
+  label: {
     fontFamily: 'Rubik-Medium',
     fontSize: 14,
     lineHeight: 18,

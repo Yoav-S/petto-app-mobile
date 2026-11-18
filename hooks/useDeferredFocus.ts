@@ -7,20 +7,22 @@ type TransitionEvent = {
 };
 
 /** iOS: frames to wait for keyboardWillShow before treating a focus as dropped. */
-const IOS_CONFIRM_FRAMES = 6;
-const IOS_MAX_ATTEMPTS = 4;
+const IOS_CONFIRM_FRAMES = 3;
+const IOS_MAX_ATTEMPTS = 6;
 /** Hard stop (~1s) in case the input never mounts. */
 const IOS_MAX_FRAMES = 60;
 
 /**
- * Focus a create-flow TextInput on the first frame of the push. Create
- * screens slide up from the bottom, so the keyboard rises with the screen.
+ * Focus a create-flow TextInput as soon as the screen mounts. KeyboardRiseIn
+ * then moves the screen with the keyboard, so the earlier the better.
  *
  * An early focus can be dropped natively while the screen is still being
  * attached, yet RN then believes the input is focused and ignores further
  * focus() calls — the keyboard only appeared later, or not at all. So:
- * - iOS: confirm via keyboardWillShow; if it never comes, blur + refocus.
- * - Android: retry once on transitionEnd if the input lost focus.
+ * - iOS: focus on mount, confirm via keyboardWillShow; if it never comes,
+ *   blur + refocus a few frames later.
+ * - Android: focus on the first frame; retry once on transitionEnd if the
+ *   input lost focus.
  *
  * Runs once per mount (arriving from outside), not when returning to the
  * screen. Do not use TextInput `autoFocus` with a push.
@@ -59,7 +61,7 @@ export function useDeferredFocus(enabled: boolean) {
         }
         raf = requestAnimationFrame(tick);
       };
-      raf = requestAnimationFrame(tick);
+      tick();
 
       return () => {
         cancelled = true;
