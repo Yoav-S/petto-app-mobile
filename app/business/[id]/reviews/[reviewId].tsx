@@ -93,6 +93,8 @@ export default function BusinessReviewScreen() {
             multiline
             textAlignVertical="top"
             maxLength={1000}
+            returnKeyType="done"
+            submitBehavior="blurAndSubmit"
           />
         </View>
       </HealthFormScreen>

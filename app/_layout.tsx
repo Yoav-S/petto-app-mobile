@@ -27,7 +27,6 @@ import AppSplash from '@/components/ui/AppSplash';
 import { SPLASH_DARK, SPLASH_LIGHT } from '@/constants/splash';
 import { SystemBarsProvider } from '@/context/SystemBarsContext';
 import { useCompactPortraitLock } from '@/hooks/useCompactPortraitLock';
-import KeyboardCheckButton from '@/components/ui/KeyboardCheckButton';
 import { CREATE_SCREEN_OPTIONS, SIDE_ANIMATION } from '@/constants/screenAnimations';
 
 export const unstable_settings = {
@@ -250,7 +249,6 @@ function AppTree({
                 }}
               >
                 <RootLayoutNav onBootReady={onBootReady} />
-                <KeyboardCheckButton />
                 {!bootReady ? (
                   <AppSplash palette={splashPalette} onReady={hideNativeSplashOnce} />
                 ) : null}

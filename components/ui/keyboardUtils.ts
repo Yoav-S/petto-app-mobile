@@ -6,8 +6,8 @@ import {
   type KeyboardEvent,
 } from 'react-native';
 
-/** Check button band above the keyboard — used for scroll clearance. */
-export const KEYBOARD_DONE_BAR_HEIGHT = 56;
+/** Gap kept between a focused field and the top of the keyboard. */
+export const KEYBOARD_DONE_BAR_HEIGHT = 16;
 
 export function dismissKeyboard(): void {
   Keyboard.dismiss();

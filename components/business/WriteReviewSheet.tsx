@@ -178,6 +178,8 @@ export default function WriteReviewSheet({
               multiline
               textAlignVertical="top"
               maxLength={1000}
+              returnKeyType="done"
+              submitBehavior="blurAndSubmit"
               onFocus={() => scrollRef.current?.scrollToEnd({ animated: true })}
             />
           </View>
