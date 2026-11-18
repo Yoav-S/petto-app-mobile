@@ -13,16 +13,24 @@ const IOS_MAX_ATTEMPTS = 6;
 const IOS_MAX_FRAMES = 60;
 
 /**
- * Focus a create-flow TextInput as soon as the screen mounts. KeyboardRiseIn
- * then moves the screen with the keyboard, so the earlier the better.
+ * Android: slide_from_bottom runs 500ms (plugins/withCreateScreenAnimDuration)
+ * while the IME rises faster. Starting the IME this much later makes both
+ * land together.
+ */
+const ANDROID_FOCUS_DELAY_MS = 250;
+
+/**
+ * Focus a create-flow TextInput as the screen slides up, so the keyboard
+ * arrives with it.
  *
  * An early focus can be dropped natively while the screen is still being
  * attached, yet RN then believes the input is focused and ignores further
  * focus() calls — the keyboard only appeared later, or not at all. So:
- * - iOS: focus on mount, confirm via keyboardWillShow; if it never comes,
+ * - iOS: focus on mount — while the modal presents, so UIKit animates the
+ *   keyboard with it — and confirm via keyboardWillShow; if it never comes,
  *   blur + refocus a few frames later.
- * - Android: focus on the first frame; retry once on transitionEnd if the
- *   input lost focus.
+ * - Android: focus ANDROID_FOCUS_DELAY_MS after transitionStart; retry once on
+ *   transitionEnd if the input lost focus.
  *
  * Runs once per mount (arriving from outside), not when returning to the
  * screen. Do not use TextInput `autoFocus` with a push.
@@ -70,13 +78,29 @@ export function useDeferredFocus(enabled: boolean) {
       };
     }
 
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const focusInput = () => {
       if (cancelled) return;
       const input = ref.current;
       if (!input || input.isFocused()) return;
       input.focus();
     };
-    raf = requestAnimationFrame(focusInput);
+    const scheduleFocus = (delay: number) => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(focusInput, delay);
+    };
+
+    // Fallback if transitionStart already fired before this effect subscribed.
+    scheduleFocus(ANDROID_FOCUS_DELAY_MS + 16);
+    let started = false;
+    const unsubStart = navigation.addListener(
+      'transitionStart' as never,
+      ((e: TransitionEvent) => {
+        if (e.data?.closing || started) return;
+        started = true;
+        scheduleFocus(ANDROID_FOCUS_DELAY_MS);
+      }) as never,
+    );
     const unsubEnd = navigation.addListener(
       'transitionEnd' as never,
       ((e: TransitionEvent) => {
@@ -87,7 +111,9 @@ export function useDeferredFocus(enabled: boolean) {
 
     return () => {
       cancelled = true;
+      if (timer) clearTimeout(timer);
       cancelAnimationFrame(raf);
+      unsubStart();
       unsubEnd();
     };
     // Once per mount: arriving from outside, not on every refocus.

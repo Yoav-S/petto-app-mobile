@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
-import KeyboardRiseIn from '@/components/ui/KeyboardRiseIn';
+import CreateScreenShell from '@/components/ui/CreateScreenShell';
 import HeaderIconButton, { HEADER_ICON_BTN } from '@/components/ui/HeaderIconButton';
 import HeaderTitle from '@/components/ui/HeaderTitle';
 import { useRouter } from 'expo-router';
@@ -203,7 +203,7 @@ export default function AddPetScreen() {
 
   return (
     <>
-      <KeyboardRiseIn>
+      <CreateScreenShell>
       <HeaderScrollLayout
         header={<AddPetHeader />}
         edges={['left', 'right']}
@@ -373,7 +373,7 @@ export default function AddPetScreen() {
           </HealthFormScreen>
         )}
       </HeaderScrollLayout>
-      </KeyboardRiseIn>
+      </CreateScreenShell>
 
       <BirthDatePickerSheet
         visible={birthSheetVisible}

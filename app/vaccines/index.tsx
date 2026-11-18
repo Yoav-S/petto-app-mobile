@@ -10,7 +10,7 @@ import {
 
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusRefresh } from '@/hooks/useFocusRefresh';
 import { type ThemeColors } from '@/constants/theme';
 import { FOOTER_FADE_BAND, LIST_CARD_LAST_SHADOW } from '@/constants/layout';
 import ScrollFadeBand from '@/components/ui/ScrollFadeBand';
@@ -84,6 +84,7 @@ export default function VaccinesScreen() {
     error,
     loadMore,
     refresh,
+    refreshIfStale,
     setItems,
   } = useCursorPagination<Vaccination>({
     fetchPage,
@@ -96,11 +97,7 @@ export default function VaccinesScreen() {
   const [swipeOpenId, setSwipeOpenId] = useState<string | null>(null);
   const toast = useToast();
 
-  useFocusEffect(
-    useCallback(() => {
-      void refresh();
-    }, [refresh]),
-  );
+  useFocusRefresh(refreshIfStale);
 
   const onRefresh = useCallback(async () => {
     if (loadingMore) return;

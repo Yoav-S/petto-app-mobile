@@ -3,6 +3,7 @@ import { useIsRestoring } from '@tanstack/react-query';
 import { LIST_PAGE_SIZE } from '@/constants/pagination';
 import { getErrorMessage } from '@/services/errors';
 import { queryClient } from '@/services/queryClient';
+import { CACHE_CONFIG } from '@/constants/cache';
 
 export interface CursorPageParams {
   limit: number;
@@ -88,8 +89,16 @@ export function useCursorPagination<T extends { id: string }>({
       }
 
       const next = append ? [...prev, ...extra] : extra;
-      itemsRef.current = next;
-      setItemsState(next);
+      // A background refresh that returns the same first page must not
+      // re-render a long list (it janks any transition running on top).
+      const unchanged =
+        !append &&
+        itemsRef.current.length === next.length &&
+        JSON.stringify(itemsRef.current) === JSON.stringify(next);
+      if (!unchanged) {
+        itemsRef.current = next;
+        setItemsState(next);
+      }
       cursorRef.current = next.length > 0 ? next[next.length - 1].id : null;
       setHasMore(page.length === pageSize);
       if (!append) writeCache(page);
@@ -153,6 +162,17 @@ export function useCursorPagination<T extends { id: string }>({
       setLoaded(true);
     }
   }, [applyPage, enabled, pageSize, readCache]);
+
+  /** Refresh only when the cached first page was invalidated by a write or is older than staleTime. */
+  const refreshIfStale = useCallback(() => {
+    const key = cacheKeyRef.current;
+    const state = key ? queryClient.getQueryState(key) : undefined;
+    const stale =
+      !state ||
+      state.isInvalidated ||
+      Date.now() - state.dataUpdatedAt > CACHE_CONFIG.staleTimeMs;
+    if (stale) void loadInitial();
+  }, [loadInitial]);
 
   const loadMore = useCallback(async () => {
     if (
@@ -231,6 +251,7 @@ export function useCursorPagination<T extends { id: string }>({
     error,
     loadMore,
     refresh: loadInitial,
+    refreshIfStale,
     setItems,
   };
 }

@@ -7,7 +7,7 @@ import {
   Keyboard,
 } from 'react-native';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
-import KeyboardRiseIn from '@/components/ui/KeyboardRiseIn';
+import CreateScreenShell from '@/components/ui/CreateScreenShell';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
 import { type ThemeColors } from '@/constants/theme';
@@ -134,7 +134,7 @@ export default function AddNoteScreen() {
 
   if (!recordId) {
     return (
-      <KeyboardRiseIn enabled={false}>
+      <CreateScreenShell>
         <HeaderScrollLayout header={header} edges={['left', 'right']}>
           {({ paddingTop }) => (
             <View style={[styles.centered, { paddingTop }]}>
@@ -142,13 +142,13 @@ export default function AddNoteScreen() {
             </View>
           )}
         </HeaderScrollLayout>
-      </KeyboardRiseIn>
+      </CreateScreenShell>
     );
   }
 
   return (
     <>
-    <KeyboardRiseIn>
+    <CreateScreenShell>
     <HeaderScrollLayout
       header={header}
       edges={['left', 'right']}
@@ -234,7 +234,7 @@ export default function AddNoteScreen() {
         </>
       )}
     </HeaderScrollLayout>
-    </KeyboardRiseIn>
+    </CreateScreenShell>
     <DiscardChangesModal
       visible={discardVisible}
       onDiscard={onDiscard}

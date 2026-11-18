@@ -126,6 +126,7 @@
       "./plugins/withAndroidAdaptiveOrientation.js",
       "./plugins/withAppLocales.js",
       "./plugins/withTransparentNavBar.js",
+      "./plugins/withCreateScreenAnimDuration.js",
       "@react-native-community/datetimepicker"
     ],
     "experiments": {

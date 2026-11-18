@@ -6,7 +6,7 @@ import {
   Keyboard,
 } from 'react-native';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
-import KeyboardRiseIn from '@/components/ui/KeyboardRiseIn';
+import CreateScreenShell from '@/components/ui/CreateScreenShell';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { type ThemeColors } from '@/constants/theme';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
@@ -160,7 +160,7 @@ export default function AddHealthScreen() {
 
   return (
     <>
-    <KeyboardRiseIn enabled={!isEditing}>
+    <CreateScreenShell>
     <HeaderScrollLayout
       header={header}
       edges={['left', 'right']}
@@ -198,7 +198,7 @@ export default function AddHealthScreen() {
         </HealthFormScreen>
       )}
     </HeaderScrollLayout>
-    </KeyboardRiseIn>
+    </CreateScreenShell>
     <DiscardChangesModal
       visible={discardVisible}
       onDiscard={onDiscard}

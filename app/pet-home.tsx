@@ -3,6 +3,7 @@ import { View, StyleSheet, Text, TouchableOpacity, Platform } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { useFocusRefresh } from '@/hooks/useFocusRefresh';
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import type { BlurViewProps } from 'expo-blur';
 import { useActivePet } from '@/store/petStore';
@@ -260,11 +261,24 @@ export default function HomeScreen() {
     useCallback(() => {
       setSwitchVisible(false);
       setFabOpen(false);
-      if (authLoading || !user) return;
-      // Background refresh — cache paints instantly.
-      refetchHome();
-    }, [authLoading, user, refetchHome]),
+    }, []),
   );
+
+  // Writes invalidate these queries (and React Query refetches them), so on
+  // return only refresh what is actually stale — cache paints instantly.
+  useFocusRefresh(() => {
+    if (authLoading || !user) return;
+    for (const query of [
+      vaccinesQuery,
+      todayQuery,
+      upcomingQuery,
+      recentQuery,
+      recordsQuery,
+      resolvedRecordsQuery,
+    ]) {
+      if (query.isStale && !query.isFetching) void query.refetch();
+    }
+  });
 
   const handleSelectPet = async (petId: string) => {
     const nextPet = pets.find((p) => p.id === petId);

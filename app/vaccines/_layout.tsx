@@ -12,7 +12,16 @@ export default function VaccinesLayout() {
         animation: SIDE_ANIMATION,
       }}
     >
-      <Stack.Screen name="add" options={CREATE_SCREEN_OPTIONS} />
+      <Stack.Screen
+        name="add"
+        options={({ route, navigation }) =>
+          // Opened from outside, the whole vaccines stack is already presented
+          // as the create modal by the root layout.
+          navigation.getState().routes[0]?.key === route.key
+            ? { animation: SIDE_ANIMATION }
+            : CREATE_SCREEN_OPTIONS
+        }
+      />
     </Stack>
   );
 }

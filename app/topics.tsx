@@ -9,7 +9,7 @@ import {
 
 import SpeedDialFab from '@/components/ui/SpeedDialFab';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusRefresh } from '@/hooks/useFocusRefresh';
 import { type ThemeColors } from '@/constants/theme';
 import ListScrollLayout from '@/components/ui/ListScrollLayout';
 import { LIST_CONTENT_TOP_NUDGE, LIST_TABS_LIST_GAP, PAGE_HORIZONTAL_PADDING, LIST_HEADER_TABS_GAP } from '@/constants/layout';
@@ -127,11 +127,10 @@ export default function HealthScreen() {
     await Promise.all([activePagination.refresh(), resolvedPagination.refresh()]);
   }, [activePagination.refresh, resolvedPagination.refresh]);
 
-  useFocusEffect(
-    useCallback(() => {
-      void refetchAll();
-    }, [refetchAll]),
-  );
+  useFocusRefresh(() => {
+    activePagination.refreshIfStale();
+    resolvedPagination.refreshIfStale();
+  });
 
   const onRefresh = useCallback(async () => {
     if (loadingMore) return;

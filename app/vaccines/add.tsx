@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useDeferredFocus } from '@/hooks/useDeferredFocus';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
-import KeyboardRiseIn from '@/components/ui/KeyboardRiseIn';
+import CreateScreenShell from '@/components/ui/CreateScreenShell';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { pickImageFromCamera, pickImageFromLibrary } from '@/services/imagePicker';
@@ -198,7 +198,7 @@ export default function AddVaccineScreen() {
 
   return (
     <>
-      <KeyboardRiseIn>
+      <CreateScreenShell>
       <HeaderScrollLayout
         header={<VaccineScreenHeader title={t('vaccines.add_title')} icon="close" />}
         edges={['left', 'right']}
@@ -345,7 +345,7 @@ export default function AddVaccineScreen() {
           </HealthFormScreen>
         )}
       </HeaderScrollLayout>
-      </KeyboardRiseIn>
+      </CreateScreenShell>
 
       <EditPhotoSheet
         visible={photoSheetVisible}
