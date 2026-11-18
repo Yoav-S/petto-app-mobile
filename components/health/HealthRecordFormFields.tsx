@@ -192,7 +192,7 @@ export default function HealthRecordFormFields({
   onDescriptionFocus,
   onDescriptionBlur,
   layout,
-  autoFocusName = true,
+  autoFocusName = false,
 }: HealthRecordFormFieldsProps) {
   const styles = useThemedStyles(makeStyles);
   const cardBase = {

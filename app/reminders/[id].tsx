@@ -509,7 +509,6 @@ export default function EditReminderScreen() {
                       },
                     }
               }
-              autoFocus={!readOnly}
               layout={layout}
               title={title}
               onTitleChange={handleTitleChange}

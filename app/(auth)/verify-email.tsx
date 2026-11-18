@@ -204,7 +204,6 @@ export default function VerifyEmailScreen() {
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 caretHidden
-                autoFocus
                 importantForAutofill="yes"
               />
             </Pressable>

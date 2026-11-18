@@ -23,11 +23,11 @@ import { onboardingHref, replaceWithWelcome } from '@/utils/onboardingRoute';
 import { UpgradeLimitProvider } from '@/context/UpgradeLimitContext';
 import { ReminderPromptProvider } from '@/context/ReminderPromptContext';
 import { useReminderNotificationRouting } from '@/hooks/useReminderNotificationRouting';
-import GlobalKeyboardDoneButton from '@/components/ui/GlobalKeyboardDoneButton';
 import AppSplash from '@/components/ui/AppSplash';
 import { SPLASH_DARK, SPLASH_LIGHT } from '@/constants/splash';
 import { SystemBarsProvider } from '@/context/SystemBarsContext';
 import { useCompactPortraitLock } from '@/hooks/useCompactPortraitLock';
+import KeyboardCheckButton from '@/components/ui/KeyboardCheckButton';
 import { CREATE_SCREEN_OPTIONS, SIDE_ANIMATION } from '@/constants/screenAnimations';
 
 export const unstable_settings = {
@@ -250,7 +250,7 @@ function AppTree({
                 }}
               >
                 <RootLayoutNav onBootReady={onBootReady} />
-                <GlobalKeyboardDoneButton />
+                <KeyboardCheckButton />
                 {!bootReady ? (
                   <AppSplash palette={splashPalette} onReady={hideNativeSplashOnce} />
                 ) : null}

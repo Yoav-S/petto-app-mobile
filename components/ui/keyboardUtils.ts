@@ -6,7 +6,7 @@ import {
   type KeyboardEvent,
 } from 'react-native';
 
-/** Done / Save bar height above the keyboard — used for scroll clearance. */
+/** Check button band above the keyboard — used for scroll clearance. */
 export const KEYBOARD_DONE_BAR_HEIGHT = 56;
 
 export function dismissKeyboard(): void {

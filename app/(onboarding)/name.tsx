@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,6 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import OnboardingProgressDots from '@/components/onboarding/OnboardingProgressDots';
 import OnboardingBackButton from '@/components/onboarding/OnboardingBackButton';
@@ -60,13 +59,6 @@ export default function PetNameOnboardingScreen() {
     seededName.current = true;
     setLocalName(draft.name);
   }, [draft.name]);
-
-  useFocusEffect(
-    useCallback(() => {
-      const timer = setTimeout(() => inputRef.current?.focus(), 50);
-      return () => clearTimeout(timer);
-    }, []),
-  );
 
   const handleNameChange = (text: string) => {
     const lettersOnly = text.replace(/[^\p{L}]/gu, '');
@@ -196,7 +188,6 @@ export default function PetNameOnboardingScreen() {
                 onChangeText={handleNameChange}
                 placeholder={t('petOnboarding.name_placeholder')}
                 placeholderTextColor={colors.secondaryText}
-                autoFocus
                 autoCapitalize="words"
                 autoCorrect={false}
                 keyboardType="default"

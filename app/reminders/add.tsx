@@ -240,8 +240,8 @@ export default function AddReminderScreen() {
         onTimeConfirm={handleTimeConfirm}
         onRepeatSelect={setRepeat}
         onAlertConfirm={setAlert}
-        autoFocus
-        keyboardSave={{
+        saveFooter={{
+          label: t('common.save'),
           disabled: !canSave,
           loading: submitting,
           onPress: handleSave,

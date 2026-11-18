@@ -8,7 +8,6 @@ import {
   Alert,
   Keyboard,
 } from 'react-native';
-import { useDeferredFocus } from '@/hooks/useDeferredFocus';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import CreateScreenShell from '@/components/ui/CreateScreenShell';
 import { Image } from 'expo-image';
@@ -100,7 +99,7 @@ export default function AddVaccineScreen() {
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const nameInputRef = useDeferredFocus(true);
+  const nameInputRef = useRef<TextInput>(null);
 
   const openDateSheet = (target: DateSheet) => {
     setPhotoSheetVisible(false);
@@ -214,7 +213,8 @@ export default function AddVaccineScreen() {
               gap: layout.formGap,
               alignItems: 'center',
             }}
-            keyboardSave={{
+            footer={{
+              label: t('common.save'),
               disabled: !canSave,
               loading: submitting,
               onPress: handleSave,

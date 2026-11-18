@@ -172,7 +172,8 @@ export default function AddHealthScreen() {
         <HealthFormScreen
           scrollInsetTop={paddingTop}
           contentContainerStyle={{ paddingTop: layout.formTop }}
-          keyboardSave={{
+          footer={{
+            label: t('common.save'),
             disabled: !canSave,
             loading: submitting,
             onPress: handleSave,
@@ -193,7 +194,7 @@ export default function AddHealthScreen() {
             onDescriptionFocus={() => setDescriptionFocused(true)}
             onDescriptionBlur={() => setDescriptionFocused(false)}
             layout={layout}
-            autoFocusName={!isEditing}
+            autoFocusName={false}
           />
         </HealthFormScreen>
       )}

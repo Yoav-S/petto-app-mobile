@@ -442,7 +442,6 @@ export default function EditNoteScreen() {
                 setReminderSheetVisible(true);
               }}
               placeholder={t('topics.note_body_placeholder')}
-              autoFocus={open === 'focus'}
             />
           </HealthFormScreen>
 

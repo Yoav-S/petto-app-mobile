@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -28,7 +28,6 @@ import { OnboardingPhotoAdd } from '@/components/brand/onboarding';
 import { HealthFormScreen } from '@/components/health/HealthKeyboardFooter';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { t } from '@/i18n';
-import { useDeferredFocus } from '@/hooks/useDeferredFocus';
 import { createPet } from '@/services/pets';
 import { playPetSound, warmupPetSounds } from '@/services/petSound';
 import { uploadPetPhoto } from '@/services/storage';
@@ -115,7 +114,7 @@ export default function AddPetScreen() {
   const [birthSheetVisible, setBirthSheetVisible] = useState(false);
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const nameInputRef = useDeferredFocus(true);
+  const nameInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     warmupPetSounds();
@@ -223,7 +222,8 @@ export default function AddPetScreen() {
             gap: layout.formGap,
             alignItems: 'center',
           }}
-          keyboardSave={{
+          footer={{
+            label: t('common.save'),
             disabled: !canSave,
             loading: submitting,
             onPress: () => void handleSave(),

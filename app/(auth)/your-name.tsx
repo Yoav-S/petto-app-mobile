@@ -92,7 +92,6 @@ export default function YourNameScreen() {
               autoCorrect={false}
               autoComplete="name"
               textContentType="name"
-              autoFocus
               returnKeyType="done"
               onSubmitEditing={() => {
                 void handleContinue();

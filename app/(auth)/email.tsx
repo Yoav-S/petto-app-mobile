@@ -108,7 +108,6 @@ export default function EmailAuthScreen() {
                 autoCorrect={false}
                 autoComplete="email"
                 textContentType="emailAddress"
-                autoFocus
                 returnKeyType="done"
                 onSubmitEditing={handleContinue}
               />
