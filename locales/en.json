@@ -1,4 +1,10 @@
 {
+  "analyticsConsent": {
+    "title": "Help us improve Ragly",
+    "message": "Can we collect app usage statistics with Google Firebase Analytics to improve the app? We never use them for ads. You can change this anytime in Settings.",
+    "allow": "Allow",
+    "decline": "Don't allow"
+  },
   "home": {
     "switch": "Switch",
     "switch_title": "Switch pet",
@@ -231,6 +237,7 @@
     "help": "Help",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
+    "analytics": "Usage analytics",
     "language_en": "English",
     "language_ro": "Română",
     "language_ru": "Русский",
@@ -584,7 +591,7 @@
     "title": "Always by your side",
     "subtitle": "Everything about your pet,\nbeautifully organized in one place.",
     "continue": "Continue",
-    "legal_prefix": "By continuing, you agree to our",
+    "legal_prefix": "By continuing, you confirm you are 18 or older and agree to our",
     "legal_and": "and",
     "terms": "Terms",
     "privacy": "Privacy Policy",

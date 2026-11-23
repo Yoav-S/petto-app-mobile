@@ -1,4 +1,10 @@
 {
+  "analyticsConsent": {
+    "title": "עזרו לנו לשפר את Ragly",
+    "message": "האם נוכל לאסוף נתוני שימוש באפליקציה באמצעות Google Firebase Analytics כדי לשפר אותה? לעולם לא נשתמש בהם לפרסום. אפשר לשנות זאת בכל עת בהגדרות.",
+    "allow": "אישור",
+    "decline": "לא עכשיו"
+  },
   "home": {
     "switch": "החלף",
     "switch_title": "החלף חיה",
@@ -229,6 +235,7 @@
     "help": "עזרה",
     "privacy": "מדיניות פרטיות",
     "terms": "תנאי שימוש",
+    "analytics": "נתוני שימוש",
     "language_en": "English",
     "language_ro": "Română",
     "language_ru": "Русский",
@@ -513,7 +520,7 @@
     "title": "תמיד לצידך",
     "subtitle": "הכל על חיית המחמד שלך,\nמאורגן יפה במקום אחד.",
     "continue": "המשך",
-    "legal_prefix": "בהמשך אתה מסכים ל",
+    "legal_prefix": "בהמשך אתה מאשר שמלאו לך 18 ומסכים ל",
     "legal_and": "ו",
     "terms": "תנאי השימוש",
     "privacy": "מדיניות הפרטיות",

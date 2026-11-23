@@ -15,6 +15,7 @@ import Purchases, {
   type PurchasesPackage,
 } from 'react-native-purchases';
 import { t } from '@/i18n';
+import { hasAnalyticsConsent } from '@/services/analyticsConsent';
 
 export const PREMIUM_ENTITLEMENT = 'petto_premium';
 export const PREMIUM_PRODUCT_ID = 'sub_premium';
@@ -159,7 +160,7 @@ export async function loginPurchases(firebaseUid: string): Promise<void> {
     await Purchases.logIn(firebaseUid);
     console.log(`${LOG} logged in appUserId=${firebaseUid}`);
     // GA attribute sync races on Test Store and can red-box; only needed in release.
-    if (!__DEV__) {
+    if (!__DEV__ && hasAnalyticsConsent()) {
       await syncFirebaseAnalyticsInstanceId();
     }
     await logSubscriptionReadiness(firebaseUid);

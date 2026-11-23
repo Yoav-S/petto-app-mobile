@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { type ThemeColors } from '@/constants/theme';
@@ -10,6 +10,7 @@ import SettingsHeader from '@/components/settings/SettingsHeader';
 import { HeaderScrollScreen } from '@/components/ui/HeaderScrollLayout';
 import { SignOutModal } from '@/components/ui/ConfirmModal';
 import ListRowPressable from '@/components/ui/ListRowPressable';
+import { setAnalyticsConsent, useAnalyticsConsent } from '@/services/analyticsConsent';
 
 interface SettingsRow {
   key: string;
@@ -34,6 +35,10 @@ export default function SettingsScreen() {
   const styles = useThemedStyles(makeStyles);
   const [signOutVisible, setSignOutVisible] = useState(false);
   const languageLabel = t(`settings.language_${locale}`);
+  const analyticsOn = useAnalyticsConsent() === 'granted';
+  const toggleAnalytics = () => {
+    void setAnalyticsConsent(analyticsOn ? 'denied' : 'granted');
+  };
 
   return (
     <>
@@ -62,6 +67,23 @@ export default function SettingsScreen() {
             </View>
           </ListRowPressable>
         ))}
+        <ListRowPressable
+          style={styles.row}
+          onPress={toggleAnalytics}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: analyticsOn }}
+        >
+          <Text style={styles.rowLabel} numberOfLines={1}>
+            {t('settings.analytics')}
+          </Text>
+          <Switch
+            value={analyticsOn}
+            onValueChange={toggleAnalytics}
+            trackColor={{ false: colors.border, true: colors.brand }}
+            thumbColor="#FFFFFF"
+            ios_backgroundColor={colors.border}
+          />
+        </ListRowPressable>
       </View>
 
       <ListRowPressable

@@ -27,6 +27,7 @@ import AppSplash from '@/components/ui/AppSplash';
 import { SPLASH_DARK, SPLASH_LIGHT } from '@/constants/splash';
 import { SystemBarsProvider } from '@/context/SystemBarsContext';
 import { useCompactPortraitLock } from '@/hooks/useCompactPortraitLock';
+import AnalyticsConsentPrompt from '@/components/AnalyticsConsentPrompt';
 import { CREATE_SCREEN_OPTIONS, SIDE_ANIMATION } from '@/constants/screenAnimations';
 
 export const unstable_settings = {
@@ -249,6 +250,7 @@ function AppTree({
                 }}
               >
                 <RootLayoutNav onBootReady={onBootReady} />
+                <AnalyticsConsentPrompt ready={bootReady} />
                 {!bootReady ? (
                   <AppSplash palette={splashPalette} onReady={hideNativeSplashOnce} />
                 ) : null}

@@ -25,7 +25,7 @@ import {
   privacyPolicyBlocks,
   termsOfServiceBlocks,
 } from '@/constants/legalContent';
-import type { LegalBlock } from '@/components/settings/LegalScreen';
+import { LegalBlocks } from '@/components/settings/LegalScreen';
 import ListScrollLayout from '@/components/ui/ListScrollLayout';
 
 type Tab = 'terms' | 'privacy';
@@ -47,32 +47,6 @@ function formatUpdated(iso: string): string {
   } catch {
     return iso;
   }
-}
-
-function Blocks({ blocks, styles }: { blocks: LegalBlock[]; styles: ReturnType<typeof makeStyles> }) {
-  return (
-    <>
-      {blocks.map((block, index) => {
-        if (block.type === 'heading') {
-          return (
-            <Text key={index} style={styles.heading}>
-              {block.text}
-            </Text>
-          );
-        }
-        const lines = block.text.split('\n');
-        return (
-          <View key={index} style={{ gap: block.gap ?? 3, marginBottom: 12 }}>
-            {lines.map((line, lineIndex) => (
-              <Text key={lineIndex} style={styles.paragraph}>
-                {line}
-              </Text>
-            ))}
-          </View>
-        );
-      })}
-    </>
-  );
 }
 
 export default function TermsScreen() {
@@ -161,7 +135,7 @@ export default function TermsScreen() {
           <Text style={styles.updated}>
             {t('settings.last_updated')}: {formatUpdated(LEGAL_LAST_UPDATED_ISO)}
           </Text>
-          <Blocks blocks={blocks} styles={styles} />
+          <LegalBlocks blocks={blocks} />
         </ScrollView>
       )}
     </ListScrollLayout>
@@ -231,19 +205,5 @@ const makeStyles = (c: ThemeColors) =>
       lineHeight: 20,
       color: c.secondaryText,
       marginBottom: 8,
-    },
-    heading: {
-      fontFamily: 'Rubik-Medium',
-      fontSize: 16,
-      lineHeight: 20,
-      color: c.primaryText,
-      marginTop: 8,
-      marginBottom: 4,
-    },
-    paragraph: {
-      fontFamily: 'Rubik-Regular',
-      fontSize: 14,
-      lineHeight: 22,
-      color: c.primaryText,
     },
   });

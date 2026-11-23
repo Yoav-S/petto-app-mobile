@@ -1,4 +1,10 @@
 {
+  "analyticsConsent": {
+    "title": "Ajută-ne să îmbunătățim Ragly",
+    "message": "Putem colecta statistici de utilizare a aplicației cu Google Firebase Analytics, ca să o îmbunătățim? Nu le folosim niciodată pentru reclame. Poți schimba oricând această opțiune din Setări.",
+    "allow": "Permite",
+    "decline": "Nu permite"
+  },
   "home": {
     "switch": "Schimbă",
     "switch_title": "Schimbă animalul",
@@ -231,6 +237,7 @@
     "help": "Ajutor",
     "privacy": "Politica de confidențialitate",
     "terms": "Termeni și condiții",
+    "analytics": "Statistici de utilizare",
     "language_en": "Engleză",
     "language_ro": "Română",
     "language_ru": "Русский",
@@ -515,7 +522,7 @@
     "title": "Mereu alături de tine",
     "subtitle": "Totul despre animalul tău de companie,\nfrumos organizat într-un singur loc.",
     "continue": "Continuă",
-    "legal_prefix": "Continuând, accepți",
+    "legal_prefix": "Continuând, confirmi că ai cel puțin 18 ani și accepți",
     "legal_and": "și",
     "terms": "Termenii și condițiile",
     "privacy": "Politica de confidențialitate",

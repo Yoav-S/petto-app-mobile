@@ -7,10 +7,41 @@ import SettingsHeader from '@/components/settings/SettingsHeader';
 import ListScrollLayout from '@/components/ui/ListScrollLayout';
 import { DOCUMENT_CONTENT_TOP_NUDGE, PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 
-export type LegalBlock =
-  | { type: 'intro'; text: string; gap?: number }
-  | { type: 'heading'; text: string }
-  | { type: 'body'; text: string; gap?: number };
+export type LegalBlock = {
+  type: 'heading' | 'subheading' | 'body' | 'bullet';
+  text: string;
+};
+
+/** Document body shared by the settings screens and the welcome terms screen. */
+export function LegalBlocks({ blocks }: { blocks: LegalBlock[] }) {
+  const styles = useThemedStyles(makeBlockStyles);
+  return (
+    <View>
+      {blocks.map((block, index) => {
+        const afterList = index > 0 && blocks[index - 1].type === 'bullet' && block.type !== 'bullet';
+        if (block.type === 'heading') {
+          return <Text key={index} style={styles.heading}>{block.text}</Text>;
+        }
+        if (block.type === 'subheading') {
+          return <Text key={index} style={styles.subheading}>{block.text}</Text>;
+        }
+        if (block.type === 'bullet') {
+          return (
+            <View key={index} style={styles.bulletRow}>
+              <Text style={styles.bulletDot}>{'\u2022'}</Text>
+              <Text style={[styles.paragraph, styles.bulletText]}>{block.text}</Text>
+            </View>
+          );
+        }
+        return (
+          <Text key={index} style={[styles.paragraph, styles.body, afterList && styles.afterList]}>
+            {block.text}
+          </Text>
+        );
+      })}
+    </View>
+  );
+}
 
 interface LegalScreenProps {
   title: string;
@@ -67,25 +98,7 @@ export default function LegalScreen({ title, lastUpdatedISO, blocks }: LegalScre
           <Text style={styles.updated}>
             {t('settings.last_updated')}: {formatUpdated(lastUpdatedISO)}
           </Text>
-          {blocks.map((block, index) => {
-            if (block.type === 'heading') {
-              return (
-                <Text key={index} style={styles.heading}>
-                  {block.text}
-                </Text>
-              );
-            }
-            const lines = block.text.split('\n');
-            return (
-              <View key={index} style={styles.block}>
-                {lines.map((line, lineIndex) => (
-                  <Text key={lineIndex} style={styles.paragraph}>
-                    {line}
-                  </Text>
-                ))}
-              </View>
-            );
-          })}
+          <LegalBlocks blocks={blocks} />
           </ScrollView>
         </View>
       )}
@@ -126,22 +139,53 @@ const makeStyles = (c: ThemeColors) =>
       color: c.secondaryText,
       marginBottom: 8,
     },
+  });
+
+const makeBlockStyles = (c: ThemeColors) =>
+  StyleSheet.create({
     heading: {
       fontFamily: 'Rubik-Medium',
       fontSize: 16,
+      lineHeight: 22,
+      color: c.primaryText,
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    subheading: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 14,
       lineHeight: 20,
       color: c.primaryText,
       marginTop: 8,
-      marginBottom: 4,
-    },
-    block: {
-      gap: 3,
-      marginBottom: 12,
+      marginBottom: 6,
     },
     paragraph: {
       fontFamily: 'Rubik-Regular',
       fontSize: 14,
       lineHeight: 22,
       color: c.primaryText,
+      textAlign: 'auto',
+    },
+    body: {
+      marginBottom: 10,
+    },
+    afterList: {
+      marginTop: 6,
+    },
+    bulletRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: 4,
+      paddingStart: 4,
+    },
+    bulletDot: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 14,
+      lineHeight: 22,
+      color: c.secondaryText,
+      width: 14,
+    },
+    bulletText: {
+      flex: 1,
     },
   });
