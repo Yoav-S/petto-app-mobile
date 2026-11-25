@@ -29,6 +29,7 @@ export default function SettingsLayout() {
       <Stack.Screen name="theme" />
       <Stack.Screen name="language" />
       <Stack.Screen name="subscription" />
+      <Stack.Screen name="blocked" />
       <Stack.Screen name="help" />
       <Stack.Screen name="privacy" />
       <Stack.Screen name="terms" />

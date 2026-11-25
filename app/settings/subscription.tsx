@@ -11,6 +11,7 @@ import {
   type AppStateStatus,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { router } from 'expo-router';
 import HeaderScrollLayout from '@/components/ui/HeaderScrollLayout';
 import { PAGE_HORIZONTAL_PADDING } from '@/constants/layout';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,6 +31,7 @@ import {
   getPremiumStoreSnapshot,
   openSubscriptionManagement,
   purchasePremium,
+  restorePremium,
   subscribeToPremiumStoreUpdates,
   syncPurchasesWithStore,
 } from '@/services/purchases';
@@ -193,6 +195,27 @@ export default function SubscriptionSettingsScreen() {
     }
   };
 
+  const handleRestore = async () => {
+    setBusy(true);
+    try {
+      const result = await restorePremium();
+      if (result.status === 'success') {
+        Alert.alert(
+          t('settings.subscription'),
+          result.premium ? t('settings.restore_success') : t('settings.restore_none'),
+        );
+        if (result.premium) setPlan('premium');
+        void refresh({ fresh: true });
+        return;
+      }
+      if (result.status === 'unavailable' || result.status === 'error') {
+        Alert.alert(t('common.error'), result.message);
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const expiresAtDate = subscription?.expires_at ? new Date(subscription.expires_at) : null;
   const expiryLabel =
     expiresAtDate && !Number.isNaN(expiresAtDate.getTime())
@@ -310,6 +333,40 @@ export default function SubscriptionSettingsScreen() {
                   )}
                 </View>
               ) : null}
+
+              <View style={styles.legalBlock}>
+                <Text style={styles.disclosure}>{t('settings.subscription_disclosure')}</Text>
+                <View style={styles.linkRow}>
+                  <Pressable
+                    onPress={() => {
+                      void handleRestore();
+                    }}
+                    disabled={busy}
+                    accessibilityRole="button"
+                    hitSlop={8}
+                  >
+                    <Text style={styles.link}>{t('settings.restore_purchases')}</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      void openSubscriptionSettings();
+                    }}
+                    disabled={busy}
+                    accessibilityRole="button"
+                    hitSlop={8}
+                  >
+                    <Text style={styles.link}>{t('settings.manage_subscription')}</Text>
+                  </Pressable>
+                </View>
+                <View style={styles.linkRow}>
+                  <Pressable onPress={() => router.push('/settings/terms')} accessibilityRole="link" hitSlop={8}>
+                    <Text style={styles.link}>{t('settings.terms')}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => router.push('/settings/privacy')} accessibilityRole="link" hitSlop={8}>
+                    <Text style={styles.link}>{t('settings.privacy')}</Text>
+                  </Pressable>
+                </View>
+              </View>
             </ScrollView>
           )
         }
@@ -500,6 +557,30 @@ const makeStyles = (c: ThemeColors) =>
       alignSelf: 'center',
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    legalBlock: {
+      gap: 12,
+      alignItems: 'center',
+    },
+    disclosure: {
+      fontFamily: 'Rubik-Regular',
+      fontSize: 12,
+      lineHeight: 16,
+      color: c.secondaryText,
+      textAlign: 'center',
+    },
+    linkRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      columnGap: 20,
+      rowGap: 8,
+    },
+    link: {
+      fontFamily: 'Rubik-Medium',
+      fontSize: 14,
+      lineHeight: 20,
+      color: c.brand,
     },
     keepPremiumText: {
       fontFamily: 'Rubik-Medium',

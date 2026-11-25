@@ -312,7 +312,27 @@ export function deletePlaceReview(id: string): Promise<void> {
   return apiDelete(`/businesses/${id}/reviews`);
 }
 
-export type ReviewReportReason = 'spam' | 'offensive' | 'fake' | 'irrelevant';
+export type ReviewReportReason =
+  | 'spam'
+  | 'offensive'
+  | 'fake'
+  | 'irrelevant'
+  | 'harassment'
+  | 'impersonation';
+
+export function blockReviewAuthor(businessId: string, reviewId: string): Promise<void> {
+  return apiPost<void>(`/businesses/${businessId}/reviews/${reviewId}/block-author`, {});
+}
+
+export type BlockedUser = { id: string; name: string; photo_url: string | null };
+
+export function listBlockedUsers(): Promise<BlockedUser[]> {
+  return apiGet<BlockedUser[]>('/users/me/blocks');
+}
+
+export function unblockUser(blockId: string): Promise<void> {
+  return apiDelete(`/users/me/blocks/${blockId}`);
+}
 
 export function reportPlaceReview(
   businessId: string,

@@ -1037,6 +1037,15 @@ export default function BusinessScreen() {
       <ReviewActionsSheet
         visible={menuReview !== null}
         isMine={menuReview?.is_mine === true}
+        businessId={params.id}
+        reviewId={menuReview?.id}
+        onBlocked={(blockedId) => {
+          setPlace((current) =>
+            current
+              ? { ...current, reviews: (current.reviews ?? []).filter((item) => item.id !== blockedId) }
+              : current,
+          );
+        }}
         onClose={() => setMenuReview(null)}
         onEdit={() => {
           if (!params.id || !menuReview) return;

@@ -10,29 +10,51 @@ import { Radius, Spacing, type ThemeColors } from '@/constants/theme';
 import { PRIMARY_BUTTON } from '@/constants/buttons';
 import { useColors, useThemedStyles } from '@/context/ThemeContext';
 import HeaderIconButton from '@/components/ui/HeaderIconButton';
+import ConfirmModal from '@/components/ui/ConfirmModal';
+import { useToast } from '@/context/ToastContext';
 import { t } from '@/i18n';
-import type { ReviewReportReason } from '@/services/places';
+import { getErrorMessage } from '@/services/errors';
+import { blockReviewAuthor, type ReviewReportReason } from '@/services/places';
 
-const REPORT_REASONS: { reason: ReviewReportReason; label: string }[] = [
+type ReasonItem = { reason: ReviewReportReason; label: string };
+
+const REVIEW_REASONS: ReasonItem[] = [
   { reason: 'spam', label: 'business.report_spam' },
   { reason: 'offensive', label: 'business.report_offensive' },
   { reason: 'fake', label: 'business.report_fake' },
   { reason: 'irrelevant', label: 'business.report_irrelevant' },
 ];
 
+const USER_REASONS: ReasonItem[] = [
+  { reason: 'harassment', label: 'business.report_harassment' },
+  { reason: 'impersonation', label: 'business.report_impersonation' },
+  { reason: 'offensive', label: 'business.report_offensive' },
+];
+
+type ReportMode = 'review' | 'user';
+
 interface ReviewActionsSheetProps {
   visible: boolean;
   isMine: boolean;
+  /** Needed to block the author; blocking is hidden without them. */
+  businessId?: string;
+  reviewId?: string;
   onClose: () => void;
   onEdit: () => void;
   onRemove: () => void;
   onReport: (reason: ReviewReportReason) => void;
+  /** The author's review is now hidden for this user. */
+  onBlocked?: (reviewId: string) => void;
 }
 
 function ReportReasonPanel({
+  title,
+  reasons,
   onCancel,
   onSelect,
 }: {
+  title: string;
+  reasons: ReasonItem[];
   onCancel: () => void;
   onSelect: (reason: ReviewReportReason) => void;
 }) {
@@ -46,13 +68,13 @@ function ReportReasonPanel({
       <View style={[styles.sheet, styles.reportSheet, { paddingBottom: insets.bottom + Spacing.lg }]}>
         <View style={styles.header}>
           <View style={styles.headerSpacer} />
-          <Text style={styles.title}>{t('business.report_review')}</Text>
+          <Text style={styles.title}>{title}</Text>
           <HeaderIconButton onPress={onCancel} accessibilityLabel={t('common.close')}>
             <Ionicons name="close" size={24} color={colors.primaryText} />
           </HeaderIconButton>
         </View>
         <View style={styles.menuContainer}>
-          {REPORT_REASONS.map((item, index) => (
+          {reasons.map((item, index) => (
             <React.Fragment key={item.reason}>
               {index > 0 ? <View style={styles.divider} /> : null}
               <TouchableOpacity
@@ -76,45 +98,68 @@ function ReportReasonPanel({
 export default function ReviewActionsSheet({
   visible,
   isMine,
+  businessId,
+  reviewId,
   onClose,
   onEdit,
   onRemove,
   onReport,
+  onBlocked,
 }: ReviewActionsSheetProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const [reportOpen, setReportOpen] = useState(false);
+  const toast = useToast();
+  const [reportMode, setReportMode] = useState<ReportMode | null>(null);
+  const [blockTarget, setBlockTarget] = useState<{ businessId: string; reviewId: string } | null>(
+    null,
+  );
   const onReportRef = useRef(onReport);
   onReportRef.current = onReport;
+  const canBlock = Boolean(businessId && reviewId && onBlocked);
 
   useEffect(() => {
-    if (!visible) setReportOpen(false);
+    if (!visible) setReportMode(null);
   }, [visible]);
 
   useEffect(() => {
-    if (!visible || !reportOpen) {
+    if (!visible || !reportMode) {
       setActiveSheetOverlay(null);
       return;
     }
     setActiveSheetOverlay(
       <ReportReasonPanel
-        onCancel={() => setReportOpen(false)}
+        title={t(reportMode === 'user' ? 'business.report_user' : 'business.report_review')}
+        reasons={reportMode === 'user' ? USER_REASONS : REVIEW_REASONS}
+        onCancel={() => setReportMode(null)}
         onSelect={(reason) => {
-          setReportOpen(false);
+          setReportMode(null);
           onReportRef.current(reason);
         }}
       />,
     );
     return () => setActiveSheetOverlay(null);
-  }, [visible, reportOpen]);
+  }, [visible, reportMode]);
 
   const requestClose = () => {
-    if (reportOpen) {
-      setReportOpen(false);
+    if (reportMode) {
+      setReportMode(null);
       return;
     }
     onClose();
+  };
+
+  const confirmBlock = async () => {
+    const target = blockTarget;
+    setBlockTarget(null);
+    if (!target) return;
+    try {
+      await blockReviewAuthor(target.businessId, target.reviewId);
+      onBlocked?.(target.reviewId);
+      toast.show({ message: t('business.user_blocked') });
+    } catch (err) {
+      toast.showError(getErrorMessage(err));
+    }
   };
 
   const runAfterClose = (action: () => void) => {
@@ -123,6 +168,7 @@ export default function ReviewActionsSheet({
   };
 
   return (
+    <>
     <BottomSheetModal visible={visible} onClose={requestClose}>
       <View style={[styles.sheet, isMine ? styles.sheetMine : null, { paddingBottom: insets.bottom + Spacing.lg }]}>
         <View style={styles.header}>
@@ -155,13 +201,40 @@ export default function ReviewActionsSheet({
               </TouchableOpacity>
             </>
           ) : (
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => setReportOpen(true)}
-              accessibilityRole="button"
-            >
-              <Text style={styles.menuItemText}>{t('business.report_review')}</Text>
-            </TouchableOpacity>
+            <>
+              <TouchableOpacity
+                style={styles.otherItem}
+                onPress={() => setReportMode('review')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.menuItemText}>{t('business.report_review')}</Text>
+              </TouchableOpacity>
+              <View style={styles.divider} />
+              <TouchableOpacity
+                style={styles.otherItem}
+                onPress={() => setReportMode('user')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.menuItemText}>{t('business.report_user')}</Text>
+              </TouchableOpacity>
+              {canBlock ? (
+                <>
+                  <View style={styles.divider} />
+                  <TouchableOpacity
+                    style={styles.otherItem}
+                    onPress={() => {
+                      const target = { businessId: businessId!, reviewId: reviewId! };
+                      runAfterClose(() => setBlockTarget(target));
+                    }}
+                    accessibilityRole="button"
+                  >
+                    <Text style={[styles.menuItemText, styles.removeText]}>
+                      {t('business.block_user')}
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              ) : null}
+            </>
           )}
         </View>
 
@@ -170,6 +243,18 @@ export default function ReviewActionsSheet({
         </TouchableOpacity>
       </View>
     </BottomSheetModal>
+    <ConfirmModal
+      visible={blockTarget !== null}
+      title={t('business.block_user_title')}
+      message={t('business.block_user_body')}
+      confirmText={t('business.block_user')}
+      variant="danger"
+      onCancel={() => setBlockTarget(null)}
+      onConfirm={() => {
+        void confirmBlock();
+      }}
+    />
+    </>
   );
 }
 
@@ -248,6 +333,11 @@ const makeStyles = (c: ThemeColors) =>
     },
     menuOther: {
       minHeight: 72,
+    },
+    otherItem: {
+      height: 56,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     menuItem: {
       flex: 1,

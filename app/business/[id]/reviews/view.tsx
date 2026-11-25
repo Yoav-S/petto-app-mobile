@@ -72,6 +72,12 @@ export default function BusinessReviewViewScreen() {
       <ReviewActionsSheet
         visible={menuOpen}
         isMine={review.is_mine === true}
+        businessId={businessId}
+        reviewId={review.id}
+        onBlocked={() => {
+          forgetOpenedReview(businessId, review.id);
+          router.back();
+        }}
         onClose={() => setMenuOpen(false)}
         onEdit={() => {
           setMenuOpen(false);
